@@ -5,16 +5,15 @@ import (
 	"testing"
 )
 
+const EMAIL_ADDRESS = "user@test.org"
+
 var (
-	//users
-	EMAIL_USER = &User{Id: "123-99-100", Name: "To User", Emails: []string{"to@new.bar"}}
-	FROM_USER  = &User{Id: "456-99-100", Name: "From user", Emails: []string{"from@new.bar"}}
 	//config templates
 	cfg = &EmailTemplate{
 		PasswordReset: `
 {{define "reset_test"}}
 ## Test Template
-Hi {{ .ToUser.Name }}
+Hi {{ .ToUser }}
 {{ .Key }}
 {{end}}
 {{template "reset_test" .}}
@@ -22,15 +21,14 @@ Hi {{ .ToUser.Name }}
 		CareteamInvite: `
 {{define "invite_test"}}
 ## Test Template
-{{ .ToUser.Name }}
+{{ .ToUser }}
 {{ .Key }}
-{{ .FromUser.Name }}
 {{end}}
 {{template "invite_test" .}}
 `, Confirmation: `
 {{define "confirm_test"}}
 ## Test Template
-{{ .User.Name }}
+{{ .ToUser }}
 {{ .Key }}
 {{end}}
 {{template "confirm_test" .}}
@@ -39,13 +37,13 @@ Hi {{ .ToUser.Name }}
 
 func TestEmail(t *testing.T) {
 
-	email, err := NewEmail(PW_RESET, cfg, EMAIL_USER)
+	email, err := NewEmailNotification(CONFIRMATION, cfg, EMAIL_ADDRESS)
 
 	if err != nil {
 		t.Fatalf("unexpected error ", err)
 	}
 
-	if email.ToUser != EMAIL_USER {
+	if email.ToUser != EMAIL_ADDRESS {
 		t.Fatal("the user being emailed should be set")
 	}
 
@@ -53,7 +51,7 @@ func TestEmail(t *testing.T) {
 		t.Fatal("the content of the email should be set")
 	}
 
-	if strings.Contains(email.Content, EMAIL_USER.Name) == false {
+	if strings.Contains(email.Content, EMAIL_ADDRESS) == false {
 		t.Fatal("the name should be set")
 	}
 
@@ -61,16 +59,12 @@ func TestEmail(t *testing.T) {
 		t.Fatal("the key should be used")
 	}
 
-	if strings.Contains(email.Key, PW_RESET) == false {
+	if strings.Contains(email.Key, CONFIRMATION) == false {
 		t.Fatal("the key should include the type")
 	}
 
 	if email.Key == "" {
 		t.Fatal("the content of the email should be set")
-	}
-
-	if email.FromUser != nil {
-		t.Fatal("the FromUser should be empty")
 	}
 
 	if email.Created.IsZero() {
@@ -80,7 +74,7 @@ func TestEmail(t *testing.T) {
 
 func TestEmailSend(t *testing.T) {
 
-	email, _ := NewEmail(PW_RESET, cfg, EMAIL_USER)
+	email, _ := NewEmailNotification(CARETEAM_INVITE, cfg, EMAIL_ADDRESS)
 
 	if email.Sent.IsZero() == false {
 		t.Fatal("the time sent should not be set")
