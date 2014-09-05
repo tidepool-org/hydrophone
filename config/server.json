@@ -1,0 +1,25 @@
+{
+  "service": {
+    "service": "hydrophone-local",
+    "protocol": "http",
+    "host": "localhost:9307",
+    "keyFile": "config/key.pem",
+    "certFile": "config/cert.pem"
+  },
+  "mongo": {
+    "connectionString": "mongodb://localhost/hydrophone"
+  },
+  "hydrophone" : {
+    "serverSecret": "This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy",
+    "emailTemplates" : {
+      "passwordReset" : "done",
+      "careteamInvite" : "welcome",
+      "confirmation" : "all good"
+    }
+  },
+  "sesEmail" : {
+    "fromAddress" : "from@user.org",
+    "accessKey": "XXX_YOUR_ACCESS_KEY_XXX",
+    "secretKey": "YYY_YOUR_SECRET_KEY_YYY"
+  }
+}
