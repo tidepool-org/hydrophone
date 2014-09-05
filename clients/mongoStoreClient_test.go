@@ -6,7 +6,6 @@ import (
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"io/ioutil"
 	"labix.org/v2/mgo"
-	"strings"
 	"testing"
 	"time"
 )
@@ -20,6 +19,7 @@ func TestMongoStoreTokenOperations(t *testing.T) {
 	var (
 		config       Config
 		notification = &models.Notification{
+			Id:       "123456789",
 			Key:      "notification_type/abcdefghijklmn_Hs4we",
 			Content:  "content from template",
 			ToUser:   "test@user.org",
@@ -52,23 +52,23 @@ func TestMongoStoreTokenOperations(t *testing.T) {
 		 * THE TESTS
 		 */
 
-		if err := mc.AddToken(notification); err != nil {
+		if err := mc.UpsertNotification(notification); err != nil {
 			t.Fatalf("we could not save the notification %v", err)
 		}
 
-		if found, err := mc.FindToken(notification); err == nil {
+		if found, err := mc.FindNotification(notification); err == nil {
 			if found.Id == "" {
-				t.Fatalf("the token string isn't included %v", foundToken)
+				t.Fatalf("the token string isn't included %v", found)
 			}
 		} else {
 			t.Fatalf("no token was returned when it should have been - err[%v]", err)
 		}
 
-		if err := mc.RemoveToken(sessionToken); err != nil {
+		if err := mc.RemoveNotification(notification); err != nil {
 			t.Fatalf("we could not remove the token %v", err)
 		}
 
-		if token, err := mc.FindToken(sessionToken); err == nil {
+		if token, err := mc.FindNotification(notification); err == nil {
 			if token != nil {
 				t.Fatalf("the token has been removed so we shouldn't find it %v", token)
 			}

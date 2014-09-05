@@ -18,7 +18,7 @@ const (
 
 type (
 	Notification struct {
-		Id       string
+		Id       string `bson:"_id,omitempty"`
 		Key      string
 		Content  string
 		ToUser   string
