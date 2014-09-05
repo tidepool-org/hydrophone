@@ -2,9 +2,6 @@ package api
 
 import (
 	"./../clients"
-	"./../models"
-	"bytes"
-	"encoding/json"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
@@ -24,10 +21,6 @@ var (
 		ServerSecret: "shhh! don't tell",
 	}
 	/*
-	 * users and tokens
-	 */
-	SRVR_TOKEN, _ = models.NewSessionToken(sverTknData, FAKE_CONFIG.Secret)
-	/*
 	 * basics setup
 	 */
 	rtr          = mux.NewRouter()
@@ -35,12 +28,12 @@ var (
 	/*
 	 * expected path
 	 */
-	mockStore  = clients.NewMockStoreClient(FAKE_CONFIG.Salt, false, false)
+	mockStore  = clients.NewMockStoreClient(false, false)
 	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier)
 	/*
 	 * failure path
 	 */
-	mockStoreFails  = clients.NewMockStoreClient(FAKE_CONFIG.Salt, false, MAKE_IT_FAIL)
+	mockStoreFails  = clients.NewMockStoreClient(false, MAKE_IT_FAIL)
 	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier)
 )
 
