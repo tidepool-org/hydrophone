@@ -1,12 +1,13 @@
 package api
 
 import (
-	"./../clients"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"./../clients"
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -104,11 +105,36 @@ func TestEmailAddress_StatusOK(t *testing.T) {
 	request.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
 	response := httptest.NewRecorder()
 
-	hydrophone.SetHandlers("", rtr)
+	// hydrophone.SetHandlers("", rtr)
 
 	hydrophone.EmailAddress(response, request, map[string]string{"type": "password", "address": "test@user.org"})
 
 	if response.Code != http.StatusOK {
 		t.Fatalf("Non-expected status code%v:\n\tbody: %v", http.StatusNotImplemented, response.Code)
+	}
+}
+
+func TestAddressResponds(t *testing.T) {
+	hydrophone.SetHandlers("", rtr)
+
+	type toTest struct {
+		method   string
+		url      string
+		respCode int
+	}
+
+	tests := []toTest{
+		{"POST", "/send/signup/UID", 200},
+	}
+
+	for _, test := range tests {
+		request, _ := http.NewRequest(test.method, test.url, nil)
+		request.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
+		response := httptest.NewRecorder()
+		rtr.ServeHTTP(response, request)
+
+		if response.Code != test.respCode {
+			t.Fatalf("Non-expected status code %d (expected %d):\n\tbody: %v", response.Code, test.respCode, response.Body)
+		}
 	}
 }

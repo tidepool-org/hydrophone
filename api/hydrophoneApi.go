@@ -1,12 +1,13 @@
 package api
 
 import (
-	"./../clients"
-	"./../models"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"net/url"
+
+	"./../clients"
+	"./../models"
+	"github.com/gorilla/mux"
 )
 
 type (
@@ -20,6 +21,7 @@ type (
 		ServerSecret string                `json:"serverSecret"` //used for services
 		templates    *models.EmailTemplate `json:"emailTemplates"`
 	}
+	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
 )
 
@@ -36,15 +38,44 @@ func InitApi(cfg Config, store clients.StoreClient, notifier clients.Notifier) *
 	}
 }
 
+// POST /confirm/send/signup/:userid
+// POST /confirm/send/forgot/:useremail
+// POST /confirm/send/invite/:userid
+
+// POST /confirm/resend/signup/:userid
+
+// PUT /confirm/accept/signup/:userid/:confirmationID
+// PUT /confirm/accept/forgot/
+// PUT /confirm/accept/invite/:userid/:invited_by
+
+// GET /confirm/signup/:userid
+// GET /confirm/invite/:userid
+
+// GET /confirm/invitations/:userid
+
+// PUT /confirm/dismiss/invite/:userid/:invited_by
+// PUT /confirm/dismiss/signup/:userid
+
+// DELETE /confirm/:userid/invited/:invited_address
+// DELETE /confirm/signup/:userid
+
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	rtr.HandleFunc("/status", a.GetStatus).Methods("GET")
 	rtr.Handle("/emailtoaddress/{type}/{address}", varsHandler(a.EmailAddress)).Methods("GET", "POST")
+
+	send := rtr.PathPrefix("/send").Subrouter()
+	send.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("POST")
 }
 
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	h(res, req, vars)
+}
+
+func (a *Api) Dummy(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	log.Printf("dummy() ignored request %s %s", req.Method, req.URL)
+	res.WriteHeader(http.StatusOK)
 }
 
 func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
