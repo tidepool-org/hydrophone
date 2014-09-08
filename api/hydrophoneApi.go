@@ -20,7 +20,7 @@ type (
 	}
 	Config struct {
 		ServerSecret string                `json:"serverSecret"` //used for services
-		templates    *models.EmailTemplate `json:"emailTemplates"`
+		Templates    *models.EmailTemplate `json:"emailTemplates"`
 	}
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
 )
@@ -32,6 +32,8 @@ const (
 )
 
 func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl *shoreline.ShorelineClient) *Api {
+
+	log.Printf("config [%v]", cfg.Templates)
 	return &Api{
 		Store:     store,
 		Config:    cfg,
@@ -76,13 +78,28 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 
 		if emailAddress != "" && emailType != "" {
 
-			if status, err := a.notifier.Send([]string{emailAddress}, "TODO", "TODO"); err != nil {
-				log.Println(err)
+			log.Printf("sending [%s] to [%s]", emailType, emailAddress)
+
+			notification, err := models.NewEmailNotification(emailType, a.Config.Templates, emailAddress)
+
+			if err != nil {
+				log.Println("Error creating template ", err)
 				res.Write([]byte(STATUS_ERR_SENDING_EMAIL))
 				res.WriteHeader(http.StatusInternalServerError)
+				return
 			} else {
-				log.Println(status)
-				res.WriteHeader(http.StatusOK)
+				log.Printf("Template [%v]", notification)
+
+				if status, err := a.notifier.Send([]string{emailAddress}, "TODO", notification.Content); err != nil {
+					log.Println(err)
+					res.Write([]byte(STATUS_ERR_SENDING_EMAIL))
+					res.WriteHeader(http.StatusInternalServerError)
+					return
+				} else {
+					log.Println(status)
+					res.WriteHeader(http.StatusOK)
+					return
+				}
 			}
 		}
 		res.WriteHeader(http.StatusBadRequest)

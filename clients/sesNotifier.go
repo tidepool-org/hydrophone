@@ -45,6 +45,8 @@ func (c *SesNotifier) Send(to []string, subject string, msg string) (string, err
 	data.Add("Message.Body.Text.Data", msg)
 	data.Add("AWSAccessKeyId", c.Config.accessKey)
 
+	log.Printf("to send [%v]", data)
+
 	return c.sesPost(data)
 }
 
