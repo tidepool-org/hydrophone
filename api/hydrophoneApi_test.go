@@ -124,7 +124,21 @@ func TestAddressResponds(t *testing.T) {
 	}
 
 	tests := []toTest{
+		{"POST", "/send/signup", 404},
 		{"POST", "/send/signup/UID", 200},
+		{"POST", "/send/forgot/me@myemail.com", 200},
+		{"POST", "/send/invite/UID", 200},
+		{"POST", "/resend/signup/UID", 200},
+		{"PUT", "/accept/signup/UID/confid", 200},
+		{"PUT", "/accept/forgot", 200},
+		{"PUT", "/accept/invite/UID/senderid", 200},
+		{"GET", "/signup/UID", 200},
+		{"GET", "/invite/UID", 200},
+		{"GET", "/invitations/UID", 200},
+		{"PUT", "/dismiss/invite/UID/senderid", 200},
+		{"PUT", "/dismiss/signup/UID", 200},
+		{"DELETE", "/UID/invited/other@youremail.com", 200},
+		{"DELETE", "/signup/UID", 200},
 	}
 
 	for _, test := range tests {
