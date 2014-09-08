@@ -28,6 +28,7 @@ type (
 const (
 	TP_SESSION_TOKEN         = "x-tidepool-session-token"
 	STATUS_ERR_SENDING_EMAIL = "Error sending email"
+	STATUS_OK                = "OK"
 )
 
 func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl *shoreline.ShorelineClient) *Api {
@@ -52,12 +53,13 @@ func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
 	if err := a.Store.Ping(); err != nil {
-		log.Println(err)
+		log.Println("Error getting status", err)
 		res.WriteHeader(http.StatusInternalServerError)
 		res.Write([]byte(err.Error()))
 		return
 	}
 	res.WriteHeader(http.StatusOK)
+	res.Write([]byte(STATUS_OK))
 	return
 }
 
