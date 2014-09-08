@@ -4,6 +4,7 @@ import (
 	"./../clients"
 	"./../models"
 	"github.com/gorilla/mux"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 	"log"
 	"net/http"
 	"net/url"
@@ -14,6 +15,7 @@ type (
 		Store     clients.StoreClient
 		notifier  clients.Notifier
 		templates models.EmailTemplate
+		shoreline *shoreline.ShorelineClient
 		Config    Config
 	}
 	Config struct {
@@ -28,11 +30,12 @@ const (
 	STATUS_ERR_SENDING_EMAIL = "Error sending email"
 )
 
-func InitApi(cfg Config, store clients.StoreClient, notifier clients.Notifier) *Api {
+func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl *shoreline.ShorelineClient) *Api {
 	return &Api{
-		Store:    store,
-		Config:   cfg,
-		notifier: notifier,
+		Store:     store,
+		Config:    cfg,
+		notifier:  ntf,
+		shoreline: sl,
 	}
 }
 
@@ -59,7 +62,12 @@ func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
 }
 
 func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if td := req.Header.Get(TP_SESSION_TOKEN); td != "" {
+
+	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
+
+		if td := a.shoreline.CheckToken(token); td == nil {
+			log.Println("bad token check ", td)
+		}
 
 		emailType := vars["type"]
 		emailAddress, _ := url.QueryUnescape(vars["address"])
