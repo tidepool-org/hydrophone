@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -32,7 +31,7 @@ func NewSesNotifier(cfg *SesNotifierConfig) *SesNotifier {
 	}
 }
 
-func (c *SesNotifier) Send(to []string, subject string, msg string) (string, error) {
+func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string) {
 
 	data := make(url.Values)
 	data.Add("Action", "SendEmail")
@@ -52,11 +51,11 @@ func (c *SesNotifier) generateAuthHeader(date string) string {
 	return fmt.Sprintf("AWS3-HTTPS AWSAccessKeyId=%s, Algorithm=HmacSHA256, Signature=%s", c.Config.AccessKey, signature)
 }
 
-func (c *SesNotifier) sesPost(data url.Values) (string, error) {
+func (c *SesNotifier) sesPost(data url.Values) (int, string) {
 	body := strings.NewReader(data.Encode())
 	req, err := http.NewRequest("POST", c.Config.EndPoint, body)
 	if err != nil {
-		return "", err
+		return http.StatusInternalServerError, err.Error()
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -67,17 +66,11 @@ func (c *SesNotifier) sesPost(data url.Values) (string, error) {
 	r, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("http error: %s", err)
-		return "", err
+		return http.StatusInternalServerError, err.Error()
 	}
 
 	resultbody, _ := ioutil.ReadAll(r.Body)
 	r.Body.Close()
 
-	if r.StatusCode != 200 {
-		log.Printf("error, status = %d", r.StatusCode)
-		log.Printf("error response: %s", resultbody)
-		return "", errors.New(fmt.Sprintf("error code %d. response: %s", r.StatusCode, resultbody))
-	}
-
-	return string(resultbody), nil
+	return r.StatusCode, string(resultbody)
 }

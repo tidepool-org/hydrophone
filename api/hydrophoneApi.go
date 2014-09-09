@@ -4,7 +4,7 @@ import (
 	"./../clients"
 	"./../models"
 	"github.com/gorilla/mux"
-	"github.com/tidepool-org/go-common/clients/shoreline"
+	//"github.com/tidepool-org/go-common/clients/shoreline"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,8 +15,8 @@ type (
 		Store     clients.StoreClient
 		notifier  clients.Notifier
 		templates models.EmailTemplate
-		shoreline *shoreline.ShorelineClient
-		Config    Config
+		//shoreline *shoreline.ShorelineClient
+		Config Config
 	}
 	Config struct {
 		ServerSecret string                `json:"serverSecret"` //used for services
@@ -31,14 +31,13 @@ const (
 	STATUS_OK                = "OK"
 )
 
-func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl *shoreline.ShorelineClient) *Api {
+func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier) *Api {
 
-	log.Printf("config [%v]", cfg.Templates)
 	return &Api{
-		Store:     store,
-		Config:    cfg,
-		notifier:  ntf,
-		shoreline: sl,
+		Store:    store,
+		Config:   cfg,
+		notifier: ntf,
+		//shoreline: sl,
 	}
 }
 
@@ -69,16 +68,15 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
 
+		/* TODO: the actual token check once we have mocks in place
 		if td := a.shoreline.CheckToken(token); td == nil {
 			log.Println("bad token check ", td)
-		}
+		}*/
 
 		emailType := vars["type"]
 		emailAddress, _ := url.QueryUnescape(vars["address"])
 
 		if emailAddress != "" && emailType != "" {
-
-			log.Printf("sending [%s] to [%s]", emailType, emailAddress)
 
 			notification, err := models.NewEmailNotification(emailType, a.Config.Templates, emailAddress)
 
@@ -88,15 +86,12 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 				res.WriteHeader(http.StatusInternalServerError)
 				return
 			} else {
-				log.Printf("Template [%v]", notification)
-
-				if status, err := a.notifier.Send([]string{emailAddress}, "TODO", notification.Content); err != nil {
-					log.Println(err)
+				if status, details := a.notifier.Send([]string{emailAddress}, "TODO", notification.Content); status != http.StatusOK {
+					log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
 					res.Write([]byte(STATUS_ERR_SENDING_EMAIL))
 					res.WriteHeader(http.StatusInternalServerError)
 					return
 				} else {
-					log.Println(status)
 					res.WriteHeader(http.StatusOK)
 					return
 				}
