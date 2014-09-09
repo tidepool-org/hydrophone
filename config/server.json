@@ -2,7 +2,7 @@
   "service": {
     "service": "hydrophone-local",
     "protocol": "http",
-    "host": "localhost:9307",
+    "host": "localhost:9157",
     "keyFile": "config/key.pem",
     "certFile": "config/cert.pem"
   },
@@ -12,14 +12,15 @@
   "hydrophone" : {
     "serverSecret": "This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy",
     "emailTemplates" : {
-      "passwordReset" : "done",
-      "careteamInvite" : "welcome",
-      "confirmation" : "all good"
+      "passwordReset" : "{{define \"pwreset_test\"}} A test pw reset email  {{ .ToUser }} {{ .Key }} {{end}} {{template \"pwreset_test\" .}}",
+      "careteamInvite" : "{{define \"invite_test\"}} A test careteam invite email  {{ .ToUser }} {{ .Key }} {{end}} {{template \"invite_test\" .}}",
+      "confirmation" : "{{define \"confirm_test\"}} A test confirmation email  {{ .ToUser }} {{ .Key }} {{end}} {{template \"confirm_test\" .}}"
     }
   },
   "sesEmail" : {
-    "fromAddress" : "from@user.org",
-    "accessKey": "XXX_YOUR_ACCESS_KEY_XXX",
-    "secretKey": "YYY_YOUR_SECRET_KEY_YYY"
+    "serverEndpoint":"https://email.us-west-2.amazonaws.com",
+    "fromAddress" : "AWS_VERIFIED_EMAIL_ADDRESS",
+    "accessKey": "AWS_ACCESS_KEY",
+    "secretKey": "AWS_SECRET_KEY"
   }
 }

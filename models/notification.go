@@ -46,6 +46,8 @@ func NewEmailNotification(emailType string, cfg *EmailTemplate, address ...strin
 			Created: time.Now(),
 		}
 
+		log.Printf("t1 [%v]", notification)
+
 		notification.Content = parseTemplateContent(
 			loadTemplate(emailType, cfg),
 			notification,
@@ -62,14 +64,19 @@ func loadTemplate(emailType string, cfg *EmailTemplate) *template.Template {
 
 	var compiled *template.Template
 
+	log.Printf("Type [%v] Config [%v]", emailType, cfg)
+
 	switch {
 	case strings.Index(strings.ToLower(emailType), CARETEAM_INVITE) != -1:
+		log.Printf("CT [%v]", cfg.CareteamInvite)
 		compiled = template.Must(template.New(CARETEAM_INVITE).Parse(cfg.CareteamInvite))
 		break
 	case strings.Index(strings.ToLower(emailType), CONFIRMATION) != -1:
+		log.Printf("CONFIRM [%v]", cfg.Confirmation)
 		compiled = template.Must(template.New(CONFIRMATION).Parse(cfg.Confirmation))
 		break
 	case strings.Index(strings.ToLower(emailType), PW_RESET) != -1:
+		log.Printf("PW [%v]", cfg.PasswordReset)
 		compiled = template.Must(template.New(PW_RESET).Parse(cfg.PasswordReset))
 		break
 	default:
@@ -91,7 +98,12 @@ func parseTemplateContent(compiled *template.Template, content interface{}) stri
 		log.Println("error parsing template ", err)
 		return ""
 	}
-	return buffer.String()
+
+	tmpl := buffer.String()
+
+	log.Println("Template: ", tmpl)
+
+	return tmpl
 }
 
 /*

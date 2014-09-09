@@ -3,12 +3,14 @@ package main
 import (
 	"./api"
 	sc "./clients"
+	//"crypto/tls"
 	"github.com/gorilla/mux"
 	"github.com/tidepool-org/go-common"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/hakken"
 	"github.com/tidepool-org/go-common/clients/mongo"
+	//"github.com/tidepool-org/go-common/clients/shoreline"
 	"log"
 	"net/http"
 	"os"
@@ -44,6 +46,25 @@ func main() {
 		log.Fatal(err)
 	}
 	defer hakkenClient.Close()
+
+	/* Clients
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	httpClient := &http.Client{Transport: tr}
+
+	slClient := shoreline.NewShorelineClientBuilder().
+		WithHostGetter(config.ShorelineConfig.ToHostGetter(hakkenClient)).
+		WithHttpClient(httpClient).
+		WithConfig(&config.ShorelineConfig.ShorelineClientConfig).
+		Build()
+
+	if err := slClient.Start(); err != nil {
+		log.Fatal(err)
+	}
+	*/
 
 	/*
 	 * hydrophone setup
