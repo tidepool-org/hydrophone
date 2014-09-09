@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"./../clients"
@@ -11,8 +12,10 @@ import (
 )
 
 const (
-	MAKE_IT_FAIL = true
-	FAKE_TOKEN   = "a.fake.token.to.use.in.tests"
+	MAKE_IT_FAIL   = true
+	FAKE_TOKEN     = "a.fake.token.to.use.in.tests"
+	TOKEN_FOR_UID1 = "a.fake.token.for.uid.1"
+	TOKEN_FOR_UID2 = "a.fake.token.for.uid.2"
 )
 
 var (
@@ -120,35 +123,213 @@ func TestAddressResponds(t *testing.T) {
 	type toTest struct {
 		method   string
 		url      string
+		body     string
+		token    bool
 		respCode int
+		response string
 	}
 
 	tests := []toTest{
-		{"POST", "/send/signup", 404},
-		{"POST", "/send/signup/UID", 200},
-		{"POST", "/send/forgot/me@myemail.com", 200},
-		{"POST", "/send/invite/UID", 200},
-		{"POST", "/resend/signup/UID", 200},
-		{"PUT", "/accept/signup/UID/confid", 200},
-		{"PUT", "/accept/forgot", 200},
-		{"PUT", "/accept/invite/UID/senderid", 200},
-		{"GET", "/signup/UID", 200},
-		{"GET", "/invite/UID", 200},
-		{"GET", "/invitations/UID", 200},
-		{"PUT", "/dismiss/invite/UID/senderid", 200},
-		{"PUT", "/dismiss/signup/UID", 200},
-		{"DELETE", "/UID/invited/other@youremail.com", 200},
-		{"DELETE", "/signup/UID", 200},
+		{
+			// can't invite without a body
+			method:   "POST",
+			url:      "/send/invite/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 400,
+		},
+		{
+			// can't invite without permissions
+			method:   "POST",
+			url:      "/send/invite/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 400,
+			body: `{
+			  "email": "personToInvite@email.com",
+			}`,
+		},
+		{
+			// can't invite without email
+			method:   "POST",
+			url:      "/send/invite/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 400,
+			body: `{
+			  "email": "personToInvite@email.com",
+			  "permissions": [
+			    "view": {},
+			    "note": {}
+			  ]
+			}`,
+		},
+		{
+			// but if you have them all, it should work
+			method:   "POST",
+			url:      "/send/invite/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 200,
+			body: `{
+			  "email": "personToInvite@email.com",
+			  "permissions": [
+			    "view": {},
+			    "note": {}
+			  ]
+			}`,
+		},
+		{
+			// we should get a list of our outstanding invitations
+			method:   "GET",
+			url:      "/invitations/UID2",
+			token:    TOKEN_FOR_UID,
+			respCode: 200,
+			response: `{
+				"invitedBy": "UID"
+				  "permissions": [
+				    "view": {},
+				    "note": {}
+				  ]
+			}`,
+		},
+		{
+			// we can't accept an invitation we didn't get
+			method:   "PUT",
+			url:      "/accept/invite/UID99/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 404,
+		},
+		{
+			// we can accept an invitation we did get
+			method:   "PUT",
+			url:      "/accept/invite/UID2/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 200,
+		},
+		{
+			// get invitations we sent
+			method:   "GET",
+			url:      "/invite/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 200,
+			response: `{
+				"email": "personToInvite@email.com"
+				  "permissions": [
+				    "view": {},
+				    "note": {}
+				  ]
+			}`,
+		},
+		{
+			// dismiss an invitation we were sent
+			method:   "PUT",
+			url:      "/dismiss/invite/UID2/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 204,
+		},
+		{
+			// delete the other invitation we sent
+			method:   "DELETE",
+			url:      "/UID/invited/other@youremail.com",
+			token:    TOKEN_FOR_UID,
+			respCode: 204,
+		},
+		{
+			// if you leave off the userid, it fails
+			method:   "POST",
+			url:      "/send/signup",
+			token:    TOKEN_FOR_UID,
+			respCode: 404,
+		},
+		{
+			// first time you ask, it does it
+			method:   "POST",
+			url:      "/send/signup/NewUserID",
+			token:    TOKEN_FOR_UID,
+			respCode: 200,
+		},
+		{
+			// second time you ask, it fails with a limit
+			method:   "POST",
+			url:      "/send/signup/NewUserID",
+			token:    TOKEN_FOR_UID,
+			respCode: 403,
+		},
+		{
+			// can't resend a signup if you didn't send it
+			method:   "POST",
+			url:      "/resend/signup/BadUID",
+			token:    TOKEN_FOR_UID,
+			respCode: 404,
+		},
+		{
+			// but you can resend a valid one
+			method:   "POST",
+			url:      "/resend/signup/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 200,
+		},
+		{
+			// you can't accept an invitation you didn't get
+			method:   "PUT",
+			url:      "/accept/signup/UID2/UIDBad",
+			token:    TOKEN_FOR_UID2,
+			respCode: 200,
+		},
+		{
+			// you can accept an invitation from another user
+			method:   "PUT",
+			url:      "/accept/signup/UID2/UID",
+			token:    TOKEN_FOR_UID2,
+			respCode: 200,
+		},
+		{
+			method:   "GET",
+			url:      "/signup/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 200,
+		},
+		{
+			method:   "PUT",
+			url:      "/dismiss/signup/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 200,
+		},
+		{
+			method:   "DELETE",
+			url:      "/signup/UID",
+			token:    TOKEN_FOR_UID,
+			respCode: 200,
+		},
+		{
+			// always returns a 200 if properly formed
+			method:   "POST",
+			url:      "/send/forgot/me@myemail.com",
+			respCode: 200,
+		},
+		{
+			method:   "PUT",
+			url:      "/accept/forgot",
+			token:    TOKEN_FOR_UID,
+			respCode: 200,
+		},
 	}
 
 	for _, test := range tests {
-		request, _ := http.NewRequest(test.method, test.url, nil)
-		request.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
+		var body = &strings.Reader{}
+		if test.body != "" {
+			body = strings.NewReader(test.body)
+		}
+		request, _ := http.NewRequest(test.method, test.url, body)
+		if test.token != "" {
+			request.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
+		}
 		response := httptest.NewRecorder()
 		rtr.ServeHTTP(response, request)
 
 		if response.Code != test.respCode {
 			t.Fatalf("Non-expected status code %d (expected %d):\n\tbody: %v", response.Code, test.respCode, response.Body)
+		}
+
+		if response.Body != "" && test.response != "" {
+			// jbody = json.
 		}
 	}
 }
