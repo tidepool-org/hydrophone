@@ -124,7 +124,7 @@ func TestAddressResponds(t *testing.T) {
 		method   string
 		url      string
 		body     string
-		token    bool
+		token    string
 		respCode int
 		response string
 	}
@@ -134,14 +134,14 @@ func TestAddressResponds(t *testing.T) {
 			// can't invite without a body
 			method:   "POST",
 			url:      "/send/invite/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 400,
 		},
 		{
 			// can't invite without permissions
 			method:   "POST",
 			url:      "/send/invite/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 400,
 			body: `{
 			  "email": "personToInvite@email.com",
@@ -151,7 +151,7 @@ func TestAddressResponds(t *testing.T) {
 			// can't invite without email
 			method:   "POST",
 			url:      "/send/invite/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 400,
 			body: `{
 			  "email": "personToInvite@email.com",
@@ -165,7 +165,7 @@ func TestAddressResponds(t *testing.T) {
 			// but if you have them all, it should work
 			method:   "POST",
 			url:      "/send/invite/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 			body: `{
 			  "email": "personToInvite@email.com",
@@ -179,7 +179,7 @@ func TestAddressResponds(t *testing.T) {
 			// we should get a list of our outstanding invitations
 			method:   "GET",
 			url:      "/invitations/UID2",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 			response: `{
 				"invitedBy": "UID"
@@ -193,21 +193,21 @@ func TestAddressResponds(t *testing.T) {
 			// we can't accept an invitation we didn't get
 			method:   "PUT",
 			url:      "/accept/invite/UID99/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 404,
 		},
 		{
 			// we can accept an invitation we did get
 			method:   "PUT",
 			url:      "/accept/invite/UID2/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 		},
 		{
 			// get invitations we sent
 			method:   "GET",
 			url:      "/invite/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 			response: `{
 				"email": "personToInvite@email.com"
@@ -221,49 +221,49 @@ func TestAddressResponds(t *testing.T) {
 			// dismiss an invitation we were sent
 			method:   "PUT",
 			url:      "/dismiss/invite/UID2/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 204,
 		},
 		{
 			// delete the other invitation we sent
 			method:   "DELETE",
 			url:      "/UID/invited/other@youremail.com",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 204,
 		},
 		{
 			// if you leave off the userid, it fails
 			method:   "POST",
 			url:      "/send/signup",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 404,
 		},
 		{
 			// first time you ask, it does it
 			method:   "POST",
 			url:      "/send/signup/NewUserID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 		},
 		{
 			// second time you ask, it fails with a limit
 			method:   "POST",
 			url:      "/send/signup/NewUserID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 403,
 		},
 		{
 			// can't resend a signup if you didn't send it
 			method:   "POST",
 			url:      "/resend/signup/BadUID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 404,
 		},
 		{
 			// but you can resend a valid one
 			method:   "POST",
 			url:      "/resend/signup/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 		},
 		{
@@ -283,19 +283,19 @@ func TestAddressResponds(t *testing.T) {
 		{
 			method:   "GET",
 			url:      "/signup/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 		},
 		{
 			method:   "PUT",
 			url:      "/dismiss/signup/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 		},
 		{
 			method:   "DELETE",
 			url:      "/signup/UID",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 		},
 		{
@@ -307,7 +307,7 @@ func TestAddressResponds(t *testing.T) {
 		{
 			method:   "PUT",
 			url:      "/accept/forgot",
-			token:    TOKEN_FOR_UID,
+			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 		},
 	}
@@ -328,8 +328,8 @@ func TestAddressResponds(t *testing.T) {
 			t.Fatalf("Non-expected status code %d (expected %d):\n\tbody: %v", response.Code, test.respCode, response.Body)
 		}
 
-		if response.Body != "" && test.response != "" {
-			// jbody = json.
+		if response.Body.Len() != 0 && test.response != "" {
+			// compare bodies by comparing the unmarshalled JSON results
 		}
 	}
 }
