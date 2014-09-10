@@ -4,7 +4,7 @@ go:
  - 1.3
 
 install:
- - wget https://github.com/tidepool-org/tools/blob/master/come_deps.sh
+ - wget https://raw.githubusercontent.com/tidepool-org/tools/master/come_deps.sh
  - chmod -R 777 ./come_deps.sh
 
 script:
