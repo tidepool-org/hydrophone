@@ -1,0 +1,17 @@
+language: go
+
+services:
+  - mongodb
+
+go:
+ - 1.3
+
+install:
+ - wget https://raw.githubusercontent.com/tidepool-org/tools/master/come_deps.sh
+ - chmod -R 777 ./come_deps.sh
+
+script:
+ - source ./build
+ - cd api && go test -v
+ - cd ../clients && go test -v
+ - cd ../models && go test -v
