@@ -11,4 +11,6 @@ install:
  - chmod -R 777 ./come_deps.sh
 
 script:
- - source ./build && go test -v ./...
+ - source ./build
+ - cd api && go test -v
+ - cd api && go test -v
