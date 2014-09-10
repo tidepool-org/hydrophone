@@ -9,6 +9,7 @@ go:
 install:
  - wget https://raw.githubusercontent.com/tidepool-org/tools/master/come_deps.sh
  - chmod -R 777 ./come_deps.sh
+ - go get gopkg.in/check.v1
 
 script:
  - source ./build && go test -v ./...
