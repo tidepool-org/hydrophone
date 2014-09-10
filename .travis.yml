@@ -1,0 +1,10 @@
+language: go
+
+go:
+ - 1.3
+
+install:
+ - wget https://github.com/tidepool-org/tools/blob/master/come_deps.sh
+
+script:
+ - source ./build && go test -v ./...
