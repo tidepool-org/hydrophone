@@ -2,7 +2,7 @@
 
 export GOPATH=`pwd`
 
-sudo ./come_deps.sh
+./come_deps.sh
 
 PROJECT=hydrophone
 

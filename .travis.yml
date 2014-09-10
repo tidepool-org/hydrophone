@@ -5,6 +5,7 @@ go:
 
 install:
  - wget https://github.com/tidepool-org/tools/blob/master/come_deps.sh
+ - chmod -R 777 ./come_deps.sh
 
 script:
  - source ./build && go test -v ./...
