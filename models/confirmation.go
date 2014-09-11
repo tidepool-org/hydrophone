@@ -3,20 +3,21 @@ package models
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"labix.org/v2/mgo/bson"
 	"log"
 	"time"
 )
 
 type (
 	Confirmation struct {
-		Id        string    `json:"id" bson:"_id,omitempty"`
-		Key       string    `json:"key" bson:"key"`
-		Type      Type      `json:"type" bson:"type"`
-		Status    Status    `json:"status" bson:"status"`
-		ToUser    string    `json:"createdBy" bson:"createdBy"`
-		CreatorId string    `json:"creatorId" bson:"creatorId"` // could be empty
-		Created   time.Time `json:"created" bson:"created"`     //used for expiry
-		Modified  time.Time `json:"modified" bson:"modified"`   //sent - or maybe failed
+		Id        bson.ObjectId `json:"id" bson:"_id,omitempty"`
+		Key       string        `json:"key" bson:"key"`
+		Type      Type          `json:"type" bson:"type"`
+		Status    Status        `json:"status" bson:"status"`
+		ToUser    string        `json:"createdBy" bson:"createdBy"`
+		CreatorId string        `json:"creatorId" bson:"creatorId"` // could be empty
+		Created   time.Time     `json:"created" bson:"created"`     //used for expiry
+		Modified  time.Time     `json:"modified" bson:"modified"`   //sent - or maybe failed
 	}
 
 	//Enum type's
@@ -41,6 +42,7 @@ func NewConfirmation(theType Type, to, from string) (*Confirmation, error) {
 	} else {
 
 		conf := &Confirmation{
+			Id:        bson.NewObjectId(),
 			Key:       key,
 			Type:      theType,
 			ToUser:    to,

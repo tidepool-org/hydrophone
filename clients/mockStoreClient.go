@@ -23,23 +23,23 @@ func (d MockStoreClient) Ping() error {
 	return nil
 }
 
-func (d MockStoreClient) UpsertNotification(notification *models.Notification) error {
+func (d MockStoreClient) UpsertConfirmation(notification *models.Confirmation) error {
 	if d.doBad {
-		return errors.New("UpsertNotification failure")
+		return errors.New("UpsertConfirmation failure")
 	}
 	return nil
 }
 
-func (d MockStoreClient) FindNotification(notification *models.Notification) (result *models.Notification, err error) {
+func (d MockStoreClient) FindConfirmation(notification *models.Confirmation) (result *models.Confirmation, err error) {
 	if d.doBad {
-		return nil, errors.New("RemoveNotification failure")
+		return nil, errors.New("FindConfirmation failure")
 	}
 	return notification, nil
 }
 
-func (d MockStoreClient) RemoveNotification(notification *models.Notification) error {
+func (d MockStoreClient) RemoveConfirmation(notification *models.Confirmation) error {
 	if d.doBad {
-		return errors.New("RemoveNotification failure")
+		return errors.New("RemoveConfirmation failure")
 	}
 	return nil
 }
