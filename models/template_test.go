@@ -13,7 +13,7 @@ type (
 )
 
 var (
-	content = Data{ToUser: "Test User", Key: "blah.blah.blah"}
+	content = Data{ToUser: "Test User", Key: "123.blah.456.blah"}
 	//config templates
 	cfg = &TemplateConfig{
 		PasswordReset: `
@@ -45,14 +45,14 @@ func TestLoad(t *testing.T) {
 
 	tmpl := NewTemplate()
 
-	tmpl.Load(PW_RESET, cfg)
+	tmpl.Load(TypePasswordReset, cfg)
 
 	if tmpl.compiled == nil {
 		t.Fatal("a template should have been created")
 	}
 
-	if tmpl.compiled.Name() != string(PW_RESET) {
-		t.Fatalf("the name is [%s] but should be [%s]", tmpl.compiled.Name(), string(PW_RESET))
+	if tmpl.compiled.Name() != string(TypePasswordReset) {
+		t.Fatalf("the name is [%s] but should be [%s]", tmpl.compiled.Name(), string(TypePasswordReset))
 	}
 
 	if tmpl.parsed != "" {
@@ -75,7 +75,7 @@ func TestParse(t *testing.T) {
 
 	tmpl := NewTemplate()
 
-	tmpl.Load(CONFIRMATION, cfg)
+	tmpl.Load(TypeConfirmation, cfg)
 
 	tmpl.Parse(content)
 

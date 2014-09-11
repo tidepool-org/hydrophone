@@ -31,14 +31,14 @@ func (t *Template) Load(templateType Type, cfg *TemplateConfig) {
 	var compiled *template.Template
 
 	switch {
-	case templateType == CARETEAM_INVITE:
-		compiled = template.Must(template.New(string(CARETEAM_INVITE)).Parse(cfg.CareteamInvite))
+	case templateType == TypeCareteamInvite:
+		compiled = template.Must(template.New(string(TypeCareteamInvite)).Parse(cfg.CareteamInvite))
 		break
-	case templateType == CONFIRMATION:
-		compiled = template.Must(template.New(string(CONFIRMATION)).Parse(cfg.Confirmation))
+	case templateType == TypeConfirmation:
+		compiled = template.Must(template.New(string(TypeConfirmation)).Parse(cfg.Confirmation))
 		break
-	case templateType == PW_RESET:
-		compiled = template.Must(template.New(string(PW_RESET)).Parse(cfg.PasswordReset))
+	case templateType == TypePasswordReset:
+		compiled = template.Must(template.New(string(TypePasswordReset)).Parse(cfg.PasswordReset))
 		break
 	default:
 		log.Println("Unknown type ", templateType)

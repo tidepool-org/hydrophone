@@ -25,13 +25,13 @@ type (
 )
 
 const (
-	PW_RESET        Type = "password_reset"
-	CARETEAM_INVITE Type = "careteam_invitation"
-	CONFIRMATION    Type = "email_confirmation"
+	TypePasswordReset  Type = "password_reset"
+	TypeCareteamInvite Type = "careteam_invitation"
+	TypeConfirmation   Type = "email_confirmation"
 
-	PENDING   Status = "pending"
-	COMPLETED Status = "completed"
-	DECLINED  Status = "declined"
+	StatusPending   Status = "pending"
+	StatusCompleted Status = "completed"
+	StatusDeclined  Status = "declined"
 )
 
 func NewConfirmation(theType Type, to, from string) (*Confirmation, error) {
@@ -44,7 +44,7 @@ func NewConfirmation(theType Type, to, from string) (*Confirmation, error) {
 			Key:       key,
 			Type:      theType,
 			ToUser:    to,
-			Status:    PENDING,
+			Status:    StatusPending,
 			CreatorId: from,
 			Created:   time.Now(),
 		}
