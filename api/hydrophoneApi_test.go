@@ -1,10 +1,11 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"./../clients"
@@ -126,10 +127,28 @@ func TestEmailAddress_StatusOK(t *testing.T) {
 func TestAddressResponds(t *testing.T) {
 	hydrophone.SetHandlers("", rtr)
 
+	// func main() {
+	// 	fmt.Println("Hello, playground")
+	// 	b := &bytes.Buffer{}
+	// 	j := jdict{ "words": jarr{"this is a test", "as is this"} }
+	// 	fmt.Println(j)
+	// 	json.NewEncoder(b).Encode(j)
+	// 	fmt.Printf("%T: %v", b, b)
+	// }
+
+	// These two types make it easier to define blobs of json inline.
+	// We don't use the types defined by the API because we want to
+	// be able to test with partial data structures.
+	// jo is a generic json object
+	type jo map[string]interface{}
+	// and ja is a generic json array
+	type ja []interface{}
+
 	type toTest struct {
+		skip     bool
 		method   string
 		url      string
-		body     string
+		body     jo
 		token    string
 		respCode int
 		response string
@@ -149,9 +168,7 @@ func TestAddressResponds(t *testing.T) {
 			url:      "/send/invite/UID",
 			token:    TOKEN_FOR_UID1,
 			respCode: 400,
-			body: `{
-			  "email": "personToInvite@email.com",
-			}`,
+			body:     jo{"email": "personToInvite@email.com"},
 		},
 		{
 			// can't invite without email
@@ -159,13 +176,12 @@ func TestAddressResponds(t *testing.T) {
 			url:      "/send/invite/UID",
 			token:    TOKEN_FOR_UID1,
 			respCode: 400,
-			body: `{
-			  "email": "personToInvite@email.com",
-			  "permissions": [
-			    "view": {},
-			    "note": {}
-			  ]
-			}`,
+			body: jo{
+				"permissions": jo{
+					"view": jo{},
+					"note": jo{},
+				},
+			},
 		},
 		{
 			// but if you have them all, it should work
@@ -173,16 +189,17 @@ func TestAddressResponds(t *testing.T) {
 			url:      "/send/invite/UID",
 			token:    TOKEN_FOR_UID1,
 			respCode: 200,
-			body: `{
-			  "email": "personToInvite@email.com",
-			  "permissions": [
-			    "view": {},
-			    "note": {}
-			  ]
-			}`,
+			body: jo{
+				"email": "personToInvite@email.com",
+				"permissions": jo{
+					"view": jo{},
+					"note": jo{},
+				},
+			},
 		},
 		{
 			// we should get a list of our outstanding invitations
+			skip:     true,
 			method:   "GET",
 			url:      "/invitations/UID2",
 			token:    TOKEN_FOR_UID1,
@@ -197,6 +214,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// we can't accept an invitation we didn't get
+			skip:     true,
 			method:   "PUT",
 			url:      "/accept/invite/UID99/UID",
 			token:    TOKEN_FOR_UID1,
@@ -204,6 +222,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// we can accept an invitation we did get
+			skip:     true,
 			method:   "PUT",
 			url:      "/accept/invite/UID2/UID",
 			token:    TOKEN_FOR_UID1,
@@ -211,6 +230,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// get invitations we sent
+			skip:     true,
 			method:   "GET",
 			url:      "/invite/UID",
 			token:    TOKEN_FOR_UID1,
@@ -225,6 +245,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// dismiss an invitation we were sent
+			skip:     true,
 			method:   "PUT",
 			url:      "/dismiss/invite/UID2/UID",
 			token:    TOKEN_FOR_UID1,
@@ -232,6 +253,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// delete the other invitation we sent
+			skip:     true,
 			method:   "DELETE",
 			url:      "/UID/invited/other@youremail.com",
 			token:    TOKEN_FOR_UID1,
@@ -239,6 +261,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// if you leave off the userid, it fails
+			skip:     true,
 			method:   "POST",
 			url:      "/send/signup",
 			token:    TOKEN_FOR_UID1,
@@ -246,6 +269,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// first time you ask, it does it
+			skip:     true,
 			method:   "POST",
 			url:      "/send/signup/NewUserID",
 			token:    TOKEN_FOR_UID1,
@@ -253,6 +277,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// second time you ask, it fails with a limit
+			skip:     true,
 			method:   "POST",
 			url:      "/send/signup/NewUserID",
 			token:    TOKEN_FOR_UID1,
@@ -260,6 +285,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// can't resend a signup if you didn't send it
+			skip:     true,
 			method:   "POST",
 			url:      "/resend/signup/BadUID",
 			token:    TOKEN_FOR_UID1,
@@ -267,6 +293,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// but you can resend a valid one
+			skip:     true,
 			method:   "POST",
 			url:      "/resend/signup/UID",
 			token:    TOKEN_FOR_UID1,
@@ -274,6 +301,7 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// you can't accept an invitation you didn't get
+			skip:     true,
 			method:   "PUT",
 			url:      "/accept/signup/UID2/UIDBad",
 			token:    TOKEN_FOR_UID2,
@@ -281,24 +309,28 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// you can accept an invitation from another user
+			skip:     true,
 			method:   "PUT",
 			url:      "/accept/signup/UID2/UID",
 			token:    TOKEN_FOR_UID2,
 			respCode: 200,
 		},
 		{
+			skip:     true,
 			method:   "GET",
 			url:      "/signup/UID",
 			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 		},
 		{
+			skip:     true,
 			method:   "PUT",
 			url:      "/dismiss/signup/UID",
 			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 		},
 		{
+			skip:     true,
 			method:   "DELETE",
 			url:      "/signup/UID",
 			token:    TOKEN_FOR_UID1,
@@ -306,11 +338,13 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// always returns a 200 if properly formed
+			skip:     true,
 			method:   "POST",
 			url:      "/send/forgot/me@myemail.com",
 			respCode: 200,
 		},
 		{
+			skip:     true,
 			method:   "PUT",
 			url:      "/accept/forgot",
 			token:    TOKEN_FOR_UID1,
@@ -318,10 +352,16 @@ func TestAddressResponds(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		var body = &strings.Reader{}
-		if test.body != "" {
-			body = strings.NewReader(test.body)
+	for idx, test := range tests {
+		// don't run a test if it says to skip it
+		if test.skip {
+			continue
+		}
+
+		var body = &bytes.Buffer{}
+		// build the body only if there is one defined in the test
+		if len(test.body) != 0 {
+			json.NewEncoder(body).Encode(test.body)
 		}
 		request, _ := http.NewRequest(test.method, test.url, body)
 		if test.token != "" {
@@ -330,9 +370,9 @@ func TestAddressResponds(t *testing.T) {
 		response := httptest.NewRecorder()
 		rtr.ServeHTTP(response, request)
 
-		//if response.Code != test.respCode {
-		if response.Code <= 0 { // its all ok with the dummy!!
-			t.Fatalf("[%s] [%s]  Non-expected status code %d (expected %d):\n\tbody: %v", test.method, test.url, response.Code, test.respCode, response.Body)
+		if response.Code != test.respCode {
+			t.Fatalf("Test %d url: '%s'\nNon-expected status code %d (expected %d):\n\tbody: %v",
+				idx, test.url, response.Code, test.respCode, response.Body)
 		}
 
 		if response.Body.Len() != 0 && test.response != "" {
