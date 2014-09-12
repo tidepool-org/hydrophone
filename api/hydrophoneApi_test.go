@@ -3,7 +3,9 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -124,6 +126,24 @@ func TestEmailAddress_StatusOK(t *testing.T) {
 	}
 }
 
+// These two types make it easier to define blobs of json inline.
+// We don't use the types defined by the API because we want to
+// be able to test with partial data structures.
+// jo is a generic json object
+type jo map[string]interface{}
+
+// and ja is a generic json array
+type ja []interface{}
+
+func (i *jo) deepCompare(j *jo) string {
+	for k, _ := range *i {
+		if (*i)[k] != (*j)[k] {
+			return fmt.Sprintf("Failed comparing field %s", k)
+		}
+	}
+	return ""
+}
+
 func TestAddressResponds(t *testing.T) {
 	hydrophone.SetHandlers("", rtr)
 
@@ -136,14 +156,6 @@ func TestAddressResponds(t *testing.T) {
 	// 	fmt.Printf("%T: %v", b, b)
 	// }
 
-	// These two types make it easier to define blobs of json inline.
-	// We don't use the types defined by the API because we want to
-	// be able to test with partial data structures.
-	// jo is a generic json object
-	type jo map[string]interface{}
-	// and ja is a generic json array
-	type ja []interface{}
-
 	type toTest struct {
 		skip     bool
 		method   string
@@ -151,7 +163,7 @@ func TestAddressResponds(t *testing.T) {
 		body     jo
 		token    string
 		respCode int
-		response string
+		response jo
 	}
 
 	tests := []toTest{
@@ -204,13 +216,13 @@ func TestAddressResponds(t *testing.T) {
 			url:      "/invitations/UID2",
 			token:    TOKEN_FOR_UID1,
 			respCode: 200,
-			response: `{
-				"invitedBy": "UID"
-				  "permissions": [
-				    "view": {},
-				    "note": {}
-				  ]
-			}`,
+			response: jo{
+				"invitedBy": "UID",
+				"permissions": jo{
+					"view": jo{},
+					"note": jo{},
+				},
+			},
 		},
 		{
 			// we can't accept an invitation we didn't get
@@ -235,13 +247,13 @@ func TestAddressResponds(t *testing.T) {
 			url:      "/invite/UID",
 			token:    TOKEN_FOR_UID1,
 			respCode: 200,
-			response: `{
-				"email": "personToInvite@email.com"
-				  "permissions": [
-				    "view": {},
-				    "note": {}
-				  ]
-			}`,
+			response: jo{
+				"email": "personToInvite@email.com",
+				"permissions": jo{
+					"view": jo{},
+					"note": jo{},
+				},
+			},
 		},
 		{
 			// dismiss an invitation we were sent
@@ -375,8 +387,18 @@ func TestAddressResponds(t *testing.T) {
 				idx, test.url, response.Code, test.respCode, response.Body)
 		}
 
-		if response.Body.Len() != 0 && test.response != "" {
+		if response.Body.Len() != 0 && len(test.response) != 0 {
 			// compare bodies by comparing the unmarshalled JSON results
+			var result = &jo{}
+
+			if err := json.NewDecoder(response.Body).Decode(result); err != nil {
+				log.Printf("Err decoding nonempty response body: %v\n", err)
+				return
+			}
+
+			if cmp := result.deepCompare(&test.response); cmp != "" {
+				t.Fatalf("Test %d url: '%s'\n\t%s\n", idx, test.url, cmp)
+			}
 		}
 	}
 }
