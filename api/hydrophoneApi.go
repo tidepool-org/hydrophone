@@ -14,22 +14,24 @@ type (
 	Api struct {
 		Store     clients.StoreClient
 		notifier  clients.Notifier
-		templates models.EmailTemplate
+		templates models.TemplateConfig
 		//shoreline *shoreline.ShorelineClient
 		Config Config
 	}
 	Config struct {
-		ServerSecret string                `json:"serverSecret"` //used for services
-		Templates    *models.EmailTemplate `json:"emailTemplates"`
+		ServerSecret string                 `json:"serverSecret"` //used for services
+		Templates    *models.TemplateConfig `json:"emailTemplates"`
 	}
 	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
 )
 
 const (
-	TP_SESSION_TOKEN         = "x-tidepool-session-token"
-	STATUS_ERR_SENDING_EMAIL = "Error sending email"
-	STATUS_OK                = "OK"
+	TP_SESSION_TOKEN                 = "x-tidepool-session-token"
+	STATUS_ERR_SENDING_EMAIL         = "Error sending email"
+	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
+	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
+	STATUS_OK                        = "OK"
 )
 
 func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier) *Api {
@@ -127,22 +129,36 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 
 		if emailAddress != "" && emailType != "" {
 
-			notification, err := models.NewEmailNotification(emailType, a.Config.Templates, emailAddress)
-
-			if err != nil {
+			/* TODO:
+			 * this will be absorbed into other endpoints but shows how to
+			 * generate a confirmation, save it and then send it
+			 */
+			if confirmation, err := models.NewConfirmation(models.TypeCareteamInvite, emailAddress, ""); err != nil {
 				log.Println("Error creating template ", err)
-				res.Write([]byte(STATUS_ERR_SENDING_EMAIL))
+				res.Write([]byte(STATUS_ERR_CREATING_CONFIRMATION))
 				res.WriteHeader(http.StatusInternalServerError)
 				return
 			} else {
-				if status, details := a.notifier.Send([]string{emailAddress}, "TODO", notification.Content); status != http.StatusOK {
-					log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
-					res.Write([]byte(STATUS_ERR_SENDING_EMAIL))
+				//save it
+				if err := a.Store.UpsertConfirmation(confirmation); err != nil {
+					log.Println("Error saving the confirmation ", err)
+					res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
 					res.WriteHeader(http.StatusInternalServerError)
 					return
 				} else {
-					res.WriteHeader(http.StatusOK)
-					return
+					emailTemplate := models.NewTemplate()
+					emailTemplate.Load(confirmation.Type, a.Config.Templates)
+					emailTemplate.Parse(confirmation)
+
+					if status, details := a.notifier.Send([]string{emailAddress}, "TODO", emailTemplate.GenerateContent); status != http.StatusOK {
+						log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
+						res.Write([]byte(STATUS_ERR_SENDING_EMAIL))
+						res.WriteHeader(http.StatusInternalServerError)
+						return
+					} else {
+						res.WriteHeader(http.StatusOK)
+						return
+					}
 				}
 			}
 		}

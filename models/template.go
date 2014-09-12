@@ -14,8 +14,8 @@ type (
 	}
 
 	Template struct {
-		compiled *template.Template
-		parsed   string
+		compiled        *template.Template
+		GenerateContent string
 	}
 )
 
@@ -66,5 +66,5 @@ func (t *Template) Parse(content interface{}) {
 		return
 	}
 
-	t.parsed = buffer.String()
+	t.GenerateContent = buffer.String()
 }

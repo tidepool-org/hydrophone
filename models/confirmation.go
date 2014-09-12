@@ -16,8 +16,8 @@ type (
 		Status    Status        `json:"status" bson:"status"`
 		ToUser    string        `json:"createdBy" bson:"createdBy"`
 		CreatorId string        `json:"creatorId" bson:"creatorId"` // could be empty
-		Created   time.Time     `json:"created" bson:"created"`     //used for expiry
-		Modified  time.Time     `json:"modified" bson:"modified"`   //sent - or maybe failed
+		Created   time.Time     `json:"created" bson:"created"`
+		Modified  time.Time     `json:"modified" bson:"modified"`
 	}
 
 	//Enum type's

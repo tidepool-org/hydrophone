@@ -55,8 +55,8 @@ func TestLoad(t *testing.T) {
 		t.Fatalf("the name is [%s] but should be [%s]", tmpl.compiled.Name(), string(TypePasswordReset))
 	}
 
-	if tmpl.parsed != "" {
-		t.Fatalf("Parsed content should be empty but is [%s]", tmpl.parsed)
+	if tmpl.GenerateContent != "" {
+		t.Fatalf("Parsed content should be empty but is [%s]", tmpl.GenerateContent)
 	}
 }
 
@@ -66,7 +66,7 @@ func TestParse_WhenNoLoadedTemplate(t *testing.T) {
 
 	tmpl.Parse(content)
 
-	if tmpl.parsed != "" {
+	if tmpl.GenerateContent != "" {
 		t.Fatal("parsed content should be empty as template is not set")
 	}
 }
@@ -79,15 +79,15 @@ func TestParse(t *testing.T) {
 
 	tmpl.Parse(content)
 
-	if tmpl.parsed == "" {
+	if tmpl.GenerateContent == "" {
 		t.Fatal("The parased content should be set")
 	}
 
-	if strings.Contains(tmpl.parsed, content.ToUser) == false {
+	if strings.Contains(tmpl.GenerateContent, content.ToUser) == false {
 		t.Fatal("the name should be set")
 	}
 
-	if strings.Contains(tmpl.parsed, content.Key) == false {
+	if strings.Contains(tmpl.GenerateContent, content.Key) == false {
 		t.Fatal("the key should be set")
 	}
 

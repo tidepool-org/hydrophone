@@ -32,7 +32,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 		 * INIT THE TEST - we use a clean copy of the collection before we start
 		 */
 
-		//drop and don't worry about any errors
+		//drop it like its hot
 		mc.confirmationsC.DropCollection()
 
 		if err := mc.confirmationsC.Create(&mgo.CollectionInfo{}); err != nil {

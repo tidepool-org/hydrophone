@@ -24,7 +24,7 @@ var (
 
 	FAKE_CONFIG = Config{
 		ServerSecret: "shhh! don't tell",
-		Templates: &models.EmailTemplate{
+		Templates: &models.TemplateConfig{
 			PasswordReset:  `{{define "reset_test"}} {{ .ToUser }} {{ .Key }} {{end}}{{template "reset_test" .}}`,
 			CareteamInvite: `{{define "invite_test"}} {{ .ToUser }} {{ .Key }} {{end}}{{template "invite_test" .}}`,
 			Confirmation:   `{{define "confirm_test"}} {{ .ToUser }} {{ .Key }} {{end}}{{template "confirm_test" .}}`,
