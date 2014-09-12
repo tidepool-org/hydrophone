@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/url"
@@ -56,7 +57,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	send := rtr.PathPrefix("/send").Subrouter()
 	send.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("POST")
 	send.Handle("/forgot/{useremail}", varsHandler(a.Dummy)).Methods("POST")
-	send.Handle("/invite/{userid}", varsHandler(a.Dummy)).Methods("POST")
+	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
 
 	// POST /confirm/resend/signup/:userid
 	rtr.Handle("/resend/signup/{userid}", varsHandler(a.Dummy)).Methods("POST")
@@ -161,10 +162,42 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 					}
 				}
 			}
+			return
 		}
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	res.WriteHeader(http.StatusUnauthorized)
 	return
+}
+
+// this is the data structure for the invitation body
+type InviteBody struct {
+	Email       string                       `json:"email"`
+	Permissions map[string]map[string]string `json:"permissions"`
+}
+
+func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if tok := req.Header.Get(TP_SESSION_TOKEN); tok != "" {
+
+		userid := vars["userid"]
+
+		defer req.Body.Close()
+		var ib = &InviteBody{}
+		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
+			log.Printf("Err: %v\n", err)
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if ib.Email == "" || len(ib.Permissions) == 0 {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		log.Printf("id: '%s' em: '%s'  p: '%v'\n", userid, ib.Email, ib.Permissions)
+		log.Printf("SendInvite() ignored request %s %s", req.Method, req.URL)
+		res.WriteHeader(http.StatusOK)
+	} else {
+		res.WriteHeader(http.StatusUnauthorized)
+	}
 }
