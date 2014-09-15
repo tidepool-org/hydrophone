@@ -93,7 +93,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// PUT /confirm/dismiss/signup/:userid
 	dismiss := rtr.PathPrefix("/dismiss").Subrouter()
 	dismiss.Handle("/invite/{userid}/{invitedby}",
-		varsHandler(a.Dummy)).Methods("PUT")
+		varsHandler(a.DismissInvite)).Methods("PUT")
 	dismiss.Handle("/signup/{userid}",
 		varsHandler(a.Dummy)).Methods("PUT")
 
@@ -232,6 +232,55 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 		res.WriteHeader(http.StatusNoContent)
 		return
 
+	} else {
+		res.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+}
+
+func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if tok := req.Header.Get(TP_SESSION_TOKEN); tok != "" {
+
+		userid := vars["userid"]
+		invitedby := vars["invitedby"]
+
+		if userid == "" || invitedby == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		dismiss := &models.Confirmation{}
+		if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
+			log.Printf("Err: %v\n", err)
+			res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if dismiss.Key == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if conf, err := a.Store.FindConfirmation(dismiss); err != nil {
+			log.Println("Error finding the confirmation ", err)
+			res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
+			res.WriteHeader(http.StatusInternalServerError)
+			return
+		} else if conf != nil {
+			conf.UpdateStatus(models.StatusDeclined)
+
+			if err := a.Store.UpsertConfirmation(conf); err != nil {
+				log.Println("Error saving the confirmation ", err)
+				res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
+				res.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+		log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
+		log.Printf("DismissInvite() ignored request %s %s", req.Method, req.URL)
+		res.WriteHeader(http.StatusNoContent)
+		return
 	} else {
 		res.WriteHeader(http.StatusUnauthorized)
 		return

@@ -47,8 +47,6 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 			t.Fatalf("we could not save the con %v", err)
 		}
 
-		t.Log("## ", confirmation)
-
 		if found, err := mc.FindConfirmation(confirmation); err == nil {
 			if found.Key == "" {
 				t.Fatalf("the confirmation string isn't included %v", found)

@@ -265,11 +265,13 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// dismiss an invitation we were sent
-			skip:     true,
 			method:   "PUT",
 			url:      "/dismiss/invite/UID2/UID",
 			token:    TOKEN_FOR_UID1,
-			respCode: 204,
+			respCode: http.StatusNoContent,
+			body: jo{
+				"key": "careteam_invite/1234",
+			},
 		},
 		{
 			// delete the other invitation we sent
