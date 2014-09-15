@@ -226,20 +226,24 @@ func TestAddressResponds(t *testing.T) {
 			},
 		},
 		{
-			// we can't accept an invitation we didn't get
-			skip:     true,
+			// not found without the full path
 			method:   "PUT",
-			url:      "/accept/invite/UID99/UID",
+			url:      "/accept/invite",
 			token:    TOKEN_FOR_UID1,
-			respCode: 404,
+			respCode: http.StatusNotFound,
+		},
+		{
+			// no token
+			method:   "PUT",
+			url:      "/accept/invite/UID2/UID",
+			respCode: http.StatusUnauthorized,
 		},
 		{
 			// we can accept an invitation we did get
-			skip:     true,
 			method:   "PUT",
-			url:      "/accept/invite/UID2/UID",
+			url:      "/accept/invite/UID1/UID",
 			token:    TOKEN_FOR_UID1,
-			respCode: 200,
+			respCode: http.StatusOK,
 		},
 		{
 			// get invitations we sent

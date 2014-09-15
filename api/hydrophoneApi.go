@@ -24,6 +24,11 @@ type (
 		ServerSecret string                 `json:"serverSecret"` //used for services
 		Templates    *models.TemplateConfig `json:"emailTemplates"`
 	}
+	// this is the data structure for the invitation body
+	InviteBody struct {
+		Email       string                       `json:"email"`
+		Permissions map[string]map[string]string `json:"permissions"`
+	}
 	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
 )
@@ -71,7 +76,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 		varsHandler(a.Dummy)).Methods("PUT")
 	accept.Handle("/forgot", varsHandler(a.Dummy)).Methods("PUT")
 	accept.Handle("/invite/{userid}/{invitedby}",
-		varsHandler(a.Dummy)).Methods("PUT")
+		varsHandler(a.AcceptInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid
@@ -172,10 +177,23 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 	return
 }
 
-// this is the data structure for the invitation body
-type InviteBody struct {
-	Email       string                       `json:"email"`
-	Permissions map[string]map[string]string `json:"permissions"`
+func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if tok := req.Header.Get(TP_SESSION_TOKEN); tok != "" {
+
+		userid := vars["userid"]
+		invitedby := vars["invitedby"]
+
+		if userid == "" || invitedby == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
+		log.Printf("AcceptInvite() ignored request %s %s", req.Method, req.URL)
+		res.WriteHeader(http.StatusOK)
+	} else {
+		res.WriteHeader(http.StatusUnauthorized)
+	}
 }
 
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
