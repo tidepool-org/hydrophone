@@ -1,18 +1,18 @@
 package api
 
 import (
+	"./../clients"
+	"./../models"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"./../clients"
-	"./../models"
-	"github.com/gorilla/mux"
 )
 
 const (
@@ -36,18 +36,19 @@ var (
 	/*
 	 * basics setup
 	 */
-	rtr          = mux.NewRouter()
-	mockNotifier = clients.NewMockNotifier()
+	rtr           = mux.NewRouter()
+	mockNotifier  = clients.NewMockNotifier()
+	mockShoreline = shoreline.NewMock(FAKE_TOKEN)
 	/*
 	 * expected path
 	 */
 	mockStore  = clients.NewMockStoreClient(false, false)
-	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier)
+	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline)
 	/*
 	 * failure path
 	 */
 	mockStoreFails  = clients.NewMockStoreClient(false, MAKE_IT_FAIL)
-	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier)
+	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline)
 )
 
 func TestGetStatus_StatusOk(t *testing.T) {

@@ -9,6 +9,7 @@ import (
 	"./../clients"
 	"./../models"
 	"github.com/gorilla/mux"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 type (
@@ -16,8 +17,8 @@ type (
 		Store     clients.StoreClient
 		notifier  clients.Notifier
 		templates models.TemplateConfig
-		//shoreline *shoreline.ShorelineClient
-		Config Config
+		sl        shoreline.Client
+		Config    Config
 	}
 	Config struct {
 		ServerSecret string                 `json:"serverSecret"` //used for services
@@ -35,13 +36,13 @@ const (
 	STATUS_OK                        = "OK"
 )
 
-func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier) *Api {
+func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl shoreline.Client) *Api {
 
 	return &Api{
 		Store:    store,
 		Config:   cfg,
 		notifier: ntf,
-		//shoreline: sl,
+		sl:       sl,
 	}
 }
 
@@ -120,10 +121,10 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
 
-		/* TODO: the actual token check once we have mocks in place
-		if td := a.shoreline.CheckToken(token); td == nil {
+		/* TODO: the actual token check once we have mocks in place */
+		if td := a.sl.CheckToken(token); td == nil {
 			log.Println("bad token check ", td)
-		}*/
+		}
 
 		emailType := vars["type"]
 		emailAddress, _ := url.QueryUnescape(vars["address"])
