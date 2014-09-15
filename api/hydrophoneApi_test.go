@@ -244,6 +244,9 @@ func TestAddressResponds(t *testing.T) {
 			url:      "/accept/invite/UID1/UID",
 			token:    TOKEN_FOR_UID1,
 			respCode: http.StatusOK,
+			body: jo{
+				"key": "careteam_invite/1234",
+			},
 		},
 		{
 			// get invitations we sent

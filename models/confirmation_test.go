@@ -38,6 +38,16 @@ func TestConfirmation(t *testing.T) {
 		t.Fatalf("The creator should be [%s] but is [%s]", creator, confirmation.CreatorId)
 	}
 
+	confirmation.UpdateStatus(StatusCompleted)
+
+	if confirmation.Status != StatusCompleted {
+		t.Fatalf("Status should be [%s] but is [%s]", StatusCompleted, confirmation.Status)
+	}
+
+	if confirmation.Modified.IsZero() != false {
+		t.Fatal("The modified time should have been set")
+	}
+
 }
 
 func TestConfirmation_NoCreator(t *testing.T) {

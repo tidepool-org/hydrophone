@@ -38,6 +38,9 @@ const (
 	STATUS_ERR_SENDING_EMAIL         = "Error sending email"
 	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
+	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
+	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
+	STATUS_CONFIRMATION_NOT_FOUND    = "No matching confirmation was found"
 	STATUS_OK                        = "OK"
 )
 
@@ -122,6 +125,10 @@ func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
 	return
 }
 
+func (a *Api) saveConfirmation(conf *models.Confirmation) {
+	a.Store.UpsertConfirmation(conf)
+}
+
 func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
@@ -188,11 +195,46 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
-		log.Printf("AcceptInvite() ignored request %s %s", req.Method, req.URL)
-		res.WriteHeader(http.StatusOK)
+		accept := &models.Confirmation{}
+		if err := json.NewDecoder(req.Body).Decode(accept); err != nil {
+			log.Printf("Err: %v\n", err)
+			res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if accept.Key == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if conf, err := a.Store.FindConfirmation(accept); err != nil {
+			log.Println("Error finding the confirmation ", err)
+			res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
+			res.WriteHeader(http.StatusInternalServerError)
+			return
+		} else if conf != nil {
+			conf.UpdateStatus(models.StatusCompleted)
+
+			if err := a.Store.UpsertConfirmation(conf); err != nil {
+				log.Println("Error saving the confirmation ", err)
+				res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
+				res.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
+			log.Printf("AcceptInvite() ignored request %s %s", req.Method, req.URL)
+			res.Write([]byte(STATUS_OK))
+			res.WriteHeader(http.StatusOK)
+			return
+		}
+		res.Write([]byte(STATUS_CONFIRMATION_NOT_FOUND))
+		res.WriteHeader(http.StatusNoContent)
+		return
+
 	} else {
 		res.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 }
 
@@ -213,9 +255,21 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		invite, _ := models.NewConfirmation(models.TypeCareteamInvite, ib.Email, userid)
+
+		if err := a.Store.UpsertConfirmation(invite); err != nil {
+			log.Println("Error saving the confirmation ", err)
+			res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
+			res.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		log.Printf("id: '%s' em: '%s'  p: '%v'\n", userid, ib.Email, ib.Permissions)
 		log.Printf("SendInvite() ignored request %s %s", req.Method, req.URL)
+		res.Write([]byte(STATUS_OK))
 		res.WriteHeader(http.StatusOK)
+		return
 	} else {
 		res.WriteHeader(http.StatusUnauthorized)
 	}

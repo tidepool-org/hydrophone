@@ -3,21 +3,19 @@ package models
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"labix.org/v2/mgo/bson"
 	"log"
 	"time"
 )
 
 type (
 	Confirmation struct {
-		Id        bson.ObjectId `json:"id" bson:"_id,omitempty"`
-		Key       string        `json:"key" bson:"key"`
-		Type      Type          `json:"type" bson:"type"`
-		Status    Status        `json:"status" bson:"status"`
-		ToUser    string        `json:"createdBy" bson:"createdBy"`
-		CreatorId string        `json:"creatorId" bson:"creatorId"` // could be empty
-		Created   time.Time     `json:"created" bson:"created"`
-		Modified  time.Time     `json:"modified" bson:"modified"`
+		Key       string    `json:"key" 		bson:"_id,omitempty"`
+		Type      Type      `json:"type" 		bson:"type"`
+		Status    Status    `json:"status" 		bson:"status"`
+		ToUser    string    `json:"createdBy" 	bson:"createdBy"`
+		CreatorId string    `json:"creatorId" 	bson:"creatorId"` // could be empty
+		Created   time.Time `json:"created" 	bson:"created"`
+		Modified  time.Time `json:"modified" 	bson:"modified"`
 	}
 
 	//Enum type's
@@ -42,7 +40,6 @@ func NewConfirmation(theType Type, to, from string) (*Confirmation, error) {
 	} else {
 
 		conf := &Confirmation{
-			Id:        bson.NewObjectId(),
 			Key:       key,
 			Type:      theType,
 			ToUser:    to,
@@ -53,6 +50,11 @@ func NewConfirmation(theType Type, to, from string) (*Confirmation, error) {
 
 		return conf, nil
 	}
+}
+
+func (c *Confirmation) UpdateStatus(newStatus Status) {
+	c.Status = newStatus
+	c.Modified = time.Now()
 }
 
 func generateKey() (string, error) {

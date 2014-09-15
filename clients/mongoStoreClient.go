@@ -47,7 +47,7 @@ func (d MongoStoreClient) Ping() error {
 func (d MongoStoreClient) UpsertConfirmation(confirmation *models.Confirmation) error {
 
 	// if the user already exists we update otherwise we add
-	if _, err := d.confirmationsC.Upsert(bson.M{"_id": confirmation.Id}, confirmation); err != nil {
+	if _, err := d.confirmationsC.Upsert(bson.M{"key": confirmation.Key}, confirmation); err != nil {
 		return err
 	}
 	return nil
@@ -55,8 +55,8 @@ func (d MongoStoreClient) UpsertConfirmation(confirmation *models.Confirmation) 
 
 func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (result *models.Confirmation, err error) {
 
-	if confirmation.Id != "" {
-		if err = d.confirmationsC.Find(bson.M{"_id": confirmation.Id}).One(&result); err != nil {
+	if confirmation.Key != "" {
+		if err = d.confirmationsC.Find(bson.M{"key": confirmation.Key}).One(&result); err != nil {
 			return result, err
 		}
 	}
@@ -65,7 +65,7 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 }
 
 func (d MongoStoreClient) RemoveConfirmation(confirmation *models.Confirmation) error {
-	if err := d.confirmationsC.Remove(bson.M{"_id": confirmation.Id}); err != nil {
+	if err := d.confirmationsC.Remove(bson.M{"key": confirmation.Key}); err != nil {
 		return err
 	}
 	return nil
