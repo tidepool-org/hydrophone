@@ -7,7 +7,7 @@ import (
 type StoreClient interface {
 	Close()
 	Ping() error
-	UpsertNotification(notification *models.Notification) error
-	FindNotification(notification *models.Notification) (result *models.Notification, err error)
-	RemoveNotification(notification *models.Notification) error
+	UpsertConfirmation(confirmation *models.Confirmation) error
+	FindConfirmation(confirmation *models.Confirmation) (result *models.Confirmation, err error)
+	RemoveConfirmation(confirmation *models.Confirmation) error
 }

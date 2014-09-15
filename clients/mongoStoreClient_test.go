@@ -7,26 +7,17 @@ import (
 	"io/ioutil"
 	"labix.org/v2/mgo"
 	"testing"
-	"time"
 )
 
-func TestMongoStoreTokenOperations(t *testing.T) {
+func TestMongoStoreConfirmationOperations(t *testing.T) {
 
 	type Config struct {
 		Mongo *mongo.Config `json:"mongo"`
 	}
 
 	var (
-		config       Config
-		notification = &models.Notification{
-			Id:       "123456789",
-			Key:      "notification_type/abcdefghijklmn_Hs4we",
-			Content:  "content from template",
-			ToUser:   "test@user.org",
-			FromUser: "",
-			Created:  time.Now(),
-			Sent:     time.Now(),
-		}
+		config          Config
+		confirmation, _ = models.NewConfirmation(models.TypePasswordReset, "user@test.org", "123.456")
 	)
 
 	if jsonConfig, err := ioutil.ReadFile("../config/server.json"); err == nil {
@@ -41,10 +32,10 @@ func TestMongoStoreTokenOperations(t *testing.T) {
 		 * INIT THE TEST - we use a clean copy of the collection before we start
 		 */
 
-		//drop and don't worry about any errors
-		mc.notificationsC.DropCollection()
+		//drop it like its hot
+		mc.confirmationsC.DropCollection()
 
-		if err := mc.notificationsC.Create(&mgo.CollectionInfo{}); err != nil {
+		if err := mc.confirmationsC.Create(&mgo.CollectionInfo{}); err != nil {
 			t.Fatalf("We couldn't created the users collection for these tests ", err)
 		}
 
@@ -52,25 +43,25 @@ func TestMongoStoreTokenOperations(t *testing.T) {
 		 * THE TESTS
 		 */
 
-		if err := mc.UpsertNotification(notification); err != nil {
-			t.Fatalf("we could not save the notification %v", err)
+		if err := mc.UpsertConfirmation(confirmation); err != nil {
+			t.Fatalf("we could not save the con %v", err)
 		}
 
-		if found, err := mc.FindNotification(notification); err == nil {
+		if found, err := mc.FindConfirmation(confirmation); err == nil {
 			if found.Id == "" {
-				t.Fatalf("the token string isn't included %v", found)
+				t.Fatalf("the confirmation string isn't included %v", found)
 			}
 		} else {
-			t.Fatalf("no token was returned when it should have been - err[%v]", err)
+			t.Fatalf("no confirmation was returned when it should have been - err[%v]", err)
 		}
 
-		if err := mc.RemoveNotification(notification); err != nil {
-			t.Fatalf("we could not remove the token %v", err)
+		if err := mc.RemoveConfirmation(confirmation); err != nil {
+			t.Fatalf("we could not remove the confirmation %v", err)
 		}
 
-		if token, err := mc.FindNotification(notification); err == nil {
-			if token != nil {
-				t.Fatalf("the token has been removed so we shouldn't find it %v", token)
+		if confirmation, err := mc.FindConfirmation(confirmation); err == nil {
+			if confirmation != nil {
+				t.Fatalf("the confirmation has been removed so we shouldn't find it %v", confirmation)
 			}
 		}
 
