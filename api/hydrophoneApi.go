@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -305,11 +304,8 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		body, _ := ioutil.ReadAll(req.Body)
-
-		invite, _ := models.NewConfirmation(models.TypeCareteamInvite, userid)
+		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, req.Body)
 		invite.ToEmail = ib.Email
-		invite.Context = body
 
 		if err := a.Store.UpsertConfirmation(invite); err != nil {
 			log.Println("Error saving the confirmation ", err)

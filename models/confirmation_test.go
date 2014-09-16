@@ -1,13 +1,21 @@
 package models
 
 import (
-	//"encoding/json"
+	"bytes"
+	"net/http"
 	"testing"
 )
 
 const USERID = "1234-555"
 
-func TestConfirmation(t *testing.T) {
+type Extras struct {
+	Blah  string `json:"blah"`
+	Email string `json:"email"`
+}
+
+var jsonData = []byte(`{"blah": "stuff", "email": "test@user.org"}`)
+
+func Test_NewConfirmation(t *testing.T) {
 
 	confirmation, _ := NewConfirmation(TypePasswordReset, USERID)
 
@@ -51,14 +59,49 @@ func TestConfirmation(t *testing.T) {
 
 }
 
-func TestConfirmation_Context(t *testing.T) {
+func Test_NewConfirmationWithContext(t *testing.T) {
 
-	type Extras struct {
-		Blah  string `json:"blah"`
-		Email string `json:"email"`
+	req, _ := http.NewRequest("", "", bytes.NewBuffer(jsonData))
+
+	confirmation, _ := NewConfirmationWithContext(TypePasswordReset, USERID, req.Body)
+
+	myExtras := &Extras{}
+
+	confirmation.DecodeContext(&myExtras)
+
+	if myExtras.Blah == "" {
+		t.Fatalf("context not decoded [%v]", myExtras)
 	}
 
-	var jsonData = []byte(`{"blah": "stuff", "email": "test@user.org"}`)
+	if myExtras.Email == "" {
+		t.Fatalf("context not decoded [%v]", myExtras)
+	}
+
+}
+
+func Test_Confirmation_AddContext(t *testing.T) {
+
+	confirmation, _ := NewConfirmation(TypePasswordReset, USERID)
+
+	req, _ := http.NewRequest("", "", bytes.NewBuffer(jsonData))
+
+	confirmation.AddContext(req.Body)
+
+	myExtras := &Extras{}
+
+	confirmation.DecodeContext(&myExtras)
+
+	if myExtras.Blah == "" {
+		t.Fatalf("context not decoded [%v]", myExtras)
+	}
+
+	if myExtras.Email == "" {
+		t.Fatalf("context not decoded [%v]", myExtras)
+	}
+
+}
+
+func Test_ConfirmationContext(t *testing.T) {
 
 	confirmation, _ := NewConfirmation(TypePasswordReset, USERID)
 
