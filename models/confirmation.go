@@ -29,15 +29,17 @@ type (
 )
 
 const (
+	//Available Type's
 	TypePasswordReset  Type = "password_reset"
 	TypeCareteamInvite Type = "careteam_invitation"
 	TypeConfirmation   Type = "email_confirmation"
-
+	//Available Status's
 	StatusPending   Status = "pending"
 	StatusCompleted Status = "completed"
 	StatusDeclined  Status = "declined"
 )
 
+//New confirmation with just the basics
 func NewConfirmation(theType Type, toId string) (*Confirmation, error) {
 
 	if key, err := generateKey(); err != nil {
@@ -56,6 +58,7 @@ func NewConfirmation(theType Type, toId string) (*Confirmation, error) {
 	}
 }
 
+//New confirmation that includes context data
 func NewConfirmationWithContext(theType Type, toId string, data io.ReadCloser) (*Confirmation, error) {
 
 	if conf, err := NewConfirmation(theType, toId); err != nil {
@@ -66,12 +69,14 @@ func NewConfirmationWithContext(theType Type, toId string, data io.ReadCloser) (
 	}
 }
 
+//Add context data
 func (c *Confirmation) AddContext(data io.ReadCloser) {
 	jsonData, _ := ioutil.ReadAll(data)
 	c.Context = jsonData
 	return
 }
 
+//Decode the context data into the provided type
 func (c *Confirmation) DecodeContext(data interface{}) error {
 
 	if c.Context != nil {
@@ -83,6 +88,7 @@ func (c *Confirmation) DecodeContext(data interface{}) error {
 	return nil
 }
 
+//Set a new status and update the modified time
 func (c *Confirmation) UpdateStatus(newStatus Status) {
 	c.Status = newStatus
 	c.Modified = time.Now()
