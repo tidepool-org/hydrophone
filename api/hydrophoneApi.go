@@ -142,7 +142,7 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 
 		if td == nil || td.IsServer == false {
 			res.WriteHeader(http.StatusForbidden)
-			res.Write([]byte(STATUS_NO_TOKEN))
+			res.Write([]byte(STATUS_INVALID_TOKEN))
 			return false
 		}
 		//all good!
