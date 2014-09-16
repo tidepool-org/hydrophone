@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -146,7 +147,7 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 
 		if emailAddress != "" && emailType != "" {
 
-			if confirmation, err := models.NewConfirmation(models.TypeCareteamInvite, emailAddress, "", "", []byte("")); err != nil {
+			if confirmation, err := models.NewConfirmation(models.TypeCareteamInvite, emailAddress); err != nil {
 				log.Println("Error creating template ", err)
 				res.Write([]byte(STATUS_ERR_CREATING_CONFIRMATION))
 				res.WriteHeader(http.StatusInternalServerError)
@@ -304,7 +305,11 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		invite, _ := models.NewConfirmation(models.TypeCareteamInvite, ib.Email, userid, req.Body)
+		body, _ := ioutil.ReadAll(req.Body)
+
+		invite, _ := models.NewConfirmation(models.TypeCareteamInvite, userid)
+		invite.ToEmail = ib.Email
+		invite.Context = body
 
 		if err := a.Store.UpsertConfirmation(invite); err != nil {
 			log.Println("Error saving the confirmation ", err)
