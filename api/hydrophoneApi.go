@@ -37,13 +37,16 @@ type (
 )
 
 const (
-	TP_SESSION_TOKEN                 = "x-tidepool-session-token"
+	TP_SESSION_TOKEN = "x-tidepool-session-token"
+	//returned status messages
 	STATUS_ERR_SENDING_EMAIL         = "Error sending email"
 	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_CONFIRMATION_NOT_FOUND    = "No matching confirmation was found"
+	STATUS_NO_TOKEN                  = "No x-tidepool-session-token was found"
+	STATUS_INVALID_TOKEN             = "The x-tidepool-session-token was invalid"
 	STATUS_OK                        = "OK"
 )
 
@@ -133,6 +136,23 @@ func (a *Api) saveConfirmation(conf *models.Confirmation) {
 	a.Store.UpsertConfirmation(conf)
 }
 
+func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
+	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
+		td := a.sl.CheckToken(token)
+
+		if td == nil || td.IsServer == false {
+			res.WriteHeader(http.StatusForbidden)
+			res.Write([]byte(STATUS_NO_TOKEN))
+			return false
+		}
+		//all good!
+		return true
+	}
+	res.WriteHeader(http.StatusUnauthorized)
+	res.Write([]byte(STATUS_NO_TOKEN))
+	return false
+}
+
 func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
@@ -184,7 +204,8 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 }
 
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if tok := req.Header.Get(TP_SESSION_TOKEN); tok != "" {
+
+	if a.checkToken(res, req) {
 
 		userid := vars["userid"]
 		invitedby := vars["invitedby"]
@@ -197,8 +218,8 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 		accept := &models.Confirmation{}
 		if err := json.NewDecoder(req.Body).Decode(accept); err != nil {
 			log.Printf("Err: %v\n", err)
-			res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
 			res.WriteHeader(http.StatusBadRequest)
+			res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
 			return
 		}
 
@@ -209,36 +230,34 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 
 		if conf, err := a.Store.FindConfirmation(accept); err != nil {
 			log.Println("Error finding the confirmation ", err)
-			res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
 			res.WriteHeader(http.StatusInternalServerError)
+			res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
 			return
 		} else if conf != nil {
 			conf.UpdateStatus(models.StatusCompleted)
 
 			if err := a.Store.UpsertConfirmation(conf); err != nil {
 				log.Println("Error saving the confirmation ", err)
-				res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
 				res.WriteHeader(http.StatusInternalServerError)
+				res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
 				return
 			}
 			log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
 			log.Printf("AcceptInvite() ignored request %s %s", req.Method, req.URL)
-			res.Write([]byte(STATUS_OK))
 			res.WriteHeader(http.StatusOK)
+			res.Write([]byte(STATUS_OK))
 			return
 		}
-		res.Write([]byte(STATUS_CONFIRMATION_NOT_FOUND))
 		res.WriteHeader(http.StatusNoContent)
+		res.Write([]byte(STATUS_CONFIRMATION_NOT_FOUND))
 		return
 
-	} else {
-		res.WriteHeader(http.StatusUnauthorized)
-		return
 	}
+	return
 }
 
 func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if tok := req.Header.Get(TP_SESSION_TOKEN); tok != "" {
+	if a.checkToken(res, req) {
 
 		userid := vars["userid"]
 		invitedby := vars["invitedby"]
@@ -251,8 +270,8 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 		dismiss := &models.Confirmation{}
 		if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
 			log.Printf("Err: %v\n", err)
-			res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
 			res.WriteHeader(http.StatusBadRequest)
+			res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
 			return
 		}
 
@@ -263,16 +282,16 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 
 		if conf, err := a.Store.FindConfirmation(dismiss); err != nil {
 			log.Println("Error finding the confirmation ", err)
-			res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
 			res.WriteHeader(http.StatusInternalServerError)
+			res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
 			return
 		} else if conf != nil {
 			conf.UpdateStatus(models.StatusDeclined)
 
 			if err := a.Store.UpsertConfirmation(conf); err != nil {
 				log.Println("Error saving the confirmation ", err)
-				res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
 				res.WriteHeader(http.StatusInternalServerError)
+				res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
 				return
 			}
 		}
@@ -280,14 +299,12 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 		log.Printf("DismissInvite() ignored request %s %s", req.Method, req.URL)
 		res.WriteHeader(http.StatusNoContent)
 		return
-	} else {
-		res.WriteHeader(http.StatusUnauthorized)
-		return
 	}
+	return
 }
 
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if tok := req.Header.Get(TP_SESSION_TOKEN); tok != "" {
+	if a.checkToken(res, req) {
 
 		userid := vars["userid"]
 
@@ -309,17 +326,16 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 		if err := a.Store.UpsertConfirmation(invite); err != nil {
 			log.Println("Error saving the confirmation ", err)
-			res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
 			res.WriteHeader(http.StatusInternalServerError)
+			res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
 			return
 		}
 
 		log.Printf("id: '%s' em: '%s'  p: '%v'\n", userid, ib.Email, ib.Permissions)
 		log.Printf("SendInvite() ignored request %s %s", req.Method, req.URL)
-		res.Write([]byte(STATUS_OK))
 		res.WriteHeader(http.StatusOK)
+		res.Write([]byte(STATUS_OK))
 		return
-	} else {
-		res.WriteHeader(http.StatusUnauthorized)
 	}
+	return
 }
