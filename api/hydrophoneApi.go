@@ -9,16 +9,18 @@ import (
 	"./../clients"
 	"./../models"
 	"github.com/gorilla/mux"
+	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 type (
 	Api struct {
-		Store     clients.StoreClient
-		notifier  clients.Notifier
-		templates models.TemplateConfig
-		sl        shoreline.Client
-		Config    Config
+		Store      clients.StoreClient
+		notifier   clients.Notifier
+		templates  models.TemplateConfig
+		sl         shoreline.Client
+		gatekeeper commonClients.Gatekeeper
+		Config     Config
 	}
 	Config struct {
 		ServerSecret string                 `json:"serverSecret"` //used for services
@@ -44,13 +46,14 @@ const (
 	STATUS_OK                        = "OK"
 )
 
-func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl shoreline.Client) *Api {
+func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl shoreline.Client, gatekeeper commonClients.Gatekeeper) *Api {
 
 	return &Api{
-		Store:    store,
-		Config:   cfg,
-		notifier: ntf,
-		sl:       sl,
+		Store:      store,
+		Config:     cfg,
+		notifier:   ntf,
+		sl:         sl,
+		gatekeeper: gatekeeper,
 	}
 }
 

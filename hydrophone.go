@@ -57,15 +57,21 @@ func main() {
 
 	httpClient := &http.Client{Transport: tr}
 
-	slClient := shoreline.NewShorelineClientBuilder().
+	shoreline := shoreline.NewShorelineClientBuilder().
 		WithHostGetter(config.ShorelineConfig.ToHostGetter(hakkenClient)).
 		WithHttpClient(httpClient).
 		WithConfig(&config.ShorelineConfig.ShorelineClientConfig).
 		Build()
 
-	if err := slClient.Start(); err != nil {
+	if err := shoreline.Start(); err != nil {
 		log.Fatal(err)
 	}
+
+	gatekeeper := clients.NewGatekeeperClientBuilder().
+		WithHostGetter(config.GatekeeperConfig.ToHostGetter(hakkenClient)).
+		WithHttpClient(httpClient).
+		WithTokenProvider(shoreline).
+		Build()
 
 	/*
 	 * hydrophone setup
@@ -74,7 +80,7 @@ func main() {
 	mail := sc.NewSesNotifier(&config.Mail)
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, slClient)
+	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper)
 	api.SetHandlers("", rtr)
 
 	/*

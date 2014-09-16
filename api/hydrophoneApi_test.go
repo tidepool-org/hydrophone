@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"io/ioutil"
 	"log"
@@ -36,19 +37,20 @@ var (
 	/*
 	 * basics setup
 	 */
-	rtr           = mux.NewRouter()
-	mockNotifier  = clients.NewMockNotifier()
-	mockShoreline = shoreline.NewMock(FAKE_TOKEN)
+	rtr            = mux.NewRouter()
+	mockNotifier   = clients.NewMockNotifier()
+	mockShoreline  = shoreline.NewMock(FAKE_TOKEN)
+	mockGatekeeper = commonClients.NewGatekeeperMock(nil, nil)
 	/*
 	 * expected path
 	 */
 	mockStore  = clients.NewMockStoreClient(false, false)
-	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline)
+	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper)
 	/*
 	 * failure path
 	 */
 	mockStoreFails  = clients.NewMockStoreClient(false, MAKE_IT_FAIL)
-	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline)
+	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper)
 )
 
 func TestGetStatus_StatusOk(t *testing.T) {
