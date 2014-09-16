@@ -8,6 +8,7 @@ import (
 
 	"./../clients"
 	"./../models"
+
 	"github.com/gorilla/mux"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -136,7 +137,6 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
 
-		/* TODO: the actual token check once we have mocks in place */
 		if td := a.sl.CheckToken(token); td == nil {
 			log.Println("bad token check ", td)
 		}
@@ -146,11 +146,7 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 
 		if emailAddress != "" && emailType != "" {
 
-			/* TODO:
-			 * this will be absorbed into other endpoints but shows how to
-			 * generate a confirmation, save it and then send it
-			 */
-			if confirmation, err := models.NewConfirmation(models.TypeCareteamInvite, emailAddress, ""); err != nil {
+			if confirmation, err := models.NewConfirmation(models.TypeCareteamInvite, emailAddress, "", "", []byte("")); err != nil {
 				log.Println("Error creating template ", err)
 				res.Write([]byte(STATUS_ERR_CREATING_CONFIRMATION))
 				res.WriteHeader(http.StatusInternalServerError)
@@ -308,7 +304,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		invite, _ := models.NewConfirmation(models.TypeCareteamInvite, ib.Email, userid)
+		invite, _ := models.NewConfirmation(models.TypeCareteamInvite, ib.Email, userid, req.Body)
 
 		if err := a.Store.UpsertConfirmation(invite); err != nil {
 			log.Println("Error saving the confirmation ", err)

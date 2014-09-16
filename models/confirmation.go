@@ -3,19 +3,22 @@ package models
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"log"
 	"time"
 )
 
 type (
 	Confirmation struct {
-		Key       string    `json:"key" 		bson:"_id,omitempty"`
-		Type      Type      `json:"type" 		bson:"type"`
-		Status    Status    `json:"status" 		bson:"status"`
-		ToUser    string    `json:"createdBy" 	bson:"createdBy"`
-		CreatorId string    `json:"creatorId" 	bson:"creatorId"` // could be empty
-		Created   time.Time `json:"created" 	bson:"created"`
-		Modified  time.Time `json:"modified" 	bson:"modified"`
+		Key       string          `json:"key" 		bson:"_id"`
+		Type      Type            `json:"type" 		bson:"type"`
+		Status    Status          `json:"status" 	bson:"status"`
+		ToEmail   string          `json:"email" 	bson:"email,omitempty"`
+		ToUser    string          `json:"userId" 	bson:"userId,omitempty"`
+		CreatorId string          `json:"creatorId" bson:"creatorId"`
+		Context   json.RawMessage `json:"context" 	bson:"context,omitempty"`
+		Created   time.Time       `json:"created" 	bson:"created"`
+		Modified  time.Time       `json:"modified" 	bson:"modified"`
 	}
 
 	//Enum type's
@@ -33,23 +36,33 @@ const (
 	StatusDeclined  Status = "declined"
 )
 
-func NewConfirmation(theType Type, to, from string) (*Confirmation, error) {
+func NewConfirmation(theType Type, toId string) (*Confirmation, error) {
 
 	if key, err := generateKey(); err != nil {
 		return nil, err
 	} else {
 
 		conf := &Confirmation{
-			Key:       key,
-			Type:      theType,
-			ToUser:    to,
-			Status:    StatusPending,
-			CreatorId: from,
-			Created:   time.Now(),
+			Key:     key,
+			Type:    theType,
+			ToUser:  toId,
+			Status:  StatusPending,
+			Created: time.Now(),
 		}
 
 		return conf, nil
 	}
+}
+
+func (c *Confirmation) DecodeContext(data interface{}) error {
+
+	if c.Context != nil {
+		if err := json.Unmarshal(c.Context, &data); err != nil {
+			log.Printf("Err: %v\n", err)
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *Confirmation) UpdateStatus(newStatus Status) {

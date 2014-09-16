@@ -1,14 +1,15 @@
 package models
 
 import (
+	//"encoding/json"
 	"testing"
 )
 
+const USERID = "1234-555"
+
 func TestConfirmation(t *testing.T) {
 
-	user, creator := "user@test.org", "123xf456"
-
-	confirmation, _ := NewConfirmation(TypePasswordReset, user, creator)
+	confirmation, _ := NewConfirmation(TypePasswordReset, USERID)
 
 	if confirmation.Status != StatusPending {
 		t.Fatalf("Status should be [%s] but is [%s]", StatusPending, confirmation.Status)
@@ -30,12 +31,12 @@ func TestConfirmation(t *testing.T) {
 		t.Fatalf("The type should be [%s] but is [%s]", TypePasswordReset, confirmation.Type)
 	}
 
-	if confirmation.ToUser != user {
-		t.Fatalf("The user should be [%s] but is [%s]", user, confirmation.ToUser)
+	if confirmation.ToUser != USERID {
+		t.Fatalf("The user should be [%s] but is [%s]", USERID, confirmation.ToUser)
 	}
 
-	if confirmation.CreatorId != creator {
-		t.Fatalf("The creator should be [%s] but is [%s]", creator, confirmation.CreatorId)
+	if confirmation.CreatorId != "" {
+		t.Fatalf("The creator should note be set by default but is [%s]", confirmation.CreatorId)
 	}
 
 	confirmation.UpdateStatus(StatusCompleted)
@@ -50,18 +51,29 @@ func TestConfirmation(t *testing.T) {
 
 }
 
-func TestConfirmation_NoCreator(t *testing.T) {
+func TestConfirmation_Context(t *testing.T) {
 
-	user := "user@test.org"
-
-	confirmation, _ := NewConfirmation(TypeCareteamInvite, user, "")
-
-	if confirmation.Type != TypeCareteamInvite {
-		t.Fatalf("The type should be [%s] but is [%s]", TypeCareteamInvite, confirmation.Type)
+	type Extras struct {
+		Blah  string `json:"blah"`
+		Email string `json:"email"`
 	}
 
-	if confirmation.CreatorId != "" {
-		t.Fatalf("The creator should be empty but is [%s]", confirmation.CreatorId)
+	var jsonData = []byte(`{"blah": "stuff", "email": "test@user.org"}`)
+
+	confirmation, _ := NewConfirmation(TypePasswordReset, USERID)
+
+	confirmation.Context = jsonData
+
+	myExtras := &Extras{}
+
+	confirmation.DecodeContext(&myExtras)
+
+	if myExtras.Blah == "" {
+		t.Fatalf("context not decoded [%v]", myExtras)
+	}
+
+	if myExtras.Email == "" {
+		t.Fatalf("context not decoded [%v]", myExtras)
 	}
 
 }

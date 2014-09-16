@@ -1,19 +1,21 @@
 package api
 
 import (
-	"./../clients"
-	"./../models"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	commonClients "github.com/tidepool-org/go-common/clients"
-	"github.com/tidepool-org/go-common/clients/shoreline"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"./../clients"
+	"./../models"
+
+	"github.com/gorilla/mux"
+	commonClients "github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 const (
