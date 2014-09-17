@@ -219,7 +219,6 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			conf.UpdateStatus(models.StatusCompleted)
 			if a.addOrUpdateConfirmation(conf, res) {
 				log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
-				log.Printf("AcceptInvite() ignored request %s %s", req.Method, req.URL)
 				res.WriteHeader(http.StatusOK)
 				res.Write([]byte(STATUS_OK))
 				return
@@ -288,14 +287,10 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 	invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, ib.Permissions)
 
-	log.Printf("our invite [%v]", invite)
-	log.Printf("invite context [%v]", string(invite.Context))
-
 	invite.ToEmail = ib.Email
 
 	if a.addOrUpdateConfirmation(invite, res) {
 		log.Printf("id: '%s' em: '%s'  p: '%v'\n", userid, ib.Email, ib.Permissions)
-		log.Printf("SendInvite() ignored request %s %s", req.Method, req.URL)
 
 		if a.createAndSendNotfication(invite, res) {
 			res.WriteHeader(http.StatusOK)

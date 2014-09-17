@@ -59,8 +59,6 @@ func Test_NewConfirmation(t *testing.T) {
 
 func Test_NewConfirmationWithContext(t *testing.T) {
 
-	//req, _ := http.NewRequest("", "", bytes.NewBuffer(jsonData))
-
 	confirmation, _ := NewConfirmationWithContext(TypePasswordReset, USERID, contextData)
 
 	myExtras := &Extras{}
@@ -80,8 +78,6 @@ func Test_NewConfirmationWithContext(t *testing.T) {
 func Test_Confirmation_AddContext(t *testing.T) {
 
 	confirmation, _ := NewConfirmation(TypePasswordReset, USERID)
-
-	//req, _ := http.NewRequest("", "", bytes.NewBuffer(jsonData))
 
 	confirmation.AddContext(contextData)
 
