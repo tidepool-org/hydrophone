@@ -90,47 +90,6 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 	}
 }
 
-func TestEmailAddress_StatusUnauthorized_WhenNoToken(t *testing.T) {
-	request, _ := http.NewRequest("PUT", "/email", nil)
-	response := httptest.NewRecorder()
-
-	hydrophone.SetHandlers("", rtr)
-
-	hydrophone.EmailAddress(response, request, NO_PARAMS)
-
-	if response.Code != http.StatusUnauthorized {
-		t.Fatalf("Non-expected status code%v:\n\tbody: %v", http.StatusUnauthorized, response.Code)
-	}
-}
-
-func TestEmailAddress_StatusBadRequest_WhenNoVariablesPassed(t *testing.T) {
-	request, _ := http.NewRequest("PUT", "/email", nil)
-	request.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
-	response := httptest.NewRecorder()
-
-	hydrophone.SetHandlers("", rtr)
-
-	hydrophone.EmailAddress(response, request, NO_PARAMS)
-
-	if response.Code != http.StatusBadRequest {
-		t.Fatalf("Non-expected status code%v:\n\tbody: %v", http.StatusBadRequest, response.Code)
-	}
-}
-
-func TestEmailAddress_StatusOK(t *testing.T) {
-	req, _ := http.NewRequest("POST", "/email", nil)
-	req.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
-	response := httptest.NewRecorder()
-
-	hydrophone.SetHandlers("", rtr)
-
-	hydrophone.EmailAddress(response, req, map[string]string{"type": "password_reset", "address": "test@user.org"})
-
-	if response.Code != http.StatusOK {
-		t.Fatalf("Non-expected status code%v:\n\tbody: %v", http.StatusNotImplemented, response.Code)
-	}
-}
-
 // These two types make it easier to define blobs of json inline.
 // We don't use the types defined by the API because we want to
 // be able to test with partial data structures.

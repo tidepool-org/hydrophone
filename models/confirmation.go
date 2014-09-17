@@ -4,8 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"io"
-	"io/ioutil"
 	"log"
 	"time"
 )
@@ -59,7 +57,7 @@ func NewConfirmation(theType Type, toId string) (*Confirmation, error) {
 }
 
 //New confirmation that includes context data
-func NewConfirmationWithContext(theType Type, toId string, data io.ReadCloser) (*Confirmation, error) {
+func NewConfirmationWithContext(theType Type, toId string, data interface{}) (*Confirmation, error) {
 
 	if conf, err := NewConfirmation(theType, toId); err != nil {
 		return nil, err
@@ -70,8 +68,9 @@ func NewConfirmationWithContext(theType Type, toId string, data io.ReadCloser) (
 }
 
 //Add context data
-func (c *Confirmation) AddContext(data io.ReadCloser) {
-	jsonData, _ := ioutil.ReadAll(data)
+func (c *Confirmation) AddContext(data interface{}) {
+
+	jsonData, _ := json.Marshal(data)
 	c.Context = jsonData
 	return
 }

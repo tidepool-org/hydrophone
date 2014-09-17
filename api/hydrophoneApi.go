@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"net/url"
 
 	"./../clients"
 	"./../models"
@@ -64,8 +63,6 @@ func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl sho
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	rtr.HandleFunc("/status", a.GetStatus).Methods("GET")
-
-	rtr.Handle("/emailtoaddress/{type}/{address}", varsHandler(a.EmailAddress)).Methods("GET", "POST")
 
 	// POST /confirm/send/signup/:userid
 	// POST /confirm/send/forgot/:useremail
@@ -193,41 +190,6 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 	return false
 }
 
-func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
-	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
-
-		if td := a.sl.CheckToken(token); td == nil {
-			log.Println("bad token check ", td)
-		}
-
-		emailType := vars["type"]
-		emailAddress, _ := url.QueryUnescape(vars["address"])
-
-		if emailAddress != "" && emailType != "" {
-
-			if confirmation, err := models.NewConfirmation(models.TypeCareteamInvite, emailAddress); err != nil {
-				log.Println("Error creating template ", err)
-				res.Write([]byte(STATUS_ERR_CREATING_CONFIRMATION))
-				res.WriteHeader(http.StatusInternalServerError)
-				return
-			} else {
-				if a.addOrUpdateConfirmation(confirmation, res) {
-					if a.createAndSendNotfication(confirmation, res) {
-						res.WriteHeader(http.StatusOK)
-						return
-					}
-				}
-			}
-			return
-		}
-		res.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	res.WriteHeader(http.StatusUnauthorized)
-	return
-}
-
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	if a.checkToken(res, req) {
@@ -307,36 +269,40 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 }
 
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
+	//if a.checkToken(res, req) {
 
-		userid := vars["userid"]
+	userid := vars["userid"]
 
-		defer req.Body.Close()
-		var ib = &InviteBody{}
-		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-			log.Printf("Err: %v\n", err)
-			res.WriteHeader(http.StatusBadRequest)
+	defer req.Body.Close()
+	var ib = &InviteBody{}
+	if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
+		log.Printf("Err: %v\n", err)
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if ib.Email == "" || len(ib.Permissions) == 0 {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, ib.Permissions)
+
+	log.Printf("our invite [%v]", invite)
+	log.Printf("invite context [%v]", string(invite.Context))
+
+	invite.ToEmail = ib.Email
+
+	if a.addOrUpdateConfirmation(invite, res) {
+		log.Printf("id: '%s' em: '%s'  p: '%v'\n", userid, ib.Email, ib.Permissions)
+		log.Printf("SendInvite() ignored request %s %s", req.Method, req.URL)
+
+		if a.createAndSendNotfication(invite, res) {
+			res.WriteHeader(http.StatusOK)
+			res.Write([]byte(STATUS_OK))
 			return
-		}
-
-		if ib.Email == "" || len(ib.Permissions) == 0 {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, req.Body)
-		invite.ToEmail = ib.Email
-
-		if a.addOrUpdateConfirmation(invite, res) {
-			log.Printf("id: '%s' em: '%s'  p: '%v'\n", userid, ib.Email, ib.Permissions)
-			log.Printf("SendInvite() ignored request %s %s", req.Method, req.URL)
-
-			if a.createAndSendNotfication(invite, res) {
-				res.WriteHeader(http.StatusOK)
-				res.Write([]byte(STATUS_OK))
-				return
-			}
 		}
 	}
+	//}
 	return
 }

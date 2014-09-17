@@ -1,8 +1,6 @@
 package models
 
 import (
-	"bytes"
-	"net/http"
 	"testing"
 )
 
@@ -13,7 +11,7 @@ type Extras struct {
 	Email string `json:"email"`
 }
 
-var jsonData = []byte(`{"blah": "stuff", "email": "test@user.org"}`)
+var contextData = &Extras{Blah: "stuff", Email: "test@user.org"}
 
 func Test_NewConfirmation(t *testing.T) {
 
@@ -61,9 +59,9 @@ func Test_NewConfirmation(t *testing.T) {
 
 func Test_NewConfirmationWithContext(t *testing.T) {
 
-	req, _ := http.NewRequest("", "", bytes.NewBuffer(jsonData))
+	//req, _ := http.NewRequest("", "", bytes.NewBuffer(jsonData))
 
-	confirmation, _ := NewConfirmationWithContext(TypePasswordReset, USERID, req.Body)
+	confirmation, _ := NewConfirmationWithContext(TypePasswordReset, USERID, contextData)
 
 	myExtras := &Extras{}
 
@@ -83,29 +81,9 @@ func Test_Confirmation_AddContext(t *testing.T) {
 
 	confirmation, _ := NewConfirmation(TypePasswordReset, USERID)
 
-	req, _ := http.NewRequest("", "", bytes.NewBuffer(jsonData))
+	//req, _ := http.NewRequest("", "", bytes.NewBuffer(jsonData))
 
-	confirmation.AddContext(req.Body)
-
-	myExtras := &Extras{}
-
-	confirmation.DecodeContext(&myExtras)
-
-	if myExtras.Blah == "" {
-		t.Fatalf("context not decoded [%v]", myExtras)
-	}
-
-	if myExtras.Email == "" {
-		t.Fatalf("context not decoded [%v]", myExtras)
-	}
-
-}
-
-func Test_ConfirmationContext(t *testing.T) {
-
-	confirmation, _ := NewConfirmation(TypePasswordReset, USERID)
-
-	confirmation.Context = jsonData
+	confirmation.AddContext(contextData)
 
 	myExtras := &Extras{}
 
