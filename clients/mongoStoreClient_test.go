@@ -17,7 +17,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 
 	var (
 		config          Config
-		confirmation, _ = models.NewConfirmation(models.TypePasswordReset, "user@test.org", "123.456")
+		confirmation, _ = models.NewConfirmation(models.TypePasswordReset, "123.456")
 	)
 
 	if jsonConfig, err := ioutil.ReadFile("../config/server.json"); err == nil {
@@ -48,7 +48,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 		}
 
 		if found, err := mc.FindConfirmation(confirmation); err == nil {
-			if found.Id == "" {
+			if found.Key == "" {
 				t.Fatalf("the confirmation string isn't included %v", found)
 			}
 		} else {

@@ -1,18 +1,21 @@
 package api
 
 import (
-	"./../clients"
-	"./../models"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/tidepool-org/go-common/clients/shoreline"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"./../clients"
+	"./../models"
+
+	"github.com/gorilla/mux"
+	commonClients "github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 const (
@@ -36,19 +39,20 @@ var (
 	/*
 	 * basics setup
 	 */
-	rtr           = mux.NewRouter()
-	mockNotifier  = clients.NewMockNotifier()
-	mockShoreline = shoreline.NewMock(FAKE_TOKEN)
+	rtr            = mux.NewRouter()
+	mockNotifier   = clients.NewMockNotifier()
+	mockShoreline  = shoreline.NewMock(FAKE_TOKEN)
+	mockGatekeeper = commonClients.NewGatekeeperMock(nil, nil)
 	/*
 	 * expected path
 	 */
 	mockStore  = clients.NewMockStoreClient(false, false)
-	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline)
+	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper)
 	/*
 	 * failure path
 	 */
 	mockStoreFails  = clients.NewMockStoreClient(false, MAKE_IT_FAIL)
-	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline)
+	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper)
 )
 
 func TestGetStatus_StatusOk(t *testing.T) {
@@ -83,47 +87,6 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 
 	if string(body) != "Session failure" {
 		t.Fatalf("Message given [%s] expected [%s] ", string(body), "Session failure")
-	}
-}
-
-func TestEmailAddress_StatusUnauthorized_WhenNoToken(t *testing.T) {
-	request, _ := http.NewRequest("PUT", "/email", nil)
-	response := httptest.NewRecorder()
-
-	hydrophone.SetHandlers("", rtr)
-
-	hydrophone.EmailAddress(response, request, NO_PARAMS)
-
-	if response.Code != http.StatusUnauthorized {
-		t.Fatalf("Non-expected status code%v:\n\tbody: %v", http.StatusUnauthorized, response.Code)
-	}
-}
-
-func TestEmailAddress_StatusBadRequest_WhenNoVariablesPassed(t *testing.T) {
-	request, _ := http.NewRequest("PUT", "/email", nil)
-	request.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
-	response := httptest.NewRecorder()
-
-	hydrophone.SetHandlers("", rtr)
-
-	hydrophone.EmailAddress(response, request, NO_PARAMS)
-
-	if response.Code != http.StatusBadRequest {
-		t.Fatalf("Non-expected status code%v:\n\tbody: %v", http.StatusBadRequest, response.Code)
-	}
-}
-
-func TestEmailAddress_StatusOK(t *testing.T) {
-	req, _ := http.NewRequest("POST", "/email", nil)
-	req.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
-	response := httptest.NewRecorder()
-
-	hydrophone.SetHandlers("", rtr)
-
-	hydrophone.EmailAddress(response, req, map[string]string{"type": "password_reset", "address": "test@user.org"})
-
-	if response.Code != http.StatusOK {
-		t.Fatalf("Non-expected status code%v:\n\tbody: %v", http.StatusNotImplemented, response.Code)
 	}
 }
 
@@ -226,20 +189,27 @@ func TestAddressResponds(t *testing.T) {
 			},
 		},
 		{
-			// we can't accept an invitation we didn't get
-			skip:     true,
+			// not found without the full path
 			method:   "PUT",
-			url:      "/accept/invite/UID99/UID",
+			url:      "/accept/invite",
 			token:    TOKEN_FOR_UID1,
-			respCode: 404,
+			respCode: http.StatusNotFound,
+		},
+		{
+			// no token
+			method:   "PUT",
+			url:      "/accept/invite/UID2/UID",
+			respCode: http.StatusUnauthorized,
 		},
 		{
 			// we can accept an invitation we did get
-			skip:     true,
 			method:   "PUT",
-			url:      "/accept/invite/UID2/UID",
+			url:      "/accept/invite/UID1/UID",
 			token:    TOKEN_FOR_UID1,
-			respCode: 200,
+			respCode: http.StatusOK,
+			body: jo{
+				"key": "careteam_invite/1234",
+			},
 		},
 		{
 			// get invitations we sent
@@ -258,11 +228,13 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// dismiss an invitation we were sent
-			skip:     true,
 			method:   "PUT",
 			url:      "/dismiss/invite/UID2/UID",
 			token:    TOKEN_FOR_UID1,
-			respCode: 204,
+			respCode: http.StatusNoContent,
+			body: jo{
+				"key": "careteam_invite/1234",
+			},
 		},
 		{
 			// delete the other invitation we sent
