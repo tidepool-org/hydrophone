@@ -132,6 +132,7 @@ func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
 	return
 }
 
+//Save this confirmation or write and error if it all goes wrong
 func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.ResponseWriter) bool {
 	if err := a.Store.UpsertConfirmation(conf); err != nil {
 		log.Println("Error saving the confirmation ", err)
@@ -142,6 +143,7 @@ func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.Respon
 	return true
 }
 
+//Find this confirmation, write error if fails or write no-content if it doesn't exist
 func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
 	if found, err := a.Store.FindConfirmation(conf); err != nil {
 		log.Println("Error finding the confirmation ", err)
@@ -157,7 +159,23 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 	}
 }
 
-//finad an validate the token
+//Generate a notification from the given confirmation,write the error if it fails
+func (a *Api) createAndSendNotfication(conf *models.Confirmation, res http.ResponseWriter) bool {
+
+	emailTemplate := models.NewTemplate()
+	emailTemplate.Load(conf.Type, a.Config.Templates)
+	emailTemplate.Parse(conf)
+
+	if status, details := a.notifier.Send([]string{conf.ToEmail}, "TODO", emailTemplate.GenerateContent); status != http.StatusOK {
+		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
+		res.WriteHeader(http.StatusInternalServerError)
+		res.Write([]byte(STATUS_ERR_SENDING_EMAIL))
+		return false
+	}
+	return true
+}
+
+//find and validate the token
 func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
 		td := a.sl.CheckToken(token)
@@ -194,24 +212,12 @@ func (a *Api) EmailAddress(res http.ResponseWriter, req *http.Request, vars map[
 				res.WriteHeader(http.StatusInternalServerError)
 				return
 			} else {
-				//save it
 				if a.addOrUpdateConfirmation(confirmation, res) {
-					emailTemplate := models.NewTemplate()
-					emailTemplate.Load(confirmation.Type, a.Config.Templates)
-					emailTemplate.Parse(confirmation)
-
-					if status, details := a.notifier.Send([]string{emailAddress}, "TODO", emailTemplate.GenerateContent); status != http.StatusOK {
-						log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
-						res.Write([]byte(STATUS_ERR_SENDING_EMAIL))
-						res.WriteHeader(http.StatusInternalServerError)
-						return
-					} else {
+					if a.createAndSendNotfication(confirmation, res) {
 						res.WriteHeader(http.StatusOK)
 						return
 					}
 				}
-				//
-				return
 			}
 			return
 		}
@@ -324,9 +330,12 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		if a.addOrUpdateConfirmation(invite, res) {
 			log.Printf("id: '%s' em: '%s'  p: '%v'\n", userid, ib.Email, ib.Permissions)
 			log.Printf("SendInvite() ignored request %s %s", req.Method, req.URL)
-			res.WriteHeader(http.StatusOK)
-			res.Write([]byte(STATUS_OK))
-			return
+
+			if a.createAndSendNotfication(invite, res) {
+				res.WriteHeader(http.StatusOK)
+				res.Write([]byte(STATUS_OK))
+				return
+			}
 		}
 	}
 	return
