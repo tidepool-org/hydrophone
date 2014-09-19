@@ -199,6 +199,14 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 	return false
 }
 
+//send metric
+func (a *Api) logMetric(name string, req *http.Request) {
+	token := req.Header.Get(TP_SESSION_TOKEN)
+	emptyParams := make(map[string]string)
+	a.metrics.PostServer(name, token, emptyParams)
+	return
+}
+
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	if a.checkToken(res, req) {
@@ -227,7 +235,9 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 		if conf := a.findExistingConfirmation(accept, res); conf != nil {
 			conf.UpdateStatus(models.StatusCompleted)
 			if a.addOrUpdateConfirmation(conf, res) {
+
 				log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
+				a.logMetric("acceptinvite", req)
 				res.WriteHeader(http.StatusOK)
 				res.Write([]byte(STATUS_OK))
 				return
@@ -267,6 +277,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 
 			if a.addOrUpdateConfirmation(conf, res) {
 				//yay
+				a.logMetric("dismissinvite", req)
 				res.WriteHeader(http.StatusNoContent)
 				res.Write([]byte(STATUS_OK))
 				return
@@ -302,6 +313,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		log.Printf("id: '%s' em: '%s'  p: '%v'\n", userid, ib.Email, ib.Permissions)
 
 		if a.createAndSendNotfication(invite, res) {
+			a.logMetric("sendinvite", req)
 			res.WriteHeader(http.StatusOK)
 			res.Write([]byte(STATUS_OK))
 			return
