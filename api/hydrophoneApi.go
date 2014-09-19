@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	commonClients "github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
@@ -20,6 +21,7 @@ type (
 		templates  models.TemplateConfig
 		sl         shoreline.Client
 		gatekeeper commonClients.Gatekeeper
+		metrics    highwater.Client
 		Config     Config
 	}
 	Config struct {
@@ -49,7 +51,13 @@ const (
 	STATUS_OK                        = "OK"
 )
 
-func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl shoreline.Client, gatekeeper commonClients.Gatekeeper) *Api {
+func InitApi(
+	cfg Config,
+	store clients.StoreClient,
+	ntf clients.Notifier,
+	sl shoreline.Client,
+	gatekeeper commonClients.Gatekeeper,
+	metrics highwater.Client) *Api {
 
 	return &Api{
 		Store:      store,
@@ -57,6 +65,7 @@ func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl sho
 		notifier:   ntf,
 		sl:         sl,
 		gatekeeper: gatekeeper,
+		metrics:    metrics,
 	}
 }
 

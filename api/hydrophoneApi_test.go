@@ -15,6 +15,7 @@ import (
 
 	"github.com/gorilla/mux"
 	commonClients "github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
@@ -43,16 +44,17 @@ var (
 	mockNotifier   = clients.NewMockNotifier()
 	mockShoreline  = shoreline.NewMock(FAKE_TOKEN)
 	mockGatekeeper = commonClients.NewGatekeeperMock(nil, nil)
+	mockMetrics    = highwater.NewMock()
 	/*
 	 * expected path
 	 */
 	mockStore  = clients.NewMockStoreClient(false, false)
-	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper)
+	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics)
 	/*
 	 * failure path
 	 */
 	mockStoreFails  = clients.NewMockStoreClient(false, MAKE_IT_FAIL)
-	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper)
+	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics)
 )
 
 func TestGetStatus_StatusOk(t *testing.T) {
