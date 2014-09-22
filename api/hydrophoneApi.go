@@ -245,14 +245,28 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		if conf := a.findExistingConfirmation(accept, res); conf != nil {
-			conf.UpdateStatus(models.StatusCompleted)
-			if a.addOrUpdateConfirmation(conf, res) {
 
-				log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
-				a.logMetric("acceptinvite", req)
-				res.WriteHeader(http.StatusOK)
-				res.Write([]byte("{" + STATUS_OK + "}"))
+			//New set the permissions for the invite
+			permissions := make(map[string]commonClients.Permissions)
+			conf.DecodeContext(&permissions)
+			if setPerms, err := a.gatekeeper.SetPermissions(userid, invitedby, permissions); err != nil {
+				log.Println("Error setting permissions in AcceptInvite ", err)
+				res.WriteHeader(http.StatusInternalServerError)
+				res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
 				return
+			} else {
+
+				log.Println("Permissons set ", setPerms)
+
+				conf.UpdateStatus(models.StatusCompleted)
+				if a.addOrUpdateConfirmation(conf, res) {
+
+					log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
+					a.logMetric("acceptinvite", req)
+					res.WriteHeader(http.StatusOK)
+					res.Write([]byte("{" + STATUS_OK + "}"))
+					return
+				}
 			}
 		}
 	}
