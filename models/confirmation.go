@@ -16,7 +16,7 @@ type (
 		ToEmail   string          `json:"email" 	bson:"email,omitempty"`
 		ToUser    string          `json:"userId" 	bson:"userId,omitempty"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
-		context   json.RawMessage `json:"context" 	bson:"context,omitempty"`
+		Context   json.RawMessage `json:"context" 	bson:"context,omitempty"`
 		Created   time.Time       `json:"created" 	bson:"created"`
 		Modified  time.Time       `json:"modified" 	bson:"modified"`
 	}
@@ -71,15 +71,15 @@ func NewConfirmationWithContext(theType Type, toId string, data interface{}) (*C
 func (c *Confirmation) AddContext(data interface{}) {
 
 	jsonData, _ := json.Marshal(data)
-	c.context = jsonData
+	c.Context = jsonData
 	return
 }
 
 //Decode the context data into the provided type
 func (c *Confirmation) DecodeContext(data interface{}) error {
 
-	if c.context != nil {
-		if err := json.Unmarshal(c.context, &data); err != nil {
+	if c.Context != nil {
+		if err := json.Unmarshal(c.Context, &data); err != nil {
 			log.Printf("Err: %v\n", err)
 			return err
 		}
