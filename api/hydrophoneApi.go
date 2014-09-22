@@ -221,82 +221,82 @@ func sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, status
 
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
-	if a.checkToken(res, req) {
+	//if a.checkToken(res, req) {
 
-		userid := vars["userid"]
-		invitedby := vars["invitedby"]
+	userid := vars["userid"]
+	invitedby := vars["invitedby"]
 
-		if userid == "" || invitedby == "" {
-			res.WriteHeader(http.StatusBadRequest)
+	if userid == "" || invitedby == "" {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	accept := &models.Confirmation{}
+	if err := json.NewDecoder(req.Body).Decode(accept); err != nil {
+		log.Printf("Err: %v\n", err)
+		res.WriteHeader(http.StatusBadRequest)
+		res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
+		return
+	}
+
+	if accept.Key == "" {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if conf := a.findExistingConfirmation(accept, res); conf != nil {
+		conf.UpdateStatus(models.StatusCompleted)
+		if a.addOrUpdateConfirmation(conf, res) {
+
+			log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
+			a.logMetric("acceptinvite", req)
+			res.WriteHeader(http.StatusOK)
+			res.Write([]byte("{" + STATUS_OK + "}"))
 			return
-		}
-
-		accept := &models.Confirmation{}
-		if err := json.NewDecoder(req.Body).Decode(accept); err != nil {
-			log.Printf("Err: %v\n", err)
-			res.WriteHeader(http.StatusBadRequest)
-			res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
-			return
-		}
-
-		if accept.Key == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if conf := a.findExistingConfirmation(accept, res); conf != nil {
-			conf.UpdateStatus(models.StatusCompleted)
-			if a.addOrUpdateConfirmation(conf, res) {
-
-				log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
-				a.logMetric("acceptinvite", req)
-				res.WriteHeader(http.StatusOK)
-				res.Write([]byte(STATUS_OK))
-				return
-			}
 		}
 	}
-	return
+	//}
+	//return
 }
 
 func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
+	//if a.checkToken(res, req) {
 
-		userid := vars["userid"]
-		invitedby := vars["invitedby"]
+	userid := vars["userid"]
+	invitedby := vars["invitedby"]
 
-		if userid == "" || invitedby == "" {
-			res.WriteHeader(http.StatusBadRequest)
+	if userid == "" || invitedby == "" {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	dismiss := &models.Confirmation{}
+	if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
+		log.Printf("Err: %v\n", err)
+		res.WriteHeader(http.StatusBadRequest)
+		res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
+		return
+	}
+
+	if dismiss.Key == "" {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if conf := a.findExistingConfirmation(dismiss, res); conf != nil {
+
+		conf.UpdateStatus(models.StatusDeclined)
+
+		if a.addOrUpdateConfirmation(conf, res) {
+			//yay
+			a.logMetric("dismissinvite", req)
+			res.WriteHeader(http.StatusNoContent)
+			res.Write([]byte(STATUS_OK))
 			return
-		}
-
-		dismiss := &models.Confirmation{}
-		if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
-			log.Printf("Err: %v\n", err)
-			res.WriteHeader(http.StatusBadRequest)
-			res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
-			return
-		}
-
-		if dismiss.Key == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if conf := a.findExistingConfirmation(dismiss, res); conf != nil {
-
-			conf.UpdateStatus(models.StatusDeclined)
-
-			if a.addOrUpdateConfirmation(conf, res) {
-				//yay
-				a.logMetric("dismissinvite", req)
-				res.WriteHeader(http.StatusNoContent)
-				res.Write([]byte(STATUS_OK))
-				return
-			}
 		}
 	}
-	return
+	//}
+	//return
 }
 
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
