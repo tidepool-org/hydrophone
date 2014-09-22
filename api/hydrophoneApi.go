@@ -207,6 +207,18 @@ func (a *Api) logMetric(name string, req *http.Request) {
 	return
 }
 
+func sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
+	res.Header().Set("content-type", "application/json")
+	res.WriteHeader(statusCode)
+
+	if jsonDetails, err := json.Marshal(model); err != nil {
+		log.Println(err)
+	} else {
+		res.Write(jsonDetails)
+	}
+	return
+}
+
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	if a.checkToken(res, req) {
@@ -314,8 +326,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 		if a.createAndSendNotfication(invite, res) {
 			a.logMetric("sendinvite", req)
-			res.WriteHeader(http.StatusOK)
-			res.Write([]byte(STATUS_OK))
+			sendModelAsResWithStatus(res, invite, http.StatusOK)
 			return
 		}
 	}
