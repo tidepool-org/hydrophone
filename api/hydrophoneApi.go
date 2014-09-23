@@ -30,8 +30,8 @@ type (
 	}
 	// this is the data structure for the invitation body
 	InviteBody struct {
-		Email       string                       `json:"email"`
-		Permissions map[string]map[string]string `json:"permissions"`
+		Email       string                 `json:"email"`
+		Permissions map[string]interface{} `json:"permissions"`
 	}
 	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
@@ -219,6 +219,8 @@ func sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, status
 	return
 }
 
+//func (a *Api) setPermissions(userid, invitedby string, permissions){}
+
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	if a.checkToken(res, req) {
@@ -247,8 +249,11 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 		if conf := a.findExistingConfirmation(accept, res); conf != nil {
 
 			//New set the permissions for the invite
-			permissions := make(map[string]commonClients.Permissions)
+			var permissions commonClients.Permissions
 			conf.DecodeContext(&permissions)
+
+			log.Printf("perms to set: [%v]", permissions)
+
 			if setPerms, err := a.gatekeeper.SetPermissions(userid, invitedby, permissions); err != nil {
 				log.Println("Error setting permissions in AcceptInvite ", err)
 				res.WriteHeader(http.StatusInternalServerError)
@@ -326,7 +331,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if ib.Email == "" || len(ib.Permissions) == 0 {
+		if ib.Email == "" || ib.Permissions == nil {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
