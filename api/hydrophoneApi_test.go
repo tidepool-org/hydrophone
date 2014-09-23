@@ -177,11 +177,10 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// we should get a list of our outstanding invitations
-			skip:     true,
 			method:   "GET",
 			url:      "/invitations/UID2",
 			token:    TOKEN_FOR_UID1,
-			respCode: 200,
+			respCode: http.StatusOK,
 			response: jo{
 				"invitedBy": "UID",
 				"permissions": jo{
@@ -215,11 +214,10 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// get invitations we sent
-			skip:     true,
 			method:   "GET",
-			url:      "/invite/UID",
+			url:      "/invite/UID2",
 			token:    TOKEN_FOR_UID1,
-			respCode: 200,
+			respCode: http.StatusOK,
 			response: jo{
 				"email": "personToInvite@email.com",
 				"permissions": jo{

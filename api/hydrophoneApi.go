@@ -97,10 +97,10 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid
 	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("GET")
-	rtr.Handle("/invite/{userid}", varsHandler(a.Dummy)).Methods("GET")
+	rtr.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
-	rtr.Handle("/invitations/{userid}", varsHandler(a.Dummy)).Methods("GET")
+	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
 
 	// PUT /confirm/dismiss/invite/:userid/:invited_by
 	// PUT /confirm/dismiss/signup/:userid
@@ -219,7 +219,35 @@ func sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, status
 	return
 }
 
-//func (a *Api) setPermissions(userid, invitedby string, permissions){}
+func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if a.checkToken(res, req) {
+		userid := vars["userid"]
+
+		if userid == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		res.WriteHeader(http.StatusNotImplemented)
+		res.Write([]byte("[{}]"))
+		return
+	}
+	return
+}
+
+func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if a.checkToken(res, req) {
+		userid := vars["userid"]
+
+		if userid == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		res.WriteHeader(http.StatusNotImplemented)
+		res.Write([]byte("[{}]"))
+		return
+	}
+	return
+}
 
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
