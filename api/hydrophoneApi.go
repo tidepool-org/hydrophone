@@ -165,6 +165,22 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 	}
 }
 
+//Find this confirmation, write error if fails or write no-content if it doesn't exist
+func (a *Api) findConfirmations(userId, creatorId string, status models.Status, res http.ResponseWriter) []*models.Confirmation {
+	if found, err := a.Store.FindConfirmations(userId, creatorId, status); err != nil {
+		log.Println("Error finding confirmations ", err)
+		res.WriteHeader(http.StatusInternalServerError)
+		res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
+		return nil
+	} else if found == nil || len(found) == 0 {
+		res.WriteHeader(http.StatusNoContent)
+		res.Write([]byte(STATUS_CONFIRMATION_NOT_FOUND))
+		return nil
+	} else {
+		return found
+	}
+}
+
 //Generate a notification from the given confirmation,write the error if it fails
 func (a *Api) createAndSendNotfication(conf *models.Confirmation, res http.ResponseWriter) bool {
 
@@ -227,9 +243,9 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		res.WriteHeader(http.StatusNotImplemented)
-		res.Write([]byte("[{}]"))
-		return
+		if invites := a.findConfirmations(userid, "", models.StatusPending, res); invites != nil {
+			sendModelAsResWithStatus(res, invites, http.StatusOK)
+		}
 	}
 	return
 }
@@ -242,9 +258,9 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		res.WriteHeader(http.StatusNotImplemented)
-		res.Write([]byte("[{}]"))
-		return
+		if invitations := a.findConfirmations("", userid, models.StatusPending, res); invitations != nil {
+			sendModelAsResWithStatus(res, invitations, http.StatusOK)
+		}
 	}
 	return
 }
