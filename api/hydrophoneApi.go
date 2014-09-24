@@ -244,7 +244,9 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			return
 		}
 		if invites := a.findConfirmations(userid, "", models.StatusPending, res); invites != nil {
+			a.logMetric("get received invites", req)
 			sendModelAsResWithStatus(res, invites, http.StatusOK)
+			return
 		}
 	}
 	return
@@ -259,7 +261,9 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 		if invitations := a.findConfirmations("", userid, models.StatusPending, res); invitations != nil {
+			a.logMetric("get sent invites", req)
 			sendModelAsResWithStatus(res, invitations, http.StatusOK)
+			return
 		}
 	}
 	return
@@ -289,6 +293,8 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		//we know the user now
+		accept.ToUser = userid
 
 		if conf := a.findExistingConfirmation(accept, res); conf != nil {
 
@@ -385,7 +391,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		invite.ToEmail = ib.Email
 
 		if a.addOrUpdateConfirmation(invite, res) {
-			log.Printf("id: '%s' em: '%s'  p: '%v'\n", userid, ib.Email, ib.Permissions)
+			log.Printf("invite: '%v' ", invite)
 
 			if a.createAndSendNotfication(invite, res) {
 				a.logMetric("sendinvite", req)

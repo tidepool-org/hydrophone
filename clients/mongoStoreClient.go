@@ -66,19 +66,15 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 
 func (d MongoStoreClient) FindConfirmations(userId, creatorId string, status models.Status) (results []*models.Confirmation, err error) {
 
-	fieldsToMatch := []bson.M{}
+	var query bson.M
 
 	if userId != "" {
-		fieldsToMatch = append(fieldsToMatch, bson.M{"userid": userId})
-	}
-	if creatorId != "" {
-		fieldsToMatch = append(fieldsToMatch, bson.M{"username": creatorId})
-	}
-	if string(status) != "" {
-		fieldsToMatch = append(fieldsToMatch, bson.M{"emails": status})
+		query = bson.M{"userId": userId, "status": status}
+	} else if creatorId != "" {
+		query = bson.M{"creatorId": creatorId, "status": status}
 	}
 
-	if err = d.confirmationsC.Find(bson.M{"$or": fieldsToMatch}).All(&results); err != nil {
+	if err = d.confirmationsC.Find(query).All(&results); err != nil {
 		return results, err
 	}
 	return results, nil
