@@ -37,12 +37,14 @@ func (d MockStoreClient) FindConfirmation(notification *models.Confirmation) (re
 	return notification, nil
 }
 
-func (d MockStoreClient) FindConfirmations(userId, creatorId string, status models.Status) (results []*models.Confirmation, err error) {
+func (d MockStoreClient) FindConfirmations(userEmail, creatorId string, status models.Status) (results []*models.Confirmation, err error) {
 	if d.doBad {
 		return nil, errors.New("FindConfirmation failure")
 	}
 
-	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, userId)
+	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
+
+	conf.ToEmail = userEmail
 
 	conf.UpdateStatus(status)
 	if creatorId != "" {

@@ -64,12 +64,12 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 	return result, nil
 }
 
-func (d MongoStoreClient) FindConfirmations(userId, creatorId string, status models.Status) (results []*models.Confirmation, err error) {
+func (d MongoStoreClient) FindConfirmations(userEmail, creatorId string, status models.Status) (results []*models.Confirmation, err error) {
 
 	var query bson.M
 
-	if userId != "" {
-		query = bson.M{"userId": userId, "status": status}
+	if userEmail != "" {
+		query = bson.M{"toemail": userEmail, "status": status}
 	} else if creatorId != "" {
 		query = bson.M{"creatorId": creatorId, "status": status}
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 
 	"./../clients"
 	"./../models"
@@ -95,9 +96,9 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 		varsHandler(a.AcceptInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
-	// GET /confirm/invite/:userid
+	// GET /confirm/invite/:useremail
 	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("GET")
-	rtr.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
+	rtr.Handle("/invite/{useremail}", varsHandler(a.GetSentInvitations)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
 	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
@@ -254,13 +255,14 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 
 func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
-		userid := vars["userid"]
 
-		if userid == "" {
+		userEmail, _ := url.QueryUnescape(vars["useremail"])
+
+		if userEmail == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if invitations := a.findConfirmations("", userid, models.StatusPending, res); invitations != nil {
+		if invitations := a.findConfirmations("", userEmail, models.StatusPending, res); invitations != nil {
 			a.logMetric("get sent invites", req)
 			sendModelAsResWithStatus(res, invitations, http.StatusOK)
 			return
