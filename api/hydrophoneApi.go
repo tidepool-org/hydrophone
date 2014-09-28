@@ -31,8 +31,8 @@ type (
 	}
 	// this is the data structure for the invitation body
 	InviteBody struct {
-		Email       string                 `json:"email"`
-		Permissions map[string]interface{} `json:"permissions"`
+		Email       string                    `json:"email"`
+		Permissions commonClients.Permissions `json:"permissions"`
 	}
 	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
@@ -304,7 +304,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			var permissions commonClients.Permissions
 			conf.DecodeContext(&permissions)
 
-			log.Printf("perms to set: [%v]", permissions)
+			log.Printf("AcceptInvite perms to apply: [%v]", permissions)
 
 			if setPerms, err := a.gatekeeper.SetPermissions(userid, invitedby, permissions); err != nil {
 				log.Println("Error setting permissions in AcceptInvite ", err)
@@ -313,7 +313,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 				return
 			} else {
 
-				log.Println("Permissons set ", setPerms)
+				log.Printf("AcceptInvite perms applied: [%v]", setPerms)
 
 				conf.UpdateStatus(models.StatusCompleted)
 				if a.addOrUpdateConfirmation(conf, res) {
@@ -387,6 +387,8 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		log.Println("SendInvite Perms: ", ib.Permissions)
 
 		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, ib.Permissions)
 
