@@ -9,6 +9,7 @@ import (
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/hakken"
+	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"log"
@@ -73,6 +74,12 @@ func main() {
 		WithTokenProvider(shoreline).
 		Build()
 
+	highwater := highwater.NewHighwaterClientBuilder().
+		WithHostGetter(config.HighwaterConfig.ToHostGetter(hakkenClient)).
+		WithHttpClient(httpClient).
+		WithConfig(&config.HighwaterConfig.HighwaterClientConfig).
+		Build()
+
 	/*
 	 * hydrophone setup
 	 */
@@ -80,7 +87,7 @@ func main() {
 	mail := sc.NewSesNotifier(&config.Mail)
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper)
+	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, highwater)
 	api.SetHandlers("", rtr)
 
 	/*

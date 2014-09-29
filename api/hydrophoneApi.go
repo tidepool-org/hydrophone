@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 
 	"./../clients"
 	"./../models"
 
 	"github.com/gorilla/mux"
 	commonClients "github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
@@ -20,6 +22,7 @@ type (
 		templates  models.TemplateConfig
 		sl         shoreline.Client
 		gatekeeper commonClients.Gatekeeper
+		metrics    highwater.Client
 		Config     Config
 	}
 	Config struct {
@@ -28,8 +31,8 @@ type (
 	}
 	// this is the data structure for the invitation body
 	InviteBody struct {
-		Email       string                       `json:"email"`
-		Permissions map[string]map[string]string `json:"permissions"`
+		Email       string                    `json:"email"`
+		Permissions commonClients.Permissions `json:"permissions"`
 	}
 	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
@@ -44,12 +47,19 @@ const (
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_CONFIRMATION_NOT_FOUND    = "No matching confirmation was found"
+	STATUS_CONFIRMATION_REMOVED      = "Confirmation has been removed"
 	STATUS_NO_TOKEN                  = "No x-tidepool-session-token was found"
 	STATUS_INVALID_TOKEN             = "The x-tidepool-session-token was invalid"
 	STATUS_OK                        = "OK"
 )
 
-func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl shoreline.Client, gatekeeper commonClients.Gatekeeper) *Api {
+func InitApi(
+	cfg Config,
+	store clients.StoreClient,
+	ntf clients.Notifier,
+	sl shoreline.Client,
+	gatekeeper commonClients.Gatekeeper,
+	metrics highwater.Client) *Api {
 
 	return &Api{
 		Store:      store,
@@ -57,6 +67,7 @@ func InitApi(cfg Config, store clients.StoreClient, ntf clients.Notifier, sl sho
 		notifier:   ntf,
 		sl:         sl,
 		gatekeeper: gatekeeper,
+		metrics:    metrics,
 	}
 }
 
@@ -86,12 +97,12 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 		varsHandler(a.AcceptInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
-	// GET /confirm/invite/:userid
+	// GET /confirm/invite/:useremail
 	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("GET")
-	rtr.Handle("/invite/{userid}", varsHandler(a.Dummy)).Methods("GET")
+	rtr.Handle("/invite/{useremail}", varsHandler(a.GetSentInvitations)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
-	rtr.Handle("/invitations/{userid}", varsHandler(a.Dummy)).Methods("GET")
+	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
 
 	// PUT /confirm/dismiss/invite/:userid/:invited_by
 	// PUT /confirm/dismiss/signup/:userid
@@ -103,7 +114,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	// DELETE /confirm/:userid/invited/:invited_address
 	// DELETE /confirm/signup/:userid
-	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.Dummy)).Methods("DELETE")
+	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.RemoveInvite)).Methods("DELETE")
 	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("DELETE")
 }
 
@@ -156,6 +167,22 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 	}
 }
 
+//Find this confirmation, write error if fails or write no-content if it doesn't exist
+func (a *Api) findConfirmations(userId, creatorId string, status models.Status, res http.ResponseWriter) []*models.Confirmation {
+	if found, err := a.Store.FindConfirmations(userId, creatorId, status); err != nil {
+		log.Println("Error finding confirmations ", err)
+		res.WriteHeader(http.StatusInternalServerError)
+		res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
+		return nil
+	} else if found == nil || len(found) == 0 {
+		res.WriteHeader(http.StatusNoContent)
+		res.Write([]byte(STATUS_CONFIRMATION_NOT_FOUND))
+		return nil
+	} else {
+		return found
+	}
+}
+
 //Generate a notification from the given confirmation,write the error if it fails
 func (a *Api) createAndSendNotfication(conf *models.Confirmation, res http.ResponseWriter) bool {
 
@@ -177,7 +204,7 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
 		td := a.sl.CheckToken(token)
 
-		if td == nil || td.IsServer == false {
+		if td == nil {
 			res.WriteHeader(http.StatusForbidden)
 			res.Write([]byte(STATUS_INVALID_TOKEN))
 			return false
@@ -188,6 +215,61 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 	res.WriteHeader(http.StatusUnauthorized)
 	res.Write([]byte(STATUS_NO_TOKEN))
 	return false
+}
+
+//send metric
+func (a *Api) logMetric(name string, req *http.Request) {
+	token := req.Header.Get(TP_SESSION_TOKEN)
+	emptyParams := make(map[string]string)
+	a.metrics.PostThisUser(name, token, emptyParams)
+	return
+}
+
+func sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
+	res.Header().Set("content-type", "application/json")
+	res.WriteHeader(statusCode)
+
+	if jsonDetails, err := json.Marshal(model); err != nil {
+		log.Println(err)
+	} else {
+		res.Write(jsonDetails)
+	}
+	return
+}
+
+func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if a.checkToken(res, req) {
+		userid := vars["userid"]
+
+		if userid == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if invites := a.findConfirmations(userid, "", models.StatusPending, res); invites != nil {
+			a.logMetric("get received invites", req)
+			sendModelAsResWithStatus(res, invites, http.StatusOK)
+			return
+		}
+	}
+	return
+}
+
+func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if a.checkToken(res, req) {
+
+		userEmail, _ := url.QueryUnescape(vars["useremail"])
+
+		if userEmail == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if invitations := a.findConfirmations("", userEmail, models.StatusPending, res); invitations != nil {
+			a.logMetric("get sent invites", req)
+			sendModelAsResWithStatus(res, invitations, http.StatusOK)
+			return
+		}
+	}
+	return
 }
 
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
@@ -216,11 +298,78 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		if conf := a.findExistingConfirmation(accept, res); conf != nil {
-			conf.UpdateStatus(models.StatusCompleted)
-			if a.addOrUpdateConfirmation(conf, res) {
-				log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
-				res.WriteHeader(http.StatusOK)
-				res.Write([]byte(STATUS_OK))
+
+			//New set the permissions for the invite
+			var permissions commonClients.Permissions
+			conf.DecodeContext(&permissions)
+
+			log.Printf("AcceptInvite perms to apply: [%v]", permissions)
+
+			if setPerms, err := a.gatekeeper.SetPermissions(userid, invitedby, permissions); err != nil {
+				log.Println("Error setting permissions in AcceptInvite ", err)
+				res.WriteHeader(http.StatusInternalServerError)
+				res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
+				return
+			} else {
+
+				log.Printf("AcceptInvite perms applied: [%v]", setPerms)
+
+				//we know the user now
+				conf.ToUser = userid
+
+				conf.UpdateStatus(models.StatusCompleted)
+				if a.addOrUpdateConfirmation(conf, res) {
+
+					log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
+					a.logMetric("acceptinvite", req)
+					res.WriteHeader(http.StatusOK)
+					res.Write([]byte("{" + STATUS_OK + "}"))
+					return
+				}
+			}
+		}
+	}
+	return
+}
+
+func (a *Api) RemoveInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if a.checkToken(res, req) {
+
+		invitedby := vars["userid"]
+		inviteEmail := vars["invited_address"]
+
+		if invitedby == "" || inviteEmail == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		alreadyAccepted := &models.Confirmation{
+			ToEmail:   inviteEmail,
+			CreatorId: invitedby,
+			Status:    models.StatusCompleted,
+			Type:      models.TypeCareteamInvite,
+		}
+
+		if conf := a.findExistingConfirmation(alreadyAccepted, res); conf != nil {
+
+			if conf.CreatorId != "" && conf.ToUser != "" {
+
+				if setPerms, err := a.gatekeeper.SetPermissions(conf.ToUser, conf.CreatorId, nil); err != nil {
+					log.Println("Error setting permissions in RemoveInvite ", err)
+					res.WriteHeader(http.StatusInternalServerError)
+					res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
+					return
+				} else {
+
+					log.Printf("RemoveInvite perms removed: [%v]", setPerms)
+					a.logMetric("removeinvite", req)
+					res.WriteHeader(http.StatusOK)
+					res.Write([]byte(STATUS_CONFIRMATION_REMOVED))
+					return
+				}
+			} else {
+				res.WriteHeader(http.StatusNoContent)
+				res.Write([]byte(STATUS_CONFIRMATION_NOT_FOUND))
 				return
 			}
 		}
@@ -258,6 +407,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 
 			if a.addOrUpdateConfirmation(conf, res) {
 				//yay
+				a.logMetric("dismissinvite", req)
 				res.WriteHeader(http.StatusNoContent)
 				res.Write([]byte(STATUS_OK))
 				return
@@ -268,36 +418,38 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 }
 
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	//if a.checkToken(res, req) {
+	if a.checkToken(res, req) {
 
-	userid := vars["userid"]
+		userid := vars["userid"]
 
-	defer req.Body.Close()
-	var ib = &InviteBody{}
-	if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-		log.Printf("Err: %v\n", err)
-		res.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	if ib.Email == "" || len(ib.Permissions) == 0 {
-		res.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, ib.Permissions)
-
-	invite.ToEmail = ib.Email
-
-	if a.addOrUpdateConfirmation(invite, res) {
-		log.Printf("id: '%s' em: '%s'  p: '%v'\n", userid, ib.Email, ib.Permissions)
-
-		if a.createAndSendNotfication(invite, res) {
-			res.WriteHeader(http.StatusOK)
-			res.Write([]byte(STATUS_OK))
+		defer req.Body.Close()
+		var ib = &InviteBody{}
+		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
+			log.Printf("Err: %v\n", err)
+			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		if ib.Email == "" || ib.Permissions == nil {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		log.Println("SendInvite Perms: ", ib.Permissions)
+
+		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, ib.Permissions)
+
+		invite.ToEmail = ib.Email
+
+		if a.addOrUpdateConfirmation(invite, res) {
+			log.Printf("invite: '%v' ", invite)
+
+			if a.createAndSendNotfication(invite, res) {
+				a.logMetric("sendinvite", req)
+				sendModelAsResWithStatus(res, invite, http.StatusOK)
+				return
+			}
+		}
 	}
-	//}
 	return
 }

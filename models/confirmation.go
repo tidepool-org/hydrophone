@@ -14,9 +14,9 @@ type (
 		Type      Type            `json:"type" 		bson:"type"`
 		Status    Status          `json:"status" 	bson:"status"`
 		ToEmail   string          `json:"email" 	bson:"email,omitempty"`
-		ToUser    string          `json:"userId" 	bson:"userId,omitempty"`
+		ToUser    string          `json:"userId" 	bson:"userId"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
-		context   json.RawMessage `json:"context" 	bson:"context,omitempty"`
+		Context   json.RawMessage `json:"context" 	bson:"context,omitempty"`
 		Created   time.Time       `json:"created" 	bson:"created"`
 		Modified  time.Time       `json:"modified" 	bson:"modified"`
 	}
@@ -38,18 +38,18 @@ const (
 )
 
 //New confirmation with just the basics
-func NewConfirmation(theType Type, toId string) (*Confirmation, error) {
+func NewConfirmation(theType Type, creatorId string) (*Confirmation, error) {
 
 	if key, err := generateKey(); err != nil {
 		return nil, err
 	} else {
 
 		conf := &Confirmation{
-			Key:     key,
-			Type:    theType,
-			ToUser:  toId,
-			Status:  StatusPending,
-			Created: time.Now(),
+			Key:       key,
+			Type:      theType,
+			CreatorId: creatorId,
+			Status:    StatusPending,
+			Created:   time.Now(),
 		}
 
 		return conf, nil
@@ -57,9 +57,9 @@ func NewConfirmation(theType Type, toId string) (*Confirmation, error) {
 }
 
 //New confirmation that includes context data
-func NewConfirmationWithContext(theType Type, toId string, data interface{}) (*Confirmation, error) {
+func NewConfirmationWithContext(theType Type, creatorId string, data interface{}) (*Confirmation, error) {
 
-	if conf, err := NewConfirmation(theType, toId); err != nil {
+	if conf, err := NewConfirmation(theType, creatorId); err != nil {
 		return nil, err
 	} else {
 		conf.AddContext(data)
@@ -71,15 +71,15 @@ func NewConfirmationWithContext(theType Type, toId string, data interface{}) (*C
 func (c *Confirmation) AddContext(data interface{}) {
 
 	jsonData, _ := json.Marshal(data)
-	c.context = jsonData
+	c.Context = jsonData
 	return
 }
 
 //Decode the context data into the provided type
 func (c *Confirmation) DecodeContext(data interface{}) error {
 
-	if c.context != nil {
-		if err := json.Unmarshal(c.context, &data); err != nil {
+	if c.Context != nil {
+		if err := json.Unmarshal(c.Context, &data); err != nil {
 			log.Printf("Err: %v\n", err)
 			return err
 		}

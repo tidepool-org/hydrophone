@@ -37,6 +37,33 @@ func (d MockStoreClient) FindConfirmation(notification *models.Confirmation) (re
 	return notification, nil
 }
 
+func (d MockStoreClient) FindConfirmationByKey(key string) (result *models.Confirmation, err error) {
+	if d.doBad {
+		return nil, errors.New("FindConfirmationByKey failure")
+	}
+	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
+	conf.Key = key
+	return conf, nil
+}
+
+func (d MockStoreClient) FindConfirmations(userEmail, creatorId string, status models.Status) (results []*models.Confirmation, err error) {
+	if d.doBad {
+		return nil, errors.New("FindConfirmation failure")
+	}
+
+	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
+
+	conf.ToEmail = userEmail
+
+	conf.UpdateStatus(status)
+	if creatorId != "" {
+		conf.CreatorId = creatorId
+	}
+
+	return []*models.Confirmation{conf}, nil
+
+}
+
 func (d MockStoreClient) RemoveConfirmation(notification *models.Confirmation) error {
 	if d.doBad {
 		return errors.New("RemoveConfirmation failure")

@@ -37,12 +37,12 @@ func Test_NewConfirmation(t *testing.T) {
 		t.Fatalf("The type should be [%s] but is [%s]", TypePasswordReset, confirmation.Type)
 	}
 
-	if confirmation.ToUser != USERID {
-		t.Fatalf("The user should be [%s] but is [%s]", USERID, confirmation.ToUser)
+	if confirmation.ToUser != "" {
+		t.Fatalf("The user should not be set but is [%s]", confirmation.ToUser)
 	}
 
-	if confirmation.CreatorId != "" {
-		t.Fatalf("The creator should note be set by default but is [%s]", confirmation.CreatorId)
+	if confirmation.CreatorId != USERID {
+		t.Fatalf("The creator should be [%s] but is [%s]", USERID, confirmation.CreatorId)
 	}
 
 	confirmation.UpdateStatus(StatusCompleted)

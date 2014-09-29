@@ -15,6 +15,7 @@ import (
 
 	"github.com/gorilla/mux"
 	commonClients "github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
@@ -43,16 +44,17 @@ var (
 	mockNotifier   = clients.NewMockNotifier()
 	mockShoreline  = shoreline.NewMock(FAKE_TOKEN)
 	mockGatekeeper = commonClients.NewGatekeeperMock(nil, nil)
+	mockMetrics    = highwater.NewMock()
 	/*
 	 * expected path
 	 */
 	mockStore  = clients.NewMockStoreClient(false, false)
-	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper)
+	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics)
 	/*
 	 * failure path
 	 */
 	mockStoreFails  = clients.NewMockStoreClient(false, MAKE_IT_FAIL)
-	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper)
+	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics)
 )
 
 func TestGetStatus_StatusOk(t *testing.T) {
@@ -175,11 +177,10 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// we should get a list of our outstanding invitations
-			skip:     true,
 			method:   "GET",
-			url:      "/invitations/UID2",
+			url:      "/invitations/me@myemail.com",
 			token:    TOKEN_FOR_UID1,
-			respCode: 200,
+			respCode: http.StatusOK,
 			response: jo{
 				"invitedBy": "UID",
 				"permissions": jo{
@@ -213,11 +214,10 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// get invitations we sent
-			skip:     true,
 			method:   "GET",
-			url:      "/invite/UID",
+			url:      "/invite/UID2",
 			token:    TOKEN_FOR_UID1,
-			respCode: 200,
+			respCode: http.StatusOK,
 			response: jo{
 				"email": "personToInvite@email.com",
 				"permissions": jo{
