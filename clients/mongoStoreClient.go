@@ -1,11 +1,12 @@
 package clients
 
 import (
+	"log"
+
 	"./../models"
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	"log"
 )
 
 const (
@@ -55,8 +56,38 @@ func (d MongoStoreClient) UpsertConfirmation(confirmation *models.Confirmation) 
 
 func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (result *models.Confirmation, err error) {
 
+	var query bson.M = bson.M{}
+
+	if confirmation.ToEmail != "" {
+		query["toemail"] = confirmation.ToEmail
+	}
 	if confirmation.Key != "" {
-		if err = d.confirmationsC.Find(bson.M{"key": confirmation.Key}).One(&result); err != nil {
+		query["key"] = confirmation.Key
+	}
+	if string(confirmation.Status) != "" {
+		query["status"] = confirmation.Status
+	}
+	if string(confirmation.Type) != "" {
+		query["type"] = confirmation.Type
+	}
+	if confirmation.CreatorId != "" {
+		query["creatorId"] = confirmation.CreatorId
+	}
+	if confirmation.ToUser != "" {
+		query["touser"] = confirmation.ToUser
+	}
+
+	if err = d.confirmationsC.Find(query).One(&result); err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
+func (d MongoStoreClient) FindConfirmationByKey(key string) (result *models.Confirmation, err error) {
+
+	if key != "" {
+		if err = d.confirmationsC.Find(bson.M{"key": key}).One(&result); err != nil {
 			return result, err
 		}
 	}

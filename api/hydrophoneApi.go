@@ -47,6 +47,7 @@ const (
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_CONFIRMATION_NOT_FOUND    = "No matching confirmation was found"
+	STATUS_CONFIRMATION_REMOVED      = "Confirmation has been removed"
 	STATUS_NO_TOKEN                  = "No x-tidepool-session-token was found"
 	STATUS_INVALID_TOKEN             = "The x-tidepool-session-token was invalid"
 	STATUS_OK                        = "OK"
@@ -113,7 +114,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	// DELETE /confirm/:userid/invited/:invited_address
 	// DELETE /confirm/signup/:userid
-	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.Dummy)).Methods("DELETE")
+	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.RemoveInvite)).Methods("DELETE")
 	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("DELETE")
 }
 
@@ -295,8 +296,6 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		//we know the user now
-		accept.ToUser = userid
 
 		if conf := a.findExistingConfirmation(accept, res); conf != nil {
 
@@ -315,6 +314,9 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 
 				log.Printf("AcceptInvite perms applied: [%v]", setPerms)
 
+				//we know the user now
+				conf.ToUser = userid
+
 				conf.UpdateStatus(models.StatusCompleted)
 				if a.addOrUpdateConfirmation(conf, res) {
 
@@ -324,6 +326,51 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 					res.Write([]byte("{" + STATUS_OK + "}"))
 					return
 				}
+			}
+		}
+	}
+	return
+}
+
+func (a *Api) RemoveInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if a.checkToken(res, req) {
+
+		invitedby := vars["userid"]
+		inviteEmail := vars["invited_address"]
+
+		if invitedby == "" || inviteEmail == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		alreadyAccepted := &models.Confirmation{
+			ToEmail:   inviteEmail,
+			CreatorId: invitedby,
+			Status:    models.StatusCompleted,
+			Type:      models.TypeCareteamInvite,
+		}
+
+		if conf := a.findExistingConfirmation(alreadyAccepted, res); conf != nil {
+
+			if conf.CreatorId != "" && conf.ToUser != "" {
+
+				if setPerms, err := a.gatekeeper.SetPermissions(conf.ToUser, conf.CreatorId, nil); err != nil {
+					log.Println("Error setting permissions in RemoveInvite ", err)
+					res.WriteHeader(http.StatusInternalServerError)
+					res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
+					return
+				} else {
+
+					log.Printf("RemoveInvite perms removed: [%v]", setPerms)
+					a.logMetric("removeinvite", req)
+					res.WriteHeader(http.StatusOK)
+					res.Write([]byte(STATUS_CONFIRMATION_REMOVED))
+					return
+				}
+			} else {
+				res.WriteHeader(http.StatusNoContent)
+				res.Write([]byte(STATUS_CONFIRMATION_NOT_FOUND))
+				return
 			}
 		}
 	}
