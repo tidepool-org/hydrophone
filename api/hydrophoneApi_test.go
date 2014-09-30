@@ -238,11 +238,10 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// delete the other invitation we sent
-			skip:     true,
-			method:   "DELETE",
+			method:   "PUT",
 			url:      "/UID/invited/other@youremail.com",
 			token:    TOKEN_FOR_UID1,
-			respCode: 204,
+			respCode: http.StatusOK,
 		},
 		{
 			// if you leave off the userid, it fails

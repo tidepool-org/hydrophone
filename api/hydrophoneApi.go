@@ -112,9 +112,9 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	dismiss.Handle("/signup/{userid}",
 		varsHandler(a.Dummy)).Methods("PUT")
 
-	// DELETE /confirm/:userid/invited/:invited_address
+	// PUT /confirm/:userid/invited/:invited_address
 	// DELETE /confirm/signup/:userid
-	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("DELETE")
+	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
 	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("DELETE")
 }
 
