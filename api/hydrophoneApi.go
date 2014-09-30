@@ -309,7 +309,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 				res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
 				return
 			} else {
-
+				log.Printf("Permissions were set as [%v] after an invite was accepted", setPerms)
 				//we know the user now
 				conf.ToUser = userid
 
