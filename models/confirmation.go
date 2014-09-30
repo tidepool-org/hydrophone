@@ -34,6 +34,7 @@ const (
 	//Available Status's
 	StatusPending   Status = "pending"
 	StatusCompleted Status = "completed"
+	StatusCanceled  Status = "canceled"
 	StatusDeclined  Status = "declined"
 )
 
