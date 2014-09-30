@@ -303,8 +303,6 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			var permissions commonClients.Permissions
 			conf.DecodeContext(&permissions)
 
-			log.Printf("AcceptInvite perms to apply: [%v]", permissions)
-
 			if setPerms, err := a.gatekeeper.SetPermissions(userid, invitedby, permissions); err != nil {
 				log.Println("Error setting permissions in AcceptInvite ", err)
 				res.WriteHeader(http.StatusInternalServerError)
@@ -312,18 +310,14 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 				return
 			} else {
 
-				log.Printf("AcceptInvite perms applied: [%v]", setPerms)
-
 				//we know the user now
 				conf.ToUser = userid
 
 				conf.UpdateStatus(models.StatusCompleted)
 				if a.addOrUpdateConfirmation(conf, res) {
-
-					log.Printf("id: '%s' invitor: '%s'", userid, invitedby)
 					a.logMetric("acceptinvite", req)
 					res.WriteHeader(http.StatusOK)
-					res.Write([]byte("{" + STATUS_OK + "}"))
+					res.Write([]byte(STATUS_OK))
 					return
 				}
 			}
@@ -380,7 +374,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 
 		dismiss := &models.Confirmation{}
 		if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
-			log.Printf("Err: %v\n", err)
+			log.Printf("Error decoding invite to dismiss [%v]", err)
 			res.WriteHeader(http.StatusBadRequest)
 			res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
 			return
@@ -396,7 +390,6 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 			conf.UpdateStatus(models.StatusDeclined)
 
 			if a.addOrUpdateConfirmation(conf, res) {
-				//yay
 				a.logMetric("dismissinvite", req)
 				res.WriteHeader(http.StatusNoContent)
 				res.Write([]byte(STATUS_OK))
@@ -425,15 +418,11 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		log.Println("SendInvite Perms: ", ib.Permissions)
-
 		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, ib.Permissions)
 
 		invite.ToEmail = ib.Email
 
 		if a.addOrUpdateConfirmation(invite, res) {
-			log.Printf("invite: '%v' ", invite)
-
 			if a.createAndSendNotfication(invite, res) {
 				a.logMetric("sendinvite", req)
 				sendModelAsResWithStatus(res, invite, http.StatusOK)
