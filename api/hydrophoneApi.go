@@ -184,7 +184,7 @@ func (a *Api) findConfirmations(userId, creatorId string, status models.Status, 
 }
 
 //Generate a notification from the given confirmation,write the error if it fails
-func (a *Api) createAndSendNotfication(conf *models.Confirmation, res http.ResponseWriter) bool {
+func (a *Api) createAndSendNotfication(conf *models.Confirmation, subject string) bool {
 
 	emailTemplate := models.NewTemplate()
 	emailTemplate.Load(conf.Type, a.Config.Templates)
@@ -192,8 +192,6 @@ func (a *Api) createAndSendNotfication(conf *models.Confirmation, res http.Respo
 
 	if status, details := a.notifier.Send([]string{conf.ToEmail}, "TODO", emailTemplate.GenerateContent); status != http.StatusOK {
 		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
-		res.WriteHeader(http.StatusInternalServerError)
-		res.Write([]byte(STATUS_ERR_SENDING_EMAIL))
 		return false
 	}
 	return true
@@ -423,11 +421,12 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		invite.ToEmail = ib.Email
 
 		if a.addOrUpdateConfirmation(invite, res) {
-			if a.createAndSendNotfication(invite, res) {
-				a.logMetric("sendinvite", req)
-				sendModelAsResWithStatus(res, invite, http.StatusOK)
-				return
+			a.logMetric("invite created", req)
+			if a.createAndSendNotfication(invite, "Invite to join my careteam") {
+				a.logMetric("invite sent", req)
 			}
+			sendModelAsResWithStatus(res, invite, http.StatusOK)
+			return
 		}
 	}
 	return

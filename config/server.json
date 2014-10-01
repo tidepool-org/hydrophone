@@ -19,8 +19,8 @@
   },
   "sesEmail" : {
     "serverEndpoint":"https://email.us-west-2.amazonaws.com",
-    "fromAddress" : "AWS_VERIFIED_EMAIL_ADDRESS",
-    "accessKey": "AWS_ACCESS_KEY",
-    "secretKey": "AWS_SECRET_KEY"
+    "fromAddress" : "noreply@tidepool.org",
+    "accessKey": "AKIAJ6NEMHEY4CXV7LSQ",
+    "secretKey": "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"
   }
 }
