@@ -34,6 +34,11 @@ type (
 		Email       string                    `json:"email"`
 		Permissions commonClients.Permissions `json:"permissions"`
 	}
+	inviteContent struct {
+		CareteamName       string
+		ViewAndUploadPerms bool
+		ViewOnlyPerms      bool
+	}
 	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
 )
@@ -184,13 +189,13 @@ func (a *Api) findConfirmations(userId, creatorId string, status models.Status, 
 }
 
 //Generate a notification from the given confirmation,write the error if it fails
-func (a *Api) createAndSendNotfication(conf *models.Confirmation, subject string) bool {
+func (a *Api) createAndSendNotfication(conf *models.Confirmation, content interface{}, subject string) bool {
 
 	emailTemplate := models.NewTemplate()
 	emailTemplate.Load(conf.Type, a.Config.Templates)
-	emailTemplate.Parse(conf)
+	emailTemplate.Parse(content)
 
-	if status, details := a.notifier.Send([]string{conf.ToEmail}, "TODO", emailTemplate.GenerateContent); status != http.StatusOK {
+	if status, details := a.notifier.Send([]string{conf.ToEmail}, subject, emailTemplate.GenerateContent); status != http.StatusOK {
 		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
 		return false
 	}
@@ -422,7 +427,12 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 		if a.addOrUpdateConfirmation(invite, res) {
 			a.logMetric("invite created", req)
-			if a.createAndSendNotfication(invite, "Invite to join my careteam") {
+
+			viewOnly := ib.Permissions["upload"] == ""
+
+			inviteContent := &inviteContent{CareteamName: "Todo", ViewAndUploadPerms: viewOnly == false, ViewOnlyPerms: viewOnly}
+
+			if a.createAndSendNotfication(invite, inviteContent, "Invite to join my careteam") {
 				a.logMetric("invite sent", req)
 			}
 			sendModelAsResWithStatus(res, invite, http.StatusOK)

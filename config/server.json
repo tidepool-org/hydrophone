@@ -13,14 +13,14 @@
     "serverSecret": "This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy",
     "emailTemplates" : {
       "passwordReset" : "{{define \"pwreset_test\"}} A test pw reset email  {{ .ToUser }} {{ .Key }} {{end}} {{template \"pwreset_test\" .}}",
-      "careteamInvite" : "{{define \"invite_test\"}} A test careteam invite email  {{ .ToUser }} {{ .Key }} {{end}} {{template \"invite_test\" .}}",
+      "careteamInvite" : "{{define \"invite\"}} <html><head><title>Blip Careteam Invitation</title><meta content=\"text/html; charset=UTF-8\" http-equiv=\"content-type\"></head><body><p>How special! You have been invited to view {{ .CareteamName }}&rsquo;s diabetes data. By confirming, you&rsquo;ll be able to view their data {{if .ViewOnlyPerms}}and comment on what you see{{end}} {{if .ViewAndUploadPerms}}, comment on what you see, and upload data on their behalf{{end}}.</p><p><a href=\"https://blip-devel.tidepool.io/#/login\">View invitation</a></p></body></html> {{end}} {{template \"invite\" .}}",
       "confirmation" : "{{define \"confirm_test\"}} A test confirmation email  {{ .ToUser }} {{ .Key }} {{end}} {{template \"confirm_test\" .}}"
     }
   },
   "sesEmail" : {
     "serverEndpoint":"https://email.us-west-2.amazonaws.com",
-    "fromAddress" : "noreply@tidepool.org",
-    "accessKey": "AKIAJ6NEMHEY4CXV7LSQ",
-    "secretKey": "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"
+    "fromAddress" : "AWS_AUTHENTICATED_EMAIL",
+    "accessKey": "AWS_KEY",
+    "secretKey": "AWS_SECERET"
   }
 }
