@@ -172,6 +172,16 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 	}
 }
 
+//Do we already have a confirmation for address?
+func (a *Api) hasExistingConfirmation(email string, status models.Status) bool {
+	if found, err := a.Store.FindConfirmations(email, "", status); err != nil {
+		log.Println("Error looking for existing confirmation ", err)
+	} else if found != nil {
+		return true
+	}
+	return false
+}
+
 //Find this confirmation, write error if fails or write no-content if it doesn't exist
 func (a *Api) findConfirmations(userId, creatorId string, status models.Status, res http.ResponseWriter) []*models.Confirmation {
 	if found, err := a.Store.FindConfirmations(userId, creatorId, status); err != nil {
@@ -424,6 +434,12 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, ib.Permissions)
 
 		invite.ToEmail = ib.Email
+
+		if a.hasExistingConfirmation(invite.ToEmail, models.StatusPending) {
+			log.Printf("There is already an existing invite [%v]", invite)
+			res.WriteHeader(http.StatusConflict)
+			return
+		}
 
 		if a.addOrUpdateConfirmation(invite, res) {
 			a.logMetric("invite created", req)
