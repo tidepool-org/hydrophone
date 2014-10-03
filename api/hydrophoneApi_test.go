@@ -21,6 +21,7 @@ import (
 
 const (
 	MAKE_IT_FAIL   = true
+	RETURN_NOTHING = true
 	FAKE_TOKEN     = "a.fake.token.to.use.in.tests"
 	TOKEN_FOR_UID1 = "a.fake.token.for.uid.1"
 	TOKEN_FOR_UID2 = "a.fake.token.for.uid.2"
@@ -46,15 +47,11 @@ var (
 	mockGatekeeper = commonClients.NewGatekeeperMock(nil, nil)
 	mockMetrics    = highwater.NewMock()
 	/*
-	 * expected path
+	 * stores
 	 */
-	mockStore  = clients.NewMockStoreClient(false, false)
-	hydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics)
-	/*
-	 * failure path
-	 */
-	mockStoreFails  = clients.NewMockStoreClient(false, MAKE_IT_FAIL)
-	hydrophoneFails = InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics)
+	mockStore      = clients.NewMockStoreClient(false, false)
+	mockStoreEmpty = clients.NewMockStoreClient(RETURN_NOTHING, false)
+	mockStoreFails = clients.NewMockStoreClient(false, MAKE_IT_FAIL)
 )
 
 func TestGetStatus_StatusOk(t *testing.T) {
@@ -62,6 +59,7 @@ func TestGetStatus_StatusOk(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
+	hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics)
 	hydrophone.SetHandlers("", rtr)
 
 	hydrophone.GetStatus(response, request)
@@ -77,6 +75,7 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
+	hydrophoneFails := InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics)
 	hydrophoneFails.SetHandlers("", rtr)
 
 	hydrophoneFails.GetStatus(response, request)
@@ -111,25 +110,16 @@ func (i *jo) deepCompare(j *jo) string {
 }
 
 func TestAddressResponds(t *testing.T) {
-	hydrophone.SetHandlers("", rtr)
-
-	// func main() {
-	// 	fmt.Println("Hello, playground")
-	// 	b := &bytes.Buffer{}
-	// 	j := jdict{ "words": jarr{"this is a test", "as is this"} }
-	// 	fmt.Println(j)
-	// 	json.NewEncoder(b).Encode(j)
-	// 	fmt.Printf("%T: %v", b, b)
-	// }
 
 	type toTest struct {
-		skip     bool
-		method   string
-		url      string
-		body     jo
-		token    string
-		respCode int
-		response jo
+		skip       bool
+		returnNone bool
+		method     string
+		url        string
+		body       jo
+		token      string
+		respCode   int
+		response   jo
 	}
 
 	tests := []toTest{
@@ -162,13 +152,28 @@ func TestAddressResponds(t *testing.T) {
 			},
 		},
 		{
-			// but if you have them all, it should work
+			// if dup invite
 			method:   "POST",
 			url:      "/send/invite/UID",
 			token:    TOKEN_FOR_UID1,
-			respCode: 200,
+			respCode: 409,
 			body: jo{
 				"email": "personToInvite@email.com",
+				"permissions": jo{
+					"view": jo{},
+					"note": jo{},
+				},
+			},
+		},
+		{
+			// but if you have them all, it should work
+			returnNone: true,
+			method:     "POST",
+			url:        "/send/invite/UID",
+			token:      TOKEN_FOR_UID1,
+			respCode:   200,
+			body: jo{
+				"email": "otherToInvite@email.com",
 				"permissions": jo{
 					"view": jo{},
 					"note": jo{},
@@ -341,6 +346,16 @@ func TestAddressResponds(t *testing.T) {
 		if test.skip {
 			continue
 		}
+		//fresh each time
+		var testRtr = mux.NewRouter()
+
+		if test.returnNone {
+			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics)
+			hydrophoneFindsNothing.SetHandlers("", testRtr)
+		} else {
+			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics)
+			hydrophone.SetHandlers("", testRtr)
+		}
 
 		var body = &bytes.Buffer{}
 		// build the body only if there is one defined in the test
@@ -352,7 +367,7 @@ func TestAddressResponds(t *testing.T) {
 			request.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
 		}
 		response := httptest.NewRecorder()
-		rtr.ServeHTTP(response, request)
+		testRtr.ServeHTTP(response, request)
 
 		if response.Code != test.respCode {
 			t.Fatalf("Test %d url: '%s'\nNon-expected status code %d (expected %d):\n\tbody: %v",
