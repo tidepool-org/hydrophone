@@ -10,15 +10,15 @@ import (
 
 type (
 	Confirmation struct {
-		Key       string          `json:"key" 		bson:"_id"`
-		Type      Type            `json:"type" 		bson:"type"`
-		Status    Status          `json:"status" 	bson:"status"`
-		ToEmail   string          `json:"email" 	bson:"email,omitempty"`
-		ToUser    string          `json:"userId" 	bson:"userId"`
+		Key       string          `json:"key" bson:"_id"`
+		Type      Type            `json:"type" bson:"type"`
+		Status    Status          `json:"status" bson:"status"`
+		ToEmail   string          `json:"email" bson:"email"`
+		ToUser    string          `json:"userId" bson:"userId"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
-		Context   json.RawMessage `json:"context" 	bson:"context,omitempty"`
-		Created   time.Time       `json:"created" 	bson:"created"`
-		Modified  time.Time       `json:"modified" 	bson:"modified"`
+		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
+		Created   time.Time       `json:"created" bson:"created"`
+		Modified  time.Time       `json:"modified" bson:"modified"`
 	}
 
 	//Enum type's
