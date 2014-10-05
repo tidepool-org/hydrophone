@@ -38,7 +38,7 @@ func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string
 	data.Add("Source", c.Config.From)
 	data.Add("Destination.ToAddresses.member.1", strings.Join(to, ", "))
 	data.Add("Message.Subject.Data", subject)
-	data.Add("Message.Body.Text.Data", msg)
+	data.Add("Message.Body.Html.Data", msg)
 	data.Add("AWSAccessKeyId", c.Config.AccessKey)
 
 	return c.sesPost(data)
