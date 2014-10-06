@@ -205,7 +205,7 @@ func (a *Api) createAndSendNotfication(conf *models.Confirmation, content interf
 	emailTemplate.Load(conf.Type, a.Config.Templates)
 	emailTemplate.Parse(content)
 
-	if status, details := a.notifier.Send([]string{conf.ToEmail}, subject, emailTemplate.GenerateContent); status != http.StatusOK {
+	if status, details := a.notifier.Send([]string{conf.Email}, subject, emailTemplate.GenerateContent); status != http.StatusOK {
 		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
 		return false
 	}
@@ -289,10 +289,10 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 
 	if a.checkToken(res, req) {
 
-		userid := vars["userid"]
-		invitedby := vars["invitedby"]
+		userId := vars["userid"]
+		invitorId := vars["invitedby"]
 
-		if userid == "" || invitedby == "" {
+		if userId == "" || invitorId == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -316,7 +316,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			var permissions commonClients.Permissions
 			conf.DecodeContext(&permissions)
 
-			if setPerms, err := a.gatekeeper.SetPermissions(userid, invitedby, permissions); err != nil {
+			if setPerms, err := a.gatekeeper.SetPermissions(userId, invitorId, permissions); err != nil {
 				log.Println("Error setting permissions in AcceptInvite ", err)
 				res.WriteHeader(http.StatusInternalServerError)
 				res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
@@ -324,7 +324,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			} else {
 				log.Printf("Permissions were set as [%v] after an invite was accepted", setPerms)
 				//we know the user now
-				conf.ToUser = userid
+				conf.UserId = userId
 
 				conf.UpdateStatus(models.StatusCompleted)
 				if a.addOrUpdateConfirmation(conf, res) {
@@ -342,17 +342,17 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
 
-		invitedby := vars["userid"]
-		inviteEmail := vars["invited_address"]
+		invitorId := vars["userid"]
+		email := vars["invited_address"]
 
-		if invitedby == "" || inviteEmail == "" {
+		if invitorId == "" || email == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		invite := &models.Confirmation{
-			ToEmail:   inviteEmail,
-			CreatorId: invitedby,
+			Email:     email,
+			CreatorId: invitorId,
 			Type:      models.TypeCareteamInvite,
 		}
 
@@ -377,10 +377,10 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
 
-		userid := vars["userid"]
-		invitedby := vars["invitedby"]
+		userId := vars["userid"]
+		invitorId := vars["invitedby"]
 
-		if userid == "" || invitedby == "" {
+		if userId == "" || invitorId == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -433,9 +433,9 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, ib.Permissions)
 
-		invite.ToEmail = ib.Email
+		invite.Email = ib.Email
 
-		if a.hasExistingConfirmation(invite.ToEmail, models.StatusPending) {
+		if a.hasExistingConfirmation(invite.Email, models.StatusPending) {
 			log.Printf("There is already an existing invite [%v]", invite)
 			res.WriteHeader(http.StatusConflict)
 			return

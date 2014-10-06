@@ -63,7 +63,7 @@ func (d *MockStoreClient) FindConfirmations(userEmail, creatorId string, status 
 
 	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
 
-	conf.ToEmail = userEmail
+	conf.Email = userEmail
 
 	conf.UpdateStatus(status)
 	if creatorId != "" {

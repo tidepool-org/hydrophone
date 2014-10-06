@@ -13,8 +13,8 @@ type (
 		Key       string          `json:"key" bson:"_id"`
 		Type      Type            `json:"type" bson:"type"`
 		Status    Status          `json:"status" bson:"status"`
-		ToEmail   string          `json:"email" bson:"email"`
-		ToUser    string          `json:"userId" bson:"userId"`
+		Email     string          `json:"email" bson:"email"`
+		UserId    string          `json:"userId" bson:"userId"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
 		Created   time.Time       `json:"created" bson:"created"`

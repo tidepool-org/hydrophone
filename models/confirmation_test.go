@@ -37,8 +37,8 @@ func Test_NewConfirmation(t *testing.T) {
 		t.Fatalf("The type should be [%s] but is [%s]", TypePasswordReset, confirmation.Type)
 	}
 
-	if confirmation.ToUser != "" {
-		t.Fatalf("The user should not be set but is [%s]", confirmation.ToUser)
+	if confirmation.UserId != "" {
+		t.Fatalf("The user should not be set but is [%s]", confirmation.UserId)
 	}
 
 	if confirmation.CreatorId != USERID {

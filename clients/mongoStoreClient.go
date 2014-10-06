@@ -48,7 +48,7 @@ func (d MongoStoreClient) Ping() error {
 func (d MongoStoreClient) UpsertConfirmation(confirmation *models.Confirmation) error {
 
 	// if the user already exists we update otherwise we add
-	if _, err := d.confirmationsC.Upsert(bson.M{"key": confirmation.Key}, confirmation); err != nil {
+	if _, err := d.confirmationsC.Upsert(bson.M{"_id": confirmation.Key}, confirmation); err != nil {
 		return err
 	}
 	return nil
@@ -58,11 +58,11 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 
 	var query bson.M = bson.M{}
 
-	if confirmation.ToEmail != "" {
-		query["toemail"] = confirmation.ToEmail
+	if confirmation.Email != "" {
+		query["email"] = confirmation.Email
 	}
 	if confirmation.Key != "" {
-		query["key"] = confirmation.Key
+		query["_id"] = confirmation.Key
 	}
 	if string(confirmation.Status) != "" {
 		query["status"] = confirmation.Status
@@ -73,8 +73,8 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 	if confirmation.CreatorId != "" {
 		query["creatorId"] = confirmation.CreatorId
 	}
-	if confirmation.ToUser != "" {
-		query["touser"] = confirmation.ToUser
+	if confirmation.UserId != "" {
+		query["userId"] = confirmation.UserId
 	}
 
 	if err = d.confirmationsC.Find(query).One(&result); err != nil {
@@ -87,7 +87,7 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 func (d MongoStoreClient) FindConfirmationByKey(key string) (result *models.Confirmation, err error) {
 
 	if key != "" {
-		if err = d.confirmationsC.Find(bson.M{"key": key}).One(&result); err != nil {
+		if err = d.confirmationsC.Find(bson.M{"_id": key}).One(&result); err != nil {
 			return result, err
 		}
 	}
@@ -100,7 +100,7 @@ func (d MongoStoreClient) FindConfirmations(userEmail, creatorId string, status 
 	var query bson.M
 
 	if userEmail != "" {
-		query = bson.M{"toemail": userEmail, "status": status}
+		query = bson.M{"email": userEmail, "status": status}
 	} else if creatorId != "" {
 		query = bson.M{"creatorId": creatorId, "status": status}
 	}
@@ -112,7 +112,7 @@ func (d MongoStoreClient) FindConfirmations(userEmail, creatorId string, status 
 }
 
 func (d MongoStoreClient) RemoveConfirmation(confirmation *models.Confirmation) error {
-	if err := d.confirmationsC.Remove(bson.M{"key": confirmation.Key}); err != nil {
+	if err := d.confirmationsC.Remove(bson.M{"_id": confirmation.Key}); err != nil {
 		return err
 	}
 	return nil
