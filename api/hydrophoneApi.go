@@ -258,6 +258,32 @@ func (a *Api) findExistingUser(email, token string) *shoreline.UserData {
 	}
 }
 
+func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
+
+	//Checks do they have an existing invite or are they already a team member
+	if a.hasExistingConfirmation(inviteeEmail, models.StatusPending) {
+		log.Println("There is already an existing invite")
+		res.WriteHeader(http.StatusConflict)
+		return true, nil
+	}
+
+	//Are they an existing user and already in the group?
+	invitedUsr := a.findExistingUser(inviteeEmail, token)
+
+	if invitedUsr != nil && invitedUsr.UserID != "" {
+		grp := &group{}
+		if err := a.seagull.GetCollection(invitorId, "groups", token, &grp); err != nil {
+			log.Printf("Error getting group collection for user [%v] ", err)
+		}
+		if grp != nil {
+			log.Printf("groups for invitor [%v] ", grp)
+			//check if the user is already in the group
+		}
+		return false, invitedUsr
+	}
+	return false, nil
+}
+
 func sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(statusCode)
@@ -270,15 +296,18 @@ func sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, status
 	return
 }
 
+//Get list of received invitations for logged in user.
+//These are invitations that have been sent to this user but not yet acted upon.
 func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
-		userid := vars["userid"]
+		inviteeId := vars["userid"]
 
-		if userid == "" {
+		if inviteeId == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if invites := a.findConfirmations(userid, "", models.StatusPending, res); invites != nil {
+		//find all oustanding invites were this user is the invitee
+		if invites := a.findConfirmations(inviteeId, "", models.StatusPending, res); invites != nil {
 			a.logMetric("get received invites", req)
 			sendModelAsResWithStatus(res, invites, http.StatusOK)
 			return
@@ -287,10 +316,15 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 	return
 }
 
+//Get the still-pending invitations for a group you own or are an admin of.
+//These are the invitations you have sent that have not been accepted.
+//There is no way to tell if an invitation has been ignored. Requires admin privileges.
 func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
 
 		userEmail, _ := url.QueryUnescape(vars["useremail"])
+
+		//invitorId, _ := url.QueryUnescape(vars["userid"])
 
 		if userEmail == "" {
 			res.WriteHeader(http.StatusBadRequest)
@@ -309,10 +343,10 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 
 	if a.checkToken(res, req) {
 
-		userId := vars["userid"]
+		inviteeId := vars["userid"]
 		invitorId := vars["invitedby"]
 
-		if userId == "" || invitorId == "" {
+		if inviteeId == "" || invitorId == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -336,7 +370,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			var permissions commonClients.Permissions
 			conf.DecodeContext(&permissions)
 
-			if setPerms, err := a.gatekeeper.SetPermissions(userId, invitorId, permissions); err != nil {
+			if setPerms, err := a.gatekeeper.SetPermissions(inviteeId, invitorId, permissions); err != nil {
 				log.Println("Error setting permissions in AcceptInvite ", err)
 				res.WriteHeader(http.StatusInternalServerError)
 				res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
@@ -344,7 +378,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			} else {
 				log.Printf("Permissions were set as [%v] after an invite was accepted", setPerms)
 				//we know the user now
-				conf.UserId = userId
+				conf.UserId = inviteeId
 
 				conf.UpdateStatus(models.StatusCompleted)
 				if a.addOrUpdateConfirmation(conf, res) {
@@ -397,10 +431,10 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
 
-		userId := vars["userid"]
+		inviteeId := vars["userid"]
 		invitorId := vars["invitedby"]
 
-		if userId == "" || invitorId == "" {
+		if inviteeId == "" || invitorId == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -433,6 +467,9 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 	return
 }
 
+//Send a invite to join my team
+//Return duplicate if the invited user already has a pending invite
+//Return duplicate if the invited user is already part of my team
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
 
@@ -451,50 +488,44 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		//Checks do they have an existing invite or are they already a team member
-		if a.hasExistingConfirmation(ib.Email, models.StatusPending) {
-			log.Println("There is already an existing invite")
-			res.WriteHeader(http.StatusConflict)
+		if existingInvite, invitedUsr := a.checkForDuplicateInvite(ib.Email, invitorId, req.Header.Get(TP_SESSION_TOKEN), res); existingInvite == true {
+			log.Println("The invited user already has or had an invite")
 			return
-		}
-		//Are they an existing user and already in the group?
-		invitedUsr := a.findExistingUser(ib.Email, req.Header.Get(TP_SESSION_TOKEN))
+		} else {
+			//None exist so lets create the invite
+			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, invitorId, ib.Permissions)
 
-		if invitedUsr != nil && invitedUsr.UserID != "" {
-			//TODO: get group
-			grp := &group{}
-			if err := a.seagull.GetCollection(invitorId, "groups", req.Header.Get(TP_SESSION_TOKEN), &grp); err != nil {
-				log.Printf("Error getting group collection for user [%v] ", err)
+			invite.Email = ib.Email
+			if invitedUsr != nil {
+				invite.UserId = invitedUsr.UserID
 			}
-			log.Printf("found [%v]", grp)
-		}
 
-		//Create the invite
-		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, invitorId, ib.Permissions)
+			if a.addOrUpdateConfirmation(invite, res) {
+				a.logMetric("invite created", req)
 
-		invite.Email = ib.Email
-		invite.UserId = invitedUsr.UserID
+				viewOnly := ib.Permissions["upload"] == ""
 
-		if a.addOrUpdateConfirmation(invite, res) {
-			a.logMetric("invite created", req)
+				up := &profile{}
+				//TODO: get profile
+				if err := a.seagull.GetCollection(invite.CreatorId, "profile", req.Header.Get(TP_SESSION_TOKEN), &up); err != nil {
+					log.Printf("Error getting the creators profile [%v] ", err)
+				} else {
+					inviteContent := &inviteContent{
+						CareteamName:       up.FullName,
+						ViewAndUploadPerms: viewOnly == false,
+						ViewOnlyPerms:      viewOnly,
+					}
 
-			viewOnly := ib.Permissions["upload"] == ""
-
-			up := &profile{}
-			//TODO: get profile
-			if err := a.seagull.GetCollection(invite.CreatorId, "profile", req.Header.Get(TP_SESSION_TOKEN), &up); err != nil {
-				log.Printf("Error getting the creators profile [%v] ", err)
-			} else {
-				inviteContent := &inviteContent{CareteamName: up.FullName, ViewAndUploadPerms: viewOnly == false, ViewOnlyPerms: viewOnly}
-
-				if a.createAndSendNotfication(invite, inviteContent, "Invite to join my careteam") {
-					a.logMetric("invite sent", req)
+					if a.createAndSendNotfication(invite, inviteContent, "Invite to join my careteam") {
+						a.logMetric("invite sent", req)
+					}
 				}
-			}
 
-			sendModelAsResWithStatus(res, invite, http.StatusOK)
-			return
+				sendModelAsResWithStatus(res, invite, http.StatusOK)
+				return
+			}
 		}
+
 	}
 	return
 }
