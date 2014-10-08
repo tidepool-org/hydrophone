@@ -22,6 +22,7 @@ type (
 		templates  models.TemplateConfig
 		sl         shoreline.Client
 		gatekeeper commonClients.Gatekeeper
+		seagull    commonClients.Seagull
 		metrics    highwater.Client
 		Config     Config
 	}
@@ -38,6 +39,12 @@ type (
 		CareteamName       string
 		ViewAndUploadPerms bool
 		ViewOnlyPerms      bool
+	}
+	profile struct {
+		FullName string
+	}
+	group struct {
+		Members []string
 	}
 	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
@@ -64,7 +71,9 @@ func InitApi(
 	ntf clients.Notifier,
 	sl shoreline.Client,
 	gatekeeper commonClients.Gatekeeper,
-	metrics highwater.Client) *Api {
+	metrics highwater.Client,
+	seagull commonClients.Seagull,
+) *Api {
 
 	return &Api{
 		Store:      store,
@@ -73,6 +82,7 @@ func InitApi(
 		sl:         sl,
 		gatekeeper: gatekeeper,
 		metrics:    metrics,
+		seagull:    seagull,
 	}
 }
 
@@ -236,6 +246,16 @@ func (a *Api) logMetric(name string, req *http.Request) {
 	emptyParams := make(map[string]string)
 	a.metrics.PostThisUser(name, token, emptyParams)
 	return
+}
+
+//find existing user
+func (a *Api) findExistingUser(email, token string) *shoreline.UserData {
+	if usr, err := a.sl.GetUser(email, token); err != nil {
+		log.Printf("Error trying to get existing users details [%v]", err)
+		return nil
+	} else {
+		return usr
+	}
 }
 
 func sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
@@ -416,7 +436,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
 
-		userid := vars["userid"]
+		invitorId := vars["userid"]
 
 		defer req.Body.Close()
 		var ib = &InviteBody{}
@@ -431,26 +451,47 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, userid, ib.Permissions)
-
-		invite.Email = ib.Email
-
-		if a.hasExistingConfirmation(invite.Email, models.StatusPending) {
-			log.Printf("There is already an existing invite [%v]", invite)
+		//Checks do they have an existing invite or are they already a team member
+		if a.hasExistingConfirmation(ib.Email, models.StatusPending) {
+			log.Println("There is already an existing invite")
 			res.WriteHeader(http.StatusConflict)
 			return
 		}
+		//Are they an existing user and already in the group?
+		invitedUsr := a.findExistingUser(ib.Email, req.Header.Get(TP_SESSION_TOKEN))
+
+		if invitedUsr != nil && invitedUsr.UserID != "" {
+			//TODO: get group
+			grp := &group{}
+			if err := a.seagull.GetCollection(invitorId, "groups", req.Header.Get(TP_SESSION_TOKEN), &grp); err != nil {
+				log.Printf("Error getting group collection for user [%v] ", err)
+			}
+			log.Printf("found [%v]", grp)
+		}
+
+		//Create the invite
+		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, invitorId, ib.Permissions)
+
+		invite.Email = ib.Email
+		invite.UserId = invitedUsr.UserID
 
 		if a.addOrUpdateConfirmation(invite, res) {
 			a.logMetric("invite created", req)
 
 			viewOnly := ib.Permissions["upload"] == ""
 
-			inviteContent := &inviteContent{CareteamName: "Todo", ViewAndUploadPerms: viewOnly == false, ViewOnlyPerms: viewOnly}
+			up := &profile{}
+			//TODO: get profile
+			if err := a.seagull.GetCollection(invite.CreatorId, "profile", req.Header.Get(TP_SESSION_TOKEN), &up); err != nil {
+				log.Printf("Error getting the creators profile [%v] ", err)
+			} else {
+				inviteContent := &inviteContent{CareteamName: up.FullName, ViewAndUploadPerms: viewOnly == false, ViewOnlyPerms: viewOnly}
 
-			if a.createAndSendNotfication(invite, inviteContent, "Invite to join my careteam") {
-				a.logMetric("invite sent", req)
+				if a.createAndSendNotfication(invite, inviteContent, "Invite to join my careteam") {
+					a.logMetric("invite sent", req)
+				}
 			}
+
 			sendModelAsResWithStatus(res, invite, http.StatusOK)
 			return
 		}

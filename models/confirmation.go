@@ -12,25 +12,21 @@ type (
 	Confirmation struct {
 		Key       string          `json:"key" bson:"_id"`
 		Type      Type            `json:"type" bson:"type"`
-		Status    Status          `json:"status" bson:"status"`
 		Email     string          `json:"email" bson:"email"`
 		UserId    string          `json:"userId" bson:"userId"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
 		Created   time.Time       `json:"created" bson:"created"`
-		Modified  time.Time       `json:"modified" bson:"modified"`
+		//don't reveal the status and modified data from consumers
+		Status   Status    `json:"-" bson:"status"`
+		Modified time.Time `json:"-" bson:"modified"`
 	}
 
 	//Enum type's
-	Type   string
 	Status string
 )
 
 const (
-	//Available Type's
-	TypePasswordReset  Type = "password_reset"
-	TypeCareteamInvite Type = "careteam_invitation"
-	TypeConfirmation   Type = "email_confirmation"
 	//Available Status's
 	StatusPending   Status = "pending"
 	StatusCompleted Status = "completed"

@@ -80,6 +80,11 @@ func main() {
 		WithConfig(&config.HighwaterConfig.HighwaterClientConfig).
 		Build()
 
+	seagull := clients.NewSeagullClientBuilder().
+		WithHostGetter(config.SeagullConfig.ToHostGetter(hakkenClient)).
+		WithHttpClient(httpClient).
+		Build()
+
 	/*
 	 * hydrophone setup
 	 */
@@ -87,7 +92,7 @@ func main() {
 	mail := sc.NewSesNotifier(&config.Mail)
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, highwater)
+	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, highwater, seagull)
 	api.SetHandlers("", rtr)
 
 	/*
