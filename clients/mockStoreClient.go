@@ -53,7 +53,7 @@ func (d *MockStoreClient) FindConfirmationByKey(key string) (result *models.Conf
 	return conf, nil
 }
 
-func (d *MockStoreClient) FindConfirmations(userEmail, creatorId string, status models.Status) (results []*models.Confirmation, err error) {
+func (d *MockStoreClient) ConfirmationsToEmail(userEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
 	if d.doBad {
 		return nil, errors.New("FindConfirmation failure")
 	}
@@ -62,13 +62,37 @@ func (d *MockStoreClient) FindConfirmations(userEmail, creatorId string, status 
 	}
 
 	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
-
 	conf.Email = userEmail
+	conf.UpdateStatus(statuses[0])
 
-	conf.UpdateStatus(status)
-	if creatorId != "" {
-		conf.CreatorId = creatorId
+	return []*models.Confirmation{conf}, nil
+}
+func (d *MockStoreClient) ConfirmationsToUser(userId string, statuses ...models.Status) (results []*models.Confirmation, err error) {
+	if d.doBad {
+		return nil, errors.New("FindConfirmation failure")
 	}
+	if d.returnNone {
+		return nil, nil
+	}
+
+	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
+	conf.UserId = userId
+	conf.UpdateStatus(statuses[0])
+
+	return []*models.Confirmation{conf}, nil
+
+}
+func (d *MockStoreClient) ConfirmationsFromUser(creatorId string, statuses ...models.Status) (results []*models.Confirmation, err error) {
+
+	if d.doBad {
+		return nil, errors.New("FindConfirmation failure")
+	}
+	if d.returnNone {
+		return nil, nil
+	}
+
+	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, creatorId)
+	conf.UpdateStatus(statuses[0])
 
 	return []*models.Confirmation{conf}, nil
 

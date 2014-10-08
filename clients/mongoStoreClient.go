@@ -95,16 +95,39 @@ func (d MongoStoreClient) FindConfirmationByKey(key string) (result *models.Conf
 	return result, nil
 }
 
-func (d MongoStoreClient) FindConfirmations(userEmail, creatorId string, status models.Status) (results []*models.Confirmation, err error) {
+func (d MongoStoreClient) FindConfirmations(userEmail, creatorId string, statuses ...models.Status) (results []*models.Confirmation, err error) {
 
 	var query bson.M
 
 	if userEmail != "" {
-		query = bson.M{"email": userEmail, "status": status}
+		query = bson.M{"userId": userEmail, "status": bson.M{"$in": statuses}}
+		//query = bson.M{"email": userEmail, "status": bson.M{"$in": statuses}}
 	} else if creatorId != "" {
-		query = bson.M{"creatorId": creatorId, "status": status}
+		query = bson.M{"creatorId": creatorId, "status": bson.M{"$in": statuses}}
 	}
 
+	if err = d.confirmationsC.Find(query).All(&results); err != nil {
+		return results, err
+	}
+	return results, nil
+}
+
+func (d MongoStoreClient) ConfirmationsToEmail(userEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
+	query := bson.M{"email": userEmail, "status": bson.M{"$in": statuses}}
+	return d.queryConfirmations(query)
+}
+
+func (d MongoStoreClient) ConfirmationsToUser(userId string, statuses ...models.Status) (results []*models.Confirmation, err error) {
+	query := bson.M{"userId": userId, "status": bson.M{"$in": statuses}}
+	return d.queryConfirmations(query)
+}
+
+func (d MongoStoreClient) ConfirmationsFromUser(creatorId string, statuses ...models.Status) (results []*models.Confirmation, err error) {
+	query := bson.M{"creatorId": creatorId, "status": bson.M{"$in": statuses}}
+	return d.queryConfirmations(query)
+}
+
+func (d MongoStoreClient) queryConfirmations(query interface{}) (results []*models.Confirmation, err error) {
 	if err = d.confirmationsC.Find(query).All(&results); err != nil {
 		return results, err
 	}
