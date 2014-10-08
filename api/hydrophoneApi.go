@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"net/url"
 
 	"./../clients"
 	"./../models"
@@ -114,7 +113,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:useremail
 	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("GET")
-	rtr.Handle("/invite/{useremail}", varsHandler(a.GetSentInvitations)).Methods("GET")
+	rtr.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
 	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
@@ -183,8 +182,8 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 }
 
 //Do we already have a confirmation for address?
-func (a *Api) hasExistingConfirmation(email string, status models.Status) bool {
-	if found, err := a.Store.FindConfirmations(email, "", status); err != nil {
+func (a *Api) hasExistingConfirmation(email string, statuses ...models.Status) bool {
+	if found, err := a.Store.ConfirmationsToEmail(email, statuses...); err != nil {
 		log.Println("Error looking for existing confirmation ", err)
 	} else if len(found) > 0 {
 		return true
@@ -193,8 +192,18 @@ func (a *Api) hasExistingConfirmation(email string, status models.Status) bool {
 }
 
 //Find this confirmation, write error if fails or write no-content if it doesn't exist
-func (a *Api) findConfirmations(userId, creatorId string, status models.Status, res http.ResponseWriter) []*models.Confirmation {
-	if found, err := a.Store.FindConfirmations(userId, creatorId, status); err != nil {
+func (a *Api) findConfirmations(to, from string, res http.ResponseWriter, statuses ...models.Status) []*models.Confirmation {
+
+	var found []*models.Confirmation
+	var err error
+
+	if to != "" {
+		found, err = a.Store.ConfirmationsToUser(to, statuses...)
+	} else if from != "" {
+		found, err = a.Store.ConfirmationsFromUser(from, statuses...)
+	}
+
+	if err != nil {
 		log.Println("Error finding confirmations ", err)
 		res.WriteHeader(http.StatusInternalServerError)
 		res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
@@ -307,7 +316,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			return
 		}
 		//find all oustanding invites were this user is the invitee
-		if invites := a.findConfirmations(inviteeId, "", models.StatusPending, res); invites != nil {
+		if invites := a.findConfirmations(inviteeId, "", res, models.StatusPending); invites != nil {
 			a.logMetric("get received invites", req)
 			sendModelAsResWithStatus(res, invites, http.StatusOK)
 			return
@@ -318,19 +327,18 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 
 //Get the still-pending invitations for a group you own or are an admin of.
 //These are the invitations you have sent that have not been accepted.
-//There is no way to tell if an invitation has been ignored. Requires admin privileges.
+//There is no way to tell if an invitation has been ignored.
 func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
 
-		userEmail, _ := url.QueryUnescape(vars["useremail"])
+		invitorId := vars["userid"]
 
-		//invitorId, _ := url.QueryUnescape(vars["userid"])
-
-		if userEmail == "" {
+		if invitorId == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if invitations := a.findConfirmations("", userEmail, models.StatusPending, res); invitations != nil {
+		//find all invites I have sent that are pending or declined
+		if invitations := a.findConfirmations("", invitorId, res, models.StatusPending); invitations != nil {
 			a.logMetric("get sent invites", req)
 			sendModelAsResWithStatus(res, invitations, http.StatusOK)
 			return

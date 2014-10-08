@@ -184,7 +184,7 @@ func TestAddressResponds(t *testing.T) {
 		{
 			// we should get a list of our outstanding invitations
 			method:   "GET",
-			url:      "/invitations/me@myemail.com",
+			url:      "/invitations/UID",
 			token:    TOKEN_FOR_UID1,
 			respCode: http.StatusOK,
 			response: jo{
