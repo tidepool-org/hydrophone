@@ -13,17 +13,18 @@ type (
 		Key       string          `json:"key" bson:"_id"`
 		Type      Type            `json:"type" bson:"type"`
 		Email     string          `json:"email" bson:"email"`
-		UserId    string          `json:"userId" bson:"userId"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
 		Created   time.Time       `json:"created" bson:"created"`
 		//don't reveal the status and modified data from consumers
+		UserId   string    `json:"-" bson:"userId"`
 		Status   Status    `json:"-" bson:"status"`
 		Modified time.Time `json:"-" bson:"modified"`
 	}
 
 	//Enum type's
 	Status string
+	Type   string
 )
 
 const (
@@ -32,6 +33,10 @@ const (
 	StatusCompleted Status = "completed"
 	StatusCanceled  Status = "canceled"
 	StatusDeclined  Status = "declined"
+	//Available Type's
+	TypePasswordReset  Type = "password_reset"
+	TypeCareteamInvite Type = "careteam_invitation"
+	TypeConfirmation   Type = "email_confirmation"
 )
 
 //New confirmation with just the basics

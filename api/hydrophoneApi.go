@@ -338,7 +338,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 		//find all invites I have sent that are pending or declined
-		if invitations := a.findConfirmations("", invitorId, res, models.StatusPending); invitations != nil {
+		if invitations := a.findConfirmations("", invitorId, res, models.StatusPending, models.StatusDeclined); invitations != nil {
 			a.logMetric("get sent invites", req)
 			sendModelAsResWithStatus(res, invitations, http.StatusOK)
 			return
