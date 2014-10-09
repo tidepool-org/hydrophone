@@ -185,7 +185,7 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 
 //Do we already have a confirmation for address?
 func (a *Api) hasExistingConfirmation(email string, statuses ...models.Status) bool {
-	if found, err := a.Store.ConfirmationsToEmail(email, statuses...); err != nil {
+	if found, err := a.Store.ConfirmationsToUser("", email, statuses...); err != nil {
 		log.Println("Error looking for existing confirmation ", err)
 	} else if len(found) > 0 {
 		return true
@@ -194,15 +194,15 @@ func (a *Api) hasExistingConfirmation(email string, statuses ...models.Status) b
 }
 
 //Find this confirmation, write error if fails or write no-content if it doesn't exist
-func (a *Api) findConfirmations(to, from string, res http.ResponseWriter, statuses ...models.Status) []*models.Confirmation {
+func (a *Api) findConfirmations(toId, toEmail, fromId string, res http.ResponseWriter, statuses ...models.Status) []*models.Confirmation {
 
 	var found []*models.Confirmation
 	var err error
 
-	if to != "" {
-		found, err = a.Store.ConfirmationsToUser(to, statuses...)
-	} else if from != "" {
-		found, err = a.Store.ConfirmationsFromUser(from, statuses...)
+	if toId != "" || toEmail != "" {
+		found, err = a.Store.ConfirmationsToUser(toId, toEmail, statuses...)
+	} else if fromId != "" {
+		found, err = a.Store.ConfirmationsFromUser(fromId, statuses...)
 	}
 
 	if err != nil {
@@ -259,13 +259,31 @@ func (a *Api) logMetric(name string, req *http.Request) {
 	return
 }
 
-//find existing user
-func (a *Api) findExistingUser(email, token string) *shoreline.UserData {
-	if usr, err := a.sl.GetUser(email, token); err != nil {
+//Find existing user based on the given indentifier
+//The indentifier could be either an id or email address
+func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
+	if usr, err := a.sl.GetUser(indentifier, token); err != nil {
 		log.Printf("Error trying to get existing users details [%v]", err)
 		return nil
 	} else {
 		return usr
+	}
+}
+
+//Makesure we have set the userId on these confirmations
+func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
+
+	if len(confirmations) < 1 {
+		return
+	}
+	for i := range confirmations {
+		//set the userid if not set already
+		if confirmations[i].UserId == "" {
+			log.Println("UserId wasn't set for invite so setting it")
+			confirmations[i].UserId = userId
+			a.Store.UpsertConfirmation(confirmations[i])
+		}
+		return
 	}
 }
 
@@ -318,8 +336,12 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		invitedUsr := a.findExistingUser(inviteeId, req.Header.Get(TP_SESSION_TOKEN))
+
 		//find all oustanding invites were this user is the invitee
-		if invites := a.findConfirmations(inviteeId, "", res, models.StatusPending); invites != nil {
+		if invites := a.findConfirmations(inviteeId, invitedUsr.Emails[0], "", res, models.StatusPending); invites != nil {
+			a.ensureIdSet(inviteeId, invites)
 			a.logMetric("get received invites", req)
 			sendModelAsResWithStatus(res, invites, http.StatusOK)
 			return
@@ -341,7 +363,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 		//find all invites I have sent that are pending or declined
-		if invitations := a.findConfirmations("", invitorId, res, models.StatusPending, models.StatusDeclined); invitations != nil {
+		if invitations := a.findConfirmations("", "", invitorId, res, models.StatusPending, models.StatusDeclined); invitations != nil {
 			a.logMetric("get sent invites", req)
 			sendModelAsResWithStatus(res, invitations, http.StatusOK)
 			return

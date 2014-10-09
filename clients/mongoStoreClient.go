@@ -112,14 +112,17 @@ func (d MongoStoreClient) FindConfirmations(userEmail, creatorId string, statuse
 	return results, nil
 }
 
-func (d MongoStoreClient) ConfirmationsToEmail(userEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
-	query := bson.M{"email": userEmail, "status": bson.M{"$in": statuses}}
-	return d.queryConfirmations(query)
-}
+func (d MongoStoreClient) ConfirmationsToUser(userId, userEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
 
-func (d MongoStoreClient) ConfirmationsToUser(userId string, statuses ...models.Status) (results []*models.Confirmation, err error) {
-	query := bson.M{"userId": userId, "status": bson.M{"$in": statuses}}
-	return d.queryConfirmations(query)
+	//best to use id but if we only have email address we will use that
+	if userId != "" {
+		query := bson.M{"userId": userId, "status": bson.M{"$in": statuses}}
+		return d.queryConfirmations(query)
+	} else if userEmail != "" {
+		query := bson.M{"email": userEmail, "status": bson.M{"$in": statuses}}
+		return d.queryConfirmations(query)
+	}
+	return results, nil
 }
 
 func (d MongoStoreClient) ConfirmationsFromUser(creatorId string, statuses ...models.Status) (results []*models.Confirmation, err error) {
