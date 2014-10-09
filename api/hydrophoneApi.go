@@ -270,9 +270,10 @@ func (a *Api) findExistingUser(email, token string) *shoreline.UserData {
 func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
 
 	//Checks do they have an existing invite or are they already a team member
-	if a.hasExistingConfirmation(inviteeEmail, models.StatusPending) {
+	if a.hasExistingConfirmation(inviteeEmail, models.StatusPending, models.StatusDeclined, models.StatusCompleted) {
 		log.Println("There is already an existing invite")
 		res.WriteHeader(http.StatusConflict)
+		res.Write([]byte("There is already an existing invite"))
 		return true, nil
 	}
 
@@ -280,15 +281,14 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 	invitedUsr := a.findExistingUser(inviteeEmail, token)
 
 	if invitedUsr != nil && invitedUsr.UserID != "" {
-		grp := &group{}
-		if err := a.seagull.GetCollection(invitorId, "groups", token, &grp); err != nil {
-			log.Printf("Error getting group collection for user [%v] ", err)
+		if perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorId); err != nil {
+			log.Printf("error checking if user is in group [%v]", err)
+		} else if perms != nil {
+			log.Println("The user is already an existing member")
+			res.WriteHeader(http.StatusConflict)
+			res.Write([]byte("The user is already an existing member"))
+			return true, invitedUsr
 		}
-		if grp != nil {
-			log.Printf("groups for invitor [%v] ", grp)
-			//check if the user is already in the group
-		}
-		return false, invitedUsr
 	}
 	return false, nil
 }
