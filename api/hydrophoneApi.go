@@ -35,7 +35,9 @@ type (
 		Permissions commonClients.Permissions `json:"permissions"`
 	}
 	inviteContent struct {
+		Key                string
 		CareteamName       string
+		IsExistingUser     bool
 		ViewAndUploadPerms bool
 		ViewOnlyPerms      bool
 	}
@@ -289,6 +291,7 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 			res.Write([]byte("The user is already an existing member"))
 			return true, invitedUsr
 		}
+		return false, invitedUsr
 	}
 	return false, nil
 }
@@ -540,8 +543,11 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 				if err := a.seagull.GetCollection(invite.CreatorId, "profile", req.Header.Get(TP_SESSION_TOKEN), &up); err != nil {
 					log.Printf("Error getting the creators profile [%v] ", err)
 				} else {
+
 					inviteContent := &inviteContent{
 						CareteamName:       up.FullName,
+						Key:                invite.Key,
+						IsExistingUser:     invite.UserId != "",
 						ViewAndUploadPerms: viewOnly == false,
 						ViewOnlyPerms:      viewOnly,
 					}
