@@ -182,6 +182,20 @@ func TestAddressResponds(t *testing.T) {
 			},
 		},
 		{
+			// we should get a invite by key without a token
+			method:   "GET",
+			url:      "/invitation/12345",
+			token:    "", //no token
+			respCode: http.StatusOK,
+			response: jo{
+				"invitedBy": "UID",
+				"permissions": jo{
+					"view": jo{},
+					"note": jo{},
+				},
+			},
+		},
+		{
 			// we should get a list of our outstanding invitations
 			method:   "GET",
 			url:      "/invitations/UID",

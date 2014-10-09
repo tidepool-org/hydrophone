@@ -57,6 +57,7 @@ const (
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
+	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
 	STATUS_CONFIRMATION_NOT_FOUND    = "No matching confirmation was found"
 	STATUS_CONFIRMATION_CANCELED     = "Confirmation has been canceled"
 	STATUS_NO_TOKEN                  = "No x-tidepool-session-token was found"
@@ -104,16 +105,15 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// PUT /confirm/accept/forgot/
 	// PUT /confirm/accept/invite/:userid/:invited_by
 	accept := rtr.PathPrefix("/accept").Subrouter()
-	accept.Handle("/signup/{userid}/{confirmationid}",
-		varsHandler(a.Dummy)).Methods("PUT")
+	accept.Handle("/signup/{userid}/{confirmationid}", varsHandler(a.Dummy)).Methods("PUT")
 	accept.Handle("/forgot", varsHandler(a.Dummy)).Methods("PUT")
-	accept.Handle("/invite/{userid}/{invitedby}",
-		varsHandler(a.AcceptInvite)).Methods("PUT")
+	accept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
-	// GET /confirm/invite/:useremail
+	// GET /confirm/invite/:userid
 	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("GET")
 	rtr.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
+	rtr.Handle("/invitation/{key}", varsHandler(a.GetInvitePreview)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
 	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
@@ -344,6 +344,28 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 	}
+	return
+}
+
+//Get the this invite you have been sent.
+func (a *Api) GetInvitePreview(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+
+	inviteKey := vars["key"]
+
+	if inviteKey != "" {
+		if invite, err := a.Store.FindConfirmationByKey(inviteKey); invite != nil {
+			sendModelAsResWithStatus(res, invite, http.StatusOK)
+			return
+		} else if err != nil {
+			log.Println("Error finding the invite ", err)
+			res.WriteHeader(http.StatusInternalServerError)
+			res.Write([]byte(STATUS_ERR_FINDING_PREVIEW))
+		}
+		res.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	res.WriteHeader(http.StatusBadRequest)
 	return
 }
 
