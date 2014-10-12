@@ -29,18 +29,6 @@ type (
 		ServerSecret string                 `json:"serverSecret"` //used for services
 		Templates    *models.TemplateConfig `json:"emailTemplates"`
 	}
-	// this is the data structure for the invitation body
-	InviteBody struct {
-		Email       string                    `json:"email"`
-		Permissions commonClients.Permissions `json:"permissions"`
-	}
-	inviteContent struct {
-		Key                string
-		CareteamName       string
-		IsExistingUser     bool
-		ViewAndUploadPerms bool
-		ViewOnlyPerms      bool
-	}
 	profile struct {
 		FullName string
 	}
@@ -287,33 +275,6 @@ func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
 	}
 }
 
-func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
-
-	//Checks do they have an existing invite or are they already a team member
-	if a.hasExistingConfirmation(inviteeEmail, models.StatusPending, models.StatusDeclined, models.StatusCompleted) {
-		log.Println("There is already an existing invite")
-		res.WriteHeader(http.StatusConflict)
-		res.Write([]byte("There is already an existing invite"))
-		return true, nil
-	}
-
-	//Are they an existing user and already in the group?
-	invitedUsr := a.findExistingUser(inviteeEmail, token)
-
-	if invitedUsr != nil && invitedUsr.UserID != "" {
-		if perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorId); err != nil {
-			log.Printf("error checking if user is in group [%v]", err)
-		} else if perms != nil {
-			log.Println("The user is already an existing member")
-			res.WriteHeader(http.StatusConflict)
-			res.Write([]byte("The user is already an existing member"))
-			return true, invitedUsr
-		}
-		return false, invitedUsr
-	}
-	return false, nil
-}
-
 func sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(statusCode)
@@ -369,28 +330,6 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 	}
-	return
-}
-
-//Get the this invite you have been sent.
-func (a *Api) GetInvitePreview(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
-	inviteKey := vars["key"]
-
-	if inviteKey != "" {
-		if invite, err := a.Store.FindConfirmationByKey(inviteKey); invite != nil {
-			sendModelAsResWithStatus(res, invite, http.StatusOK)
-			return
-		} else if err != nil {
-			log.Println("Error finding the invite ", err)
-			res.WriteHeader(http.StatusInternalServerError)
-			res.Write([]byte(STATUS_ERR_FINDING_PREVIEW))
-		}
-		res.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	res.WriteHeader(http.StatusBadRequest)
 	return
 }
 
@@ -561,12 +500,11 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 				viewOnly := ib.Permissions["upload"] == ""
 
 				up := &profile{}
-				//TODO: get profile
 				if err := a.seagull.GetCollection(invite.CreatorId, "profile", req.Header.Get(TP_SESSION_TOKEN), &up); err != nil {
 					log.Printf("Error getting the creators profile [%v] ", err)
 				} else {
 
-					inviteContent := &inviteContent{
+					emailContent := &inviteEmailContent{
 						CareteamName:       up.FullName,
 						Key:                invite.Key,
 						IsExistingUser:     invite.UserId != "",
@@ -574,7 +512,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						ViewOnlyPerms:      viewOnly,
 					}
 
-					if a.createAndSendNotfication(invite, inviteContent, "Invite to join my careteam") {
+					if a.createAndSendNotfication(invite, emailContent, "Invite to join my careteam") {
 						a.logMetric("invite sent", req)
 					}
 				}
