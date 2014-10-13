@@ -50,6 +50,8 @@ func (d *MockStoreClient) FindConfirmationByKey(key string) (result *models.Conf
 	}
 	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
 	conf.Key = key
+	conf.Email = "otherToInvite@email.com"
+	conf.Context = []byte(`{"permissions" : {"view":{}}}`)
 	return conf, nil
 }
 

@@ -49,8 +49,9 @@ const (
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
-	STATUS_CONFIRMATION_NOT_FOUND    = "No matching confirmation was found"
-	STATUS_CONFIRMATION_CANCELED     = "Confirmation has been canceled"
+	STATUS_NOT_FOUND                 = "Nothing found"
+	STATUS_INVITE_NOT_FOUND          = "No matching invite was found"
+	STATUS_INVITE_CANCELED           = "Invite has been canceled"
 	STATUS_NO_TOKEN                  = "No x-tidepool-session-token was found"
 	STATUS_INVALID_TOKEN             = "The x-tidepool-session-token was invalid"
 	STATUS_OK                        = "OK"
@@ -164,8 +165,8 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return nil
 	} else if found == nil {
-		statusErr := &status.StatusError{status.NewStatus(http.StatusNoContent, STATUS_CONFIRMATION_NOT_FOUND)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNoContent)
+		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	} else {
 		return found
@@ -200,8 +201,13 @@ func (a *Api) findConfirmations(toId, toEmail, fromId string, res http.ResponseW
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return nil
 	} else if found == nil || len(found) == 0 {
-		statusErr := &status.StatusError{status.NewStatus(http.StatusNoContent, STATUS_CONFIRMATION_NOT_FOUND)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNoContent)
+		if fromId != "" {
+			log.Printf("No confirmations found from user [%s]", fromId)
+		} else {
+			log.Printf("No confirmations found for user [%s] or email [%s]", toId, toEmail)
+		}
+		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	} else {
 		return found
@@ -279,9 +285,8 @@ func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
 func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(statusCode)
-
 	if jsonDetails, err := json.Marshal(model); err != nil {
-		log.Println(err)
+		http.Error(res, "Error marshaling data for response", http.StatusInternalServerError)
 	} else {
 		res.Write(jsonDetails)
 	}
@@ -412,12 +417,11 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			if a.addOrUpdateConfirmation(conf, res) {
 				a.logMetric("canceled invite", req)
 				res.WriteHeader(http.StatusOK)
-				res.Write([]byte(STATUS_CONFIRMATION_CANCELED))
 				return
 			}
 		}
-		statusErr := &status.StatusError{status.NewStatus(http.StatusNoContent, STATUS_CONFIRMATION_NOT_FOUND)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNoContent)
+		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_INVITE_NOT_FOUND)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return
 	}
 	return
@@ -453,8 +457,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 
 			if a.addOrUpdateConfirmation(conf, res) {
 				a.logMetric("dismissinvite", req)
-				res.WriteHeader(http.StatusNoContent)
-				res.Write([]byte(STATUS_OK))
+				res.WriteHeader(http.StatusOK)
 				return
 			}
 		}

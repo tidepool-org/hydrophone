@@ -97,7 +97,6 @@ func (a *Api) GetInvitePreview(res http.ResponseWriter, req *http.Request, vars 
 			if up.FullName != "" {
 				preview.Creator = creator{Id: invite.CreatorId, FullName: up.FullName}
 			}
-
 			a.sendModelAsResWithStatus(res, preview, http.StatusOK)
 			return
 
@@ -110,7 +109,7 @@ func (a *Api) GetInvitePreview(res http.ResponseWriter, req *http.Request, vars 
 		res.WriteHeader(http.StatusNotFound)
 		return
 	}
-
-	res.WriteHeader(http.StatusBadRequest)
+	statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, "No invite key was given")}
+	a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 	return
 }
