@@ -51,7 +51,7 @@ func (d *MockStoreClient) FindConfirmationByKey(key string) (result *models.Conf
 	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
 	conf.Key = key
 	conf.Email = "otherToInvite@email.com"
-	conf.Context = []byte(`{"permissions" : {"view":{}}}`)
+	conf.Context = []byte(`{"view":{}, "note":{}}`)
 	return conf, nil
 }
 
@@ -70,6 +70,8 @@ func (d *MockStoreClient) ConfirmationsToUser(userId, userEmail string, statuses
 	if userEmail != "" {
 		conf.Email = userEmail
 	}
+
+	conf.Context = []byte(`{"view":{}, "note":{}}`)
 	conf.UpdateStatus(statuses[0])
 
 	return []*models.Confirmation{conf}, nil
@@ -86,6 +88,7 @@ func (d *MockStoreClient) ConfirmationsFromUser(creatorId string, statuses ...mo
 
 	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, creatorId)
 	conf.UpdateStatus(statuses[0])
+	conf.Context = []byte(`{"view":{}, "note":{}}`)
 
 	return []*models.Confirmation{conf}, nil
 

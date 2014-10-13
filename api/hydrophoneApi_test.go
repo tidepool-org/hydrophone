@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	"./../clients"
@@ -103,8 +104,8 @@ type ja []interface{}
 
 func (i *jo) deepCompare(j *jo) string {
 	for k, _ := range *i {
-		if (*i)[k] != (*j)[k] {
-			return fmt.Sprintf("Failed comparing field %s", k)
+		if reflect.DeepEqual((*i)[k], (*j)[k]) == false {
+			return fmt.Sprintf("for [%s] was [%v] expected [%v] ", k, (*i)[k], (*j)[k])
 		}
 	}
 	return ""
@@ -192,6 +193,7 @@ func TestAddressResponds(t *testing.T) {
 				"email": "otherToInvite@email.com",
 				"permissions": jo{
 					"view": jo{},
+					"note": jo{},
 				},
 			},
 		},
@@ -398,9 +400,9 @@ func TestAddressResponds(t *testing.T) {
 				return
 			}
 
-			/*if cmp := result.deepCompare(&test.response); cmp != "" {
-				t.Fatalf("Test %d url: '%s'\n\t%s\n", idx, test.url, cmp)
-			}*/
+			if cmp := result.deepCompare(&test.response); cmp != "" {
+				t.Logf("Test %d url: '%s'\n\t%s\n", idx, test.url, cmp)
+			}
 		}
 	}
 }

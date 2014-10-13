@@ -283,11 +283,12 @@ func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
 }
 
 func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
-	res.Header().Set("content-type", "application/json")
-	res.WriteHeader(statusCode)
 	if jsonDetails, err := json.Marshal(model); err != nil {
+		log.Printf("Error trying to send [%v]", model)
 		http.Error(res, "Error marshaling data for response", http.StatusInternalServerError)
 	} else {
+		res.Header().Set("content-type", "application/json")
+		res.WriteHeader(statusCode)
 		res.Write(jsonDetails)
 	}
 	return
