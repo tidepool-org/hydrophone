@@ -138,8 +138,6 @@ func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
 		log.Printf("Error getting status [%v]", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, err.Error())}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-		//res.WriteHeader(http.StatusInternalServerError)
-		//res.Write([]byte(err.Error()))
 		return
 	}
 	res.WriteHeader(http.StatusOK)
@@ -153,8 +151,6 @@ func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.Respon
 		log.Println("Error saving the confirmation ", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-		//res.WriteHeader(http.StatusInternalServerError)
-		//res.Write([]byte(STATUS_ERR_SAVING_CONFIRMATION))
 		return false
 	}
 	return true
@@ -166,14 +162,10 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 		log.Println("Error finding the confirmation ", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-		//res.WriteHeader(http.StatusInternalServerError)
-		//res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
 		return nil
 	} else if found == nil {
 		statusErr := &status.StatusError{status.NewStatus(http.StatusNoContent, STATUS_CONFIRMATION_NOT_FOUND)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNoContent)
-		//res.WriteHeader(http.StatusNoContent)
-		//res.Write([]byte(STATUS_CONFIRMATION_NOT_FOUND))
 		return nil
 	} else {
 		return found
@@ -206,14 +198,10 @@ func (a *Api) findConfirmations(toId, toEmail, fromId string, res http.ResponseW
 		log.Println("Error finding confirmations ", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-		//res.WriteHeader(http.StatusInternalServerError)
-		//res.Write([]byte(STATUS_ERR_FINDING_CONFIRMATION))
 		return nil
 	} else if found == nil || len(found) == 0 {
 		statusErr := &status.StatusError{status.NewStatus(http.StatusNoContent, STATUS_CONFIRMATION_NOT_FOUND)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNoContent)
-		//res.WriteHeader(http.StatusNoContent)
-		//res.Write([]byte(STATUS_CONFIRMATION_NOT_FOUND))
 		return nil
 	} else {
 		return found
@@ -242,8 +230,6 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 		if td == nil {
 			statusErr := &status.StatusError{status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
-			//res.WriteHeader(http.StatusForbidden)
-			//res.Write([]byte(STATUS_INVALID_TOKEN))
 			return false
 		}
 		//all good!
@@ -251,8 +237,6 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 	}
 	statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
-	//res.WriteHeader(http.StatusUnauthorized)
-	//res.Write([]byte(STATUS_NO_TOKEN))
 	return false
 }
 
@@ -367,8 +351,6 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			log.Printf("AcceptInvite Error: %v\n", err)
 			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-			//res.WriteHeader(http.StatusBadRequest)
-			//res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
 			return
 		}
 
@@ -387,8 +369,6 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 				log.Println("Error setting permissions in AcceptInvite ", err)
 				statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)}
 				a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-				//res.WriteHeader(http.StatusInternalServerError)
-				//res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
 				return
 			} else {
 				log.Printf("Permissions were set as [%v] after an invite was accepted", setPerms)
@@ -438,8 +418,6 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 		}
 		statusErr := &status.StatusError{status.NewStatus(http.StatusNoContent, STATUS_CONFIRMATION_NOT_FOUND)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNoContent)
-		//res.WriteHeader(http.StatusNoContent)
-		//res.Write([]byte(STATUS_CONFIRMATION_NOT_FOUND))
 		return
 	}
 	return
@@ -461,8 +439,6 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 			log.Printf("Error decoding invite to dismiss [%v]", err)
 			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-			//res.WriteHeader(http.StatusBadRequest)
-			//res.Write([]byte(STATUS_ERR_DECODING_CONFIRMATION))
 			return
 		}
 
@@ -497,10 +473,9 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		defer req.Body.Close()
 		var ib = &InviteBody{}
 		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-			log.Printf("SendInvite Err: %v\n", err)
+			log.Printf("SendInvite error: %v\n", err)
 			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-			//res.WriteHeader(http.StatusBadRequest)
 			return
 		}
 

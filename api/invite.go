@@ -54,8 +54,6 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 		log.Println(EXISTING_INVITE)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, EXISTING_INVITE)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-		//res.WriteHeader(http.StatusConflict)
-		//res.Write([]byte("There is already an existing invite"))
 		return true, nil
 	}
 
@@ -69,8 +67,6 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 			log.Println(EXISTING_MEMBER)
 			statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, EXISTING_MEMBER)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-			//res.WriteHeader(http.StatusConflict)
-			//res.Write([]byte("The user is already an existing member"))
 			return true, invitedUsr
 		}
 		return false, invitedUsr
