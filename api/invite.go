@@ -12,6 +12,11 @@ import (
 	"github.com/tidepool-org/go-common/clients/status"
 )
 
+const (
+	EXISTING_INVITE = "There is already an existing invite"
+	EXISTING_MEMBER = "The user is already an existing member"
+)
+
 type (
 	//Invite details for generating a new invite
 	InviteBody struct {
@@ -46,9 +51,11 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 
 	//already has invite?
 	if a.hasExistingConfirmation(inviteeEmail, models.StatusPending, models.StatusDeclined, models.StatusCompleted) {
-		log.Println("There is already an existing invite")
-		res.WriteHeader(http.StatusConflict)
-		res.Write([]byte("There is already an existing invite"))
+		log.Println(EXISTING_INVITE)
+		statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, EXISTING_INVITE)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
+		//res.WriteHeader(http.StatusConflict)
+		//res.Write([]byte("There is already an existing invite"))
 		return true, nil
 	}
 
@@ -59,9 +66,11 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 		if perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorId); err != nil {
 			log.Printf("error checking if user is in group [%v]", err)
 		} else if perms != nil {
-			log.Println("The user is already an existing member")
-			res.WriteHeader(http.StatusConflict)
-			res.Write([]byte("The user is already an existing member"))
+			log.Println(EXISTING_MEMBER)
+			statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, EXISTING_MEMBER)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
+			//res.WriteHeader(http.StatusConflict)
+			//res.Write([]byte("The user is already an existing member"))
 			return true, invitedUsr
 		}
 		return false, invitedUsr
@@ -93,13 +102,13 @@ func (a *Api) GetInvitePreview(res http.ResponseWriter, req *http.Request, vars 
 				preview.Creator = creator{Id: invite.CreatorId, FullName: up.FullName}
 			}
 
-			sendModelAsResWithStatus(res, preview, http.StatusOK)
+			a.sendModelAsResWithStatus(res, preview, http.StatusOK)
 			return
 
 		} else if err != nil {
 			log.Printf("GetInvitePreview error finding the invite [%v]", err)
 			statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, "Error trying to find invite.")}
-			sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 			return
 		}
 		res.WriteHeader(http.StatusNotFound)
