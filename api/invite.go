@@ -131,8 +131,10 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 	return
 }
 
-// status: 200
-// status: 400
+//Accept the given invite
+//
+// status: 200 when accepted
+// status: 400 when the incoming data is incomplete or incorrect
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	if a.checkToken(res, req) {
@@ -187,9 +189,11 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 	return
 }
 
-// status: 200
-// status: 404
-// status: 400
+// Cancel an invite the has been sent to an email address
+//
+// status: 200 when cancled
+// status: 404 STATUS_INVITE_NOT_FOUND
+// status: 400 when the incoming data is incomplete or incorrect
 func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
 
