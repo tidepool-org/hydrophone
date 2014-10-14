@@ -102,7 +102,6 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// GET /confirm/invite/:userid
 	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("GET")
 	rtr.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
-	rtr.Handle("/invitation/{key}", varsHandler(a.GetInvitePreview)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
 	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")

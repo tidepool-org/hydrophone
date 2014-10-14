@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	"./../models"
 	commonClients "github.com/tidepool-org/go-common/clients"
@@ -29,22 +28,11 @@ type (
 	//Content used to generate the invite email
 	inviteEmailContent struct {
 		Key                string
+		Email              string
 		CareteamName       string
 		IsExistingUser     bool
 		ViewAndUploadPerms bool
 		ViewOnlyPerms      bool
-	}
-	//Returned invite preview
-	InvitePreview struct {
-		Key         string          `json:"key"`
-		Email       string          `json:"email"`
-		Permissions json.RawMessage `json:"permissions"`
-		Creator     creator         `json:"creator"`
-		Created     time.Time       `json:"created"`
-	}
-	creator struct {
-		Id       string `json:"id"`
-		FullName string `json:"fullName"`
 	}
 )
 
@@ -149,7 +137,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 
 		accept := &models.Confirmation{}
 		if err := json.NewDecoder(req.Body).Decode(accept); err != nil {
-			log.Printf("AcceptInvite Error: %v\n", err)
+			log.Printf("AcceptInvite: error decoding invite data: %v\n", err)
 			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 			return
@@ -167,12 +155,12 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			conf.DecodeContext(&permissions)
 
 			if setPerms, err := a.gatekeeper.SetPermissions(inviteeId, invitorId, permissions); err != nil {
-				log.Println("Error setting permissions in AcceptInvite ", err)
+				log.Printf("AcceptInvite: error setting permissions in %v\n", err)
 				statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)}
 				a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 				return
 			} else {
-				log.Printf("Permissions were set as [%v] after an invite was accepted", setPerms)
+				log.Printf("AcceptInvite: permissions were set as [%v] after an invite was accepted", setPerms)
 				//we know the user now
 				conf.UserId = inviteeId
 
@@ -243,7 +231,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 
 		dismiss := &models.Confirmation{}
 		if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
-			log.Printf("Error decoding invite to dismiss [%v]", err)
+			log.Printf("DismissInvite: error decoding invite to dismiss [%v]", err)
 			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 			return
@@ -269,12 +257,10 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 }
 
 //Send a invite to join my team
-//Return duplicate if the invited user already has a pending invite
-//Return duplicate if the invited user is already part of my team
 //
 // status: 200 models.Confirmation
-// status: 409 STATUS_EXISTING_INVITE
-// status: 409 STATUS_EXISTING_MEMBER
+// status: 409 STATUS_EXISTING_INVITE - user already has a pending or declined invite
+// status: 409 STATUS_EXISTING_MEMBER - user is already part of the team
 // status: 400
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
@@ -284,7 +270,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		defer req.Body.Close()
 		var ib = &InviteBody{}
 		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-			log.Printf("SendInvite error: %v\n", err)
+			log.Printf("SendInvite: error decoding invite to detail %v\n", err)
 			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 			return
@@ -296,7 +282,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		}
 
 		if existingInvite, invitedUsr := a.checkForDuplicateInvite(ib.Email, invitorId, req.Header.Get(TP_SESSION_TOKEN), res); existingInvite == true {
-			log.Println("The invited user already has or had an invite")
+			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
 			return
 		} else {
 			//None exist so lets create the invite
@@ -314,12 +300,13 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 				up := &profile{}
 				if err := a.seagull.GetCollection(invite.CreatorId, "profile", req.Header.Get(TP_SESSION_TOKEN), &up); err != nil {
-					log.Printf("Error getting the creators profile [%v] ", err)
+					log.Printf("SendInvite: error getting the creators profile [%v] ", err)
 				} else {
 
 					emailContent := &inviteEmailContent{
 						CareteamName:       up.FullName,
 						Key:                invite.Key,
+						Email:              invite.Email,
 						IsExistingUser:     invite.UserId != "",
 						ViewAndUploadPerms: viewOnly == false,
 						ViewOnlyPerms:      viewOnly,
@@ -336,48 +323,5 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		}
 
 	}
-	return
-}
-
-//Get the invite preview you have been sent for this given key
-//Note: this is an unsecured call that you require the invote key for
-//
-// status: 200
-// status: 400
-func (a *Api) GetInvitePreview(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
-	inviteKey := vars["key"]
-
-	if inviteKey != "" {
-		if invite, err := a.Store.FindConfirmationByKey(inviteKey); invite != nil {
-			svrToken := a.sl.TokenProvide()
-			up := &profile{}
-			if err := a.seagull.GetCollection(invite.CreatorId, "profile", svrToken, &up); err != nil {
-				log.Printf("Error getting the creators profile [%v] ", err)
-			}
-
-			preview := &InvitePreview{
-				Key:         invite.Key,
-				Email:       invite.Email,
-				Permissions: invite.Context,
-				Created:     invite.Created,
-			}
-			if up.FullName != "" {
-				preview.Creator = creator{Id: invite.CreatorId, FullName: up.FullName}
-			}
-			a.sendModelAsResWithStatus(res, preview, http.StatusOK)
-			return
-
-		} else if err != nil {
-			log.Printf("GetInvitePreview error finding the invite [%v]", err)
-			statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, "Error trying to find invite.")}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-			return
-		}
-		res.WriteHeader(http.StatusNotFound)
-		return
-	}
-	statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, "No invite key was given")}
-	a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 	return
 }
