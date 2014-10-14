@@ -50,8 +50,6 @@ const (
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
 	STATUS_NOT_FOUND                 = "Nothing found"
-	STATUS_INVITE_NOT_FOUND          = "No matching invite was found"
-	STATUS_INVITE_CANCELED           = "Invite has been canceled"
 	STATUS_NO_TOKEN                  = "No x-tidepool-session-token was found"
 	STATUS_INVALID_TOKEN             = "The x-tidepool-session-token was invalid"
 	STATUS_OK                        = "OK"
@@ -66,7 +64,6 @@ func InitApi(
 	metrics highwater.Client,
 	seagull commonClients.Seagull,
 ) *Api {
-
 	return &Api{
 		Store:      store,
 		Config:     cfg,
@@ -184,33 +181,19 @@ func (a *Api) hasExistingConfirmation(email string, statuses ...models.Status) b
 }
 
 //Find this confirmation, write error if fails or write no-content if it doesn't exist
-func (a *Api) findConfirmations(toId, toEmail, fromId string, res http.ResponseWriter, statuses ...models.Status) []*models.Confirmation {
-
-	var found []*models.Confirmation
-	var err error
-
-	if toId != "" || toEmail != "" {
-		found, err = a.Store.ConfirmationsToUser(toId, toEmail, statuses...)
-	} else if fromId != "" {
-		found, err = a.Store.ConfirmationsFromUser(fromId, statuses...)
-	}
-
+func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
 	if err != nil {
 		log.Println("Error finding confirmations ", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return nil
-	} else if found == nil || len(found) == 0 {
-		if fromId != "" {
-			log.Printf("No confirmations found from user [%s]", fromId)
-		} else {
-			log.Printf("No confirmations found for user [%s] or email [%s]", toId, toEmail)
-		}
+	} else if results == nil || len(results) == 0 {
+		log.Printf("No confirmations were found")
 		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	} else {
-		return found
+		return results
 	}
 }
 
@@ -290,244 +273,6 @@ func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{
 		res.Header().Set("content-type", "application/json")
 		res.WriteHeader(statusCode)
 		res.Write(jsonDetails)
-	}
-	return
-}
-
-//Get list of received invitations for logged in user.
-//These are invitations that have been sent to this user but not yet acted upon.
-func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
-		inviteeId := vars["userid"]
-
-		if inviteeId == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		invitedUsr := a.findExistingUser(inviteeId, req.Header.Get(TP_SESSION_TOKEN))
-
-		//find all oustanding invites were this user is the invitee
-		if invites := a.findConfirmations(inviteeId, invitedUsr.Emails[0], "", res, models.StatusPending); invites != nil {
-			a.ensureIdSet(inviteeId, invites)
-			a.logMetric("get received invites", req)
-			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
-			return
-		}
-	}
-	return
-}
-
-//Get the still-pending invitations for a group you own or are an admin of.
-//These are the invitations you have sent that have not been accepted.
-//There is no way to tell if an invitation has been ignored.
-func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
-
-		invitorId := vars["userid"]
-
-		if invitorId == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		//find all invites I have sent that are pending or declined
-		if invitations := a.findConfirmations("", "", invitorId, res, models.StatusPending, models.StatusDeclined); invitations != nil {
-			a.logMetric("get sent invites", req)
-			a.sendModelAsResWithStatus(res, invitations, http.StatusOK)
-			return
-		}
-	}
-	return
-}
-
-func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
-	if a.checkToken(res, req) {
-
-		inviteeId := vars["userid"]
-		invitorId := vars["invitedby"]
-
-		if inviteeId == "" || invitorId == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		accept := &models.Confirmation{}
-		if err := json.NewDecoder(req.Body).Decode(accept); err != nil {
-			log.Printf("AcceptInvite Error: %v\n", err)
-			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-			return
-		}
-
-		if accept.Key == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if conf := a.findExistingConfirmation(accept, res); conf != nil {
-
-			//New set the permissions for the invite
-			var permissions commonClients.Permissions
-			conf.DecodeContext(&permissions)
-
-			if setPerms, err := a.gatekeeper.SetPermissions(inviteeId, invitorId, permissions); err != nil {
-				log.Println("Error setting permissions in AcceptInvite ", err)
-				statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)}
-				a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-				return
-			} else {
-				log.Printf("Permissions were set as [%v] after an invite was accepted", setPerms)
-				//we know the user now
-				conf.UserId = inviteeId
-
-				conf.UpdateStatus(models.StatusCompleted)
-				if a.addOrUpdateConfirmation(conf, res) {
-					a.logMetric("acceptinvite", req)
-					res.WriteHeader(http.StatusOK)
-					res.Write([]byte(STATUS_OK))
-					return
-				}
-			}
-		}
-	}
-	return
-}
-
-func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
-
-		invitorId := vars["userid"]
-		email := vars["invited_address"]
-
-		if invitorId == "" || email == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		invite := &models.Confirmation{
-			Email:     email,
-			CreatorId: invitorId,
-			Type:      models.TypeCareteamInvite,
-		}
-
-		if conf := a.findExistingConfirmation(invite, res); conf != nil {
-			//cancel the invite
-			conf.UpdateStatus(models.StatusCanceled)
-
-			if a.addOrUpdateConfirmation(conf, res) {
-				a.logMetric("canceled invite", req)
-				res.WriteHeader(http.StatusOK)
-				return
-			}
-		}
-		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_INVITE_NOT_FOUND)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-		return
-	}
-	return
-}
-
-func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
-
-		inviteeId := vars["userid"]
-		invitorId := vars["invitedby"]
-
-		if inviteeId == "" || invitorId == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		dismiss := &models.Confirmation{}
-		if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
-			log.Printf("Error decoding invite to dismiss [%v]", err)
-			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-			return
-		}
-
-		if dismiss.Key == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if conf := a.findExistingConfirmation(dismiss, res); conf != nil {
-
-			conf.UpdateStatus(models.StatusDeclined)
-
-			if a.addOrUpdateConfirmation(conf, res) {
-				a.logMetric("dismissinvite", req)
-				res.WriteHeader(http.StatusOK)
-				return
-			}
-		}
-	}
-	return
-}
-
-//Send a invite to join my team
-//Return duplicate if the invited user already has a pending invite
-//Return duplicate if the invited user is already part of my team
-func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
-
-		invitorId := vars["userid"]
-
-		defer req.Body.Close()
-		var ib = &InviteBody{}
-		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-			log.Printf("SendInvite error: %v\n", err)
-			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-			return
-		}
-
-		if ib.Email == "" || ib.Permissions == nil {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if existingInvite, invitedUsr := a.checkForDuplicateInvite(ib.Email, invitorId, req.Header.Get(TP_SESSION_TOKEN), res); existingInvite == true {
-			log.Println("The invited user already has or had an invite")
-			return
-		} else {
-			//None exist so lets create the invite
-			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, invitorId, ib.Permissions)
-
-			invite.Email = ib.Email
-			if invitedUsr != nil {
-				invite.UserId = invitedUsr.UserID
-			}
-
-			if a.addOrUpdateConfirmation(invite, res) {
-				a.logMetric("invite created", req)
-
-				viewOnly := ib.Permissions["upload"] == ""
-
-				up := &profile{}
-				if err := a.seagull.GetCollection(invite.CreatorId, "profile", req.Header.Get(TP_SESSION_TOKEN), &up); err != nil {
-					log.Printf("Error getting the creators profile [%v] ", err)
-				} else {
-
-					emailContent := &inviteEmailContent{
-						CareteamName:       up.FullName,
-						Key:                invite.Key,
-						IsExistingUser:     invite.UserId != "",
-						ViewAndUploadPerms: viewOnly == false,
-						ViewOnlyPerms:      viewOnly,
-					}
-
-					if a.createAndSendNotfication(invite, emailContent, "Invite to join my careteam") {
-						a.logMetric("invite sent", req)
-					}
-				}
-
-				a.sendModelAsResWithStatus(res, invite, http.StatusOK)
-				return
-			}
-		}
-
 	}
 	return
 }
