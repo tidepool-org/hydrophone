@@ -50,10 +50,12 @@ func (d *MockStoreClient) FindConfirmationByKey(key string) (result *models.Conf
 	}
 	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
 	conf.Key = key
+	conf.Email = "otherToInvite@email.com"
+	conf.Context = []byte(`{"view":{}, "note":{}}`)
 	return conf, nil
 }
 
-func (d *MockStoreClient) ConfirmationsToEmail(userEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
+func (d *MockStoreClient) ConfirmationsToUser(userId, userEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
 	if d.doBad {
 		return nil, errors.New("FindConfirmation failure")
 	}
@@ -62,21 +64,14 @@ func (d *MockStoreClient) ConfirmationsToEmail(userEmail string, statuses ...mod
 	}
 
 	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
-	conf.Email = userEmail
-	conf.UpdateStatus(statuses[0])
-
-	return []*models.Confirmation{conf}, nil
-}
-func (d *MockStoreClient) ConfirmationsToUser(userId string, statuses ...models.Status) (results []*models.Confirmation, err error) {
-	if d.doBad {
-		return nil, errors.New("FindConfirmation failure")
+	if userId != "" {
+		conf.UserId = userId
 	}
-	if d.returnNone {
-		return nil, nil
+	if userEmail != "" {
+		conf.Email = userEmail
 	}
 
-	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
-	conf.UserId = userId
+	conf.Context = []byte(`{"view":{}, "note":{}}`)
 	conf.UpdateStatus(statuses[0])
 
 	return []*models.Confirmation{conf}, nil
@@ -93,6 +88,7 @@ func (d *MockStoreClient) ConfirmationsFromUser(creatorId string, statuses ...mo
 
 	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, creatorId)
 	conf.UpdateStatus(statuses[0])
+	conf.Context = []byte(`{"view":{}, "note":{}}`)
 
 	return []*models.Confirmation{conf}, nil
 
