@@ -312,7 +312,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						ViewOnlyPerms:      viewOnly,
 					}
 
-					if a.createAndSendNotfication(invite, emailContent, "Invite to join my careteam") {
+					if a.createAndSendNotfication(invite, emailContent) {
 						a.logMetric("invite sent", req)
 					}
 				}

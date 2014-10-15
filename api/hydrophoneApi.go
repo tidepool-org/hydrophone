@@ -197,13 +197,13 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 }
 
 //Generate a notification from the given confirmation,write the error if it fails
-func (a *Api) createAndSendNotfication(conf *models.Confirmation, content interface{}, subject string) bool {
+func (a *Api) createAndSendNotfication(conf *models.Confirmation, content interface{}) bool {
 
 	emailTemplate := models.NewTemplate()
 	emailTemplate.Load(conf.Type, a.Config.Templates)
 	emailTemplate.Parse(content)
 
-	if status, details := a.notifier.Send([]string{conf.Email}, subject, emailTemplate.GenerateContent); status != http.StatusOK {
+	if status, details := a.notifier.Send([]string{conf.Email}, emailTemplate.Subject, emailTemplate.BodyContent); status != http.StatusOK {
 		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
 		return false
 	}

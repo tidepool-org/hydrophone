@@ -24,6 +24,7 @@ Hi {{ .UserName }}
 {{end}}
 {{template "reset_test" .}}
 `,
+		PasswordResetSubject: "A Password Reset",
 		CareteamInvite: `
 {{define "invite_test"}}
 ## Test Template
@@ -31,14 +32,18 @@ Hi {{ .UserName }}
 {{ .Key }}
 {{end}}
 {{template "invite_test" .}}
-`, Confirmation: `
+`,
+		CareteamInviteSubject: "A Careteam Invite",
+		Confirmation: `
 {{define "confirm_test"}}
 ## Test Template
 {{ .UserName }}
 {{ .Key }}
 {{end}}
 {{template "confirm_test" .}}
-`}
+`,
+		ConfirmationSubject: "A Confirmation",
+	}
 )
 
 func TestLoad(t *testing.T) {
@@ -55,8 +60,12 @@ func TestLoad(t *testing.T) {
 		t.Fatalf("the name is [%s] but should be [%s]", tmpl.compiled.Name(), string(TypePasswordReset))
 	}
 
-	if tmpl.GenerateContent != "" {
-		t.Fatalf("Parsed content should be empty but is [%s]", tmpl.GenerateContent)
+	if tmpl.BodyContent != "" {
+		t.Fatalf("Parsed content should be empty but is [%s]", tmpl.BodyContent)
+	}
+
+	if tmpl.Subject != cfg.PasswordResetSubject {
+		t.Fatalf("The subject should be [%s] as the config but is [%s]", cfg.PasswordResetSubject, tmpl.Subject)
 	}
 }
 
@@ -66,7 +75,7 @@ func TestParse_WhenNoLoadedTemplate(t *testing.T) {
 
 	tmpl.Parse(content)
 
-	if tmpl.GenerateContent != "" {
+	if tmpl.BodyContent != "" {
 		t.Fatal("parsed content should be empty as template is not set")
 	}
 }
@@ -79,15 +88,15 @@ func TestParse(t *testing.T) {
 
 	tmpl.Parse(content)
 
-	if tmpl.GenerateContent == "" {
+	if tmpl.BodyContent == "" {
 		t.Fatal("The parased content should be set")
 	}
 
-	if strings.Contains(tmpl.GenerateContent, content.UserName) == false {
+	if strings.Contains(tmpl.BodyContent, content.UserName) == false {
 		t.Fatal("the name should be set")
 	}
 
-	if strings.Contains(tmpl.GenerateContent, content.Key) == false {
+	if strings.Contains(tmpl.BodyContent, content.Key) == false {
 		t.Fatal("the key should be set")
 	}
 

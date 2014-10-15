@@ -8,14 +8,18 @@ import (
 
 type (
 	TemplateConfig struct {
-		PasswordReset  string `json:"passwordReset"`
-		CareteamInvite string `json:"careteamInvite"`
-		Confirmation   string `json:"confirmation"`
+		PasswordReset         string `json:"passwordReset"`
+		PasswordResetSubject  string `json:"passwordResetSubject"`
+		CareteamInvite        string `json:"careteamInvite"`
+		CareteamInviteSubject string `json:"careteamInviteSubject"`
+		Confirmation          string `json:"confirmation"`
+		ConfirmationSubject   string `json:"confirmationSubject"`
 	}
 
 	Template struct {
-		compiled        *template.Template
-		GenerateContent string
+		compiled    *template.Template
+		Subject     string
+		BodyContent string
 	}
 )
 
@@ -29,16 +33,20 @@ func NewTemplate() *Template {
 func (t *Template) Load(templateType Type, cfg *TemplateConfig) {
 
 	var compiled *template.Template
+	var subject string
 
 	switch {
 	case templateType == TypeCareteamInvite:
 		compiled = template.Must(template.New(string(TypeCareteamInvite)).Parse(cfg.CareteamInvite))
+		subject = cfg.CareteamInviteSubject
 		break
 	case templateType == TypeConfirmation:
 		compiled = template.Must(template.New(string(TypeConfirmation)).Parse(cfg.Confirmation))
+		subject = cfg.ConfirmationSubject
 		break
 	case templateType == TypePasswordReset:
 		compiled = template.Must(template.New(string(TypePasswordReset)).Parse(cfg.PasswordReset))
+		subject = cfg.PasswordResetSubject
 		break
 	default:
 		log.Println("Unknown type ", templateType)
@@ -47,6 +55,7 @@ func (t *Template) Load(templateType Type, cfg *TemplateConfig) {
 	}
 
 	t.compiled = compiled
+	t.Subject = subject
 }
 
 /*
@@ -66,5 +75,5 @@ func (t *Template) Parse(content interface{}) {
 		return
 	}
 
-	t.GenerateContent = buffer.String()
+	t.BodyContent = buffer.String()
 }
