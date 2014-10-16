@@ -27,12 +27,11 @@ type (
 	}
 	//Content used to generate the invite email
 	inviteEmailContent struct {
-		Key                string
-		Email              string
-		CareteamName       string
-		IsExistingUser     bool
-		ViewAndUploadPerms bool
-		ViewOnlyPerms      bool
+		Key            string
+		Email          string
+		CareteamName   string
+		IsExistingUser bool
+		ViewOnlyPerms  bool
 	}
 )
 
@@ -296,20 +295,19 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			if a.addOrUpdateConfirmation(invite, res) {
 				a.logMetric("invite created", req)
 
-				viewOnly := ib.Permissions["upload"] == ""
-
 				up := &profile{}
 				if err := a.seagull.GetCollection(invite.CreatorId, "profile", req.Header.Get(TP_SESSION_TOKEN), &up); err != nil {
 					log.Printf("SendInvite: error getting the creators profile [%v] ", err)
 				} else {
 
+					canUpload := ib.Permissions["upload"]
+
 					emailContent := &inviteEmailContent{
-						CareteamName:       up.FullName,
-						Key:                invite.Key,
-						Email:              invite.Email,
-						IsExistingUser:     invite.UserId != "",
-						ViewAndUploadPerms: viewOnly == false,
-						ViewOnlyPerms:      viewOnly,
+						CareteamName:   up.FullName,
+						Key:            invite.Key,
+						Email:          invite.Email,
+						IsExistingUser: invite.UserId != "",
+						ViewOnlyPerms:  canUpload == nil,
 					}
 
 					if a.createAndSendNotfication(invite, emailContent) {

@@ -14,7 +14,7 @@
     "emailTemplates" : {
       "passwordReset" : "{{define \"pwreset_test\"}} A test pw reset email  {{ .ToUser }} {{ .Key }} {{end}} {{template \"pwreset_test\" .}}",
       "passwordResetSubject" : "Test password reset",
-      "careteamInvite" : "{{define \"invite\"}} <html><head><title>Blip Careteam Invitation</title><meta content=\"text/html; charset=UTF-8\" http-equiv=\"content-type\"></head><body><p>How special! You have been invited to view {{ .CareteamName }}&rsquo;s diabetes data. By confirming, you&rsquo;ll be able to view their data {{if .ViewOnlyPerms}}and comment on what you see{{end}} {{if .ViewAndUploadPerms}}, comment on what you see, and upload data on their behalf{{end}}.</p><p><a href=\"https://blip-devel.tidepool.io/#/login\">View invitation</a></p></body></html> {{end}} {{template \"invite\" .}}",
+      "careteamInvite" : "{{define \"invite\"}} <html> <head> <title>Please be part of my diabetes care team</title> <meta content=\"text/html; charset=UTF-8\" http-equiv=\"content-type\"> </head> <body> <p>Hey there!</p> <p>I’d like you to take a look at my diabetes data with me. When you confirm below, you’ll be able to see the data{{if .ViewOnlyPerms}} and comment on what you see{{else}}, comment on what you see, and upload my devices, too{{end}}.</p> </body> </html> {{end}} {{template \"invite\" .}}",
       "careteamInviteSubject" : "Careteam invite",
       "confirmation" : "{{define \"confirm_test\"}} A test confirmation email  {{ .ToUser }} {{ .Key }} {{end}} {{template \"confirm_test\" .}}",
       "confirmationSubject" :"Confirmation"
