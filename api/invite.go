@@ -39,8 +39,8 @@ type (
 //Or are they an existing user and already in the group?
 func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
 
-	//already has invite?
-	if a.hasExistingConfirmation(inviteeEmail, models.StatusPending, models.StatusDeclined, models.StatusCompleted) {
+	//already has invite? NOTE we allow them to have one extra try
+	if a.existingConfirmations(inviteeEmail, models.StatusPending, models.StatusDeclined, models.StatusCompleted) > 1 {
 		log.Println(STATUS_EXISTING_INVITE)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, STATUS_EXISTING_INVITE)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
