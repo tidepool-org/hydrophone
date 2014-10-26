@@ -41,6 +41,20 @@ func (d *MockStoreClient) FindConfirmation(notification *models.Confirmation) (r
 	return notification, nil
 }
 
+func (d *MockStoreClient) FindConfirmations(confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
+	if d.doBad {
+		return nil, errors.New("FindConfirmation failure")
+	}
+	if d.returnNone {
+		return nil, nil
+	}
+
+	confirmation.Context = []byte(`{"view":{}, "note":{}}`)
+	confirmation.UpdateStatus(statuses[0])
+
+	return []*models.Confirmation{confirmation}, nil
+}
+
 func (d *MockStoreClient) FindConfirmationByKey(key string) (result *models.Confirmation, err error) {
 	if d.doBad {
 		return nil, errors.New("FindConfirmationByKey failure")
@@ -53,48 +67,6 @@ func (d *MockStoreClient) FindConfirmationByKey(key string) (result *models.Conf
 	conf.Email = "otherToInvite@email.com"
 	conf.Context = []byte(`{"view":{}, "note":{}}`)
 	return conf, nil
-}
-
-func (d *MockStoreClient) ConfirmationsToUser(fromId, toId, toEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
-	if d.doBad {
-		return nil, errors.New("FindConfirmation failure")
-	}
-	if d.returnNone {
-		return nil, nil
-	}
-
-	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
-	if fromId != "" {
-		conf.CreatorId = fromId
-	}
-	if toId != "" {
-		conf.UserId = toId
-	}
-	if toEmail != "" {
-		conf.Email = toEmail
-	}
-
-	conf.Context = []byte(`{"view":{}, "note":{}}`)
-	conf.UpdateStatus(statuses[0])
-
-	return []*models.Confirmation{conf}, nil
-
-}
-func (d *MockStoreClient) ConfirmationsFromUser(creatorId string, statuses ...models.Status) (results []*models.Confirmation, err error) {
-
-	if d.doBad {
-		return nil, errors.New("FindConfirmation failure")
-	}
-	if d.returnNone {
-		return nil, nil
-	}
-
-	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, creatorId)
-	conf.UpdateStatus(statuses[0])
-	conf.Context = []byte(`{"view":{}, "note":{}}`)
-
-	return []*models.Confirmation{conf}, nil
-
 }
 
 func (d *MockStoreClient) RemoveConfirmation(notification *models.Confirmation) error {

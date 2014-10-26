@@ -75,7 +75,9 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 		c2.UpdateStatus(models.StatusCompleted)
 		mc.UpsertConfirmation(c2)
 
-		if confirmations, err := mc.ConfirmationsFromUser(fromUser, models.StatusDeclined, models.StatusCompleted); err == nil {
+		searchForm := &models.Confirmation{CreatorId: fromUser}
+
+		if confirmations, err := mc.FindConfirmations(searchForm, models.StatusDeclined, models.StatusCompleted); err == nil {
 			if len(confirmations) != 2 {
 				t.Fatalf("we should have found 2 confirmations %v", confirmations)
 			}
@@ -86,20 +88,9 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 				t.Fatalf("status invalid: %s", confirmations[1].Status)
 			}
 		}
-		//with userid
-		if confirmations, err := mc.ConfirmationsToUser(fromUser, toUser, "", models.StatusDeclined, models.StatusCompleted); err == nil {
-			if len(confirmations) != 1 {
-				t.Fatalf("we should have found 1 confirmations %v", confirmations)
-			}
-			if confirmations[0].UserId != toUser {
-				t.Fatalf("should be for user: %s", toUser)
-			}
-			if confirmations[0].Status != models.StatusCompleted && confirmations[0].Status != models.StatusDeclined {
-				t.Fatalf("status invalid: %s", confirmations[0].Status)
-			}
-		}
+		searchToOtherEmail := &models.Confirmation{CreatorId: fromUser, Email: toOtherEmail}
 		//only email address
-		if confirmations, err := mc.ConfirmationsToUser(fromUser, "", toOtherEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
+		if confirmations, err := mc.FindConfirmations(searchToOtherEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
 			if len(confirmations) != 1 {
 				t.Fatalf("we should have found 1 confirmations %v", confirmations)
 			}
@@ -110,8 +101,9 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 				t.Fatalf("status invalid: %s", confirmations[0].Status)
 			}
 		}
+		searchToEmail := &models.Confirmation{CreatorId: fromUser, Email: toEmail}
 		//with both userid and email address
-		if confirmations, err := mc.ConfirmationsToUser(fromUser, toUser, toEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
+		if confirmations, err := mc.FindConfirmations(searchToEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
 			if len(confirmations) != 1 {
 				t.Fatalf("we should have found 1 confirmations %v", confirmations)
 			}

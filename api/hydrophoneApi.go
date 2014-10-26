@@ -171,7 +171,7 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 
 //Do we already have a confirmation for address?
 func (a *Api) existingConfirmations(invitorId, email string, statuses ...models.Status) int {
-	if found, err := a.Store.ConfirmationsToUser(invitorId, "", email, statuses...); err != nil {
+	if found, err := a.Store.FindConfirmations(&models.Confirmation{CreatorId: invitorId, Email: email}, statuses...); err != nil {
 		log.Println("Error looking for existing confirmation ", err)
 		return 0
 	} else {

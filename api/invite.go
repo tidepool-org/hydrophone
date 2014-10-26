@@ -81,7 +81,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		invitedUsr := a.findExistingUser(inviteeId, req.Header.Get(TP_SESSION_TOKEN))
 
 		//find all oustanding invites were this user is the invite//
-		found, err := a.Store.ConfirmationsToUser(inviteeId, "", invitedUsr.Emails[0], models.StatusPending)
+		found, err := a.Store.FindConfirmations(&models.Confirmation{CreatorId: inviteeId, Email: invitedUsr.Emails[0]}, models.StatusPending)
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(inviteeId, invites)
 			a.logMetric("get received invites", req)
@@ -108,7 +108,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 		//find all invites I have sent that are pending or declined
-		found, err := a.Store.ConfirmationsFromUser(invitorId, models.StatusPending, models.StatusDeclined)
+		found, err := a.Store.FindConfirmations(&models.Confirmation{CreatorId: invitorId}, models.StatusPending, models.StatusDeclined)
 		if invitations := a.checkFoundConfirmations(res, found, err); invitations != nil {
 			a.logMetric("get sent invites", req)
 			a.sendModelAsResWithStatus(res, invitations, http.StatusOK)
