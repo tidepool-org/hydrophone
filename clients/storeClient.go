@@ -8,8 +8,8 @@ type StoreClient interface {
 	Close()
 	Ping() error
 	UpsertConfirmation(confirmation *models.Confirmation) error
-	ConfirmationsToUser(userId, userEmail string, statuses ...models.Status) (results []*models.Confirmation, err error)
-	ConfirmationsFromUser(creatorId string, statuses ...models.Status) (results []*models.Confirmation, err error)
+	ConfirmationsToUser(fromId, toId, toEmail string, statuses ...models.Status) (results []*models.Confirmation, err error)
+	ConfirmationsFromUser(fromId string, statuses ...models.Status) (results []*models.Confirmation, err error)
 	FindConfirmation(confirmation *models.Confirmation) (result *models.Confirmation, err error)
 	FindConfirmationByKey(key string) (result *models.Confirmation, err error)
 	RemoveConfirmation(confirmation *models.Confirmation) error

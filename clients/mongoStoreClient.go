@@ -95,32 +95,15 @@ func (d MongoStoreClient) FindConfirmationByKey(key string) (result *models.Conf
 	return result, nil
 }
 
-func (d MongoStoreClient) FindConfirmations(userEmail, creatorId string, statuses ...models.Status) (results []*models.Confirmation, err error) {
-
-	var query bson.M
-
-	if userEmail != "" {
-		query = bson.M{"userId": userEmail, "status": bson.M{"$in": statuses}}
-		//query = bson.M{"email": userEmail, "status": bson.M{"$in": statuses}}
-	} else if creatorId != "" {
-		query = bson.M{"creatorId": creatorId, "status": bson.M{"$in": statuses}}
-	}
-
-	if err = d.confirmationsC.Find(query).All(&results); err != nil {
-		return results, err
-	}
-	return results, nil
-}
-
-func (d MongoStoreClient) ConfirmationsToUser(userId, userEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
+func (d MongoStoreClient) ConfirmationsToUser(fromId, toId, toEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
 
 	query := []bson.M{}
 
-	if userId != "" {
-		query = append(query, bson.M{"userId": userId, "status": bson.M{"$in": statuses}})
+	if toId != "" && fromId != "" {
+		query = append(query, bson.M{"creatorId": fromId, "userId": toId, "status": bson.M{"$in": statuses}})
 	}
-	if userEmail != "" {
-		query = append(query, bson.M{"email": userEmail, "status": bson.M{"$in": statuses}})
+	if toEmail != "" && fromId != "" {
+		query = append(query, bson.M{"creatorId": fromId, "email": toEmail, "status": bson.M{"$in": statuses}})
 	}
 	return d.queryConfirmations(bson.M{"$or": query})
 }

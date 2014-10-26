@@ -39,8 +39,8 @@ type (
 //Or are they an existing user and already in the group?
 func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
 
-	//already has invite?
-	if a.existingConfirmations(inviteeEmail, models.StatusPending, models.StatusDeclined, models.StatusCompleted) > 0 {
+	//already has invite from this user?
+	if a.existingConfirmations(invitorId, inviteeEmail, models.StatusPending, models.StatusDeclined, models.StatusCompleted) > 0 {
 		log.Println(STATUS_EXISTING_INVITE)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, STATUS_EXISTING_INVITE)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
@@ -81,7 +81,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		invitedUsr := a.findExistingUser(inviteeId, req.Header.Get(TP_SESSION_TOKEN))
 
 		//find all oustanding invites were this user is the invite//
-		found, err := a.Store.ConfirmationsToUser(inviteeId, invitedUsr.Emails[0], models.StatusPending)
+		found, err := a.Store.ConfirmationsToUser(inviteeId, "", invitedUsr.Emails[0], models.StatusPending)
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(inviteeId, invites)
 			a.logMetric("get received invites", req)

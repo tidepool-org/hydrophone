@@ -87,7 +87,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 			}
 		}
 		//with userid
-		if confirmations, err := mc.ConfirmationsToUser(toUser, "", models.StatusDeclined, models.StatusCompleted); err == nil {
+		if confirmations, err := mc.ConfirmationsToUser(fromUser, toUser, "", models.StatusDeclined, models.StatusCompleted); err == nil {
 			if len(confirmations) != 1 {
 				t.Fatalf("we should have found 1 confirmations %v", confirmations)
 			}
@@ -99,7 +99,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 			}
 		}
 		//only email address
-		if confirmations, err := mc.ConfirmationsToUser("", toOtherEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
+		if confirmations, err := mc.ConfirmationsToUser(fromUser, "", toOtherEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
 			if len(confirmations) != 1 {
 				t.Fatalf("we should have found 1 confirmations %v", confirmations)
 			}
@@ -111,7 +111,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 			}
 		}
 		//with both userid and email address
-		if confirmations, err := mc.ConfirmationsToUser(toUser, toEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
+		if confirmations, err := mc.ConfirmationsToUser(fromUser, toUser, toEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
 			if len(confirmations) != 1 {
 				t.Fatalf("we should have found 1 confirmations %v", confirmations)
 			}

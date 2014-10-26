@@ -55,7 +55,7 @@ func (d *MockStoreClient) FindConfirmationByKey(key string) (result *models.Conf
 	return conf, nil
 }
 
-func (d *MockStoreClient) ConfirmationsToUser(userId, userEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
+func (d *MockStoreClient) ConfirmationsToUser(fromId, toId, toEmail string, statuses ...models.Status) (results []*models.Confirmation, err error) {
 	if d.doBad {
 		return nil, errors.New("FindConfirmation failure")
 	}
@@ -64,11 +64,14 @@ func (d *MockStoreClient) ConfirmationsToUser(userId, userEmail string, statuses
 	}
 
 	conf, _ := models.NewConfirmation(models.TypeCareteamInvite, "")
-	if userId != "" {
-		conf.UserId = userId
+	if fromId != "" {
+		conf.CreatorId = fromId
 	}
-	if userEmail != "" {
-		conf.Email = userEmail
+	if toId != "" {
+		conf.UserId = toId
+	}
+	if toEmail != "" {
+		conf.Email = toEmail
 	}
 
 	conf.Context = []byte(`{"view":{}, "note":{}}`)
