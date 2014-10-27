@@ -111,17 +111,6 @@ func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 	return d.queryConfirmations(query)
 }
 
-func (d MongoStoreClient) FindConfirmationByKey(key string) (result *models.Confirmation, err error) {
-
-	if key != "" {
-		if err = d.confirmationsC.Find(bson.M{"_id": key}).One(&result); err != nil {
-			return result, err
-		}
-	}
-
-	return result, nil
-}
-
 func (d MongoStoreClient) queryConfirmations(query interface{}) (results []*models.Confirmation, err error) {
 	if err = d.confirmationsC.Find(query).All(&results); err != nil {
 		return results, err

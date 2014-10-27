@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -381,12 +380,12 @@ func TestAddressResponds(t *testing.T) {
 			var result = &jo{}
 
 			if err := json.NewDecoder(response.Body).Decode(result); err != nil {
-				log.Printf("Err decoding nonempty response body: %v\n", err)
+				t.Logf("Err decoding nonempty response body: [%v]\n [%v]\n", err, response.Body)
 				return
 			}
 
 			if cmp := result.deepCompare(&test.response); cmp != "" {
-				t.Logf("Test %d url: '%s'\n\t%s\n", idx, test.url, cmp)
+				t.Fatalf("Test %d url: '%s'\n\t%s\n", idx, test.url, cmp)
 			}
 		}
 	}
