@@ -50,12 +50,13 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 
 	if len(invites) > 0 {
 
-		hrsBetweenInvites := float64(a.Config.InviteTimeoutDays * 24)
-		hrsSinceInvite := time.Now().Sub(invites[0].Created).Hours()
+		//rule is we cannot send if the invite is before the window opens
+		latestInvite := invites[0].Created
+		timeWindowOpens := latestInvite.Add(time.Duration(a.Config.InviteTimeoutDays) * 24 * time.Hour)
 
-		if hrsSinceInvite > hrsBetweenInvites {
+		if timeWindowOpens.After(time.Now()) {
 			log.Println(STATUS_EXISTING_INVITE)
-			log.Printf("time allowed between invites [%.1f]hrs time since last invite [%.1f]hrs", hrsBetweenInvites, hrsSinceInvite)
+			log.Printf("last invite was [%v] and window opened [%v]", latestInvite, timeWindowOpens)
 			statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, STATUS_EXISTING_INVITE)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 			return true, nil

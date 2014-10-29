@@ -37,7 +37,7 @@ var (
 			CareteamInvite: `{{define "invite_test"}} {{ .UserId }} {{ .Key }} {{end}}{{template "invite_test" .}}`,
 			Confirmation:   `{{define "confirm_test"}} {{ .UserId }} {{ .Key }} {{end}}{{template "confirm_test" .}}`,
 		},
-		InviteTimeoutDays: 2,
+		InviteTimeoutDays: 7,
 	}
 	/*
 	 * basics setup
