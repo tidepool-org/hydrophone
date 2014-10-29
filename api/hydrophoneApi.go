@@ -27,8 +27,9 @@ type (
 		Config     Config
 	}
 	Config struct {
-		ServerSecret string                 `json:"serverSecret"` //used for services
-		Templates    *models.TemplateConfig `json:"emailTemplates"`
+		ServerSecret      string                 `json:"serverSecret"` //used for services
+		Templates         *models.TemplateConfig `json:"emailTemplates"`
+		InviteTimeoutDays int                    `json:"inviteTimeoutDays"`
 	}
 	profile struct {
 		FullName string

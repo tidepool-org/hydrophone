@@ -40,11 +40,19 @@ type (
 func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
 
 	//already has invite from this user?
-	if a.existingConfirmations(invitorId, inviteeEmail, models.StatusPending, models.StatusDeclined, models.StatusCompleted) > 0 {
-		log.Println(STATUS_EXISTING_INVITE)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, STATUS_EXISTING_INVITE)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-		return true, nil
+	invites := a.existingConfirmations(invitorId, inviteeEmail, models.StatusPending, models.StatusDeclined, models.StatusCompleted)
+
+	if len(invites) > 0 {
+
+		hrsBetweenInvites := a.Config.InviteTimeoutDays * 24
+		hrsSinceInvite := time.Now().Sub(invites[0].Created).Hours()
+
+		if hrsSinceInvite < hrsBetweenInvites {
+			log.Println(STATUS_EXISTING_INVITE)
+			statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, STATUS_EXISTING_INVITE)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
+			return true, nil
+		}
 	}
 
 	//already in the group?

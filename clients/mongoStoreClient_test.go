@@ -81,6 +81,11 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 			if len(confirmations) != 2 {
 				t.Fatalf("we should have found 2 confirmations %v", confirmations)
 			}
+
+			if confirmations[0].Created < confirmations[1].Created {
+				t.Fatalf("the newest confirmtion should be first %v", confirmations)
+			}
+
 			if confirmations[0].Status != models.StatusCompleted && confirmations[0].Status != models.StatusDeclined {
 				t.Fatalf("status invalid: %s", confirmations[0].Status)
 			}
