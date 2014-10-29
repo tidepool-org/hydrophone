@@ -1,12 +1,14 @@
 package clients
 
 import (
-	"./../models"
 	"encoding/json"
-	"github.com/tidepool-org/go-common/clients/mongo"
 	"io/ioutil"
-	"labix.org/v2/mgo"
 	"testing"
+
+	"labix.org/v2/mgo"
+
+	"./../models"
+	"github.com/tidepool-org/go-common/clients/mongo"
 )
 
 func TestMongoStoreConfirmationOperations(t *testing.T) {
@@ -82,7 +84,10 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 				t.Fatalf("we should have found 2 confirmations %v", confirmations)
 			}
 
-			if confirmations[0].Created < confirmations[1].Created {
+			t1 := confirmations[0].Created
+			t2 := confirmations[1].Created
+
+			if t1.After(t2) {
 				t.Fatalf("the newest confirmtion should be first %v", confirmations)
 			}
 
