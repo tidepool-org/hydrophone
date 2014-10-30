@@ -9,6 +9,7 @@ import (
 
 const (
 	STATUS_NO_EMAIL_MATCH = ""
+	STATUS_NO_RESET_MATCH = ""
 	STATUS_RESET_SENT     = ""
 	STATUS_RESET_ACCEPTED = ""
 )
@@ -68,24 +69,17 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 }
 
 //Accept the password change
+
+//This call will be invoked by the lost password screen with the key that was included in the URL of the lost password screen.
+//For additional safety, the user will be required to manually enter the email address on the account as part of the UI,
+// and also to enter a new password which will replace the password on the account.
+//
+// If this call is completed without error, the lost password request is marked as accepted.
+// Otherwise, the lost password request remains active until it expires.
 //
 // status: 200 STATUS_RESET_ACCEPTED
-/*
-```
-PUT /confirm/accept/forgot/
-
-body {
-  "key": "confirmkey"
-  "email": "address_on_the_account"
-  "password": "new_password"
-}
-```
-
-This call will be invoked by the lost password screen with the key that was included in the URL of the lost password screen. For additional safety, the user will be required to manually enter the email address on the account as part of the UI, and also to enter a new password which will replace the password on the account.
-
-If this call is completed without error, the lost password request is marked as accepted. Otherwise, the lost password request remains active until it expires.
-
-*/
+// status: 400 STATUS_ERR_DECODING_CONFIRMATION issue decoding the accept body
+// status: 404 STATUS_NO_RESET_MATCH
 func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
 
