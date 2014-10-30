@@ -2,6 +2,7 @@ package clients
 
 import (
 	"errors"
+	"time"
 
 	"./../models"
 )
@@ -9,10 +10,11 @@ import (
 type MockStoreClient struct {
 	doBad      bool
 	returnNone bool
+	now        time.Time
 }
 
 func NewMockStoreClient(returnNone, doBad bool) *MockStoreClient {
-	return &MockStoreClient{doBad: doBad, returnNone: returnNone}
+	return &MockStoreClient{doBad: doBad, returnNone: returnNone, now: time.Now()}
 }
 
 func (d *MockStoreClient) Close() {}
@@ -38,6 +40,8 @@ func (d *MockStoreClient) FindConfirmation(notification *models.Confirmation) (r
 	if d.returnNone {
 		return nil, nil
 	}
+
+	notification.Created = time.Now().AddDate(0, 0, -3) // created three days ago
 	return notification, nil
 }
 
@@ -49,6 +53,7 @@ func (d *MockStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 		return nil, nil
 	}
 
+	confirmation.Created = time.Now().AddDate(0, 0, -3) // created three days ago
 	confirmation.Context = []byte(`{"view":{}, "note":{}}`)
 	confirmation.UpdateStatus(statuses[0])
 
