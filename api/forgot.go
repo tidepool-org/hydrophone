@@ -1,10 +1,12 @@
 package api
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
 	"./../models"
+	"github.com/tidepool-org/go-common/clients/status"
 )
 
 const (
@@ -45,7 +47,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.Email = email
 
 		//already in the group?
-		if resetUsr := a.findExistingUser(resetCnf.Email, token); resetUsr != nil {
+		if resetUsr := a.findExistingUser(resetCnf.Email, req.Header.Get(TP_SESSION_TOKEN)); resetUsr != nil {
 			resetCnf.UserId = resetUsr.UserID
 		}
 
@@ -57,7 +59,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 				Email: resetCnf.Email,
 			}
 
-			if a.createAndSendNotfication(invite, emailContent) {
+			if a.createAndSendNotfication(resetCnf, emailContent) {
 				a.logMetric("reset confirmation sent", req)
 			}
 		}
