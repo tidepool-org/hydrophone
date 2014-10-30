@@ -84,7 +84,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// POST /confirm/send/invite/:userid
 	send := rtr.PathPrefix("/send").Subrouter()
 	send.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("POST")
-	send.Handle("/forgot/{useremail}", varsHandler(a.Dummy)).Methods("POST")
+	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
 
 	// POST /confirm/resend/signup/:userid
@@ -95,7 +95,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// PUT /confirm/accept/invite/:userid/:invited_by
 	accept := rtr.PathPrefix("/accept").Subrouter()
 	accept.Handle("/signup/{userid}/{confirmationid}", varsHandler(a.Dummy)).Methods("PUT")
-	accept.Handle("/forgot", varsHandler(a.Dummy)).Methods("PUT")
+	accept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
 	accept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
