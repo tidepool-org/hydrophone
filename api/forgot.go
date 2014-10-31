@@ -35,40 +35,38 @@ type (
 //Send a password reset confirmation
 //
 // status: 200 STATUS_RESET_SENT
-// status: 404 STATUS_NO_EMAIL_MATCH - no match is made on the email
 // status: 400 no email given
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
-		email := vars["useremail"]
-		if email == "" {
-			res.WriteHeader(http.StatusBadRequest)
+
+	email := vars["useremail"]
+	if email == "" {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	resetCnf, _ := models.NewConfirmation(models.TypePasswordReset, "")
+	resetCnf.Email = email
+
+	//can we find the user?
+	token := a.sl.TokenProvide()
+	if resetUsr := a.findExistingUser(resetCnf.Email, token); resetUsr != nil {
+		resetCnf.UserId = resetUsr.UserID
+	}
+
+	if a.addOrUpdateConfirmation(resetCnf, res) {
+		a.logMetric("reset confirmation created", req)
+
+		emailContent := &resetEmailContent{
+			Key:   resetCnf.Key,
+			Email: resetCnf.Email,
+		}
+
+		if a.createAndSendNotfication(resetCnf, emailContent) {
+			a.logMetric("reset confirmation sent", req)
+			res.WriteHeader(http.StatusOK)
 			return
 		}
-
-		resetCnf, _ := models.NewConfirmation(models.TypePasswordReset, "")
-		resetCnf.Email = email
-
-		//already in the group?
-		if resetUsr := a.findExistingUser(resetCnf.Email, req.Header.Get(TP_SESSION_TOKEN)); resetUsr != nil {
-			resetCnf.UserId = resetUsr.UserID
-		}
-
-		if a.addOrUpdateConfirmation(resetCnf, res) {
-			a.logMetric("reset confirmation created", req)
-
-			emailContent := &resetEmailContent{
-				Key:   resetCnf.Key,
-				Email: resetCnf.Email,
-			}
-
-			if a.createAndSendNotfication(resetCnf, emailContent) {
-				a.logMetric("reset confirmation sent", req)
-				a.sendModelAsResWithStatus(res, resetCnf, http.StatusOK)
-				return
-			}
-		}
 	}
-	return
 }
 
 //Accept the password change
