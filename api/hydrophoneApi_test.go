@@ -88,7 +88,7 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 
 	body, _ := ioutil.ReadAll(response.Body)
 
-	if string(body) != `{"Code":500,"Reason":"Session failure"}` {
+	if string(body) != `{"code":500,"reason":"Session failure"}` {
 		t.Fatalf("Message given [%s] expected [%s] ", string(body), "Session failure")
 	}
 }

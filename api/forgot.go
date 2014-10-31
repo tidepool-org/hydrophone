@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"./../models"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 )
 
@@ -14,6 +15,7 @@ const (
 	STATUS_NO_RESET_MATCH = ""
 	STATUS_RESET_SENT     = ""
 	STATUS_RESET_ACCEPTED = ""
+	STATUS_RESET_ERROR    = ""
 )
 
 type (
@@ -62,6 +64,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 			if a.createAndSendNotfication(resetCnf, emailContent) {
 				a.logMetric("reset confirmation sent", req)
 			}
+			return
 		}
 
 		a.sendModelAsResWithStatus(res, resetCnf, http.StatusOK)
@@ -81,7 +84,8 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 //
 // status: 200 STATUS_RESET_ACCEPTED
 // status: 400 STATUS_ERR_DECODING_CONFIRMATION issue decoding the accept body
-// status: 404 STATUS_NO_RESET_MATCH
+// status: 400 STATUS_RESET_ERROR when we can't update the users password
+// status: 404 STATUS_NO_RESET_MATCH when no matching reset confirmation is found
 func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if a.checkToken(res, req) {
 
@@ -94,7 +98,26 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 			return
 		}
 
-		res.WriteHeader(http.StatusNotImplemented)
+		resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email}
+
+		if conf := a.findExistingConfirmation(resetCnf, res); conf != nil {
+
+			if usr := a.findExistingUser(rb.Email, req.Header.Get(TP_SESSION_TOKEN)); usr != nil {
+
+				if err := a.sl.UpdateUser(shoreline.UserUpdate{*usr, rb.Password}, req.Header.Get(TP_SESSION_TOKEN)); err != nil {
+					log.Printf("Error updating password as part of password reset [%v]", err)
+					status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
+					a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
+					return
+				}
+
+				status := &status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)}
+				a.sendModelAsResWithStatus(res, status, http.StatusOK)
+				return
+			}
+		}
+		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NO_RESET_MATCH)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 		return
 	}
 	return
