@@ -329,13 +329,11 @@ func TestAddressResponds(t *testing.T) {
 		},
 		{
 			// always returns a 200 if properly formed
-			skip:     true,
 			method:   "POST",
 			url:      "/send/forgot/me@myemail.com",
 			respCode: 200,
 		},
 		{
-			skip:     true,
 			method:   "PUT",
 			url:      "/accept/forgot",
 			token:    TOKEN_FOR_UID1,

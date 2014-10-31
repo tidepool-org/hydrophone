@@ -63,12 +63,10 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 			if a.createAndSendNotfication(resetCnf, emailContent) {
 				a.logMetric("reset confirmation sent", req)
+				a.sendModelAsResWithStatus(res, resetCnf, http.StatusOK)
+				return
 			}
-			return
 		}
-
-		a.sendModelAsResWithStatus(res, resetCnf, http.StatusOK)
-		return
 	}
 	return
 }
@@ -110,10 +108,13 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 					a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
 					return
 				}
-
-				status := &status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)}
-				a.sendModelAsResWithStatus(res, status, http.StatusOK)
-				return
+				conf.UpdateStatus(models.StatusCompleted)
+				if a.addOrUpdateConfirmation(conf, res) {
+					a.logMetric("password reset", req)
+					status := &status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)}
+					a.sendModelAsResWithStatus(res, status, http.StatusOK)
+					return
+				}
 			}
 		}
 		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NO_RESET_MATCH)}
