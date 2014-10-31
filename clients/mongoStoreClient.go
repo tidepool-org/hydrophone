@@ -108,11 +108,7 @@ func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 		query["status"] = bson.M{"$in": statuses}
 	}
 
-	return d.queryConfirmations(query)
-}
-
-func (d MongoStoreClient) queryConfirmations(query interface{}) (results []*models.Confirmation, err error) {
-	if err = d.confirmationsC.Find(query).All(&results); err != nil {
+	if err = d.confirmationsC.Find(query).Sort("created").All(&results); err != nil {
 		return results, err
 	}
 	return results, nil

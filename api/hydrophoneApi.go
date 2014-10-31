@@ -27,8 +27,9 @@ type (
 		Config     Config
 	}
 	Config struct {
-		ServerSecret string                 `json:"serverSecret"` //used for services
-		Templates    *models.TemplateConfig `json:"emailTemplates"`
+		ServerSecret      string                 `json:"serverSecret"` //used for services
+		Templates         *models.TemplateConfig `json:"emailTemplates"`
+		InviteTimeoutDays int                    `json:"inviteTimeoutDays"`
 	}
 	profile struct {
 		FullName string
@@ -166,19 +167,6 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 		return nil
 	} else {
 		return found
-	}
-}
-
-//Do we already have a confirmation for address?
-func (a *Api) existingConfirmations(invitorId, email string, statuses ...models.Status) int {
-	if found, err := a.Store.FindConfirmations(&models.Confirmation{CreatorId: invitorId, Email: email}, statuses...); err != nil {
-		log.Println("Error looking for existing confirmation ", err)
-		return 0
-	} else {
-		if found == nil {
-			return 0
-		}
-		return len(found)
 	}
 }
 

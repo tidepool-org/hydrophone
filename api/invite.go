@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"./../models"
 	commonClients "github.com/tidepool-org/go-common/clients"
@@ -40,11 +41,26 @@ type (
 func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
 
 	//already has invite from this user?
-	if a.existingConfirmations(invitorId, inviteeEmail, models.StatusPending, models.StatusDeclined, models.StatusCompleted) > 0 {
-		log.Println(STATUS_EXISTING_INVITE)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, STATUS_EXISTING_INVITE)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-		return true, nil
+	invites, _ := a.Store.FindConfirmations(
+		&models.Confirmation{CreatorId: invitorId, Email: inviteeEmail},
+		models.StatusPending,
+		models.StatusDeclined,
+		models.StatusCompleted,
+	)
+
+	if len(invites) > 0 {
+
+		//rule is we cannot send if the invite is before the window opens
+		latestInvite := invites[0].Created
+		timeWindowOpens := latestInvite.Add(time.Duration(a.Config.InviteTimeoutDays) * 24 * time.Hour)
+
+		if timeWindowOpens.After(time.Now()) {
+			log.Println(STATUS_EXISTING_INVITE)
+			log.Printf("last invite was [%v] and window opened [%v]", latestInvite, timeWindowOpens)
+			statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, STATUS_EXISTING_INVITE)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
+			return true, nil
+		}
 	}
 
 	//already in the group?
