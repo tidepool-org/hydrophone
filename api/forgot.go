@@ -11,11 +11,9 @@ import (
 )
 
 const (
-	STATUS_NO_EMAIL_MATCH = ""
-	STATUS_NO_RESET_MATCH = ""
-	STATUS_RESET_SENT     = ""
-	STATUS_RESET_ACCEPTED = ""
-	STATUS_RESET_ERROR    = ""
+	STATUS_NO_RESET_MATCH = "No matching reset confirmation was found"
+	STATUS_RESET_ACCEPTED = "Password has been reset"
+	STATUS_RESET_ERROR    = "Error while reseting password, reset confirmation remains active until it expires"
 )
 
 type (
@@ -43,7 +41,7 @@ type (
 // Visiting the URL in the email will fetch a page that offers the user the chance to accept or reject the lost password request.
 // If accepted, the user must then create a new password that will replace the old one.
 //
-// status: 200 STATUS_RESET_SENT
+// status: 200
 // status: 400 no email given
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
