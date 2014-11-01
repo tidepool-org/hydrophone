@@ -32,7 +32,16 @@ type (
 	}
 )
 
-//Send a password reset confirmation
+//Create a lost password request
+//
+//If the request is correctly formed, always returns a 200, even if the email address was not found (this way it can't be used to validate email addresses).
+//
+//If the email address is found in the Tidepool system, this will:
+// - Create a confirm record and a random key
+// - Send an email with a link containing the key
+//
+// Visiting the URL in the email will fetch a page that offers the user the chance to accept or reject the lost password request.
+// If accepted, the user must then create a new password that will replace the old one.
 //
 // status: 200 STATUS_RESET_SENT
 // status: 400 no email given
@@ -49,6 +58,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 	//can we find the user?
 	token := a.sl.TokenProvide()
+
 	if resetUsr := a.findExistingUser(resetCnf.Email, token); resetUsr != nil {
 		resetCnf.UserId = resetUsr.UserID
 	}
@@ -63,14 +73,15 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 		if a.createAndSendNotfication(resetCnf, emailContent) {
 			a.logMetric("reset confirmation sent", req)
-			res.WriteHeader(http.StatusOK)
-			return
 		}
 	}
+	//unless no email was given we say its all good
+	res.WriteHeader(http.StatusOK)
+	return
 }
 
 //Accept the password change
-
+//
 //This call will be invoked by the lost password screen with the key that was included in the URL of the lost password screen.
 //For additional safety, the user will be required to manually enter the email address on the account as part of the UI,
 // and also to enter a new password which will replace the password on the account.
