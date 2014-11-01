@@ -30,6 +30,7 @@ type (
 		ServerSecret      string                 `json:"serverSecret"` //used for services
 		Templates         *models.TemplateConfig `json:"emailTemplates"`
 		InviteTimeoutDays int                    `json:"inviteTimeoutDays"`
+		ResetTimeoutDays  int                    `json:"resetTimeoutDays"`
 	}
 	profile struct {
 		FullName string
