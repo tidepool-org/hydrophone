@@ -228,6 +228,14 @@ func (a *Api) logMetric(name string, req *http.Request) {
 	return
 }
 
+//send metric
+func (a *Api) logMetricAsServer(name string) {
+	token := a.sl.TokenProvide()
+	emptyParams := make(map[string]string)
+	a.metrics.PostServer(name, token, emptyParams)
+	return
+}
+
 //Find existing user based on the given indentifier
 //The indentifier could be either an id or email address
 func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {

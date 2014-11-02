@@ -61,7 +61,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	}
 
 	if a.addOrUpdateConfirmation(resetCnf, res) {
-		a.logMetric("reset confirmation created", req)
+		a.logMetricAsServer("reset confirmation created")
 
 		emailContent := &resetEmailContent{
 			Key:   resetCnf.Key,
@@ -69,7 +69,10 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		}
 
 		if a.createAndSendNotfication(resetCnf, emailContent) {
-			a.logMetric("reset confirmation sent", req)
+			a.logMetricAsServer("reset confirmation sent")
+		} else {
+			a.logMetricAsServer("reset confirmation failed to be sent")
+			log.Print("Something happened generating a passwordReset email")
 		}
 	}
 	//unless no email was given we say its all good
@@ -106,58 +109,56 @@ func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.Response
 // status: 400 STATUS_RESET_ERROR when we can't update the users password
 // status: 404 STATUS_RESET_NOT_FOUND when no matching reset confirmation is found
 func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
 
-		defer req.Body.Close()
-		var rb = &resetBody{}
-		if err := json.NewDecoder(req.Body).Decode(rb); err != nil {
-			log.Printf("acceptPassword: error decoding reset details %v\n", err)
-			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-			return
-		}
+	defer req.Body.Close()
+	var rb = &resetBody{}
+	if err := json.NewDecoder(req.Body).Decode(rb); err != nil {
+		log.Printf("acceptPassword: error decoding reset details %v\n", err)
+		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		return
+	}
 
-		resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email}
+	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email}
 
-		if conf, err := a.findResetConfirmation(resetCnf, res); err == nil {
+	if conf, err := a.findResetConfirmation(resetCnf, res); err == nil {
 
-			if conf != nil {
+		if conf != nil {
 
-				token := a.sl.TokenProvide()
+			token := a.sl.TokenProvide()
 
-				if usr := a.findExistingUser(rb.Email, token); usr != nil {
+			if usr := a.findExistingUser(rb.Email, token); usr != nil {
 
-					if err := a.sl.UpdateUser(shoreline.UserUpdate{*usr, rb.Password}, token); err != nil {
-						log.Printf("Error updating password as part of password reset [%v]", err)
-						status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
-						a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
-						return
-					}
-					conf.UpdateStatus(models.StatusCompleted)
-					if a.addOrUpdateConfirmation(conf, res) {
-						//STATUS_RESET_ACCEPTED
-						a.logMetric("password reset", req)
-						a.sendModelAsResWithStatus(
-							res,
-							status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
-							http.StatusOK,
-						)
-						return
-					}
+				if err := a.sl.UpdateUser(shoreline.UserUpdate{*usr, rb.Password}, token); err != nil {
+					log.Printf("Error updating password as part of password reset [%v]", err)
+					status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
+					a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
+					return
+				}
+				conf.UpdateStatus(models.StatusCompleted)
+				if a.addOrUpdateConfirmation(conf, res) {
+					//STATUS_RESET_ACCEPTED
+					a.logMetricAsServer("password reset")
+					a.sendModelAsResWithStatus(
+						res,
+						status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
+						http.StatusOK,
+					)
+					return
 				}
 			}
-			//STATUS_RESET_NOT_FOUND
-			a.sendModelAsResWithStatus(
-				res,
-				status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND),
-				http.StatusNotFound,
-			)
-			return
-		} else {
-			//expired error
-			a.sendModelAsResWithStatus(res, err, http.StatusUnauthorized)
-			return
 		}
+		//STATUS_RESET_NOT_FOUND
+		a.sendModelAsResWithStatus(
+			res,
+			status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND),
+			http.StatusNotFound,
+		)
+		return
+	} else {
+		//expired error
+		a.sendModelAsResWithStatus(res, err, http.StatusUnauthorized)
+		return
 	}
 	return
 }
