@@ -46,42 +46,48 @@ func (a *Api) findSignUpConfirmation(conf *models.Confirmation, res http.Respons
 
 //Send a signup confirmation email to a userid.
 //
-//```
-//POST /confirm/send/signup/:userid
-//x-tidepool-session-token: <token>
-//```
-//
-//This post is sent by the signup logic. In this state, the user account has been created but has a flag that forces the user to the confirmation-required page until the signup has been confirmed.
-//
-//(We need some rules about how often you can attempt a signup with a given email address, to keep this from being used to spam people either deliberately or accidentally. This call should also be throttled at the system level to prevent distributed attacks.)
-//
+//This post is sent by the signup logic. In this state, the user account has been created but has a flag that
+//forces the user to the confirmation-required page until the signup has been confirmed.
 //It sends an email that contains a random confirmation link.
-// status: 200
+//
+// status: 201
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	//NOTE: (We need some rules about how often you can attempt a signup with a given email address, to keep this from being used to spam people either deliberately or accidentally. This call should also be throttled at the system level to prevent distributed attacks.)
+
 	res.WriteHeader(http.StatusNotImplemented)
 	return
 }
 
-// status: 200
-func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	res.WriteHeader(http.StatusNotImplemented)
-	return
-}
-
+//If a user didn't receive the confirmation email and logs in, they're directed to the confirmation-required page which can offer to resend the confirmation email.
+//
 // status: 200
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	res.WriteHeader(http.StatusNotImplemented)
 	return
 }
 
+//This would be PUT by the web page at the link in the signup email. No authentication is required.
+//When this call is made, the flag that prevents login on an account is removed, and the user is directed to the login page.
+//If the user has an active cookie for signup (created with a short lifetime) we can accept the presence of that cookie to allow the actual login to be skipped.
+//
 // status: 200
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	res.WriteHeader(http.StatusNotImplemented)
 	return
 }
 
+//In the event that someone uses the wrong email address, the receiver could explicitly dismiss a signup attempt with this link (useful for metrics and to identify phishing attempts).
+//This link would be some sort of parenthetical comment in the signup confirmation email, like "(I didn't try to sign up for Tidepool.)"
+//No authentication required.
+//
 // status: 200
 func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	res.WriteHeader(http.StatusNotImplemented)
+	return
+}
+
+// status: 200
+func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	res.WriteHeader(http.StatusNotImplemented)
 	return
 }
