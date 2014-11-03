@@ -94,6 +94,10 @@ func TestSignupResponds(t *testing.T) {
 
 	for idx, test := range tests {
 
+		if test.skip {
+			continue
+		}
+
 		//fresh each time
 		var testRtr = mux.NewRouter()
 
