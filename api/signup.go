@@ -51,6 +51,12 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 }
 
 // status: 200
+func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	res.WriteHeader(http.StatusNotImplemented)
+	return
+}
+
+// status: 200
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	res.WriteHeader(http.StatusNotImplemented)
 	return
