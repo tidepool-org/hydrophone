@@ -29,6 +29,13 @@ func TestSignupResponds(t *testing.T) {
 			respCode:   200,
 		},
 		{
+			// need a token
+			returnNone: true,
+			method:     "POST",
+			url:        "/send/signup/NewUserID",
+			respCode:   401,
+		},
+		{
 			// second time you ask, it fails with a limit
 			method:   "POST",
 			url:      "/send/signup/NewUserID",
@@ -41,6 +48,12 @@ func TestSignupResponds(t *testing.T) {
 			url:      "/resend/signup",
 			token:    TOKEN_FOR_UID1,
 			respCode: 404,
+		},
+		{
+			// no token is no good
+			method:   "POST",
+			url:      "/resend/signup/UID",
+			respCode: 401,
 		},
 		{
 			// but you can resend a valid one
