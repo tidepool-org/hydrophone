@@ -44,6 +44,18 @@ func (a *Api) findSignUpConfirmation(conf *models.Confirmation, res http.Respons
 	return nil, nil
 }
 
+//Send a signup confirmation email to a userid.
+//
+//```
+//POST /confirm/send/signup/:userid
+//x-tidepool-session-token: <token>
+//```
+//
+//This post is sent by the signup logic. In this state, the user account has been created but has a flag that forces the user to the confirmation-required page until the signup has been confirmed.
+//
+//(We need some rules about how often you can attempt a signup with a given email address, to keep this from being used to spam people either deliberately or accidentally. This call should also be throttled at the system level to prevent distributed attacks.)
+//
+//It sends an email that contains a random confirmation link.
 // status: 200
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	res.WriteHeader(http.StatusNotImplemented)
