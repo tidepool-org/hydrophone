@@ -11,6 +11,7 @@ import (
 
 const (
 	STATUS_SIGNUP_NOT_FOUND = "No matching signup confirmation was found"
+	STATUS_SIGNUP_NO_ID     = "Required userid is missing"
 	STATUS_SIGNUP_ACCEPTED  = "User has had signup confirmed"
 	STATUS_SIGNUP_EXPIRED   = "The signup confirmation has expired"
 	STATUS_SIGNUP_ERROR     = "Error while completing signup confirmation> The signup confirmation remains active until it expires"
@@ -51,10 +52,53 @@ func (a *Api) findSignUpConfirmation(conf *models.Confirmation, res http.Respons
 //It sends an email that contains a random confirmation link.
 //
 // status: 201
+// status: 400 STATUS_SIGNUP_NO_ID
+// status: 401 STATUS_NO_TOKEN
+// status: 500 STATUS_ERR_FINDING_USER
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	//NOTE: (We need some rules about how often you can attempt a signup with a given email address, to keep this from being used to spam people either deliberately or accidentally. This call should also be throttled at the system level to prevent distributed attacks.)
+	//NOTE: (We need some rules about how often you can attempt a signup with a given email address,
+	//to keep this from being used to spam people either deliberately or accidentally.
+	//This call should also be throttled at the system level to prevent distributed attacks.)
 
-	res.WriteHeader(http.StatusNotImplemented)
+	if a.checkToken(res, req) {
+		userId := vars["userid"]
+		if userId == "" {
+			log.Printf("sendSignUp %s", STATUS_SIGNUP_NO_ID)
+			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+			return
+		}
+
+		if usrDetails, err := a.sl.GetUser(userId, req.Header.Get(TP_SESSION_TOKEN)); err != nil {
+			log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
+			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
+			return
+		} else {
+
+			signUpCnf, _ := models.NewConfirmation(models.TypeConfirmation, "")
+			signUpCnf.UserId = usrDetails.UserID
+			signUpCnf.Email = usrDetails.Emails[0]
+
+			if a.addOrUpdateConfirmation(signUpCnf, res) {
+				a.logMetric("signup confirmation created", req)
+
+				emailContent := &signUpEmailContent{
+					Key:   signUpCnf.Key,
+					Email: signUpCnf.Email,
+				}
+
+				if a.createAndSendNotfication(signUpCnf, emailContent) {
+					a.logMetricAsServer("signup confirmation sent")
+					res.WriteHeader(http.StatusOK)
+					return
+				} else {
+					a.logMetric("signup confirmation failed to be sent", req)
+					log.Print("Something happened generating a signup email")
+				}
+			}
+		}
+	}
+	log.Printf("sendSignUp %s", STATUS_NO_TOKEN)
+	a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN), http.StatusUnauthorized)
 	return
 }
 

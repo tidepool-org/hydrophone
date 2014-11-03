@@ -49,6 +49,7 @@ const (
 	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
+	STATUS_ERR_FINDING_USER          = "Error finding the user"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
 	STATUS_NOT_FOUND                 = "Nothing found"
