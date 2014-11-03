@@ -13,6 +13,7 @@ const (
 	STATUS_SIGNUP_NOT_FOUND = "No matching signup confirmation was found"
 	STATUS_SIGNUP_NO_ID     = "Required userid is missing"
 	STATUS_SIGNUP_ACCEPTED  = "User has had signup confirmed"
+	STATUS_EXISTING_SIGNUP  = "User already has an existing valid signup confirmation"
 	STATUS_SIGNUP_EXPIRED   = "The signup confirmation has expired"
 	STATUS_SIGNUP_ERROR     = "Error while completing signup confirmation> The signup confirmation remains active until it expires"
 )
@@ -45,6 +46,21 @@ func (a *Api) findSignUpConfirmation(conf *models.Confirmation, res http.Respons
 	return nil, nil
 }
 
+//Do we already have an existing signup confirmation for this email
+func (a *Api) hasDuplicateSignup(userId string) bool {
+
+	signUp, _ := a.Store.FindConfirmations(
+		&models.Confirmation{UserId: userId},
+		models.StatusPending,
+		models.StatusCompleted,
+	)
+
+	if len(signUp) > 0 {
+		return true
+	}
+	return false
+}
+
 //Send a signup confirmation email to a userid.
 //
 //This post is sent by the signup logic. In this state, the user account has been created but has a flag that
@@ -54,6 +70,7 @@ func (a *Api) findSignUpConfirmation(conf *models.Confirmation, res http.Respons
 // status: 201
 // status: 400 STATUS_SIGNUP_NO_ID
 // status: 401 STATUS_NO_TOKEN
+// status: 403 STATUS_EXISTING_SIGNUP
 // status: 500 STATUS_ERR_FINDING_USER
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	//NOTE: (We need some rules about how often you can attempt a signup with a given email address,
@@ -73,6 +90,13 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
 			return
 		} else {
+
+			//has existing??
+			if a.hasDuplicateSignup(usrDetails.UserID) {
+				log.Printf("sendSignUp %s", STATUS_EXISTING_SIGNUP)
+				a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusForbidden, STATUS_EXISTING_SIGNUP), http.StatusForbidden)
+				return
+			}
 
 			signUpCnf, _ := models.NewConfirmation(models.TypeConfirmation, "")
 			signUpCnf.UserId = usrDetails.UserID

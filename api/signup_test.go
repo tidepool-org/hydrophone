@@ -15,7 +15,6 @@ func TestSignupResponds(t *testing.T) {
 	tests := []toTest{
 		{
 			// if you leave off the userid, it fails
-			skip:     true,
 			method:   "POST",
 			url:      "/send/signup",
 			token:    TOKEN_FOR_UID1,
@@ -23,15 +22,14 @@ func TestSignupResponds(t *testing.T) {
 		},
 		{
 			// first time you ask, it does it
-			skip:     true,
-			method:   "POST",
-			url:      "/send/signup/NewUserID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 200,
+			returnNone: true,
+			method:     "POST",
+			url:        "/send/signup/NewUserID",
+			token:      TOKEN_FOR_UID1,
+			respCode:   200,
 		},
 		{
 			// second time you ask, it fails with a limit
-			skip:     true,
 			method:   "POST",
 			url:      "/send/signup/NewUserID",
 			token:    TOKEN_FOR_UID1,
