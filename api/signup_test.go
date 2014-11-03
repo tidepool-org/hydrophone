@@ -37,15 +37,13 @@ func TestSignupResponds(t *testing.T) {
 		},
 		{
 			// can't resend a signup if you didn't send it
-			skip:     true,
 			method:   "POST",
-			url:      "/resend/signup/BadUID",
+			url:      "/resend/signup",
 			token:    TOKEN_FOR_UID1,
 			respCode: 404,
 		},
 		{
 			// but you can resend a valid one
-			skip:     true,
 			method:   "POST",
 			url:      "/resend/signup/UID",
 			token:    TOKEN_FOR_UID1,

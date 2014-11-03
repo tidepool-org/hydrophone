@@ -37,6 +37,7 @@ var (
 		},
 		InviteTimeoutDays: 7,
 		ResetTimeoutDays:  7,
+		SignUpTimeoutDays: 7,
 	}
 	/*
 	 * basics setup

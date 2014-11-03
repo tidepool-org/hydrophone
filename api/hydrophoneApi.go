@@ -31,6 +31,7 @@ type (
 		Templates         *models.TemplateConfig `json:"emailTemplates"`
 		InviteTimeoutDays int                    `json:"inviteTimeoutDays"`
 		ResetTimeoutDays  int                    `json:"resetTimeoutDays"`
+		SignUpTimeoutDays int                    `json:"signUpTimeoutDays"`
 	}
 	profile struct {
 		FullName string

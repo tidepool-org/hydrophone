@@ -35,13 +35,13 @@ type (
 func (a *Api) findSignUpConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
 	if signUpCnf := a.findExistingConfirmation(conf, res); signUpCnf != nil {
 
-		expires := signUpCnf.Created.Add(time.Duration(a.Config.ResetTimeoutDays) * 24 * time.Hour)
+		expires := signUpCnf.Created.Add(time.Duration(a.Config.SignUpTimeoutDays) * 24 * time.Hour)
 
 		if time.Now().Before(expires) {
 			return signUpCnf, nil
 		}
 		log.Printf("findSignUpConfirmation the confirmtaion has expired [%v]", signUpCnf)
-		return nil, &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
+		return nil, &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_SIGNUP_EXPIRED)}
 	}
 	return nil, nil
 }
@@ -126,11 +126,38 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 	return
 }
 
-//If a user didn't receive the confirmation email and logs in, they're directed to the confirmation-required page which can offer to resend the confirmation email.
+//If a user didn't receive the confirmation email and logs in, they're directed to the confirmation-required page which can
+//offer to resend the confirmation email.
 //
 // status: 200
+// status: 401 STATUS_NO_TOKEN
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	res.WriteHeader(http.StatusNotImplemented)
+
+	if a.checkToken(res, req) {
+		userId := vars["userid"]
+
+		signUpCnf := &models.Confirmation{UserId: userId}
+
+		if resendCnf, err := a.findSignUpConfirmation(signUpCnf, res); err == nil {
+
+			emailContent := &signUpEmailContent{
+				Key:   resendCnf.Key,
+				Email: resendCnf.Email,
+			}
+
+			if a.createAndSendNotfication(signUpCnf, emailContent) {
+				a.logMetricAsServer("signup confirmation re-sent")
+			} else {
+				a.logMetric("signup confirmation failed to be sent", req)
+				log.Print("Something happened tryiing to resend a signup email")
+			}
+		}
+		//always return StatusOK so we don't leak details
+		res.WriteHeader(http.StatusOK)
+		return
+	}
+	log.Printf("resendSignUp %s", STATUS_NO_TOKEN)
+	a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN), http.StatusUnauthorized)
 	return
 }
 
