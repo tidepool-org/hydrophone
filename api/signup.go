@@ -1,13 +1,11 @@
 package api
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 
 	"./../models"
-	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 )
 
@@ -19,28 +17,28 @@ const (
 )
 
 type (
-	//Content used to generate the reset email
-	resetEmailContent struct {
+	//Content used to generate the signup email
+	signUpEmailContent struct {
 		Key   string
 		Email string
 	}
-	//reset details reseting a users password
-	resetBody struct {
-		Key      string `json:"key"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
+	//signup details
+	signUpBody struct {
+		Key   string `json:"key"`
+		Email string `json:"email"`
 	}
 )
 
 //find the reset confirmation if it exists and hasn't expired
 func (a *Api) findSignUpConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
-	if resetCnf := a.findExistingConfirmation(conf, res); resetCnf != nil {
+	if signUpCnf := a.findExistingConfirmation(conf, res); signUpCnf != nil {
 
-		expires := resetCnf.Created.Add(time.Duration(a.Config.ResetTimeoutDays) * 24 * time.Hour)
+		expires := signUpCnf.Created.Add(time.Duration(a.Config.ResetTimeoutDays) * 24 * time.Hour)
 
 		if time.Now().Before(expires) {
-			return resetCnf, nil
+			return signUpCnf, nil
 		}
+		log.Printf("findSignUpConfirmation the confirmtaion has expired [%v]", signUpCnf)
 		return nil, &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
 	}
 	return nil, nil
