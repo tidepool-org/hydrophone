@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -13,10 +14,11 @@ const (
 	STATUS_SIGNUP_NOT_FOUND     = "No matching signup confirmation was found"
 	STATUS_SIGNUP_NO_ID         = "Required userid is missing"
 	STATUS_SIGNUP_NO_ID_OR_CONF = "Required userid and/or confirmationid is missing"
+	STATUS_SIGNUP_NO_CONF       = "Required confirmation id is missing"
 	STATUS_SIGNUP_ACCEPTED      = "User has had signup confirmed"
 	STATUS_EXISTING_SIGNUP      = "User already has an existing valid signup confirmation"
 	STATUS_SIGNUP_EXPIRED       = "The signup confirmation has expired"
-	STATUS_SIGNUP_ERROR         = "Error while completing signup confirmation> The signup confirmation remains active until it expires"
+	STATUS_SIGNUP_ERROR         = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
 )
 
 type (
@@ -207,9 +209,49 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 //No authentication required.
 //
 // status: 200
+// status: 400 STATUS_SIGNUP_NO_ID
+// status: 400 STATUS_SIGNUP_NO_CONF
+// status: 400 STATUS_ERR_DECODING_CONFIRMATION
+// status: 404 STATUS_SIGNUP_NOT_FOUND
 func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	res.WriteHeader(http.StatusNotImplemented)
-	return
+
+	userId := vars["userid"]
+
+	if userId == "" {
+		log.Printf("dismissSignUp %s", STATUS_SIGNUP_NO_ID)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+		return
+	}
+
+	dismiss := &models.Confirmation{}
+	if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
+		log.Printf("dismissSignUp: error decoding signup to dismiss [%s]", err.Error())
+		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		return
+	}
+
+	if dismiss.Key == "" {
+		log.Printf("dismissSignUp: %s", STATUS_SIGNUP_NO_CONF)
+		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_CONF)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		return
+	}
+
+	if conf := a.findExistingConfirmation(dismiss, res); conf != nil {
+
+		conf.UpdateStatus(models.StatusDeclined)
+
+		if a.addOrUpdateConfirmation(conf, res) {
+			a.logMetricAsServer("dismiss signup")
+			res.WriteHeader(http.StatusOK)
+			return
+		}
+	} else {
+		log.Printf("dismissSignUp: %s [%v]", STATUS_SIGNUP_NOT_FOUND, dismiss)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
+		return
+	}
 }
 
 // status: 200

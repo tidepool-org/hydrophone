@@ -92,16 +92,23 @@ func TestSignupResponds(t *testing.T) {
 			respCode: 200,
 		},
 		{
-			skip:     true,
-			method:   "GET",
-			url:      "/signup/UID",
-			token:    TOKEN_FOR_UID1,
+			method:   "PUT",
+			url:      "/dismiss/signup/UID",
 			respCode: 200,
+			body: jo{
+				"key": "1234-xXd",
+			},
+		},
+		{
+			//when no key
+			method:   "PUT",
+			url:      "/dismiss/signup/UID",
+			respCode: 400,
 		},
 		{
 			skip:     true,
-			method:   "PUT",
-			url:      "/dismiss/signup/UID",
+			method:   "GET",
+			url:      "/signup/UID",
 			token:    TOKEN_FOR_UID1,
 			respCode: 200,
 		},
