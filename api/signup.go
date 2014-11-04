@@ -64,6 +64,41 @@ func (a *Api) hasDuplicateSignup(userId string) bool {
 	return false
 }
 
+//used to update an existing signup confirmation
+func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.ResponseWriter, req *http.Request) {
+	fromBody := &models.Confirmation{}
+	if err := json.NewDecoder(req.Body).Decode(fromBody); err != nil {
+		log.Printf("updateSignupConfirmation: error decoding signup to cancel [%s]", err.Error())
+		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		return
+	}
+
+	if fromBody.Key == "" {
+		log.Printf("updateSignupConfirmation: %s", STATUS_SIGNUP_NO_CONF)
+		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_CONF)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		return
+	}
+
+	if confToUpdate := a.findExistingConfirmation(fromBody, res); confToUpdate != nil {
+
+		updatedStatus := string(newStatus) + " signup"
+		log.Printf("updateSignupConfirmation: %s", updatedStatus)
+		confToUpdate.UpdateStatus(newStatus)
+
+		if a.addOrUpdateConfirmation(confToUpdate, res) {
+			a.logMetricAsServer(updatedStatus)
+			res.WriteHeader(http.StatusOK)
+			return
+		}
+	} else {
+		log.Printf("updateSignupConfirmation: %s [%v]", STATUS_SIGNUP_NOT_FOUND, fromBody)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
+		return
+	}
+}
+
 //Send a signup confirmation email to a userid.
 //
 //This post is sent by the signup logic. In this state, the user account has been created but has a flag that
@@ -222,36 +257,9 @@ func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map
 		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
 		return
 	}
-
-	dismiss := &models.Confirmation{}
-	if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
-		log.Printf("dismissSignUp: error decoding signup to dismiss [%s]", err.Error())
-		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-		return
-	}
-
-	if dismiss.Key == "" {
-		log.Printf("dismissSignUp: %s", STATUS_SIGNUP_NO_CONF)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_CONF)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-		return
-	}
-
-	if conf := a.findExistingConfirmation(dismiss, res); conf != nil {
-
-		conf.UpdateStatus(models.StatusDeclined)
-
-		if a.addOrUpdateConfirmation(conf, res) {
-			a.logMetricAsServer("dismiss signup")
-			res.WriteHeader(http.StatusOK)
-			return
-		}
-	} else {
-		log.Printf("dismissSignUp: %s [%v]", STATUS_SIGNUP_NOT_FOUND, dismiss)
-		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
-		return
-	}
+	log.Print("dismissSignUp: dismissing for ", userId)
+	a.updateSignupConfirmation(models.StatusDeclined, res, req)
+	return
 }
 
 // status: 200
@@ -262,6 +270,14 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 
 // status: 200
 func (a *Api) cancelSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	res.WriteHeader(http.StatusNotImplemented)
+	userId := vars["userid"]
+
+	if userId == "" {
+		log.Printf("cancelSignUp %s", STATUS_SIGNUP_NO_ID)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+		return
+	}
+	log.Print("cancelSignUp: canceling for ", userId)
+	a.updateSignupConfirmation(models.StatusCanceled, res, req)
 	return
 }

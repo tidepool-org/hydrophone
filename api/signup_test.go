@@ -113,11 +113,17 @@ func TestSignupResponds(t *testing.T) {
 			respCode: 200,
 		},
 		{
-			skip:     true,
-			method:   "DELETE",
+			method:   "PUT",
 			url:      "/signup/UID",
-			token:    TOKEN_FOR_UID1,
 			respCode: 200,
+			body: jo{
+				"key": "1234-xXd",
+			},
+		},
+		{
+			method:   "PUT",
+			url:      "/signup/UID",
+			respCode: 400,
 		},
 	}
 
