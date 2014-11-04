@@ -211,6 +211,7 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 
 		if td == nil {
 			statusErr := &status.StatusError{status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
+			log.Printf("checkToken %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
 			return false
 		}
@@ -218,6 +219,7 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 		return true
 	}
 	statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
+	log.Printf("checkToken %s err[%v] ", STATUS_NO_TOKEN, statusErr)
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
 	return false
 }

@@ -10,12 +10,13 @@ import (
 )
 
 const (
-	STATUS_SIGNUP_NOT_FOUND = "No matching signup confirmation was found"
-	STATUS_SIGNUP_NO_ID     = "Required userid is missing"
-	STATUS_SIGNUP_ACCEPTED  = "User has had signup confirmed"
-	STATUS_EXISTING_SIGNUP  = "User already has an existing valid signup confirmation"
-	STATUS_SIGNUP_EXPIRED   = "The signup confirmation has expired"
-	STATUS_SIGNUP_ERROR     = "Error while completing signup confirmation> The signup confirmation remains active until it expires"
+	STATUS_SIGNUP_NOT_FOUND     = "No matching signup confirmation was found"
+	STATUS_SIGNUP_NO_ID         = "Required userid is missing"
+	STATUS_SIGNUP_NO_ID_OR_CONF = "Required userid and/or confirmationid is missing"
+	STATUS_SIGNUP_ACCEPTED      = "User has had signup confirmed"
+	STATUS_EXISTING_SIGNUP      = "User already has an existing valid signup confirmation"
+	STATUS_SIGNUP_EXPIRED       = "The signup confirmation has expired"
+	STATUS_SIGNUP_ERROR         = "Error while completing signup confirmation> The signup confirmation remains active until it expires"
 )
 
 type (
@@ -73,10 +74,6 @@ func (a *Api) hasDuplicateSignup(userId string) bool {
 // status: 403 STATUS_EXISTING_SIGNUP
 // status: 500 STATUS_ERR_FINDING_USER
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	//NOTE: (We need some rules about how often you can attempt a signup with a given email address,
-	//to keep this from being used to spam people either deliberately or accidentally.
-	//This call should also be throttled at the system level to prevent distributed attacks.)
-
 	if a.checkToken(res, req) {
 		userId := vars["userid"]
 		if userId == "" {
@@ -121,8 +118,6 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 		}
 	}
-	log.Printf("sendSignUp %s", STATUS_NO_TOKEN)
-	a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN), http.StatusUnauthorized)
 	return
 }
 
@@ -156,8 +151,6 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		res.WriteHeader(http.StatusOK)
 		return
 	}
-	log.Printf("resendSignUp %s", STATUS_NO_TOKEN)
-	a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN), http.StatusUnauthorized)
 	return
 }
 
@@ -166,8 +159,46 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 //If the user has an active cookie for signup (created with a short lifetime) we can accept the presence of that cookie to allow the actual login to be skipped.
 //
 // status: 200
+// status: 400 STATUS_SIGNUP_NO_ID_OR_CONF
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	res.WriteHeader(http.StatusNotImplemented)
+	if a.checkToken(res, req) {
+
+		userId := vars["userid"]
+		confirmationId := vars["confirmationid"]
+
+		if userId == "" || confirmationId == "" {
+			log.Printf("acceptSignUp %s", STATUS_SIGNUP_NO_ID_OR_CONF)
+			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID_OR_CONF), http.StatusBadRequest)
+			return
+		}
+
+		signUpCnf := &models.Confirmation{UserId: userId, Key: confirmationId}
+
+		if fndCnf, err := a.findSignUpConfirmation(signUpCnf, res); err == nil {
+			if fndCnf != nil {
+				fndCnf.UpdateStatus(models.StatusCompleted)
+				if a.addOrUpdateConfirmation(fndCnf, res) {
+					a.logMetric("accept signup", req)
+					res.WriteHeader(http.StatusOK)
+					return
+				}
+			} else {
+				log.Printf("acceptSignUp %s ", STATUS_RESET_NOT_FOUND)
+				a.sendModelAsResWithStatus(res,
+					status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND),
+					http.StatusNotFound,
+				)
+				return
+			}
+		} else {
+			log.Printf("acceptSignUp %s err[%s]", STATUS_ERR_DECODING_CONFIRMATION, err.Error())
+			a.sendModelAsResWithStatus(res,
+				status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)},
+				http.StatusInternalServerError,
+			)
+			return
+		}
+	}
 	return
 }
 

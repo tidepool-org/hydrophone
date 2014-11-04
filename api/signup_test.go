@@ -63,18 +63,31 @@ func TestSignupResponds(t *testing.T) {
 			respCode: 200,
 		},
 		{
-			// you can't accept an invitation you didn't get
-			skip:     true,
-			method:   "PUT",
-			url:      "/accept/signup/UID2/UIDBad",
-			token:    TOKEN_FOR_UID2,
-			respCode: 200,
-		},
-		{
-			// you can accept an invitation from another user
-			skip:     true,
+			// no token is no good
 			method:   "PUT",
 			url:      "/accept/signup/UID2/UID",
+			respCode: 401,
+		},
+		{
+			// you can't accept an invitation you didn't get
+			returnNone: true,
+			method:     "PUT",
+			url:        "/accept/signup/UID2/UIDBad",
+			token:      TOKEN_FOR_UID2,
+			respCode:   404,
+		},
+		{
+			// you can accept an invitation from another user key and userid wont give match
+			returnNone: true,
+			method:     "PUT",
+			url:        "/accept/signup/UID2/UID",
+			token:      TOKEN_FOR_UID2,
+			respCode:   404,
+		},
+		{
+			// all good
+			method:   "PUT",
+			url:      "/accept/signup/UID2/UIDBad",
 			token:    TOKEN_FOR_UID2,
 			respCode: 200,
 		},
