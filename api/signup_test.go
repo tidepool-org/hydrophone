@@ -106,13 +106,6 @@ func TestSignupResponds(t *testing.T) {
 			respCode: 400,
 		},
 		{
-			skip:     true,
-			method:   "GET",
-			url:      "/signup/UID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 200,
-		},
-		{
 			method:   "PUT",
 			url:      "/signup/UID",
 			respCode: 200,
@@ -124,6 +117,26 @@ func TestSignupResponds(t *testing.T) {
 			method:   "PUT",
 			url:      "/signup/UID",
 			respCode: 400,
+		},
+		{
+			method:   "GET",
+			url:      "/signup/UID",
+			token:    TOKEN_FOR_UID1,
+			respCode: 200,
+		},
+		{
+			//no confirmtaions
+			returnNone: true,
+			method:     "GET",
+			url:        "/signup/UID",
+			token:      TOKEN_FOR_UID1,
+			respCode:   404,
+		},
+		{
+			//no token is no good
+			method:   "GET",
+			url:      "/signup/UID",
+			respCode: 401,
 		},
 	}
 

@@ -262,9 +262,36 @@ func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map
 	return
 }
 
-// status: 200
+//This call is provided for completeness -- we don't expect to need it in the actual user flow.
+//
+//Fetch any existing confirmation requests.
+// status: 200 with a single result in an array
+// status: 404
 func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	res.WriteHeader(http.StatusNotImplemented)
+	if a.checkToken(res, req) {
+
+		userId := vars["userid"]
+
+		if userId == "" {
+			log.Printf("getSignUp %s", STATUS_SIGNUP_NO_ID)
+			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+			return
+		}
+
+		if signups, _ := a.Store.FindConfirmations(
+			&models.Confirmation{UserId: userId},
+			models.StatusPending,
+		); signups == nil {
+			log.Printf("getSignUp %s", STATUS_SIGNUP_NOT_FOUND)
+			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
+			return
+		} else {
+			a.logMetric("get signups", req)
+			log.Printf("getSignUp found %d for user %s", len(signups), userId)
+			a.sendModelAsResWithStatus(res, signups, http.StatusOK)
+			return
+		}
+	}
 	return
 }
 
