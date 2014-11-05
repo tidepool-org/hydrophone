@@ -22,7 +22,7 @@ const (
 
 type (
 	//Invite details for generating a new invite
-	InviteBody struct {
+	inviteBody struct {
 		Email       string                    `json:"email"`
 		Permissions commonClients.Permissions `json:"permissions"`
 	}
@@ -283,7 +283,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		invitorId := vars["userid"]
 
 		defer req.Body.Close()
-		var ib = &InviteBody{}
+		var ib = &inviteBody{}
 		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
 			log.Printf("SendInvite: error decoding invite to detail %v\n", err)
 			statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
