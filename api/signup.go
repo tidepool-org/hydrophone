@@ -213,6 +213,11 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 
 		if fndCnf, err := a.findSignUpConfirmation(signUpCnf, res); err == nil {
 			if fndCnf != nil {
+
+				/*TODO: the actual update to set the authenticated flag
+				updates := shoreline.UserUpdate{UserID: userId, Authenticated: true}
+				err := a.sl.UpdateUser(updates, a.sl.TokenProvide())
+				*/
 				fndCnf.UpdateStatus(models.StatusCompleted)
 				if a.addOrUpdateConfirmation(fndCnf, res) {
 					a.logMetric("accept signup", req)
