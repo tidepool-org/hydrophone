@@ -20,7 +20,8 @@
       "confirmationSubject" :"Confirmation"
     },
     "inviteTimeoutDays": 7,
-    "resetTimeoutDays": 7
+    "resetTimeoutDays": 7,
+    "signUpTimeoutDays": 7
   },
   "sesEmail" : {
     "serverEndpoint":"https://email.us-west-2.amazonaws.com",
