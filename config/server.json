@@ -19,8 +19,8 @@
       "confirmation" : "{{define \"confirm_test\"}} A test confirmation email  {{ .ToUser }} {{ .Key }} {{end}} {{template \"confirm_test\" .}}",
       "confirmationSubject" :"Confirmation"
     },
-    "inviteTimeoutDays": "7",
-    "resetTimeoutDays": "7"
+    "inviteTimeoutDays": 7,
+    "resetTimeoutDays": 7
   },
   "sesEmail" : {
     "serverEndpoint":"https://email.us-west-2.amazonaws.com",
