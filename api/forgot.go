@@ -82,6 +82,8 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 //find the reset confirmation if it exists and hasn't expired
 func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
+
+	log.Printf("finding reset [%v]", conf)
 	if resetCnf := a.findExistingConfirmation(conf, res); resetCnf != nil {
 
 		expires := resetCnf.Created.Add(time.Duration(a.Config.ResetTimeoutDays) * 24 * time.Hour)
@@ -119,45 +121,38 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		return
 	}
 
-	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email}
+	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
 
-	if conf, err := a.findResetConfirmation(resetCnf, res); err == nil {
+	if conf, err := a.findResetConfirmation(resetCnf, res); err == nil && conf != nil {
 
-		if conf != nil {
+		token := a.sl.TokenProvide()
 
-			token := a.sl.TokenProvide()
+		if usr := a.findExistingUser(rb.Email, token); usr != nil {
 
-			if usr := a.findExistingUser(rb.Email, token); usr != nil {
-
-				if err := a.sl.UpdateUser(shoreline.UserUpdate{*usr, rb.Password}, token); err != nil {
-					log.Printf("Error updating password as part of password reset [%v]", err)
-					status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
-					a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
-					return
-				}
-				conf.UpdateStatus(models.StatusCompleted)
-				if a.addOrUpdateConfirmation(conf, res) {
-					//STATUS_RESET_ACCEPTED
-					a.logMetricAsServer("password reset")
-					a.sendModelAsResWithStatus(
-						res,
-						status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
-						http.StatusOK,
-					)
-					return
-				}
+			if err := a.sl.UpdateUser(shoreline.UserUpdate{UserData: shoreline.UserData{UserID: usr.UserID}, Password: rb.Password}, token); err != nil {
+				log.Printf("acceptPassword: error updating password as part of password reset [%v]", err)
+				status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
+				a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
+				return
+			}
+			conf.UpdateStatus(models.StatusCompleted)
+			if a.addOrUpdateConfirmation(conf, res) {
+				//STATUS_RESET_ACCEPTED
+				a.logMetricAsServer("password reset")
+				a.sendModelAsResWithStatus(
+					res,
+					status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
+					http.StatusOK,
+				)
+				return
 			}
 		}
-		//STATUS_RESET_NOT_FOUND
-		a.sendModelAsResWithStatus(
-			res,
-			status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND),
-			http.StatusNotFound,
-		)
-		return
-	} else {
-		//expired error
-		a.sendModelAsResWithStatus(res, err, http.StatusUnauthorized)
+
+	} else if err != nil {
+		//there was an error
+		log.Printf("acceptPassword: finding reset confirmation %v\n", err)
+		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 		return
 	}
 	return
