@@ -20,6 +20,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	var (
 		config          Config
 		confirmation, _ = models.NewConfirmation(models.TypePasswordReset, "123.456")
+		doesNotExist, _ = models.NewConfirmation(models.TypePasswordReset, "123.456")
 	)
 
 	if jsonConfig, err := ioutil.ReadFile("../config/server.json"); err == nil {
@@ -42,6 +43,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 		}
 
 		//The basics
+		//+++++++++++++++++++++++++++
 		if err := mc.UpsertConfirmation(confirmation); err != nil {
 			t.Fatalf("we could not save the con %v", err)
 		}
@@ -52,6 +54,13 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 			}
 		} else {
 			t.Fatalf("no confirmation was returned when it should have been - err[%v]", err)
+		}
+
+		//when the conf doesn't exist
+		if found, err := mc.FindConfirmation(doesNotExist); err == nil && found != nil {
+			t.Fatalf("there should have been no confirmation found [%v]", found)
+		} else if err != nil {
+			t.Fatalf("and error was returned when it should not have been err[%v]", err)
 		}
 
 		if err := mc.RemoveConfirmation(confirmation); err != nil {

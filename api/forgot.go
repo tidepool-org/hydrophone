@@ -81,19 +81,29 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 }
 
 //find the reset confirmation if it exists and hasn't expired
-func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
+func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
 
-	log.Printf("finding reset [%v]", conf)
-	if resetCnf := a.findExistingConfirmation(conf, res); resetCnf != nil {
+	log.Printf("findResetConfirmation: finding [%v]", conf)
+	if found, err := a.findExistingConfirmation(conf, res); err != nil {
+		log.Printf("findResetConfirmation: error [%s]\n", err.Error())
+		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		return nil
+	} else if found != nil {
 
-		expires := resetCnf.Created.Add(time.Duration(a.Config.ResetTimeoutDays) * 24 * time.Hour)
+		expires := found.Created.Add(time.Duration(a.Config.ResetTimeoutDays) * 24 * time.Hour)
 
 		if time.Now().Before(expires) {
-			return resetCnf, nil
+			return found
 		}
-		return nil, &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
+		statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
+		log.Printf("findResetConfirmation: expired [%s]\n", statusErr.Error())
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		return nil
 	}
-	return nil, nil
+	statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND)}
+	log.Printf("findResetConfirmation: not found [%s]\n", statusErr.Error())
+	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+	return nil
 }
 
 //Accept the password change
@@ -123,7 +133,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 
 	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
 
-	if conf, err := a.findResetConfirmation(resetCnf, res); err == nil && conf != nil {
+	if conf := a.findResetConfirmation(resetCnf, res); conf != nil {
 
 		token := a.sl.TokenProvide()
 
@@ -147,13 +157,6 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 				return
 			}
 		}
-
-	} else if err != nil {
-		//there was an error
-		log.Printf("acceptPassword: finding reset confirmation %v\n", err)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-		return
 	}
 	return
 }

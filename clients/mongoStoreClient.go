@@ -77,7 +77,8 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 		query["userId"] = confirmation.UserId
 	}
 
-	if err = d.confirmationsC.Find(query).One(&result); err != nil {
+	if err = d.confirmationsC.Find(query).One(&result); err != nil && err != mgo.ErrNotFound {
+		log.Printf("FindConfirmation: something bad happened [%v]", err)
 		return result, err
 	}
 
@@ -108,7 +109,8 @@ func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 		query["status"] = bson.M{"$in": statuses}
 	}
 
-	if err = d.confirmationsC.Find(query).Sort("created").All(&results); err != nil {
+	if err = d.confirmationsC.Find(query).Sort("created").All(&results); err != nil && err != mgo.ErrNotFound {
+		log.Printf("FindConfirmations: something bad happened [%v]", err)
 		return results, err
 	}
 	return results, nil
