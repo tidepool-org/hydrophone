@@ -146,10 +146,11 @@ func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
 	return
 }
 
-//Save this confirmation or write and error if it all goes wrong
+//Save this confirmation or
+//write an error if it all goes wrong
 func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.ResponseWriter) bool {
 	if err := a.Store.UpsertConfirmation(conf); err != nil {
-		log.Println("Error saving the confirmation ", err)
+		log.Printf("Error saving the confirmation [%v]", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return false
@@ -157,23 +158,20 @@ func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.Respon
 	return true
 }
 
-//Find this confirmation, write error if fails or write no-content if it doesn't exist
-func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
+//Find this confirmation
+//write error if it fails
+func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
 	if found, err := a.Store.FindConfirmation(conf); err != nil {
-		log.Println("Error finding the confirmation ", err)
+		log.Printf("findExistingConfirmation: [%v]", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-		return nil
-	} else if found == nil {
-		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-		return nil
+		return nil, statusErr
 	} else {
-		return found
+		return found, nil
 	}
 }
 
-//Find this confirmation, write error if fails or write no-content if it doesn't exist
+//Find these confirmations
+//write error if fails or write no-content if it doesn't exist
 func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
 	if err != nil {
 		log.Println("Error finding confirmations ", err)
@@ -181,8 +179,8 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return nil
 	} else if results == nil || len(results) == 0 {
-		log.Printf("No confirmations were found")
 		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
+		log.Printf("No confirmations were found [%s]", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	} else {

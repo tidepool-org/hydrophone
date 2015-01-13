@@ -163,14 +163,17 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		if conf := a.findExistingConfirmation(accept, res); conf != nil {
-
+		if conf, err := a.findExistingConfirmation(accept, res); err != nil {
+			log.Printf("AcceptInvite: finding [%s]\n", err.Error())
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		} else if conf != nil {
 			//New set the permissions for the invite
 			var permissions commonClients.Permissions
 			conf.DecodeContext(&permissions)
 
 			if setPerms, err := a.gatekeeper.SetPermissions(inviteeId, invitorId, permissions); err != nil {
-				log.Printf("AcceptInvite: error setting permissions in %v\n", err)
+				log.Printf("AcceptInvite: permissions  [%v]\n", err)
 				statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)}
 				a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 				return
@@ -188,6 +191,10 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 				}
 			}
 		}
+		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_INVITE_NOT_FOUND)}
+		log.Printf("AcceptInvite: [%s]", statusErr.Error())
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		return
 	}
 	return
 }
@@ -214,7 +221,10 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			Type:      models.TypeCareteamInvite,
 		}
 
-		if conf := a.findExistingConfirmation(invite, res); conf != nil {
+		if conf, err := a.findExistingConfirmation(invite, res); err != nil {
+			log.Printf("CancelInvite: finding [%s]", err.Error())
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		} else if conf != nil {
 			//cancel the invite
 			conf.UpdateStatus(models.StatusCanceled)
 
@@ -225,6 +235,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			}
 		}
 		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_INVITE_NOT_FOUND)}
+		log.Printf("CancelInvite: [%s]", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return
 	}
@@ -257,7 +268,11 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 			return
 		}
 
-		if conf := a.findExistingConfirmation(dismiss, res); conf != nil {
+		if conf, err := a.findExistingConfirmation(dismiss, res); err != nil {
+			log.Printf("DismissInvite: finding [%s]", err.Error())
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		} else if conf != nil {
 
 			conf.UpdateStatus(models.StatusDeclined)
 
@@ -267,6 +282,10 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 				return
 			}
 		}
+		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_INVITE_NOT_FOUND)}
+		log.Printf("DismissInvite: [%s]", statusErr.Error())
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		return
 	}
 	return
 }

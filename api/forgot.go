@@ -81,17 +81,29 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 }
 
 //find the reset confirmation if it exists and hasn't expired
-func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
-	if resetCnf := a.findExistingConfirmation(conf, res); resetCnf != nil {
+func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
 
-		expires := resetCnf.Created.Add(time.Duration(a.Config.ResetTimeoutDays) * 24 * time.Hour)
+	log.Printf("findResetConfirmation: finding [%v]", conf)
+	if found, err := a.findExistingConfirmation(conf, res); err != nil {
+		log.Printf("findResetConfirmation: error [%s]\n", err.Error())
+		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		return nil
+	} else if found != nil {
+
+		expires := found.Created.Add(time.Duration(a.Config.ResetTimeoutDays) * 24 * time.Hour)
 
 		if time.Now().Before(expires) {
-			return resetCnf, nil
+			return found
 		}
-		return nil, &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
+		statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
+		log.Printf("findResetConfirmation: expired [%s]\n", statusErr.Error())
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		return nil
 	}
-	return nil, nil
+	statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND)}
+	log.Printf("findResetConfirmation: not found [%s]\n", statusErr.Error())
+	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+	return nil
 }
 
 //Accept the password change
@@ -119,46 +131,32 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		return
 	}
 
-	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email}
+	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
 
-	if conf, err := a.findResetConfirmation(resetCnf, res); err == nil {
+	if conf := a.findResetConfirmation(resetCnf, res); conf != nil {
 
-		if conf != nil {
+		token := a.sl.TokenProvide()
 
-			token := a.sl.TokenProvide()
+		if usr := a.findExistingUser(rb.Email, token); usr != nil {
 
-			if usr := a.findExistingUser(rb.Email, token); usr != nil {
-
-				if err := a.sl.UpdateUser(shoreline.UserUpdate{*usr, rb.Password}, token); err != nil {
-					log.Printf("Error updating password as part of password reset [%v]", err)
-					status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
-					a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
-					return
-				}
-				conf.UpdateStatus(models.StatusCompleted)
-				if a.addOrUpdateConfirmation(conf, res) {
-					//STATUS_RESET_ACCEPTED
-					a.logMetricAsServer("password reset")
-					a.sendModelAsResWithStatus(
-						res,
-						status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
-						http.StatusOK,
-					)
-					return
-				}
+			if err := a.sl.UpdateUser(shoreline.UserUpdate{UserData: shoreline.UserData{UserID: usr.UserID}, Password: rb.Password}, token); err != nil {
+				log.Printf("acceptPassword: error updating password as part of password reset [%v]", err)
+				status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
+				a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
+				return
+			}
+			conf.UpdateStatus(models.StatusCompleted)
+			if a.addOrUpdateConfirmation(conf, res) {
+				//STATUS_RESET_ACCEPTED
+				a.logMetricAsServer("password reset")
+				a.sendModelAsResWithStatus(
+					res,
+					status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
+					http.StatusOK,
+				)
+				return
 			}
 		}
-		//STATUS_RESET_NOT_FOUND
-		a.sendModelAsResWithStatus(
-			res,
-			status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND),
-			http.StatusNotFound,
-		)
-		return
-	} else {
-		//expired error
-		a.sendModelAsResWithStatus(res, err, http.StatusUnauthorized)
-		return
 	}
 	return
 }
