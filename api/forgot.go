@@ -83,7 +83,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 //find the reset confirmation if it exists and hasn't expired
 func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
 
-	log.Printf("finding reset [%v]", conf)
+	log.Printf("findResetConfirmation: finding [%v]", conf)
 	if resetCnf := a.findExistingConfirmation(conf, res); resetCnf != nil {
 
 		expires := resetCnf.Created.Add(time.Duration(a.Config.ResetTimeoutDays) * 24 * time.Hour)
