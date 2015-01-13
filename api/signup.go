@@ -34,7 +34,7 @@ type (
 	}
 )
 
-//find the reset confirmation if it exists and hasn't expired
+//try to find the signup confirmation and validate that it hasn't expired
 func (a *Api) findAndValidateSignUp(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
 
 	if found, err := a.findExistingConfirmation(conf, res); err != nil {
@@ -60,7 +60,7 @@ func (a *Api) findAndValidateSignUp(conf *models.Confirmation, res http.Response
 	return nil
 }
 
-//Do we already have an existing signup confirmation for this email
+//do we already have an existing signup confirmation for this email?
 func (a *Api) hasDuplicateSignup(userId string) bool {
 
 	signUp, _ := a.Store.FindConfirmations(
@@ -69,13 +69,10 @@ func (a *Api) hasDuplicateSignup(userId string) bool {
 		models.StatusCompleted,
 	)
 
-	if len(signUp) > 0 {
-		return true
-	}
-	return false
+	return len(signUp) > 0
 }
 
-//used to update an existing signup confirmation
+//update an existing signup confirmation
 func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.ResponseWriter, req *http.Request) {
 	fromBody := &models.Confirmation{}
 	if err := json.NewDecoder(req.Body).Decode(fromBody); err != nil {
@@ -174,6 +171,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 //
 // status: 200
 // status: 401 STATUS_NO_TOKEN
+// status: 404 STATUS_SIGNUP_EXPIRED
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	if a.checkToken(res, req) {
@@ -192,7 +190,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				a.logMetricAsServer("signup confirmation re-sent")
 			} else {
 				a.logMetric("signup confirmation failed to be sent", req)
-				log.Print("resendSignUp: Something happened tryiing to resend a signup email")
+				log.Print("resendSignUp: Something happened trying to resend a signup email")
 			}
 		}
 		//always return StatusOK so we don't leak details
@@ -295,11 +293,12 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 }
 
 // status: 200
+// status: 400 STATUS_SIGNUP_NO_ID
 func (a *Api) cancelSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	userId := vars["userid"]
 
 	if userId == "" {
-		log.Printf("cancelSignUp %s", STATUS_SIGNUP_NO_ID)
+		log.Printf("cancelSignUp: %s", STATUS_SIGNUP_NO_ID)
 		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
 		return
 	}
