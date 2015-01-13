@@ -16,11 +16,12 @@
       "passwordResetSubject" : "Test password reset",
       "careteamInvite" : "{{define \"invite\"}} <html> <head> <title>Please be part of my diabetes care team</title> <meta content=\"text/html; charset=UTF-8\" http-equiv=\"content-type\"> </head> <body> <p>Hey there!</p> <p>I’d like you to take a look at my diabetes data with me. When you confirm below, you’ll be able to see the data{{if .ViewOnlyPerms}} and comment on what you see{{else}}, comment on what you see, and upload my devices, too{{end}}.</p> <p><a href='http://tidepool.org'>Tidepool</a> is a secure data hosting platform that supports apps made for people with diabetes.</p></body> </html> {{end}} {{template \"invite\" .}}",
       "careteamInviteSubject" : "Careteam invite",
-      "confirmation" : "{{define \"confirm_test\"}} A test confirmation email  {{ .ToUser }} {{ .Key }} {{end}} {{template \"confirm_test\" .}}",
+      "confirmation" : "{{define \"confirm_test\"}} A test confirmation email  {{ .Email }} {{ .Key }} {{end}} {{template \"confirm_test\" .}}",
       "confirmationSubject" :"Confirmation"
     },
     "inviteTimeoutDays": 7,
-    "resetTimeoutDays": 7
+    "resetTimeoutDays": 7,
+    "signUpTimeoutDays": 7
   },
   "sesEmail" : {
     "serverEndpoint":"https://email.us-west-2.amazonaws.com",

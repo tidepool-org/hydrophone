@@ -37,6 +37,7 @@ var (
 		},
 		InviteTimeoutDays: 7,
 		ResetTimeoutDays:  7,
+		SignUpTimeoutDays: 7,
 	}
 	/*
 	 * basics setup
@@ -121,94 +122,4 @@ func (i *jo) deepCompare(j *jo) string {
 		}
 	}
 	return ""
-}
-
-func TestAddressResponds(t *testing.T) {
-
-	tests := []toTest{
-		{
-			// if you leave off the userid, it fails
-			skip:     true,
-			method:   "POST",
-			url:      "/send/signup",
-			token:    TOKEN_FOR_UID1,
-			respCode: 404,
-		},
-		{
-			// first time you ask, it does it
-			skip:     true,
-			method:   "POST",
-			url:      "/send/signup/NewUserID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 200,
-		},
-		{
-			// second time you ask, it fails with a limit
-			skip:     true,
-			method:   "POST",
-			url:      "/send/signup/NewUserID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 403,
-		},
-		{
-			// can't resend a signup if you didn't send it
-			skip:     true,
-			method:   "POST",
-			url:      "/resend/signup/BadUID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 404,
-		},
-		{
-			// but you can resend a valid one
-			skip:     true,
-			method:   "POST",
-			url:      "/resend/signup/UID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 200,
-		},
-		{
-			// you can't accept an invitation you didn't get
-			skip:     true,
-			method:   "PUT",
-			url:      "/accept/signup/UID2/UIDBad",
-			token:    TOKEN_FOR_UID2,
-			respCode: 200,
-		},
-		{
-			// you can accept an invitation from another user
-			skip:     true,
-			method:   "PUT",
-			url:      "/accept/signup/UID2/UID",
-			token:    TOKEN_FOR_UID2,
-			respCode: 200,
-		},
-		{
-			skip:     true,
-			method:   "GET",
-			url:      "/signup/UID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 200,
-		},
-		{
-			skip:     true,
-			method:   "PUT",
-			url:      "/dismiss/signup/UID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 200,
-		},
-		{
-			skip:     true,
-			method:   "DELETE",
-			url:      "/signup/UID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 200,
-		},
-	}
-
-	for _, test := range tests {
-		// don't run a test if it says to skip it
-		if test.skip {
-			continue
-		}
-	}
 }

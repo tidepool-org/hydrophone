@@ -31,6 +31,7 @@ type (
 		Templates         *models.TemplateConfig `json:"emailTemplates"`
 		InviteTimeoutDays int                    `json:"inviteTimeoutDays"`
 		ResetTimeoutDays  int                    `json:"resetTimeoutDays"`
+		SignUpTimeoutDays int                    `json:"signUpTimeoutDays"`
 	}
 	profile struct {
 		FullName string
@@ -49,6 +50,7 @@ const (
 	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
+	STATUS_ERR_FINDING_USER          = "Error finding the user"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
 	STATUS_NOT_FOUND                 = "Nothing found"
@@ -85,24 +87,24 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// POST /confirm/send/forgot/:useremail
 	// POST /confirm/send/invite/:userid
 	send := rtr.PathPrefix("/send").Subrouter()
-	send.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("POST")
+	send.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
 	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
 
 	// POST /confirm/resend/signup/:userid
-	rtr.Handle("/resend/signup/{userid}", varsHandler(a.Dummy)).Methods("POST")
+	rtr.Handle("/resend/signup/{userid}", varsHandler(a.resendSignUp)).Methods("POST")
 
 	// PUT /confirm/accept/signup/:userid/:confirmationID
 	// PUT /confirm/accept/forgot/
 	// PUT /confirm/accept/invite/:userid/:invited_by
 	accept := rtr.PathPrefix("/accept").Subrouter()
-	accept.Handle("/signup/{userid}/{confirmationid}", varsHandler(a.Dummy)).Methods("PUT")
+	accept.Handle("/signup/{userid}/{confirmationid}", varsHandler(a.acceptSignUp)).Methods("PUT")
 	accept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
 	accept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid
-	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("GET")
+	rtr.Handle("/signup/{userid}", varsHandler(a.getSignUp)).Methods("GET")
 	rtr.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
@@ -114,12 +116,12 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	dismiss.Handle("/invite/{userid}/{invitedby}",
 		varsHandler(a.DismissInvite)).Methods("PUT")
 	dismiss.Handle("/signup/{userid}",
-		varsHandler(a.Dummy)).Methods("PUT")
+		varsHandler(a.dismissSignUp)).Methods("PUT")
 
 	// PUT /confirm/:userid/invited/:invited_address
-	// DELETE /confirm/signup/:userid
+	// PUT /confirm/signup/:userid
 	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
-	rtr.Handle("/signup/{userid}", varsHandler(a.Dummy)).Methods("DELETE")
+	rtr.Handle("/signup/{userid}", varsHandler(a.cancelSignUp)).Methods("PUT")
 }
 
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
@@ -207,6 +209,7 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 
 		if td == nil {
 			statusErr := &status.StatusError{status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
+			log.Printf("checkToken %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
 			return false
 		}
@@ -214,6 +217,7 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 		return true
 	}
 	statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
+	log.Printf("checkToken %s err[%v] ", STATUS_NO_TOKEN, statusErr)
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
 	return false
 }
