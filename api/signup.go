@@ -35,18 +35,29 @@ type (
 )
 
 //find the reset confirmation if it exists and hasn't expired
-func (a *Api) findSignUpConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
-	if signUpCnf := a.findExistingConfirmation(conf, res); signUpCnf != nil {
+func (a *Api) findAndValidateSignUp(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
 
-		expires := signUpCnf.Created.Add(time.Duration(a.Config.SignUpTimeoutDays) * 24 * time.Hour)
+	if found, err := a.findExistingConfirmation(conf, res); err != nil {
+		log.Printf("findAndValidateSignUp: error [%s]\n", err.Error())
+		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		return nil
+	} else if found != nil {
+
+		expires := found.Created.Add(time.Duration(a.Config.SignUpTimeoutDays) * 24 * time.Hour)
 
 		if time.Now().Before(expires) {
-			return signUpCnf, nil
+			return found
 		}
-		log.Printf("findSignUpConfirmation the confirmtaion has expired [%v]", signUpCnf)
-		return nil, &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_SIGNUP_EXPIRED)}
+
+		statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_SIGNUP_EXPIRED)}
+		log.Printf("findAndValidateSignUp: expired [%s]\n", statusErr.Error())
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		return nil
 	}
-	return nil, nil
+	statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND)}
+	log.Printf("findAndValidateSignUp: not found [%s]\n", statusErr.Error())
+	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+	return nil
 }
 
 //Do we already have an existing signup confirmation for this email
@@ -81,13 +92,13 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 		return
 	}
 
-	if confToUpdate := a.findExistingConfirmation(fromBody, res); confToUpdate != nil {
+	if found, _ := a.findExistingConfirmation(fromBody, res); found != nil {
 
 		updatedStatus := string(newStatus) + " signup"
 		log.Printf("updateSignupConfirmation: %s", updatedStatus)
-		confToUpdate.UpdateStatus(newStatus)
+		found.UpdateStatus(newStatus)
 
-		if a.addOrUpdateConfirmation(confToUpdate, res) {
+		if a.addOrUpdateConfirmation(found, res) {
 			a.logMetricAsServer(updatedStatus)
 			res.WriteHeader(http.StatusOK)
 			return
@@ -132,19 +143,19 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				return
 			}
 
-			signUpCnf, _ := models.NewConfirmation(models.TypeConfirmation, "")
-			signUpCnf.UserId = usrDetails.UserID
-			signUpCnf.Email = usrDetails.Emails[0]
+			newSignUp, _ := models.NewConfirmation(models.TypeConfirmation, "")
+			newSignUp.UserId = usrDetails.UserID
+			newSignUp.Email = usrDetails.Emails[0]
 
-			if a.addOrUpdateConfirmation(signUpCnf, res) {
+			if a.addOrUpdateConfirmation(newSignUp, res) {
 				a.logMetric("signup confirmation created", req)
 
 				emailContent := &signUpEmailContent{
-					Key:   signUpCnf.Key,
-					Email: signUpCnf.Email,
+					Key:   newSignUp.Key,
+					Email: newSignUp.Email,
 				}
 
-				if a.createAndSendNotfication(signUpCnf, emailContent) {
+				if a.createAndSendNotfication(newSignUp, emailContent) {
 					a.logMetricAsServer("signup confirmation sent")
 					res.WriteHeader(http.StatusOK)
 					return
@@ -168,20 +179,20 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	if a.checkToken(res, req) {
 		userId := vars["userid"]
 
-		signUpCnf := &models.Confirmation{UserId: userId}
+		toFind := &models.Confirmation{UserId: userId}
 
-		if resendCnf, err := a.findSignUpConfirmation(signUpCnf, res); err == nil {
+		if found := a.findAndValidateSignUp(toFind, res); found != nil {
 
 			emailContent := &signUpEmailContent{
-				Key:   resendCnf.Key,
-				Email: resendCnf.Email,
+				Key:   found.Key,
+				Email: found.Email,
 			}
 
-			if a.createAndSendNotfication(signUpCnf, emailContent) {
+			if a.createAndSendNotfication(found, emailContent) {
 				a.logMetricAsServer("signup confirmation re-sent")
 			} else {
 				a.logMetric("signup confirmation failed to be sent", req)
-				log.Print("Something happened tryiing to resend a signup email")
+				log.Print("resendSignUp: Something happened tryiing to resend a signup email")
 			}
 		}
 		//always return StatusOK so we don't leak details
@@ -209,36 +220,19 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		signUpCnf := &models.Confirmation{UserId: userId, Key: confirmationId}
+		toFind := &models.Confirmation{UserId: userId, Key: confirmationId}
 
-		if fndCnf, err := a.findSignUpConfirmation(signUpCnf, res); err == nil {
-			if fndCnf != nil {
-
-				/*TODO: the actual update to set the authenticated flag
-				updates := shoreline.UserUpdate{UserID: userId, Authenticated: true}
-				err := a.sl.UpdateUser(updates, a.sl.TokenProvide())
-				*/
-				fndCnf.UpdateStatus(models.StatusCompleted)
-				if a.addOrUpdateConfirmation(fndCnf, res) {
-					a.logMetric("accept signup", req)
-					res.WriteHeader(http.StatusOK)
-					return
-				}
-			} else {
-				log.Printf("acceptSignUp %s ", STATUS_RESET_NOT_FOUND)
-				a.sendModelAsResWithStatus(res,
-					status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND),
-					http.StatusNotFound,
-				)
+		if found := a.findAndValidateSignUp(toFind, res); found != nil {
+			/*TODO: the actual update to set the authenticated flag
+			updates := shoreline.UserUpdate{UserID: userId, Authenticated: true}
+			err := a.sl.UpdateUser(updates, a.sl.TokenProvide())
+			*/
+			found.UpdateStatus(models.StatusCompleted)
+			if a.addOrUpdateConfirmation(found, res) {
+				a.logMetric("accept signup", req)
+				res.WriteHeader(http.StatusOK)
 				return
 			}
-		} else {
-			log.Printf("acceptSignUp %s err[%s]", STATUS_ERR_DECODING_CONFIRMATION, err.Error())
-			a.sendModelAsResWithStatus(res,
-				status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)},
-				http.StatusInternalServerError,
-			)
-			return
 		}
 	}
 	return
