@@ -33,7 +33,7 @@ var (
 		Templates: &models.TemplateConfig{
 			PasswordReset:  `{{define "reset_test"}} {{ .Email }} {{ .Key }} {{end}}{{template "reset_test" .}}`,
 			CareteamInvite: `{{define "invite_test"}} {{ .CareteamName }} {{ .Key }} {{end}}{{template "invite_test" .}}`,
-			Confirmation:   `{{define "confirm_test"}} {{ .UserId }} {{ .Key }} {{end}}{{template "confirm_test" .}}`,
+			Signup:         `{{define "confirm_test"}} {{ .UserId }} {{ .Key }} {{end}}{{template "confirm_test" .}}`,
 		},
 		InviteTimeoutDays: 7,
 		ResetTimeoutDays:  7,

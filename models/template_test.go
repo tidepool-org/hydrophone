@@ -34,7 +34,7 @@ Hi {{ .UserName }}
 {{template "invite_test" .}}
 `,
 		CareteamInviteSubject: "A Careteam Invite",
-		Confirmation: `
+		Signup: `
 {{define "confirm_test"}}
 ## Test Template
 {{ .UserName }}
@@ -42,7 +42,7 @@ Hi {{ .UserName }}
 {{end}}
 {{template "confirm_test" .}}
 `,
-		ConfirmationSubject: "A Confirmation",
+		SignupSubject: "A Confirmation",
 	}
 )
 
@@ -84,7 +84,7 @@ func TestParse(t *testing.T) {
 
 	tmpl := NewTemplate()
 
-	tmpl.Load(TypeConfirmation, cfg)
+	tmpl.Load(TypeSignUp, cfg)
 
 	tmpl.Parse(content)
 

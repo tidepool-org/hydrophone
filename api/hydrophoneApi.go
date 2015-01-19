@@ -129,11 +129,6 @@ func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	h(res, req, vars)
 }
 
-func (a *Api) Dummy(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	log.Printf("dummy() ignored request %s %s", req.Method, req.URL)
-	res.WriteHeader(http.StatusOK)
-}
-
 func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
 	if err := a.Store.Ping(); err != nil {
 		log.Printf("Error getting status [%v]", err)

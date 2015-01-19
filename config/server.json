@@ -12,11 +12,11 @@
   "hydrophone" : {
     "serverSecret": "This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy",
     "emailTemplates" : {
-      "passwordReset" : "{{define \"password_reset\"}} A test pw reset email  {{ .Email }} {{ .Key }} {{end}} {{template \"password_reset\" .}}",
+      "passwordReset" : "{{define \"tst_reset\"}} A test pw reset email  {{ .Email }} {{ .Key }} {{end}} {{template \"tst_reset\" .}}",
       "passwordResetSubject" : "Test password reset",
-      "careteamInvite" : "{{define \"careteam_invitation\"}}  {{if .ViewOnlyPerms}} only can view {{else}}, comment and upload, too{{end}} {{end}} {{template \"careteam_invitation\" .}}",
+      "careteamInvite" : "{{define \"tst_invitation\"}}  {{if .ViewOnlyPerms}} only can view {{else}}, comment and upload, too{{end}} {{end}} {{template \"tst_invitation\" .}}",
       "careteamInviteSubject" : "Careteam invite",
-      "signUp" : "{{define \"email_confirmation\"}} A test confirmation email  {{ .Email }} {{ .Key }} {{end}} {{template \"email_confirmation\" .}}",
+      "signUp" : "{{define \"tst_signup\"}} A test confirmation email  {{ .Email }} {{ .Key }} {{end}} {{template \"tst_signup\" .}}",
       "signUpSubject" :"Signup Confirmation"
     },
     "inviteTimeoutDays": 7,

@@ -188,7 +188,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		if a.createAndSendNotfication(found, emailContent) {
 			a.logMetricAsServer("signup confirmation re-sent")
 		} else {
-			a.logMetric("signup confirmation failed to be sent", req)
+			a.logMetricAsServer("signup confirmation failed to be sent")
 			log.Print("resendSignUp: Something happened trying to resend a signup email")
 		}
 	}
@@ -227,7 +227,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 
 		found.UpdateStatus(models.StatusCompleted)
 		if a.addOrUpdateConfirmation(found, res) {
-			a.logMetric("accept signup", req)
+			a.logMetricAsServer("accept signup")
 			res.WriteHeader(http.StatusOK)
 			return
 		}

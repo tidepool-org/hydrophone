@@ -46,34 +46,19 @@ func TestSignupResponds(t *testing.T) {
 			// can't resend a signup if you didn't send it
 			method:   "POST",
 			url:      "/resend/signup",
-			token:    TOKEN_FOR_UID1,
 			respCode: 404,
 		},
 		{
-			// no token is no good
+			// no token is all good
 			method:   "POST",
 			url:      "/resend/signup/UID",
-			respCode: 401,
-		},
-		{
-			// but you can resend a valid one
-			method:   "POST",
-			url:      "/resend/signup/UID",
-			token:    TOKEN_FOR_UID1,
 			respCode: 200,
-		},
-		{
-			// no token is no good
-			method:   "PUT",
-			url:      "/accept/signup/UID2/UID",
-			respCode: 401,
 		},
 		{
 			// you can't accept an invitation you didn't get
 			returnNone: true,
 			method:     "PUT",
 			url:        "/accept/signup/UID2/UIDBad",
-			token:      TOKEN_FOR_UID2,
 			respCode:   404,
 		},
 		{
@@ -81,14 +66,12 @@ func TestSignupResponds(t *testing.T) {
 			returnNone: true,
 			method:     "PUT",
 			url:        "/accept/signup/UID2/UID",
-			token:      TOKEN_FOR_UID2,
 			respCode:   404,
 		},
 		{
 			// all good
 			method:   "PUT",
-			url:      "/accept/signup/UID2/UIDBad",
-			token:    TOKEN_FOR_UID2,
+			url:      "/accept/signup/UID2/UID",
 			respCode: 200,
 		},
 		{
