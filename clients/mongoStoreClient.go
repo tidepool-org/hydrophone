@@ -31,6 +31,11 @@ func NewMongoStoreClient(config *mongo.Config) *MongoStoreClient {
 	}
 }
 
+//warpper function for consistent access to the collection
+func mgoConfirmationsCollection(cpy *mgo.Session) *mgo.Collection {
+	return cpy.DB("").C(CONFIRMATIONS_COLLECTION)
+}
+
 func (d MongoStoreClient) Close() {
 	log.Println("Close the session")
 	d.session.Close()
@@ -47,8 +52,11 @@ func (d MongoStoreClient) Ping() error {
 
 func (d MongoStoreClient) UpsertConfirmation(confirmation *models.Confirmation) error {
 
+	cpy := d.session.Copy()
+	defer cpy.Close()
+
 	// if the user already exists we update otherwise we add
-	if _, err := d.confirmationsC.Upsert(bson.M{"_id": confirmation.Key}, confirmation); err != nil {
+	if _, err := mgoConfirmationsCollection(cpy).Upsert(bson.M{"_id": confirmation.Key}, confirmation); err != nil {
 		return err
 	}
 	return nil
@@ -77,7 +85,10 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 		query["userId"] = confirmation.UserId
 	}
 
-	if err = d.confirmationsC.Find(query).One(&result); err != nil && err != mgo.ErrNotFound {
+	cpy := d.session.Copy()
+	defer cpy.Close()
+
+	if err = mgoConfirmationsCollection(cpy).Find(query).One(&result); err != nil && err != mgo.ErrNotFound {
 		log.Printf("FindConfirmation: something bad happened [%v]", err)
 		return result, err
 	}
@@ -109,7 +120,10 @@ func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 		query["status"] = bson.M{"$in": statuses}
 	}
 
-	if err = d.confirmationsC.Find(query).Sort("created").All(&results); err != nil && err != mgo.ErrNotFound {
+	cpy := d.session.Copy()
+	defer cpy.Close()
+
+	if err = mgoConfirmationsCollection(cpy).Find(query).Sort("created").All(&results); err != nil && err != mgo.ErrNotFound {
 		log.Printf("FindConfirmations: something bad happened [%v]", err)
 		return results, err
 	}
@@ -117,7 +131,11 @@ func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 }
 
 func (d MongoStoreClient) RemoveConfirmation(confirmation *models.Confirmation) error {
-	if err := d.confirmationsC.Remove(bson.M{"_id": confirmation.Key}); err != nil {
+
+	cpy := d.session.Copy()
+	defer cpy.Close()
+
+	if err := mgoConfirmationsCollection(cpy).Remove(bson.M{"_id": confirmation.Key}); err != nil {
 		return err
 	}
 	return nil

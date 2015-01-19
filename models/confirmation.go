@@ -36,7 +36,7 @@ const (
 	//Available Type's
 	TypePasswordReset  Type = "password_reset"
 	TypeCareteamInvite Type = "careteam_invitation"
-	TypeConfirmation   Type = "email_confirmation"
+	TypeSignUp         Type = "signup_confirmation"
 )
 
 //New confirmation with just the basics

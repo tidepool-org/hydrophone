@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"./../models"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 )
 
@@ -140,7 +141,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				return
 			}
 
-			newSignUp, _ := models.NewConfirmation(models.TypeConfirmation, "")
+			newSignUp, _ := models.NewConfirmation(models.TypeSignUp, "")
 			newSignUp.UserId = usrDetails.UserID
 			newSignUp.Email = usrDetails.Emails[0]
 
@@ -170,33 +171,29 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 //offer to resend the confirmation email.
 //
 // status: 200
-// status: 401 STATUS_NO_TOKEN
 // status: 404 STATUS_SIGNUP_EXPIRED
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
-	if a.checkToken(res, req) {
-		userId := vars["userid"]
+	userId := vars["userid"]
 
-		toFind := &models.Confirmation{UserId: userId}
+	toFind := &models.Confirmation{UserId: userId}
 
-		if found := a.findAndValidateSignUp(toFind, res); found != nil {
+	if found := a.findAndValidateSignUp(toFind, res); found != nil {
 
-			emailContent := &signUpEmailContent{
-				Key:   found.Key,
-				Email: found.Email,
-			}
-
-			if a.createAndSendNotfication(found, emailContent) {
-				a.logMetricAsServer("signup confirmation re-sent")
-			} else {
-				a.logMetric("signup confirmation failed to be sent", req)
-				log.Print("resendSignUp: Something happened trying to resend a signup email")
-			}
+		emailContent := &signUpEmailContent{
+			Key:   found.Key,
+			Email: found.Email,
 		}
-		//always return StatusOK so we don't leak details
-		res.WriteHeader(http.StatusOK)
-		return
+
+		if a.createAndSendNotfication(found, emailContent) {
+			a.logMetricAsServer("signup confirmation re-sent")
+		} else {
+			a.logMetricAsServer("signup confirmation failed to be sent")
+			log.Print("resendSignUp: Something happened trying to resend a signup email")
+		}
 	}
+	//always return StatusOK so we don't leak details
+	res.WriteHeader(http.StatusOK)
 	return
 }
 
@@ -207,32 +204,35 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // status: 200
 // status: 400 STATUS_SIGNUP_NO_ID_OR_CONF
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
 
-		userId := vars["userid"]
-		confirmationId := vars["confirmationid"]
+	userId := vars["userid"]
+	confirmationId := vars["confirmationid"]
 
-		if userId == "" || confirmationId == "" {
-			log.Printf("acceptSignUp %s", STATUS_SIGNUP_NO_ID_OR_CONF)
-			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID_OR_CONF), http.StatusBadRequest)
+	if userId == "" || confirmationId == "" {
+		log.Printf("acceptSignUp %s", STATUS_SIGNUP_NO_ID_OR_CONF)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID_OR_CONF), http.StatusBadRequest)
+		return
+	}
+
+	toFind := &models.Confirmation{UserId: userId, Key: confirmationId}
+
+	if found := a.findAndValidateSignUp(toFind, res); found != nil {
+
+		updates := shoreline.UserUpdate{UserData: shoreline.UserData{UserID: userId}, Authenticated: true}
+		if err := a.sl.UpdateUser(updates, a.sl.TokenProvide()); err != nil {
+			log.Printf("acceptSignUp  error trying to update user to be authenticated [%s]", err.Error())
+			res.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		toFind := &models.Confirmation{UserId: userId, Key: confirmationId}
-
-		if found := a.findAndValidateSignUp(toFind, res); found != nil {
-			/*TODO: the actual update to set the authenticated flag
-			updates := shoreline.UserUpdate{UserID: userId, Authenticated: true}
-			err := a.sl.UpdateUser(updates, a.sl.TokenProvide())
-			*/
-			found.UpdateStatus(models.StatusCompleted)
-			if a.addOrUpdateConfirmation(found, res) {
-				a.logMetric("accept signup", req)
-				res.WriteHeader(http.StatusOK)
-				return
-			}
+		found.UpdateStatus(models.StatusCompleted)
+		if a.addOrUpdateConfirmation(found, res) {
+			a.logMetricAsServer("accept signup")
+			res.WriteHeader(http.StatusOK)
+			return
 		}
 	}
+
 	return
 }
 
