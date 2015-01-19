@@ -36,9 +36,12 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 		 */
 
 		//drop it like its hot
-		mc.confirmationsC.DropCollection()
+		cpy := mc.session.Copy()
+		defer cpy.Close()
 
-		if err := mc.confirmationsC.Create(&mgo.CollectionInfo{}); err != nil {
+		mgoConfirmationsCollection(cpy).DropCollection()
+
+		if err := mgoConfirmationsCollection(cpy).Create(&mgo.CollectionInfo{}); err != nil {
 			t.Fatalf("We couldn't created the users collection for these tests ", err)
 		}
 
