@@ -12,12 +12,12 @@
   "hydrophone" : {
     "serverSecret": "This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy",
     "emailTemplates" : {
-      "passwordReset" : "{{define \"pwreset_test\"}} A test pw reset email  {{ .Email }} {{ .Key }} {{end}} {{template \"pwreset_test\" .}}",
+      "passwordReset" : "{{define \"password_reset\"}} A test pw reset email  {{ .Email }} {{ .Key }} {{end}} {{template \"password_reset\" .}}",
       "passwordResetSubject" : "Test password reset",
-      "careteamInvite" : "{{define \"invite\"}} <html> <head> <title>Please be part of my diabetes care team</title> <meta content=\"text/html; charset=UTF-8\" http-equiv=\"content-type\"> </head> <body> <p>Hey there!</p> <p>I’d like you to take a look at my diabetes data with me. When you confirm below, you’ll be able to see the data{{if .ViewOnlyPerms}} and comment on what you see{{else}}, comment on what you see, and upload my devices, too{{end}}.</p> <p><a href='http://tidepool.org'>Tidepool</a> is a secure data hosting platform that supports apps made for people with diabetes.</p></body> </html> {{end}} {{template \"invite\" .}}",
+      "careteamInvite" : "{{define \"careteam_invitation\"}}  {{if .ViewOnlyPerms}} only can view {{else}}, comment and upload, too{{end}} {{end}} {{template \"careteam_invitation\" .}}",
       "careteamInviteSubject" : "Careteam invite",
-      "confirmation" : "{{define \"confirm_test\"}} A test confirmation email  {{ .Email }} {{ .Key }} {{end}} {{template \"confirm_test\" .}}",
-      "confirmationSubject" :"Confirmation"
+      "signUp" : "{{define \"email_confirmation\"}} A test confirmation email  {{ .Email }} {{ .Key }} {{end}} {{template \"email_confirmation\" .}}",
+      "signUpSubject" :"Signup Confirmation"
     },
     "inviteTimeoutDays": 7,
     "resetTimeoutDays": 7,

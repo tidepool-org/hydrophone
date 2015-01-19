@@ -12,8 +12,8 @@ type (
 		PasswordResetSubject  string `json:"passwordResetSubject"`
 		CareteamInvite        string `json:"careteamInvite"`
 		CareteamInviteSubject string `json:"careteamInviteSubject"`
-		Confirmation          string `json:"confirmation"`
-		ConfirmationSubject   string `json:"confirmationSubject"`
+		Signup                string `json:"signUp"`
+		SignupSubject         string `json:"signUpSubject"`
 	}
 
 	Template struct {
@@ -40,9 +40,9 @@ func (t *Template) Load(templateType Type, cfg *TemplateConfig) {
 		compiled = template.Must(template.New(string(TypeCareteamInvite)).Parse(cfg.CareteamInvite))
 		subject = cfg.CareteamInviteSubject
 		break
-	case templateType == TypeConfirmation:
-		compiled = template.Must(template.New(string(TypeConfirmation)).Parse(cfg.Confirmation))
-		subject = cfg.ConfirmationSubject
+	case templateType == TypeSignUp:
+		compiled = template.Must(template.New(string(TypeSignUp)).Parse(cfg.Signup))
+		subject = cfg.SignupSubject
 		break
 	case templateType == TypePasswordReset:
 		compiled = template.Must(template.New(string(TypePasswordReset)).Parse(cfg.PasswordReset))
