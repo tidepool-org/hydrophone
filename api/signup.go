@@ -174,9 +174,9 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 // status: 404 STATUS_SIGNUP_EXPIRED
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
-	userId := vars["userid"]
+	email := vars["useremail"]
 
-	toFind := &models.Confirmation{UserId: userId}
+	toFind := &models.Confirmation{Email: email, Status: models.StatusPending}
 
 	if found := a.findAndValidateSignUp(toFind, res); found != nil {
 

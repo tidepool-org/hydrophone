@@ -51,7 +51,7 @@ func TestSignupResponds(t *testing.T) {
 		{
 			// no token is all good
 			method:   "POST",
-			url:      "/resend/signup/UID",
+			url:      "/resend/signup/email@address.org",
 			respCode: 200,
 		},
 		{
