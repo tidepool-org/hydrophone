@@ -94,11 +94,11 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// POST /confirm/resend/signup/:useremail
 	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
 
-	// PUT /confirm/accept/signup/:userid/:confirmationID
+	// PUT /confirm/accept/signup/:confirmationID
 	// PUT /confirm/accept/forgot/
 	// PUT /confirm/accept/invite/:userid/:invited_by
 	accept := rtr.PathPrefix("/accept").Subrouter()
-	accept.Handle("/signup/{userid}/{confirmationid}", varsHandler(a.acceptSignUp)).Methods("PUT")
+	accept.Handle("/signup/{confirmationid}", varsHandler(a.acceptSignUp)).Methods("PUT")
 	accept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
 	accept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
 
