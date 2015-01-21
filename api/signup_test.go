@@ -71,7 +71,7 @@ func TestSignupResponds(t *testing.T) {
 		{
 			// all good
 			method:   "PUT",
-			url:      "/accept/signup/UID2/UID",
+			url:      "/accept/signup/UID",
 			respCode: 200,
 		},
 		{

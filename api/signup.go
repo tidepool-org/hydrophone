@@ -12,14 +12,13 @@ import (
 )
 
 const (
-	STATUS_SIGNUP_NOT_FOUND     = "No matching signup confirmation was found"
-	STATUS_SIGNUP_NO_ID         = "Required userid is missing"
-	STATUS_SIGNUP_NO_ID_OR_CONF = "Required userid and/or confirmationid is missing"
-	STATUS_SIGNUP_NO_CONF       = "Required confirmation id is missing"
-	STATUS_SIGNUP_ACCEPTED      = "User has had signup confirmed"
-	STATUS_EXISTING_SIGNUP      = "User already has an existing valid signup confirmation"
-	STATUS_SIGNUP_EXPIRED       = "The signup confirmation has expired"
-	STATUS_SIGNUP_ERROR         = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
+	STATUS_SIGNUP_NOT_FOUND = "No matching signup confirmation was found"
+	STATUS_SIGNUP_NO_ID     = "Required userid is missing"
+	STATUS_SIGNUP_NO_CONF   = "Required confirmation id is missing"
+	STATUS_SIGNUP_ACCEPTED  = "User has had signup confirmed"
+	STATUS_EXISTING_SIGNUP  = "User already has an existing valid signup confirmation"
+	STATUS_SIGNUP_EXPIRED   = "The signup confirmation has expired"
+	STATUS_SIGNUP_ERROR     = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
 )
 
 type (
@@ -205,23 +204,22 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 //If the user has an active cookie for signup (created with a short lifetime) we can accept the presence of that cookie to allow the actual login to be skipped.
 //
 // status: 200
-// status: 400 STATUS_SIGNUP_NO_ID_OR_CONF
+// status: 400 STATUS_SIGNUP_NO_CONF
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
-	userId := vars["userid"]
 	confirmationId := vars["confirmationid"]
 
-	if userId == "" || confirmationId == "" {
-		log.Printf("acceptSignUp %s", STATUS_SIGNUP_NO_ID_OR_CONF)
-		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID_OR_CONF), http.StatusBadRequest)
+	if confirmationId == "" {
+		log.Printf("acceptSignUp %s", STATUS_SIGNUP_NO_CONF)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_CONF), http.StatusBadRequest)
 		return
 	}
 
-	toFind := &models.Confirmation{UserId: userId, Key: confirmationId}
+	toFind := &models.Confirmation{Key: confirmationId}
 
 	if found := a.findAndValidateSignUp(toFind, res); found != nil {
 
-		updates := shoreline.UserUpdate{UserData: shoreline.UserData{UserID: userId}, Authenticated: true}
+		updates := shoreline.UserUpdate{UserData: shoreline.UserData{UserID: found.UserId}, Authenticated: true}
 		if err := a.sl.UpdateUser(updates, a.sl.TokenProvide()); err != nil {
 			log.Printf("acceptSignUp  error trying to update user to be authenticated [%s]", err.Error())
 			res.WriteHeader(http.StatusInternalServerError)
