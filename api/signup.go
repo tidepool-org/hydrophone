@@ -185,6 +185,9 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			Email: found.Email,
 		}
 
+		log.Printf("content to send %v", emailContent)
+		log.Printf("signup found %v", found)
+
 		if a.createAndSendNotfication(found, emailContent) {
 			a.logMetricAsServer("signup confirmation re-sent")
 		} else {
