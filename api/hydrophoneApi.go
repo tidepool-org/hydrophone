@@ -91,8 +91,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
 
-	// POST /confirm/resend/signup/:userid
-	rtr.Handle("/resend/signup/{userid}", varsHandler(a.resendSignUp)).Methods("POST")
+	// POST /confirm/resend/signup/:useremail
+	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
 
 	// PUT /confirm/accept/signup/:userid/:confirmationID
 	// PUT /confirm/accept/forgot/
