@@ -98,8 +98,15 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 
 		//find all oustanding invites were this user is the invite//
 		found, err := a.Store.FindConfirmations(&models.Confirmation{Email: invitedUsr.Emails[0]}, models.StatusPending)
+
+		log.Printf("GetReceivedInvitations: found [%d] pending invite(s) [%v]", len(found), found)
+		if err != nil {
+			log.Printf("GetReceivedInvitations: error [%v] when finding peding invites ", err)
+		}
+
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(inviteeId, invites)
+			log.Printf("GetReceivedInvitations: found and have checked [%d] invites ", len(invites))
 			a.logMetric("get received invites", req)
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
 			return
