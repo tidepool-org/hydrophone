@@ -237,7 +237,7 @@ func (a *Api) logMetricAsServer(name string) {
 //The indentifier could be either an id or email address
 func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
 	if usr, err := a.sl.GetUser(indentifier, token); err != nil {
-		log.Printf("Error trying to get existing users details [%v]", err)
+		log.Printf("Error [%s] trying to get existing users details", err.Error())
 		return nil
 	} else {
 		return usr
@@ -263,7 +263,7 @@ func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
 
 func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
 	if jsonDetails, err := json.Marshal(model); err != nil {
-		log.Printf("Error trying to send [%v]", model)
+		log.Printf("Error [%s] trying to send model [%s]", err.Error(), model)
 		http.Error(res, "Error marshaling data for response", http.StatusInternalServerError)
 	} else {
 		res.Header().Set("content-type", "application/json")
