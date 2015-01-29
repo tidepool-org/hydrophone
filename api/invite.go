@@ -42,7 +42,7 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 
 	//already has invite from this user?
 	invites, _ := a.Store.FindConfirmations(
-		&models.Confirmation{CreatorId: invitorId, Email: inviteeEmail},
+		&models.Confirmation{CreatorId: invitorId, Email: inviteeEmail, Type: models.TypeCareteamInvite},
 		models.StatusPending,
 		models.StatusDeclined,
 		models.StatusCompleted,
@@ -97,9 +97,9 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		invitedUsr := a.findExistingUser(inviteeId, req.Header.Get(TP_SESSION_TOKEN))
 
 		//find all oustanding invites were this user is the invite//
-		found, err := a.Store.FindConfirmations(&models.Confirmation{Email: invitedUsr.Emails[0]}, models.StatusPending)
+		found, err := a.Store.FindConfirmations(&models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
 
-		log.Printf("GetReceivedInvitations: found [%d] pending invite(s) [%v]", len(found), found)
+		log.Printf("GetReceivedInvitations: found [%d] pending invite(s)", len(found))
 		if err != nil {
 			log.Printf("GetReceivedInvitations: error [%v] when finding peding invites ", err)
 		}
@@ -131,7 +131,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 		//find all invites I have sent that are pending or declined
-		found, err := a.Store.FindConfirmations(&models.Confirmation{CreatorId: invitorId}, models.StatusPending, models.StatusDeclined)
+		found, err := a.Store.FindConfirmations(&models.Confirmation{CreatorId: invitorId, Type: models.TypeCareteamInvite}, models.StatusPending, models.StatusDeclined)
 		if invitations := a.checkFoundConfirmations(res, found, err); invitations != nil {
 			a.logMetric("get sent invites", req)
 			a.sendModelAsResWithStatus(res, invitations, http.StatusOK)

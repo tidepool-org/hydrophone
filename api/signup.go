@@ -64,7 +64,7 @@ func (a *Api) findAndValidateSignUp(conf *models.Confirmation, res http.Response
 func (a *Api) hasDuplicateSignup(userId string) bool {
 
 	signUp, _ := a.Store.FindConfirmations(
-		&models.Confirmation{UserId: userId},
+		&models.Confirmation{UserId: userId, Type: models.TypeSignUp},
 		models.StatusPending,
 		models.StatusCompleted,
 	)
@@ -276,7 +276,7 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 			return
 		}
 
-		if signups, _ := a.Store.FindConfirmations(&models.Confirmation{UserId: userId}, models.StatusPending); signups == nil {
+		if signups, _ := a.Store.FindConfirmations(&models.Confirmation{UserId: userId, Type: models.TypeSignUp}, models.StatusPending); signups == nil {
 			log.Printf("getSignUp %s", STATUS_SIGNUP_NOT_FOUND)
 			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
 			return
