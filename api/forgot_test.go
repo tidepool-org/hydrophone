@@ -20,6 +20,13 @@ func TestForgotResponds(t *testing.T) {
 			respCode: 200,
 		},
 		{
+			// always returns a 200 if properly formed
+			returnNone: true,
+			method:     "POST",
+			url:        "/send/forgot/me@myemail.com",
+			respCode:   200,
+		},
+		{
 			method:   "PUT",
 			url:      "/accept/forgot",
 			respCode: 200,
