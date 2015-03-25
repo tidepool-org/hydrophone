@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	STATUS_RESET_NOT_FOUND  = "No matching reset confirmation was found"
-	STATUS_RESET_ACCEPTED   = "Password has been reset"
-	STATUS_RESET_EXPIRED    = "Password reset confirmation has expired"
-	STATUS_RESET_ERROR      = "Error while reseting password, reset confirmation remains active until it expires"
-	STATUS_RESET_NO_ACCOUNT = "No matching account for the email was found"
+	STATUS_RESET_NOT_FOUND  = "No matching reset confirmation was found."
+	STATUS_RESET_ACCEPTED   = "Password has been reset."
+	STATUS_RESET_EXPIRED    = "Password reset confirmation has expired."
+	STATUS_RESET_ERROR      = "Error while resetting password; reset confirmation remains active until it expires."
+	STATUS_RESET_NO_ACCOUNT = "No matching account for the email was found."
 )
 
 type (
