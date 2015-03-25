@@ -37,6 +37,7 @@ const (
 	TypePasswordReset  Type = "password_reset"
 	TypeCareteamInvite Type = "careteam_invitation"
 	TypeSignUp         Type = "signup_confirmation"
+	TypeNoAccount      Type = "no_account"
 )
 
 //New confirmation with just the basics

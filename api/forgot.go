@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	STATUS_RESET_NOT_FOUND = "No matching reset confirmation was found"
-	STATUS_RESET_ACCEPTED  = "Password has been reset"
-	STATUS_RESET_EXPIRED   = "Password reset confirmation has expired"
-	STATUS_RESET_ERROR     = "Error while reseting password, reset confirmation remains active until it expires"
+	STATUS_RESET_NOT_FOUND  = "No matching reset confirmation was found."
+	STATUS_RESET_ACCEPTED   = "Password has been reset."
+	STATUS_RESET_EXPIRED    = "Password reset confirmation has expired."
+	STATUS_RESET_ERROR      = "Error while resetting password; reset confirmation remains active until it expires."
+	STATUS_RESET_NO_ACCOUNT = "No matching account for the email was found."
 )
 
 type (
@@ -58,6 +59,13 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
 		resetCnf.UserId = resetUsr.UserID
+	} else {
+		log.Print(STATUS_RESET_NO_ACCOUNT)
+		log.Printf("email used [%s]", email)
+		resetCnf, _ = models.NewConfirmation(models.TypeNoAccount, "")
+		resetCnf.Email = email
+		//there is nothing more to do other than notify the user
+		resetCnf.UpdateStatus(models.StatusCompleted)
 	}
 
 	if a.addOrUpdateConfirmation(resetCnf, res) {

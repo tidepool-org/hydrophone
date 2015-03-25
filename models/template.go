@@ -14,6 +14,8 @@ type (
 		CareteamInviteSubject string `json:"careteamInviteSubject"`
 		Signup                string `json:"signUp"`
 		SignupSubject         string `json:"signUpSubject"`
+		NoAccount             string `json:"noAccount"`
+		NoAccountSubject      string `json:"noAccountSubject"`
 	}
 
 	Template struct {
@@ -47,6 +49,10 @@ func (t *Template) Load(templateType Type, cfg *TemplateConfig) {
 	case templateType == TypePasswordReset:
 		compiled = template.Must(template.New(string(TypePasswordReset)).Parse(cfg.PasswordReset))
 		subject = cfg.PasswordResetSubject
+		break
+	case templateType == TypeNoAccount:
+		compiled = template.Must(template.New(string(TypeNoAccount)).Parse(cfg.NoAccount))
+		subject = cfg.NoAccountSubject
 		break
 	default:
 		log.Println("Unknown type ", templateType)
