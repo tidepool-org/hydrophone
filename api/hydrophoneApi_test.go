@@ -15,6 +15,7 @@ import (
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/tidepool-org/go-common/clients/status"
 )
 
 const (
@@ -45,9 +46,9 @@ var (
 	rtr            = mux.NewRouter()
 	mockNotifier   = clients.NewMockNotifier()
 	mockShoreline  = shoreline.NewMock(FAKE_TOKEN)
-	mockGatekeeper = commonClients.NewGatekeeperMock(nil, nil)
+	mockGatekeeper = commonClients.NewGatekeeperMock(nil, &status.StatusError{status.NewStatus(500, "Unable to parse response.")})
 	mockMetrics    = highwater.NewMock()
-	mockSeagull    = commonClients.NewSeagullMock(`{}`, nil)
+	mockSeagull    = commonClients.NewSeagullMock()
 	/*
 	 * stores
 	 */
