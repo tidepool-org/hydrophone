@@ -1,7 +1,9 @@
 package clients
 
 import (
+	"fmt"
 	"log"
+	"regexp"
 
 	"./../models"
 	"github.com/tidepool-org/go-common/clients/mongo"
@@ -67,7 +69,7 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 	var query bson.M = bson.M{}
 
 	if confirmation.Email != "" {
-		query["email"] = confirmation.Email
+		query["email"] = bson.M{"$regex": bson.RegEx{fmt.Sprintf("^%s$", regexp.QuoteMeta(confirmation.Email)), "i"}}
 	}
 	if confirmation.Key != "" {
 		query["_id"] = confirmation.Key
@@ -101,7 +103,7 @@ func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 	var query bson.M = bson.M{}
 
 	if confirmation.Email != "" {
-		query["email"] = confirmation.Email
+		query["email"] = bson.M{"$regex": bson.RegEx{fmt.Sprintf("^%s$", regexp.QuoteMeta(confirmation.Email)), "i"}}
 	}
 	if confirmation.Key != "" {
 		query["_id"] = confirmation.Key

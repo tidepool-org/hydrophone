@@ -11,10 +11,10 @@ import (
 
 func TestMongoStoreConfirmationOperations(t *testing.T) {
 
-	var (
-		confirmation, _ = models.NewConfirmation(models.TypePasswordReset, "123.456")
-		doesNotExist, _ = models.NewConfirmation(models.TypePasswordReset, "123.456")
-	)
+	confirmation, _ := models.NewConfirmation(models.TypePasswordReset, "123.456")
+	confirmation.Email = "test@test.com"
+
+	doesNotExist, _ := models.NewConfirmation(models.TypePasswordReset, "123.456")
 
 	testingConfig := &mongo.Config{ConnectionString: "mongodb://localhost/hydrophone_test"}
 
@@ -41,6 +41,22 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	}
 
 	if found, err := mc.FindConfirmation(confirmation); err == nil {
+		if found == nil {
+			t.Fatalf("the confirmation was not found")
+		}
+		if found.Key == "" {
+			t.Fatalf("the confirmation string isn't included %v", found)
+		}
+	} else {
+		t.Fatalf("no confirmation was returned when it should have been - err[%v]", err)
+	}
+
+	// Uppercase the email and try again (detect case sensitivity)
+	confirmation.Email = "TEST@TEST.COM"
+	if found, err := mc.FindConfirmation(confirmation); err == nil {
+		if found == nil {
+			t.Fatalf("the uppercase confirmation was not found")
+		}
 		if found.Key == "" {
 			t.Fatalf("the confirmation string isn't included %v", found)
 		}
