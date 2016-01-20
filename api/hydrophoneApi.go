@@ -45,7 +45,8 @@ type (
 
 const (
 	TP_SESSION_TOKEN = "x-tidepool-session-token"
-	//returned status messages
+
+	//returned error messages
 	STATUS_ERR_SENDING_EMAIL         = "Error sending email"
 	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
@@ -53,10 +54,13 @@ const (
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
-	STATUS_NOT_FOUND                 = "Nothing found"
-	STATUS_NO_TOKEN                  = "No x-tidepool-session-token was found"
-	STATUS_INVALID_TOKEN             = "The x-tidepool-session-token was invalid"
-	STATUS_OK                        = "OK"
+
+	//returned status messages
+	STATUS_NOT_FOUND     = "Nothing found"
+	STATUS_NO_TOKEN      = "No x-tidepool-session-token was found"
+	STATUS_INVALID_TOKEN = "The x-tidepool-session-token was invalid"
+	STATUS_UNAUTHORIZED  = "Not authorized for requested operation"
+	STATUS_OK            = "OK"
 )
 
 func InitApi(
@@ -207,6 +211,11 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 			log.Printf("checkToken %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
 			return false
+		} else if !td.IsServer {
+			statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}
+			log.Printf("checkToken %s err[%v] ", STATUS_UNAUTHORIZED, statusErr)
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
+			return false
 		}
 		//all good!
 		return true
@@ -215,6 +224,25 @@ func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
 	log.Printf("checkToken %s err[%v] ", STATUS_NO_TOKEN, statusErr)
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
 	return false
+}
+
+func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
+	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
+		td := a.sl.CheckToken(token)
+
+		if td == nil {
+			statusErr := &status.StatusError{status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
+			log.Printf("checkToken %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+			return nil
+		}
+		//all good!
+		return td
+	}
+	statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
+	log.Printf("checkToken %s err[%v] ", STATUS_NO_TOKEN, statusErr)
+	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
+	return nil
 }
 
 //send metric

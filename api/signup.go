@@ -119,11 +119,18 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 // status: 403 STATUS_EXISTING_SIGNUP
 // status: 500 STATUS_ERR_FINDING_USER
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
+	if token := a.token(res, req); token != nil {
 		userId := vars["userid"]
 		if userId == "" {
 			log.Printf("sendSignUp %s", STATUS_SIGNUP_NO_ID)
 			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+			return
+		}
+
+		// Non-server tokens can only send to their own user id
+		if !token.IsServer && userId != token.UserId {
+			log.Printf("sendSignUp %s ", STATUS_UNAUTHORIZED)
+			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
 
@@ -266,13 +273,20 @@ func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map
 // status: 200 with a single result in an array
 // status: 404
 func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
+	if token := a.token(res, req); token != nil {
 
 		userId := vars["userid"]
 
 		if userId == "" {
 			log.Printf("getSignUp %s", STATUS_SIGNUP_NO_ID)
 			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+			return
+		}
+
+		// Non-server tokens can only send to their own user id
+		if !token.IsServer && userId != token.UserId {
+			log.Printf("getSignUp %s ", STATUS_UNAUTHORIZED)
+			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
 

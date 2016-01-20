@@ -86,11 +86,17 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 // status: 200
 // status: 400
 func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
+	if token := a.token(res, req); token != nil {
 		inviteeId := vars["userid"]
 
 		if inviteeId == "" {
 			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		// Non-server tokens can only get for their own user id
+		if !token.IsServer && inviteeId != token.UserId {
+			log.Printf("GetReceivedInvitations %s ", STATUS_UNAUTHORIZED)
+			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
 
@@ -122,7 +128,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 // status: 200
 // status: 400
 func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
+	if token := a.token(res, req); token != nil {
 
 		invitorId := vars["userid"]
 
@@ -130,6 +136,14 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		// Non-server tokens can only get for their own user id
+		if !token.IsServer && invitorId != token.UserId {
+			log.Printf("GetReceivedInvitations %s ", STATUS_UNAUTHORIZED)
+			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+			return
+		}
+
 		//find all invites I have sent that are pending or declined
 		found, err := a.Store.FindConfirmations(&models.Confirmation{CreatorId: invitorId, Type: models.TypeCareteamInvite}, models.StatusPending, models.StatusDeclined)
 		if invitations := a.checkFoundConfirmations(res, found, err); invitations != nil {
@@ -147,13 +161,20 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 // status: 400 when the incoming data is incomplete or incorrect
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
-	if a.checkToken(res, req) {
+	if token := a.token(res, req); token != nil {
 
 		inviteeId := vars["userid"]
 		invitorId := vars["invitedby"]
 
 		if inviteeId == "" || invitorId == "" {
 			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// Non-server tokens can only get for their own user id
+		if !token.IsServer && inviteeId != token.UserId {
+			log.Printf("AcceptInvite %s ", STATUS_UNAUTHORIZED)
+			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
 
@@ -212,13 +233,20 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 // status: 404 STATUS_INVITE_NOT_FOUND
 // status: 400 when the incoming data is incomplete or incorrect
 func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
+	if token := a.token(res, req); token != nil {
 
 		invitorId := vars["userid"]
 		email := vars["invited_address"]
 
 		if invitorId == "" || email == "" {
 			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// Non-server tokens can only get for their own user id
+		if !token.IsServer && invitorId != token.UserId {
+			log.Printf("CancelInvite %s ", STATUS_UNAUTHORIZED)
+			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
 
@@ -252,13 +280,20 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 // status: 200
 // status: 400
 func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
+	if token := a.token(res, req); token != nil {
 
 		inviteeId := vars["userid"]
 		invitorId := vars["invitedby"]
 
 		if inviteeId == "" || invitorId == "" {
 			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// Non-server tokens can only get for their own user id
+		if !token.IsServer && inviteeId != token.UserId {
+			log.Printf("DismissInvite %s ", STATUS_UNAUTHORIZED)
+			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
 
@@ -304,9 +339,21 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 // status: 409 STATUS_EXISTING_MEMBER - user is already part of the team
 // status: 400
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if a.checkToken(res, req) {
+	if token := a.token(res, req); token != nil {
 
 		invitorId := vars["userid"]
+
+		if invitorId == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// Non-server tokens can only get for their own user id
+		if !token.IsServer && invitorId != token.UserId {
+			log.Printf("SendInvite %s ", STATUS_UNAUTHORIZED)
+			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+			return
+		}
 
 		defer req.Body.Close()
 		var ib = &inviteBody{}
