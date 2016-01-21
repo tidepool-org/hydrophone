@@ -93,7 +93,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		// Non-server tokens can only get for their own user id
+		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeId != token.UserID {
 			log.Printf("GetReceivedInvitations %s ", STATUS_UNAUTHORIZED)
 			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
@@ -137,7 +137,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 
-		// Non-server tokens can only get for their own user id
+		// Non-server tokens only legit when for same userid
 		if !token.IsServer && invitorId != token.UserID {
 			log.Printf("GetReceivedInvitations %s ", STATUS_UNAUTHORIZED)
 			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
@@ -171,7 +171,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		// Non-server tokens can only get for their own user id
+		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeId != token.UserID {
 			log.Printf("AcceptInvite %s ", STATUS_UNAUTHORIZED)
 			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
@@ -243,7 +243,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		// Non-server tokens can only get for their own user id
+		// Non-server tokens only legit when for same userid
 		if !token.IsServer && invitorId != token.UserID {
 			log.Printf("CancelInvite %s ", STATUS_UNAUTHORIZED)
 			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
@@ -290,7 +290,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 			return
 		}
 
-		// Non-server tokens can only get for their own user id
+		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeId != token.UserID {
 			log.Printf("DismissInvite %s ", STATUS_UNAUTHORIZED)
 			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
@@ -348,7 +348,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		// Non-server tokens can only get for their own user id
+		// Non-server tokens only legit when for same userid
 		if !token.IsServer && invitorId != token.UserID {
 			log.Printf("SendInvite %s ", STATUS_UNAUTHORIZED)
 			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)

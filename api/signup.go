@@ -127,7 +127,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		// Non-server tokens can only send to their own user id
+		// Non-server tokens only legit when for same userid
 		if !token.IsServer && userId != token.UserID {
 			log.Printf("sendSignUp %s ", STATUS_UNAUTHORIZED)
 			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
@@ -283,7 +283,7 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 			return
 		}
 
-		// Non-server tokens can only send to their own user id
+		// Non-server tokens only legit when for same userid
 		if !token.IsServer && userId != token.UserID {
 			log.Printf("getSignUp %s ", STATUS_UNAUTHORIZED)
 			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
