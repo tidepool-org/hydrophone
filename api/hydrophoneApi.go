@@ -202,37 +202,13 @@ func (a *Api) createAndSendNotfication(conf *models.Confirmation, content interf
 }
 
 //find and validate the token
-func (a *Api) checkToken(res http.ResponseWriter, req *http.Request) bool {
-	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
-		td := a.sl.CheckToken(token)
-
-		if td == nil {
-			statusErr := &status.StatusError{status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
-			log.Printf("checkToken %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
-			return false
-		} else if !td.IsServer {
-			statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}
-			log.Printf("checkToken %s err[%v] ", STATUS_UNAUTHORIZED, statusErr)
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
-			return false
-		}
-		//all good!
-		return true
-	}
-	statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
-	log.Printf("checkToken %s err[%v] ", STATUS_NO_TOKEN, statusErr)
-	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
-	return false
-}
-
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
 		td := a.sl.CheckToken(token)
 
 		if td == nil {
 			statusErr := &status.StatusError{status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
-			log.Printf("checkToken %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
+			log.Printf("token %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
 			return nil
 		}
@@ -240,7 +216,7 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 		return td
 	}
 	statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
-	log.Printf("checkToken %s err[%v] ", STATUS_NO_TOKEN, statusErr)
+	log.Printf("token %s err[%v] ", STATUS_NO_TOKEN, statusErr)
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
 	return nil
 }
