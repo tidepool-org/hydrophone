@@ -384,15 +384,14 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			if a.addOrUpdateConfirmation(invite, res) {
 				a.logMetric("invite created", req)
 
-				up := &profile{}
-				if err := a.seagull.GetCollection(invite.CreatorId, "profile", req.Header.Get(TP_SESSION_TOKEN), &up); err != nil {
-					log.Printf("SendInvite: error getting the creators profile [%v] ", err)
+				if err := a.addProfile(invite); err != nil {
+					log.Println("SendInvite: ", err.Error())
 				} else {
 
 					canUpload := ib.Permissions["upload"]
 
 					emailContent := &inviteEmailContent{
-						CareteamName:   up.FullName,
+						CareteamName:   invite.Creator,
 						Key:            invite.Key,
 						Email:          invite.Email,
 						IsExistingUser: invite.UserId != "",

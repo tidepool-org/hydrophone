@@ -36,6 +36,7 @@ type (
 	profile struct {
 		FullName string
 	}
+
 	group struct {
 		Members []string
 	}
@@ -169,6 +170,19 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 	}
 }
 
+//Find this confirmation
+//write error if it fails
+func (a *Api) addProfile(conf *models.Confirmation) error {
+
+	up := &profile{}
+	if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &up); err != nil {
+		log.Printf("error getting the creators profile [%v] ", err)
+		return err
+	}
+	conf.Creator = up.FullName
+	return nil
+}
+
 //Find these confirmations
 //write error if fails or write no-content if it doesn't exist
 func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
@@ -179,10 +193,16 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 		return nil
 	} else if results == nil || len(results) == 0 {
 		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
-		log.Printf("No confirmations were found [%s]", statusErr.Error())
+		log.Println("No confirmations were found ", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	} else {
+		for i := range results {
+			if err = a.addProfile(results[i]); err != nil {
+				//report and move on
+				log.Printf("Error getting profile", err.Error())
+			}
+		}
 		return results
 	}
 }

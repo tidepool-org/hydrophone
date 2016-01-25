@@ -14,6 +14,7 @@ type (
 		Type      Type            `json:"type" bson:"type"`
 		Email     string          `json:"email" bson:"email"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
+		Creator   string          `json:"creator" bson:"-"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
 		Created   time.Time       `json:"created" bson:"created"`
 		//don't reveal the status and modified data from consumers
