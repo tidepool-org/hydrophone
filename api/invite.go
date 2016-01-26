@@ -392,7 +392,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 					canUpload := ib.Permissions["upload"]
 
 					emailContent := &inviteEmailContent{
-						CareteamName:   invite.Creator.FullName,
+						CareteamName:   invite.Creator.Profile.FullName,
 						Key:            invite.Key,
 						Email:          invite.Email,
 						IsExistingUser: invite.UserId != "",
