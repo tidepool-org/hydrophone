@@ -33,9 +33,6 @@ type (
 		ResetTimeoutDays  int                    `json:"resetTimeoutDays"`
 		SignUpTimeoutDays int                    `json:"signUpTimeoutDays"`
 	}
-	profile struct {
-		FullName string
-	}
 
 	group struct {
 		Members []string
@@ -174,12 +171,12 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 //write error if it fails
 func (a *Api) addProfile(conf *models.Confirmation) error {
 
-	up := &profile{}
-	if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &up); err != nil {
+	if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &conf.Creator.Profile); err != nil {
 		log.Printf("error getting the creators profile [%v] ", err)
 		return err
 	}
-	conf.Creator = up.FullName
+
+	conf.Creator.UserId = conf.CreatorId
 	return nil
 }
 
@@ -200,7 +197,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 		for i := range results {
 			if err = a.addProfile(results[i]); err != nil {
 				//report and move on
-				log.Printf("Error getting profile", err.Error())
+				log.Println("Error getting profile", err.Error())
 			}
 		}
 		return results

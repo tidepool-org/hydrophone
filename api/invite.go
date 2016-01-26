@@ -253,6 +253,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 		invite := &models.Confirmation{
 			Email:     email,
 			CreatorId: invitorId,
+			Creator:   models.Creator{},
 			Type:      models.TypeCareteamInvite,
 		}
 
@@ -391,7 +392,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 					canUpload := ib.Permissions["upload"]
 
 					emailContent := &inviteEmailContent{
-						CareteamName:   invite.Creator,
+						CareteamName:   invite.Creator.FullName,
 						Key:            invite.Key,
 						Email:          invite.Email,
 						IsExistingUser: invite.UserId != "",

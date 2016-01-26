@@ -14,13 +14,24 @@ type (
 		Type      Type            `json:"type" bson:"type"`
 		Email     string          `json:"email" bson:"email"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
-		Creator   string          `json:"creator" bson:"-"`
+		Creator   Creator         `json:"creator" bson:"creator"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
 		Created   time.Time       `json:"created" bson:"created"`
 		//don't reveal the status and modified data from consumers
 		UserId   string    `json:"-" bson:"userId"`
 		Status   Status    `json:"-" bson:"status"`
 		Modified time.Time `json:"-" bson:"modified"`
+	}
+
+	//basic details for the creator of the confirmation
+	Creator struct {
+		*Profile `json:"profile" bson:"-"`
+		UserId   string `json:"userId" bson:"-"`
+	}
+
+	//cutdown verson of a profile used for confirmations
+	Profile struct {
+		FullName string `json:"fullName"`
 	}
 
 	//Enum type's
@@ -52,6 +63,7 @@ func NewConfirmation(theType Type, creatorId string) (*Confirmation, error) {
 			Key:       key,
 			Type:      theType,
 			CreatorId: creatorId,
+			Creator:   Creator{}, //set before sending back to client
 			Status:    StatusPending,
 			Created:   time.Now(),
 		}
