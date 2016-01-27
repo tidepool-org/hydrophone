@@ -26,7 +26,7 @@ type (
 	//basic details for the creator of the confirmation
 	Creator struct {
 		*Profile `json:"profile" bson:"-"`
-		UserId   string `json:"userId" bson:"-"`
+		UserId   string `json:"userid" bson:"-"` //for compatability with blip
 	}
 
 	//cutdown verson of a profile used for confirmations
