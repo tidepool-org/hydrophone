@@ -38,11 +38,23 @@ func Test_NewConfirmation(t *testing.T) {
 	}
 
 	if confirmation.UserId != "" {
-		t.Fatalf("The user should not be set but is [%s]", confirmation.UserId)
+		t.Logf("expected '' actual [%s]", confirmation.UserId)
+		t.Fail()
 	}
 
 	if confirmation.CreatorId != USERID {
-		t.Fatalf("The creator should be [%s] but is [%s]", USERID, confirmation.CreatorId)
+		t.Logf("expected [%s] actual [%s]", USERID, confirmation.CreatorId)
+		t.Fail()
+	}
+
+	if confirmation.Creator.Profile != nil {
+		t.Logf("expected `nil` actual [%s]", confirmation.Creator.Profile)
+		t.Fail()
+	}
+
+	if confirmation.Creator.UserId != "" {
+		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
+		t.Fail()
 	}
 
 	confirmation.UpdateStatus(StatusCompleted)
@@ -73,6 +85,8 @@ func Test_NewConfirmationWithContext(t *testing.T) {
 		t.Fatalf("context not decoded [%v]", myExtras)
 	}
 
+	//and all tests should pass for a new confirmation too
+	Test_NewConfirmation(t)
 }
 
 func Test_Confirmation_AddContext(t *testing.T) {
