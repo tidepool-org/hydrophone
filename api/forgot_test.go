@@ -76,7 +76,7 @@ func TestForgotResponds(t *testing.T) {
 		}
 		request, _ := http.NewRequest(test.method, test.url, body)
 		if test.token != "" {
-			request.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
+			request.Header.Set(TP_SESSION_TOKEN, testing_token)
 		}
 		response := httptest.NewRecorder()
 		testRtr.ServeHTTP(response, request)

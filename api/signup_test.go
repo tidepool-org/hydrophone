@@ -17,7 +17,7 @@ func TestSignupResponds(t *testing.T) {
 			// if you leave off the userid, it fails
 			method:   "POST",
 			url:      "/send/signup",
-			token:    TOKEN_FOR_UID1,
+			token:    testing_token_uid1,
 			respCode: 404,
 		},
 		{
@@ -25,7 +25,7 @@ func TestSignupResponds(t *testing.T) {
 			returnNone: true,
 			method:     "POST",
 			url:        "/send/signup/NewUserID",
-			token:      TOKEN_FOR_UID1,
+			token:      testing_token_uid1,
 			respCode:   200,
 		},
 		{
@@ -39,7 +39,7 @@ func TestSignupResponds(t *testing.T) {
 			// second time you ask, it fails with a limit
 			method:   "POST",
 			url:      "/send/signup/NewUserID",
-			token:    TOKEN_FOR_UID1,
+			token:    testing_token_uid1,
 			respCode: 403,
 		},
 		{
@@ -104,7 +104,7 @@ func TestSignupResponds(t *testing.T) {
 		{
 			method:   "GET",
 			url:      "/signup/UID",
-			token:    TOKEN_FOR_UID1,
+			token:    testing_token_uid1,
 			respCode: 200,
 		},
 		{
@@ -112,7 +112,7 @@ func TestSignupResponds(t *testing.T) {
 			returnNone: true,
 			method:     "GET",
 			url:        "/signup/UID",
-			token:      TOKEN_FOR_UID1,
+			token:      testing_token_uid1,
 			respCode:   404,
 		},
 		{
@@ -147,7 +147,7 @@ func TestSignupResponds(t *testing.T) {
 		}
 		request, _ := http.NewRequest(test.method, test.url, body)
 		if test.token != "" {
-			request.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
+			request.Header.Set(TP_SESSION_TOKEN, testing_token)
 		}
 		response := httptest.NewRecorder()
 		testRtr.ServeHTTP(response, request)

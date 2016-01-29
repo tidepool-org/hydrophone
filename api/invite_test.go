@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,30 +11,129 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func initTestingRouterNoPerms() *mux.Router {
+	testRtr := mux.NewRouter()
+	hydrophone := InitApi(
+		FAKE_CONFIG,
+		mockStore,
+		mockNotifier,
+		mock_uid1Shoreline,
+		mock_NoPermsGatekeeper,
+		mockMetrics,
+		mockSeagull,
+	)
+
+	hydrophone.SetHandlers("", testRtr)
+	return testRtr
+}
+
+func TestSendInvite_NoPerms(t *testing.T) {
+
+	tstRtr := initTestingRouterNoPerms()
+	sendBody := &bytes.Buffer{}
+	json.NewEncoder(sendBody).Encode(jo{
+		"email": testing_uid2 + "@email.org",
+		"permissions": jo{
+			"view": jo{},
+			"note": jo{},
+		},
+	})
+
+	request, _ := http.NewRequest("POST", fmt.Sprintf("/send/invite/%s", testing_uid2), sendBody)
+	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
+	response := httptest.NewRecorder()
+	tstRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Logf("expected %d actual %d", http.StatusUnauthorized, response.Code)
+		t.Fail()
+	}
+}
+
+func TestGetReceivedInvitations_NoPerms(t *testing.T) {
+
+	tstRtr := initTestingRouterNoPerms()
+
+	request, _ := http.NewRequest("GET", fmt.Sprintf("/invitations/%s", testing_uid2), nil)
+	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
+	response := httptest.NewRecorder()
+	tstRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Logf("expected %d actual %d", http.StatusUnauthorized, response.Code)
+		t.Fail()
+	}
+}
+
+func TestGetSentInvitations_NoPerms(t *testing.T) {
+
+	tstRtr := initTestingRouterNoPerms()
+
+	request, _ := http.NewRequest("GET", fmt.Sprintf("/invite/%s", testing_uid2), nil)
+	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
+	response := httptest.NewRecorder()
+	tstRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Logf("expected %d actual %d", http.StatusUnauthorized, response.Code)
+		t.Fail()
+	}
+}
+
+func TestAcceptInvite_NoPerms(t *testing.T) {
+
+	tstRtr := initTestingRouterNoPerms()
+
+	request, _ := http.NewRequest("PUT", fmt.Sprintf("/accept/invite/%s/%s", testing_uid2, testing_uid1), nil)
+	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
+	response := httptest.NewRecorder()
+	tstRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Logf("expected %d actual %d", http.StatusUnauthorized, response.Code)
+		t.Fail()
+	}
+}
+
+func TestDismissInvite_NoPerms(t *testing.T) {
+
+	tstRtr := initTestingRouterNoPerms()
+
+	request, _ := http.NewRequest("PUT", fmt.Sprintf("/dismiss/invite/%s/%s", testing_uid2, testing_uid1), nil)
+	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
+	response := httptest.NewRecorder()
+	tstRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Logf("expected %d actual %d", http.StatusUnauthorized, response.Code)
+		t.Fail()
+	}
+}
+
 func TestInviteResponds(t *testing.T) {
 
 	tests := []toTest{
 		{
 			// can't invite without a body
 			method:   "POST",
-			url:      "/send/invite/UID",
-			token:    TOKEN_FOR_UID1,
+			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
+			token:    testing_token_uid1,
 			respCode: 400,
 		},
 		{
 			// can't invite without permissions
 			method:   "POST",
-			url:      "/send/invite/UID",
-			token:    TOKEN_FOR_UID1,
+			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
+			token:    testing_token_uid1,
 			respCode: 400,
 			body:     jo{"email": "personToInvite@email.com"},
 		},
 		{
 			// can't invite without email
 			method:   "POST",
-			url:      "/send/invite/UID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 400,
+			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
+			token:    testing_token_uid1,
+			respCode: http.StatusBadRequest,
 			body: jo{
 				"permissions": jo{
 					"view": jo{},
@@ -42,13 +142,13 @@ func TestInviteResponds(t *testing.T) {
 			},
 		},
 		{
-			// if dup invite
+			// if duplicate invite
 			method:   "POST",
-			url:      "/send/invite/UID",
-			token:    TOKEN_FOR_UID1,
-			respCode: 409,
+			url:      fmt.Sprintf("/send/invite/%s", testing_uid2),
+			token:    testing_token_uid1,
+			respCode: http.StatusConflict,
 			body: jo{
-				"email": "personToInvite@email.com",
+				"email": testing_uid2 + "@email.org",
 				"permissions": jo{
 					"view": jo{},
 					"note": jo{},
@@ -59,11 +159,11 @@ func TestInviteResponds(t *testing.T) {
 			// but if you have them all, it should work
 			returnNone: true,
 			method:     "POST",
-			url:        "/send/invite/UID",
-			token:      TOKEN_FOR_UID1,
-			respCode:   200,
+			url:        fmt.Sprintf("/send/invite/%s", testing_uid2),
+			token:      testing_token_uid1,
+			respCode:   http.StatusOK,
 			body: jo{
-				"email": "otherToInvite@email.com",
+				"email": testing_uid2 + "@email.org",
 				"permissions": jo{
 					"view": jo{},
 					"note": jo{},
@@ -73,11 +173,11 @@ func TestInviteResponds(t *testing.T) {
 		{
 			// we should get a list of our outstanding invitations
 			method:   "GET",
-			url:      "/invitations/UID",
-			token:    TOKEN_FOR_UID1,
+			url:      fmt.Sprintf("/invitations/%s", testing_uid1),
+			token:    testing_token_uid1,
 			respCode: http.StatusOK,
 			response: jo{
-				"invitedBy": "UID",
+				"invitedBy": testing_uid2,
 				"permissions": jo{
 					"view": jo{},
 					"note": jo{},
@@ -88,20 +188,14 @@ func TestInviteResponds(t *testing.T) {
 			// not found without the full path
 			method:   "PUT",
 			url:      "/accept/invite",
-			token:    TOKEN_FOR_UID1,
+			token:    testing_token_uid1,
 			respCode: http.StatusNotFound,
-		},
-		{
-			// no token
-			method:   "PUT",
-			url:      "/accept/invite/UID2/UID",
-			respCode: http.StatusUnauthorized,
 		},
 		{
 			// we can accept an invitation we did get
 			method:   "PUT",
-			url:      "/accept/invite/UID1/UID",
-			token:    TOKEN_FOR_UID1,
+			url:      fmt.Sprintf("/accept/invite/%s/%s", testing_uid1, testing_uid2),
+			token:    testing_token_uid1,
 			respCode: http.StatusOK,
 			body: jo{
 				"key": "careteam_invite/1234",
@@ -110,8 +204,8 @@ func TestInviteResponds(t *testing.T) {
 		{
 			// get invitations we sent
 			method:   "GET",
-			url:      "/invite/UID2",
-			token:    TOKEN_FOR_UID1,
+			url:      fmt.Sprintf("/invite/%s", testing_uid2),
+			token:    testing_token_uid1,
 			respCode: http.StatusOK,
 			response: jo{
 				"email": "personToInvite@email.com",
@@ -124,8 +218,8 @@ func TestInviteResponds(t *testing.T) {
 		{
 			// dismiss an invitation we were sent
 			method:   "PUT",
-			url:      "/dismiss/invite/UID2/UID",
-			token:    TOKEN_FOR_UID1,
+			url:      fmt.Sprintf("/dismiss/invite/%s/%s", testing_uid2, testing_uid1),
+			token:    testing_token_uid1,
 			respCode: http.StatusOK,
 			body: jo{
 				"key": "careteam_invite/1234",
@@ -134,8 +228,8 @@ func TestInviteResponds(t *testing.T) {
 		{
 			// delete the other invitation we sent
 			method:   "PUT",
-			url:      "/UID/invited/other@youremail.com",
-			token:    TOKEN_FOR_UID1,
+			url:      fmt.Sprintf("%s/invited/other@youremail.com", testing_uid1),
+			token:    testing_token_uid1,
 			respCode: http.StatusOK,
 		},
 	}
@@ -148,13 +242,31 @@ func TestInviteResponds(t *testing.T) {
 		//fresh each time
 		var testRtr = mux.NewRouter()
 
+		//default flow, fully authorized
+		hydrophone := InitApi(
+			FAKE_CONFIG,
+			mockStore,
+			mockNotifier,
+			mockShoreline,
+			mockGatekeeper,
+			mockMetrics,
+			mockSeagull,
+		)
+
+		//testing when there is nothing to return from the store
 		if test.returnNone {
-			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull)
-			hydrophoneFindsNothing.SetHandlers("", testRtr)
-		} else {
-			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull)
-			hydrophone.SetHandlers("", testRtr)
+			hydrophone = InitApi(
+				FAKE_CONFIG,
+				mockStoreEmpty,
+				mockNotifier,
+				mockShoreline,
+				mockGatekeeper,
+				mockMetrics,
+				mockSeagull,
+			)
 		}
+
+		hydrophone.SetHandlers("", testRtr)
 
 		var body = &bytes.Buffer{}
 		// build the body only if there is one defined in the test
@@ -163,14 +275,14 @@ func TestInviteResponds(t *testing.T) {
 		}
 		request, _ := http.NewRequest(test.method, test.url, body)
 		if test.token != "" {
-			request.Header.Set(TP_SESSION_TOKEN, FAKE_TOKEN)
+			request.Header.Set(TP_SESSION_TOKEN, testing_token)
 		}
 		response := httptest.NewRecorder()
 		testRtr.ServeHTTP(response, request)
 
 		if response.Code != test.respCode {
-			t.Fatalf("Test %d url: '%s'\nNon-expected status code %d (expected %d):\n\tbody: %v",
-				idx, test.url, response.Code, test.respCode, response.Body)
+			t.Logf("TestId %d expected %d actual %d", idx, test.respCode, response.Code)
+			t.Fail()
 		}
 
 		if response.Body.Len() != 0 && len(test.response) != 0 {

@@ -19,11 +19,16 @@ import (
 )
 
 const (
-	MAKE_IT_FAIL   = true
-	RETURN_NOTHING = true
-	FAKE_TOKEN     = "a.fake.token.to.use.in.tests"
-	TOKEN_FOR_UID1 = "a.fake.token.for.uid.1"
-	TOKEN_FOR_UID2 = "a.fake.token.for.uid.2"
+	make_store_fail           = true
+	make_store_return_nothing = true
+
+	testing_token = "a.fake.token.to.use.in.tests"
+
+	testing_token_uid1 = "a.fake.token.for.uid.1"
+	testing_uid1       = "UID123"
+
+	testing_token_uid2 = "a.fake.token.for.uid.2"
+	testing_uid2       = "UID999"
 )
 
 var (
@@ -45,17 +50,48 @@ var (
 	 */
 	rtr            = mux.NewRouter()
 	mockNotifier   = clients.NewMockNotifier()
-	mockShoreline  = shoreline.NewMock(FAKE_TOKEN)
+	mockShoreline  = shoreline.NewMock(testing_token)
 	mockGatekeeper = commonClients.NewGatekeeperMock(nil, &status.StatusError{status.NewStatus(500, "Unable to parse response.")})
-	mockMetrics    = highwater.NewMock()
-	mockSeagull    = commonClients.NewSeagullMock()
+
+	mockMetrics = highwater.NewMock()
+	mockSeagull = commonClients.NewSeagullMock()
 	/*
 	 * stores
 	 */
 	mockStore      = clients.NewMockStoreClient(false, false)
-	mockStoreEmpty = clients.NewMockStoreClient(RETURN_NOTHING, false)
-	mockStoreFails = clients.NewMockStoreClient(false, MAKE_IT_FAIL)
+	mockStoreEmpty = clients.NewMockStoreClient(make_store_return_nothing, false)
+	mockStoreFails = clients.NewMockStoreClient(false, make_store_fail)
+
+	/*
+	 * users permissons scenarios
+	 */
+	mock_NoPermsGatekeeper = commonClients.NewGatekeeperMock(map[string]commonClients.Permissions{"upload": commonClients.Permissions{"userid": "other-id"}}, nil)
+	mock_uid1Shoreline     = newtestingShorelingMock(testing_uid1)
 )
+
+// In an effort to mock shoreline so that we can return the token we wish
+type testingShorelingMock struct{ userid string }
+
+func newtestingShorelingMock(userid string) *testingShorelingMock {
+	return &testingShorelingMock{userid: userid}
+}
+
+func (m *testingShorelingMock) Start() error { return nil }
+func (m *testingShorelingMock) Close()       { return }
+func (m *testingShorelingMock) Login(username, password string) (*shoreline.UserData, string, error) {
+	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, UserName: m.userid + "@email.org"}, "", nil
+}
+func (m *testingShorelingMock) Signup(username, password, email string) (*shoreline.UserData, error) {
+	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, UserName: m.userid + "@email.org"}, nil
+}
+func (m *testingShorelingMock) TokenProvide() string { return testing_token }
+func (m *testingShorelingMock) GetUser(userID, token string) (*shoreline.UserData, error) {
+	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, UserName: m.userid + "@email.org"}, nil
+}
+func (m *testingShorelingMock) UpdateUser(user shoreline.UserUpdate, token string) error { return nil }
+func (m *testingShorelingMock) CheckToken(token string) *shoreline.TokenData {
+	return &shoreline.TokenData{UserID: m.userid, IsServer: false}
+}
 
 type (
 	//common test structure
@@ -90,7 +126,7 @@ func TestGetStatus_StatusOk(t *testing.T) {
 	hydrophone.GetStatus(response, request)
 
 	if response.Code != http.StatusOK {
-		t.Fatalf("Resp given [%s] expected [%s] ", response.Code, http.StatusOK)
+		t.Fatalf("Resp given [%d] expected [%d] ", response.Code, http.StatusOK)
 	}
 
 }
@@ -106,7 +142,7 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 	hydrophoneFails.GetStatus(response, request)
 
 	if response.Code != http.StatusInternalServerError {
-		t.Fatalf("Resp given [%s] expected [%s] ", response.Code, http.StatusInternalServerError)
+		t.Fatalf("Resp given [%d] expected [%d] ", response.Code, http.StatusInternalServerError)
 	}
 
 	body, _ := ioutil.ReadAll(response.Body)
