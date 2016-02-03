@@ -2,8 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"reflect"
+	"strings"
 
 	"./../clients"
 	"./../models"
@@ -292,4 +295,31 @@ func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{
 		res.Write(jsonDetails)
 	}
 	return
+}
+
+func (a *Api) sendError(res http.ResponseWriter, statusCode int, reason string, extras ...interface{}) {
+	messages := make([]string, len(extras))
+	for index, extra := range extras {
+		messages[index] = fmt.Sprintf("%v", extra)
+	}
+	log.Printf("RESPONSE ERROR: [%d %s] %s", statusCode, reason, strings.Join(messages, "; "))
+	a.sendModelAsResWithStatus(res, status.NewStatus(statusCode, reason), statusCode)
+}
+
+func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, groupId string, requestedPermissions commonClients.Permissions) (commonClients.Permissions, error) {
+	if tokenData.IsServer {
+		return requestedPermissions, nil
+	} else if tokenData.UserID == groupId {
+		return requestedPermissions, nil
+	} else if actualPermissions, err := a.gatekeeper.UserInGroup(tokenData.UserID, groupId); err != nil {
+		return commonClients.Permissions{}, err
+	} else {
+		finalPermissions := make(commonClients.Permissions, 0)
+		for permission, _ := range requestedPermissions {
+			if reflect.DeepEqual(requestedPermissions[permission], actualPermissions[permission]) {
+				finalPermissions[permission] = requestedPermissions[permission]
+			}
+		}
+		return finalPermissions, nil
+	}
 }

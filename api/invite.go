@@ -137,10 +137,11 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 
-		// Non-server tokens only legit when for same userid
-		if !token.IsServer && invitorId != token.UserID {
-			log.Printf("GetReceivedInvitations %s ", STATUS_UNAUTHORIZED)
-			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			return
+		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
@@ -243,10 +244,11 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		// Non-server tokens only legit when for same userid
-		if !token.IsServer && invitorId != token.UserID {
-			log.Printf("CancelInvite %s ", STATUS_UNAUTHORIZED)
-			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			return
+		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
@@ -349,10 +351,11 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		// Non-server tokens only legit when for same userid
-		if !token.IsServer && invitorId != token.UserID {
-			log.Printf("SendInvite %s ", STATUS_UNAUTHORIZED)
-			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			return
+		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 

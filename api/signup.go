@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"./../models"
+	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 )
@@ -19,6 +20,7 @@ const (
 	STATUS_EXISTING_SIGNUP  = "User already has an existing valid signup confirmation"
 	STATUS_SIGNUP_EXPIRED   = "The signup confirmation has expired"
 	STATUS_SIGNUP_ERROR     = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
+	STATUS_ERR_FINDING_USR  = "Error finding user"
 )
 
 type (
@@ -127,10 +129,11 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		// Non-server tokens only legit when for same userid
-		if !token.IsServer && userId != token.UserID {
-			log.Printf("sendSignUp %s ", STATUS_UNAUTHORIZED)
-			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+		if permissions, err := a.tokenUserHasRequestedPermissions(token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			return
+		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
@@ -226,7 +229,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 
 	if found := a.findAndValidateSignUp(toFind, res); found != nil {
 
-		updates := shoreline.UserUpdate{UserData: shoreline.UserData{UserID: found.UserId}, Authenticated: true}
+		updates := shoreline.UserUpdate{UserData: shoreline.UserData{UserID: found.UserId}, EmailVerified: true}
 		if err := a.sl.UpdateUser(updates, a.sl.TokenProvide()); err != nil {
 			log.Printf("acceptSignUp  error trying to update user to be authenticated [%s]", err.Error())
 			res.WriteHeader(http.StatusInternalServerError)
@@ -283,10 +286,11 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 			return
 		}
 
-		// Non-server tokens only legit when for same userid
-		if !token.IsServer && userId != token.UserID {
-			log.Printf("getSignUp %s ", STATUS_UNAUTHORIZED)
-			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+		if permissions, err := a.tokenUserHasRequestedPermissions(token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			return
+		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 

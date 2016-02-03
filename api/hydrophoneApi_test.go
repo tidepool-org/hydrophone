@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -65,8 +66,11 @@ var (
 	/*
 	 * users permissons scenarios
 	 */
-	mock_NoPermsGatekeeper = commonClients.NewGatekeeperMock(map[string]commonClients.Permissions{"upload": commonClients.Permissions{"userid": "other-id"}}, nil)
+	mock_NoPermsGatekeeper = commonClients.NewGatekeeperMock(commonClients.Permissions{"upload": commonClients.Permission{"userid": "other-id"}}, nil)
 	mock_uid1Shoreline     = newtestingShorelingMock(testing_uid1)
+
+	responsableGatekeeper = NewResponsableGatekeeper()
+	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, responsableGatekeeper, mockMetrics, mockSeagull)
 )
 
 // In an effort to mock shoreline so that we can return the token we wish
@@ -159,4 +163,106 @@ func (i *jo) deepCompare(j *jo) string {
 		}
 	}
 	return ""
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func T_ExpectResponsablesEmpty(t *testing.T) {
+	if responsableGatekeeper.HasResponses() {
+		if len(responsableGatekeeper.UserInGroupResponses) > 0 {
+			t.Logf("UserInGroupResponses still available")
+		}
+		if len(responsableGatekeeper.SetPermissionsResponses) > 0 {
+			t.Logf("SetPermissionsResponses still available")
+		}
+		responsableGatekeeper.Reset()
+		t.Fail()
+	}
+}
+
+func Test_TokenUserHasRequestedPermissions_Server(t *testing.T) {
+	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: true}
+	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
+	if err != nil {
+		t.Fatalf("Unexpected error: %#v", err)
+	}
+	if !reflect.DeepEqual(permissions, requestedPermissions) {
+		t.Fatalf("Unexpected permissions returned: %#v", permissions)
+	}
+}
+
+func Test_TokenUserHasRequestedPermissions_Owner(t *testing.T) {
+	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
+	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "abcdef1234", requestedPermissions)
+	if err != nil {
+		t.Fatalf("Unexpected error: %#v", err)
+	}
+	if !reflect.DeepEqual(permissions, requestedPermissions) {
+		t.Fatalf("Unexpected permissions returned: %#v", permissions)
+	}
+}
+
+func Test_TokenUserHasRequestedPermissions_GatekeeperError(t *testing.T) {
+	responsableGatekeeper.UserInGroupResponses = []PermissionsResponse{{commonClients.Permissions{}, errors.New("ERROR")}}
+	defer T_ExpectResponsablesEmpty(t)
+
+	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
+	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
+	if err == nil {
+		t.Fatalf("Unexpected success")
+	}
+	if err.Error() != "ERROR" {
+		t.Fatalf("Unexpected error: %#v", err)
+	}
+	if len(permissions) != 0 {
+		t.Fatalf("Unexpected permissions returned: %#v", permissions)
+	}
+}
+
+func Test_TokenUserHasRequestedPermissions_CompleteMismatch(t *testing.T) {
+	responsableGatekeeper.UserInGroupResponses = []PermissionsResponse{{commonClients.Permissions{"y": commonClients.Allowed, "z": commonClients.Allowed}, nil}}
+	defer T_ExpectResponsablesEmpty(t)
+
+	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
+	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
+	if err != nil {
+		t.Fatalf("Unexpected error: %#v", err)
+	}
+	if len(permissions) != 0 {
+		t.Fatalf("Unexpected permissions returned: %#v", permissions)
+	}
+}
+
+func Test_TokenUserHasRequestedPermissions_PartialMismatch(t *testing.T) {
+	responsableGatekeeper.UserInGroupResponses = []PermissionsResponse{{commonClients.Permissions{"a": commonClients.Allowed, "z": commonClients.Allowed}, nil}}
+	defer T_ExpectResponsablesEmpty(t)
+
+	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
+	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
+	if err != nil {
+		t.Fatalf("Unexpected error: %#v", err)
+	}
+	if !reflect.DeepEqual(permissions, commonClients.Permissions{"a": commonClients.Allowed}) {
+		t.Fatalf("Unexpected permissions returned: %#v", permissions)
+	}
+}
+
+func Test_TokenUserHasRequestedPermissions_FullMatch(t *testing.T) {
+	responsableGatekeeper.UserInGroupResponses = []PermissionsResponse{{commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}, nil}}
+	defer T_ExpectResponsablesEmpty(t)
+
+	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
+	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
+	if err != nil {
+		t.Fatalf("Unexpected error: %#v", err)
+	}
+	if !reflect.DeepEqual(permissions, requestedPermissions) {
+		t.Fatalf("Unexpected permissions returned: %#v", permissions)
+	}
 }
