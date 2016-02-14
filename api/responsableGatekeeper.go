@@ -7,8 +7,14 @@ type PermissionsResponse struct {
 	Error       error
 }
 
+type UsersPermissionsResponse struct {
+	UsersPermissions clients.UsersPermissions
+	Error            error
+}
+
 type ResponsableGatekeeper struct {
 	UserInGroupResponses    []PermissionsResponse
+	UsersInGroupResponses   []UsersPermissionsResponse
 	SetPermissionsResponses []PermissionsResponse
 }
 
@@ -18,11 +24,13 @@ func NewResponsableGatekeeper() *ResponsableGatekeeper {
 
 func (c *ResponsableGatekeeper) HasResponses() bool {
 	return len(c.UserInGroupResponses) > 0 ||
+		len(c.UsersInGroupResponses) > 0 ||
 		len(c.SetPermissionsResponses) > 0
 }
 
 func (c *ResponsableGatekeeper) Reset() {
 	c.UserInGroupResponses = nil
+	c.UsersInGroupResponses = nil
 	c.SetPermissionsResponses = nil
 }
 
@@ -33,6 +41,15 @@ func (c *ResponsableGatekeeper) UserInGroup(userID, groupID string) (clients.Per
 		return response.Permissions, response.Error
 	}
 	panic("UserInGroupResponses unavailable")
+}
+
+func (c *ResponsableGatekeeper) UsersInGroup(groupID string) (clients.UsersPermissions, error) {
+	if len(c.UsersInGroupResponses) > 0 {
+		var response UsersPermissionsResponse
+		response, c.UsersInGroupResponses = c.UsersInGroupResponses[0], c.UsersInGroupResponses[1:]
+		return response.UsersPermissions, response.Error
+	}
+	panic("UsersInGroupResponses unavailable")
 }
 
 func (c *ResponsableGatekeeper) SetPermissions(userID, groupID string, permissions clients.Permissions) (clients.Permissions, error) {

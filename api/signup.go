@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 
 	"./../models"
@@ -13,14 +14,20 @@ import (
 )
 
 const (
-	STATUS_SIGNUP_NOT_FOUND = "No matching signup confirmation was found"
-	STATUS_SIGNUP_NO_ID     = "Required userid is missing"
-	STATUS_SIGNUP_NO_CONF   = "Required confirmation id is missing"
-	STATUS_SIGNUP_ACCEPTED  = "User has had signup confirmed"
-	STATUS_EXISTING_SIGNUP  = "User already has an existing valid signup confirmation"
-	STATUS_SIGNUP_EXPIRED   = "The signup confirmation has expired"
-	STATUS_SIGNUP_ERROR     = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
-	STATUS_ERR_FINDING_USR  = "Error finding user"
+	STATUS_SIGNUP_NOT_FOUND  = "No matching signup confirmation was found"
+	STATUS_SIGNUP_NO_ID      = "Required userid is missing"
+	STATUS_SIGNUP_NO_CONF    = "Required confirmation id is missing"
+	STATUS_SIGNUP_ACCEPTED   = "User has had signup confirmed"
+	STATUS_EXISTING_SIGNUP   = "User already has an existing valid signup confirmation"
+	STATUS_SIGNUP_EXPIRED    = "The signup confirmation has expired"
+	STATUS_SIGNUP_ERROR      = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
+	STATUS_ERR_FINDING_USR   = "Error finding user"
+	STATUS_NO_PASSWORD       = "User does not have a password"
+	STATUS_MISSING_PASSWORD  = "Password is missing"
+	STATUS_INVALID_PASSWORD  = "Password specified is invalid"
+	STATUS_MISSING_BIRTHDAY  = "Birthday is missing"
+	STATUS_INVALID_BIRTHDAY  = "Birthday specified is invalid"
+	STATUS_MISMATCH_BIRTHDAY = "Birthday specified does not match patient birthday"
 )
 
 type (
@@ -162,6 +169,8 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 					Email: newSignUp.Email,
 				}
 
+				log.Printf("Sending email confirmation to %s with key %s", emailContent.Email, emailContent.Key)
+
 				if a.createAndSendNotfication(newSignUp, emailContent) {
 					a.logMetricAsServer("signup confirmation sent")
 					res.WriteHeader(http.StatusOK)
@@ -215,6 +224,12 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 //
 // status: 200
 // status: 400 STATUS_SIGNUP_NO_CONF
+// status: 400 STATUS_NO_PASSWORD
+// status: 400 STATUS_MISSING_PASSWORD
+// status: 400 STATUS_INVALID_PASSWORD
+// status: 400 STATUS_MISSING_BIRTHDAY
+// status: 400 STATUS_INVALID_BIRTHDAY
+// status: 400 STATUS_MISMATCH_BIRTHDAY
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	confirmationId := vars["confirmationid"]
@@ -228,10 +243,64 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	toFind := &models.Confirmation{Key: confirmationId}
 
 	if found := a.findAndValidateSignUp(toFind, res); found != nil {
+		var password string
 
-		updates := shoreline.UserUpdate{UserData: shoreline.UserData{UserID: found.UserId}, EmailVerified: true}
-		if err := a.sl.UpdateUser(updates, a.sl.TokenProvide()); err != nil {
-			log.Printf("acceptSignUp  error trying to update user to be authenticated [%s]", err.Error())
+		if user, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide()); err != nil {
+			log.Printf("acceptSignUp: error trying to get user checking email verified [%s]", err.Error())
+			res.WriteHeader(http.StatusInternalServerError)
+			return
+
+		} else if !user.PasswordExists {
+			acceptance := &models.Acceptance{}
+			if req.Body != nil {
+				if err := json.NewDecoder(req.Body).Decode(acceptance); err != nil {
+					log.Printf("acceptSignUp: error decoding acceptance [%#v]", err)
+					a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_NO_PASSWORD)}, http.StatusBadRequest)
+					return
+				}
+			}
+
+			if acceptance.Password == "" {
+				log.Printf("acceptSignUp: missing password")
+				a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_MISSING_PASSWORD)}, http.StatusBadRequest)
+				return
+			}
+			if !IsValidPassword(acceptance.Password) {
+				log.Printf("acceptSignUp: invalid password specified")
+				a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_INVALID_PASSWORD)}, http.StatusBadRequest)
+				return
+			}
+			if acceptance.Birthday == "" {
+				log.Printf("acceptSignUp: missing birthday")
+				a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_MISSING_BIRTHDAY)}, http.StatusBadRequest)
+				return
+			}
+			if !IsValidDate(acceptance.Birthday) {
+				log.Printf("acceptSignUp: invalid birthday specified")
+				a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_INVALID_BIRTHDAY)}, http.StatusBadRequest)
+				return
+			}
+
+			profile := &models.Profile{}
+			if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
+				log.Printf("acceptSignUp: error getting the users profile [%v]", err)
+				res.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			if acceptance.Birthday != profile.Patient.Birthday {
+				log.Printf("acceptSignUp: acceptance birthday does not match user patient birthday")
+				a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_MISMATCH_BIRTHDAY)}, http.StatusBadRequest)
+				return
+			}
+
+			password = acceptance.Password
+		}
+
+		emailVerified := true
+		updates := shoreline.UserUpdate{EmailVerified: &emailVerified, Password: &password}
+		if err := a.sl.UpdateUser(found.UserId, updates, a.sl.TokenProvide()); err != nil {
+			log.Printf("acceptSignUp error trying to update user to be email verified [%s]", err.Error())
 			res.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -321,4 +390,14 @@ func (a *Api) cancelSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	log.Print("cancelSignUp: canceling for ", userId)
 	a.updateSignupConfirmation(models.StatusCanceled, res, req)
 	return
+}
+
+func IsValidPassword(password string) bool {
+	ok, _ := regexp.MatchString(`\A\S{8,72}\z`, password)
+	return ok
+}
+
+func IsValidDate(date string) bool {
+	_, err := time.Parse("2006-01-02", date)
+	return err == nil
 }

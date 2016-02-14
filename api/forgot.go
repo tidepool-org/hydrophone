@@ -147,7 +147,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 
 		if usr := a.findExistingUser(rb.Email, token); usr != nil {
 
-			if err := a.sl.UpdateUser(shoreline.UserUpdate{UserData: shoreline.UserData{UserID: usr.UserID}, Password: rb.Password}, token); err != nil {
+			if err := a.sl.UpdateUser(usr.UserID, shoreline.UserUpdate{Password: &rb.Password}, token); err != nil {
 				log.Printf("acceptPassword: error updating password as part of password reset [%v]", err)
 				status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
 				a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)

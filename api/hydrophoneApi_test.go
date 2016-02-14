@@ -83,16 +83,18 @@ func newtestingShorelingMock(userid string) *testingShorelingMock {
 func (m *testingShorelingMock) Start() error { return nil }
 func (m *testingShorelingMock) Close()       { return }
 func (m *testingShorelingMock) Login(username, password string) (*shoreline.UserData, string, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, UserName: m.userid + "@email.org"}, "", nil
+	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, "", nil
 }
 func (m *testingShorelingMock) Signup(username, password, email string) (*shoreline.UserData, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, UserName: m.userid + "@email.org"}, nil
+	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
 func (m *testingShorelingMock) TokenProvide() string { return testing_token }
 func (m *testingShorelingMock) GetUser(userID, token string) (*shoreline.UserData, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, UserName: m.userid + "@email.org"}, nil
+	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
-func (m *testingShorelingMock) UpdateUser(user shoreline.UserUpdate, token string) error { return nil }
+func (m *testingShorelingMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate, token string) error {
+	return nil
+}
 func (m *testingShorelingMock) CheckToken(token string) *shoreline.TokenData {
 	return &shoreline.TokenData{UserID: m.userid, IsServer: false}
 }
@@ -171,6 +173,9 @@ func T_ExpectResponsablesEmpty(t *testing.T) {
 	if responsableGatekeeper.HasResponses() {
 		if len(responsableGatekeeper.UserInGroupResponses) > 0 {
 			t.Logf("UserInGroupResponses still available")
+		}
+		if len(responsableGatekeeper.UsersInGroupResponses) > 0 {
+			t.Logf("UsersInGroupResponses still available")
 		}
 		if len(responsableGatekeeper.SetPermissionsResponses) > 0 {
 			t.Logf("SetPermissionsResponses still available")

@@ -41,6 +41,10 @@ func (d *MockStoreClient) FindConfirmation(notification *models.Confirmation) (r
 		return nil, nil
 	}
 
+	if notification.UserId == "" {
+		notification.UserId = notification.Key
+	}
+
 	notification.Created = time.Now().AddDate(0, 0, -3) // created three days ago
 	return notification, nil
 }

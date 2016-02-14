@@ -69,6 +69,94 @@ func TestSignupResponds(t *testing.T) {
 			respCode:   404,
 		},
 		{
+			// failure - user does not yet have a password; no body
+			method:   "PUT",
+			url:      "/accept/signup/WithoutPassword",
+			respCode: 400,
+			response: jo{
+				"code":   float64(400),
+				"reason": "User does not have a password",
+			},
+		},
+		{
+			// failure - user does not yet have a password; password missing, but birthday correct
+			method: "PUT",
+			url:    "/accept/signup/WithoutPassword",
+			body: jo{
+				"birthday": "2016-01-01",
+			},
+			respCode: 400,
+			response: jo{
+				"code":   float64(400),
+				"reason": "Password is missing",
+			},
+		},
+		{
+			// failure - user does not yet have a password; password invalid, but birthday correct
+			method: "PUT",
+			url:    "/accept/signup/WithoutPassword",
+			body: jo{
+				"password": "1234",
+				"birthday": "2016-01-01",
+			},
+			respCode: 400,
+			response: jo{
+				"code":   float64(400),
+				"reason": "Password specified is invalid",
+			},
+		},
+		{
+			// failure - user does not yet have a password; password valid and birthday missing
+			method: "PUT",
+			url:    "/accept/signup/WithoutPassword",
+			body: jo{
+				"password": "12345678",
+			},
+			respCode: 400,
+			response: jo{
+				"code":   float64(400),
+				"reason": "Birthday is missing",
+			},
+		},
+		{
+			// failure - user does not yet have a password; password valid and birthday invalid
+			method: "PUT",
+			url:    "/accept/signup/WithoutPassword",
+			body: jo{
+				"password": "12345678",
+				"birthday": "aaaaaaaa",
+			},
+			respCode: 400,
+			response: jo{
+				"code":   float64(400),
+				"reason": "Birthday specified is invalid",
+			},
+		},
+		{
+			// failure - user does not yet have a password; password valid and birthday not correct
+			method: "PUT",
+			url:    "/accept/signup/WithoutPassword",
+			body: jo{
+				"password": "12345678",
+				"birthday": "2015-12-31",
+			},
+			respCode: 400,
+			response: jo{
+				"code":   float64(400),
+				"reason": "Birthday specified does not match patient birthday",
+			},
+		},
+		{
+			// all good - user does not yet have a password; password valid and birthday correct
+			method: "PUT",
+			url:    "/accept/signup/WithoutPassword",
+			body: jo{
+				"password": "12345678",
+				"birthday": "2016-01-01",
+			},
+			respCode: 200,
+		},
+		{
 			// all good
 			method:   "PUT",
 			url:      "/accept/signup/UID",

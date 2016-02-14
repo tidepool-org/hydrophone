@@ -30,13 +30,22 @@ type (
 	}
 
 	//cutdown verson of a profile used for confirmations
+	Patient struct {
+		Birthday string `json:"birthday"`
+	}
 	Profile struct {
-		FullName string `json:"fullName"`
+		FullName string  `json:"fullName"`
+		Patient  Patient `json:"patient"`
 	}
 
 	//Enum type's
 	Status string
 	Type   string
+
+	Acceptance struct {
+		Password string `json:"password"`
+		Birthday string `json:"birthday"`
+	}
 )
 
 const (

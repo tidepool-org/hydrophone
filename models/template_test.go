@@ -7,19 +7,19 @@ import (
 
 type (
 	Data struct {
-		UserName string
+		Username string
 		Key      string
 	}
 )
 
 var (
-	content = Data{UserName: "Test User", Key: "123.blah.456.blah"}
+	content = Data{Username: "Test User", Key: "123.blah.456.blah"}
 	//config templates
 	cfg = &TemplateConfig{
 		PasswordReset: `
 {{define "reset_test"}}
 ## Test Template
-Hi {{ .UserName }}
+Hi {{ .Username }}
 {{ .Key }}
 {{end}}
 {{template "reset_test" .}}
@@ -28,7 +28,7 @@ Hi {{ .UserName }}
 		CareteamInvite: `
 {{define "invite_test"}}
 ## Test Template
-{{ .UserName }}
+{{ .Username }}
 {{ .Key }}
 {{end}}
 {{template "invite_test" .}}
@@ -37,7 +37,7 @@ Hi {{ .UserName }}
 		Signup: `
 {{define "confirm_test"}}
 ## Test Template
-{{ .UserName }}
+{{ .Username }}
 {{ .Key }}
 {{end}}
 {{template "confirm_test" .}}
@@ -92,7 +92,7 @@ func TestParse(t *testing.T) {
 		t.Fatal("The parased content should be set")
 	}
 
-	if strings.Contains(tmpl.BodyContent, content.UserName) == false {
+	if strings.Contains(tmpl.BodyContent, content.Username) == false {
 		t.Fatal("the name should be set")
 	}
 
