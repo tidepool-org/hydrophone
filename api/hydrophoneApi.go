@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"runtime"
 	"strings"
 
 	"./../clients"
@@ -298,11 +299,21 @@ func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{
 }
 
 func (a *Api) sendError(res http.ResponseWriter, statusCode int, reason string, extras ...interface{}) {
+	_, file, line, ok := runtime.Caller(1)
+	if ok {
+		segments := strings.Split(file, "/")
+		file = segments[len(segments)-1]
+	} else {
+		file = "???"
+		line = 0
+	}
+
 	messages := make([]string, len(extras))
 	for index, extra := range extras {
 		messages[index] = fmt.Sprintf("%v", extra)
 	}
-	log.Printf("RESPONSE ERROR: [%d %s] %s", statusCode, reason, strings.Join(messages, "; "))
+
+	log.Printf("%s:%d RESPONSE ERROR: [%d %s] %s", file, line, statusCode, reason, strings.Join(messages, "; "))
 	a.sendModelAsResWithStatus(res, status.NewStatus(statusCode, reason), statusCode)
 }
 

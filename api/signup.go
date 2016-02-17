@@ -22,6 +22,7 @@ const (
 	STATUS_SIGNUP_EXPIRED    = "The signup confirmation has expired"
 	STATUS_SIGNUP_ERROR      = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
 	STATUS_ERR_FINDING_USR   = "Error finding user"
+	STATUS_ERR_UPDATING_USR  = "Error updating user"
 	STATUS_NO_PASSWORD       = "User does not have a password"
 	STATUS_MISSING_PASSWORD  = "Password is missing"
 	STATUS_INVALID_PASSWORD  = "Password specified is invalid"
@@ -246,51 +247,43 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		var password string
 
 		if user, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide()); err != nil {
-			log.Printf("acceptSignUp: error trying to get user checking email verified [%s]", err.Error())
-			res.WriteHeader(http.StatusInternalServerError)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error trying to get user to check email verified: ", err.Error())
 			return
 
 		} else if !user.PasswordExists {
 			acceptance := &models.Acceptance{}
 			if req.Body != nil {
 				if err := json.NewDecoder(req.Body).Decode(acceptance); err != nil {
-					log.Printf("acceptSignUp: error decoding acceptance [%#v]", err)
-					a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_NO_PASSWORD)}, http.StatusBadRequest)
+					a.sendError(res, http.StatusBadRequest, STATUS_NO_PASSWORD, "acceptSignUp: error decoding acceptance: ", err.Error())
 					return
 				}
 			}
 
 			if acceptance.Password == "" {
-				log.Printf("acceptSignUp: missing password")
-				a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_MISSING_PASSWORD)}, http.StatusBadRequest)
+				a.sendError(res, http.StatusBadRequest, STATUS_MISSING_PASSWORD, "acceptSignUp: missing password")
 				return
 			}
 			if !IsValidPassword(acceptance.Password) {
-				log.Printf("acceptSignUp: invalid password specified")
-				a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_INVALID_PASSWORD)}, http.StatusBadRequest)
+				a.sendError(res, http.StatusBadRequest, STATUS_INVALID_PASSWORD, "acceptSignUp: invalid password specified")
 				return
 			}
 			if acceptance.Birthday == "" {
-				log.Printf("acceptSignUp: missing birthday")
-				a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_MISSING_BIRTHDAY)}, http.StatusBadRequest)
+				a.sendError(res, http.StatusBadRequest, STATUS_MISSING_BIRTHDAY, "acceptSignUp: missing birthday")
 				return
 			}
 			if !IsValidDate(acceptance.Birthday) {
-				log.Printf("acceptSignUp: invalid birthday specified")
-				a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_INVALID_BIRTHDAY)}, http.StatusBadRequest)
+				a.sendError(res, http.StatusBadRequest, STATUS_INVALID_BIRTHDAY, "acceptSignUp: invalid birthday specified")
 				return
 			}
 
 			profile := &models.Profile{}
 			if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
-				log.Printf("acceptSignUp: error getting the users profile [%v]", err)
-				res.WriteHeader(http.StatusInternalServerError)
+				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error getting the users profile: ", err.Error())
 				return
 			}
 
 			if acceptance.Birthday != profile.Patient.Birthday {
-				log.Printf("acceptSignUp: acceptance birthday does not match user patient birthday")
-				a.sendModelAsResWithStatus(res, &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_MISMATCH_BIRTHDAY)}, http.StatusBadRequest)
+				a.sendError(res, http.StatusBadRequest, STATUS_MISMATCH_BIRTHDAY, "acceptSignUp: acceptance birthday does not match user patient birthday")
 				return
 			}
 
@@ -300,8 +293,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		emailVerified := true
 		updates := shoreline.UserUpdate{EmailVerified: &emailVerified, Password: &password}
 		if err := a.sl.UpdateUser(found.UserId, updates, a.sl.TokenProvide()); err != nil {
-			log.Printf("acceptSignUp error trying to update user to be email verified [%s]", err.Error())
-			res.WriteHeader(http.StatusInternalServerError)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_UPDATING_USR, "acceptSignUp error trying to update user to be email verified: ", err.Error())
 			return
 		}
 

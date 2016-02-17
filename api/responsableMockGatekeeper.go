@@ -12,29 +12,29 @@ type UsersPermissionsResponse struct {
 	Error            error
 }
 
-type ResponsableGatekeeper struct {
+type ResponsableMockGatekeeper struct {
 	UserInGroupResponses    []PermissionsResponse
 	UsersInGroupResponses   []UsersPermissionsResponse
 	SetPermissionsResponses []PermissionsResponse
 }
 
-func NewResponsableGatekeeper() *ResponsableGatekeeper {
-	return &ResponsableGatekeeper{}
+func NewResponsableMockGatekeeper() *ResponsableMockGatekeeper {
+	return &ResponsableMockGatekeeper{}
 }
 
-func (c *ResponsableGatekeeper) HasResponses() bool {
+func (c *ResponsableMockGatekeeper) HasResponses() bool {
 	return len(c.UserInGroupResponses) > 0 ||
 		len(c.UsersInGroupResponses) > 0 ||
 		len(c.SetPermissionsResponses) > 0
 }
 
-func (c *ResponsableGatekeeper) Reset() {
+func (c *ResponsableMockGatekeeper) Reset() {
 	c.UserInGroupResponses = nil
 	c.UsersInGroupResponses = nil
 	c.SetPermissionsResponses = nil
 }
 
-func (c *ResponsableGatekeeper) UserInGroup(userID, groupID string) (clients.Permissions, error) {
+func (c *ResponsableMockGatekeeper) UserInGroup(userID, groupID string) (clients.Permissions, error) {
 	if len(c.UserInGroupResponses) > 0 {
 		var response PermissionsResponse
 		response, c.UserInGroupResponses = c.UserInGroupResponses[0], c.UserInGroupResponses[1:]
@@ -43,7 +43,7 @@ func (c *ResponsableGatekeeper) UserInGroup(userID, groupID string) (clients.Per
 	panic("UserInGroupResponses unavailable")
 }
 
-func (c *ResponsableGatekeeper) UsersInGroup(groupID string) (clients.UsersPermissions, error) {
+func (c *ResponsableMockGatekeeper) UsersInGroup(groupID string) (clients.UsersPermissions, error) {
 	if len(c.UsersInGroupResponses) > 0 {
 		var response UsersPermissionsResponse
 		response, c.UsersInGroupResponses = c.UsersInGroupResponses[0], c.UsersInGroupResponses[1:]
@@ -52,7 +52,7 @@ func (c *ResponsableGatekeeper) UsersInGroup(groupID string) (clients.UsersPermi
 	panic("UsersInGroupResponses unavailable")
 }
 
-func (c *ResponsableGatekeeper) SetPermissions(userID, groupID string, permissions clients.Permissions) (clients.Permissions, error) {
+func (c *ResponsableMockGatekeeper) SetPermissions(userID, groupID string, permissions clients.Permissions) (clients.Permissions, error) {
 	if len(c.SetPermissionsResponses) > 0 {
 		var response PermissionsResponse
 		response, c.SetPermissionsResponses = c.SetPermissionsResponses[0], c.SetPermissionsResponses[1:]
