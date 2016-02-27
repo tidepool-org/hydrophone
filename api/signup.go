@@ -244,7 +244,8 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	toFind := &models.Confirmation{Key: confirmationId}
 
 	if found := a.findAndValidateSignUp(toFind, res); found != nil {
-		var password string
+		emailVerified := true
+		updates := shoreline.UserUpdate{EmailVerified: &emailVerified}
 
 		if user, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide()); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error trying to get user to check email verified: ", err.Error())
@@ -287,11 +288,9 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				return
 			}
 
-			password = acceptance.Password
+			updates.Password = &acceptance.Password
 		}
 
-		emailVerified := true
-		updates := shoreline.UserUpdate{EmailVerified: &emailVerified, Password: &password}
 		if err := a.sl.UpdateUser(found.UserId, updates, a.sl.TokenProvide()); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_UPDATING_USR, "acceptSignUp error trying to update user to be email verified: ", err.Error())
 			return
