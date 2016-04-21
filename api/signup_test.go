@@ -72,9 +72,10 @@ func TestSignupResponds(t *testing.T) {
 			// failure - user does not yet have a password; no body
 			method:   "PUT",
 			url:      "/accept/signup/WithoutPassword",
-			respCode: 400,
+			respCode: 409,
 			response: jo{
-				"code":   float64(400),
+				"code":   float64(409),
+				"error":  float64(1001),
 				"reason": "User does not have a password",
 			},
 		},
@@ -85,9 +86,10 @@ func TestSignupResponds(t *testing.T) {
 			body: jo{
 				"birthday": "2016-01-01",
 			},
-			respCode: 400,
+			respCode: 409,
 			response: jo{
-				"code":   float64(400),
+				"code":   float64(409),
+				"error":  float64(1002),
 				"reason": "Password is missing",
 			},
 		},
@@ -99,9 +101,10 @@ func TestSignupResponds(t *testing.T) {
 				"password": "1234",
 				"birthday": "2016-01-01",
 			},
-			respCode: 400,
+			respCode: 409,
 			response: jo{
-				"code":   float64(400),
+				"code":   float64(409),
+				"error":  float64(1003),
 				"reason": "Password specified is invalid",
 			},
 		},
@@ -112,9 +115,10 @@ func TestSignupResponds(t *testing.T) {
 			body: jo{
 				"password": "12345678",
 			},
-			respCode: 400,
+			respCode: 409,
 			response: jo{
-				"code":   float64(400),
+				"code":   float64(409),
+				"error":  float64(1004),
 				"reason": "Birthday is missing",
 			},
 		},
@@ -126,9 +130,10 @@ func TestSignupResponds(t *testing.T) {
 				"password": "12345678",
 				"birthday": "aaaaaaaa",
 			},
-			respCode: 400,
+			respCode: 409,
 			response: jo{
-				"code":   float64(400),
+				"code":   float64(409),
+				"error":  float64(1005),
 				"reason": "Birthday specified is invalid",
 			},
 		},
@@ -140,9 +145,10 @@ func TestSignupResponds(t *testing.T) {
 				"password": "12345678",
 				"birthday": "2015-12-31",
 			},
-			respCode: 400,
+			respCode: 409,
 			response: jo{
-				"code":   float64(400),
+				"code":   float64(409),
+				"error":  float64(1006),
 				"reason": "Birthday specified does not match patient birthday",
 			},
 		},
