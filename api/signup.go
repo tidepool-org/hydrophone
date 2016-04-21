@@ -31,6 +31,15 @@ const (
 	STATUS_MISMATCH_BIRTHDAY = "Birthday specified does not match patient birthday"
 )
 
+const (
+	ERROR_NO_PASSWORD       = 1001
+	ERROR_MISSING_PASSWORD  = 1002
+	ERROR_INVALID_PASSWORD  = 1003
+	ERROR_MISSING_BIRTHDAY  = 1004
+	ERROR_INVALID_BIRTHDAY  = 1005
+	ERROR_MISMATCH_BIRTHDAY = 1006
+)
+
 type (
 	//Content used to generate the signup email
 	signUpEmailContent struct {
@@ -255,25 +264,25 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			acceptance := &models.Acceptance{}
 			if req.Body != nil {
 				if err := json.NewDecoder(req.Body).Decode(acceptance); err != nil {
-					a.sendError(res, http.StatusBadRequest, STATUS_NO_PASSWORD, "acceptSignUp: error decoding acceptance: ", err.Error())
+					a.sendErrorWithCode(res, http.StatusConflict, ERROR_NO_PASSWORD, STATUS_NO_PASSWORD, "acceptSignUp: error decoding acceptance: ", err.Error())
 					return
 				}
 			}
 
 			if acceptance.Password == "" {
-				a.sendError(res, http.StatusBadRequest, STATUS_MISSING_PASSWORD, "acceptSignUp: missing password")
+				a.sendErrorWithCode(res, http.StatusConflict, ERROR_MISSING_PASSWORD, STATUS_MISSING_PASSWORD, "acceptSignUp: missing password")
 				return
 			}
 			if !IsValidPassword(acceptance.Password) {
-				a.sendError(res, http.StatusBadRequest, STATUS_INVALID_PASSWORD, "acceptSignUp: invalid password specified")
+				a.sendErrorWithCode(res, http.StatusConflict, ERROR_INVALID_PASSWORD, STATUS_INVALID_PASSWORD, "acceptSignUp: invalid password specified")
 				return
 			}
 			if acceptance.Birthday == "" {
-				a.sendError(res, http.StatusBadRequest, STATUS_MISSING_BIRTHDAY, "acceptSignUp: missing birthday")
+				a.sendErrorWithCode(res, http.StatusConflict, ERROR_MISSING_BIRTHDAY, STATUS_MISSING_BIRTHDAY, "acceptSignUp: missing birthday")
 				return
 			}
 			if !IsValidDate(acceptance.Birthday) {
-				a.sendError(res, http.StatusBadRequest, STATUS_INVALID_BIRTHDAY, "acceptSignUp: invalid birthday specified")
+				a.sendErrorWithCode(res, http.StatusConflict, ERROR_INVALID_BIRTHDAY, STATUS_INVALID_BIRTHDAY, "acceptSignUp: invalid birthday specified")
 				return
 			}
 
@@ -284,7 +293,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			}
 
 			if acceptance.Birthday != profile.Patient.Birthday {
-				a.sendError(res, http.StatusBadRequest, STATUS_MISMATCH_BIRTHDAY, "acceptSignUp: acceptance birthday does not match user patient birthday")
+				a.sendErrorWithCode(res, http.StatusConflict, ERROR_MISMATCH_BIRTHDAY, STATUS_MISMATCH_BIRTHDAY, "acceptSignUp: acceptance birthday does not match user patient birthday")
 				return
 			}
 

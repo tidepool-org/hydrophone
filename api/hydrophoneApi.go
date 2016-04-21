@@ -317,6 +317,25 @@ func (a *Api) sendError(res http.ResponseWriter, statusCode int, reason string, 
 	a.sendModelAsResWithStatus(res, status.NewStatus(statusCode, reason), statusCode)
 }
 
+func (a *Api) sendErrorWithCode(res http.ResponseWriter, statusCode int, errorCode int, reason string, extras ...interface{}) {
+	_, file, line, ok := runtime.Caller(1)
+	if ok {
+		segments := strings.Split(file, "/")
+		file = segments[len(segments)-1]
+	} else {
+		file = "???"
+		line = 0
+	}
+
+	messages := make([]string, len(extras))
+	for index, extra := range extras {
+		messages[index] = fmt.Sprintf("%v", extra)
+	}
+
+	log.Printf("%s:%d RESPONSE ERROR: [%d %s] %s", file, line, statusCode, reason, strings.Join(messages, "; "))
+	a.sendModelAsResWithStatus(res, status.NewStatusWithError(statusCode, errorCode, reason), statusCode)
+}
+
 func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, groupId string, requestedPermissions commonClients.Permissions) (commonClients.Permissions, error) {
 	if tokenData.IsServer {
 		return requestedPermissions, nil
