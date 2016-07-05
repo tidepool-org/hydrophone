@@ -1,9 +1,9 @@
-{{define \"signup\"}}
+{{define \"inclinic\"}}
 <html>
 	<head>
 		<meta name='viewport' content='width=device-width'/>
 		<meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
-		<title>Verify your Tidepool account</title>
+		<title>Claim your Tidepool account</title>
 		<link href='http://fonts.googleapis.com/css?family=Nunito:400,300,700' rel='stylesheet' type='text/css'>
 	</head>
 
@@ -16,13 +16,13 @@
 
 			<div align='center'>
 				<p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:25px 0 15px; margin:0;'>Hey there!</p>
-				<p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:0 0 15px; margin:0;'>Congrats on creating your Tidepool account!</p>
+				<p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:0 0 15px; margin:0;'>Congrats on the new Tidepool account that your clinic, {{ .ClinicName }} created. To claim the account click the link below.</p> <!-- {{ .ClinicName is not currently supported }} -->
 			</div>
 
 			<br>
 
 			<div align='center' style='padding:0;'>
-				<a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='http://localhost:3000/#/login?signupEmail={{ .Email }}&signupKey={{ .Key }}'>Verify Your Account</a>
+				<a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='#'>Claim Your Account</a>
 			</div>
 
 			<br>
@@ -41,4 +41,4 @@
 
 	</body>
 </html>
-{{end}} {{template \"signup\" .}}
+{{end}} {{template \"inclinic\" .}}
