@@ -1,9 +1,9 @@
-{{define \"signup\"}}
+"{{define \"invite\"}}
 <html>
 	<head>
 		<meta name='viewport' content='width=device-width'/>
 		<meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
-		<title>Verify your Tidepool account</title>
+		<title>Diabetes care team invitation</title>
 		<link href='http://fonts.googleapis.com/css?family=Nunito:400,300,700' rel='stylesheet' type='text/css'>
 	</head>
 
@@ -16,14 +16,20 @@
 
 			<div align='center'>
 				<p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:25px 0 15px; margin:0;'>Hey there!</p>
-				<p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:0 0 15px; margin:0;'>Congrats on creating your Tidepool account!</p>
+				<p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:0 0 15px; margin:0;'>{{ .CareteamName }} invited you to be on their care team. Please click the link below to accept and see {{ .CareteamName }}’s data.</p>
 			</div>
 
 			<br>
 
+			{{if .IsExistingUser}}
 			<div align='center' style='padding:0;'>
-				<a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='http://localhost:3000/#/login?signupEmail={{ .Email }}&signupKey={{ .Key }}'>Verify Your Account</a>
+				<a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='http://localhost:3000/#/login?inviteEmail={{ .Email }}&inviteKey={{ .Key }}'>Join {{ .CareteamName }}'s Care Team</a>
 			</div>
+			{{else}}
+			<div align='center' style='padding:0;'>
+				<a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='http://localhost:3000/#/signup?inviteEmail={{ .Email }}&inviteKey={{ .Key }}'>Join {{ .CareteamName }}'s Care Team</a>
+			</div>
+			{{end}}
 
 			<br>
 
@@ -41,4 +47,4 @@
 
 	</body>
 </html>
-{{end}} {{template \"signup\" .}}
+{{end}} {{template \"invite\" .}}"
