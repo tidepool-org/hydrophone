@@ -79,18 +79,6 @@ func (a *Api) findAndValidateSignUp(conf *models.Confirmation, res http.Response
 	return nil
 }
 
-//do we already have an existing signup confirmation for this email?
-func (a *Api) hasDuplicateSignup(userId string) bool {
-
-	signUp, _ := a.Store.FindConfirmations(
-		&models.Confirmation{UserId: userId, Type: models.TypeSignUp},
-		models.StatusPending,
-		models.StatusCompleted,
-	)
-
-	return len(signUp) > 0
-}
-
 //update an existing signup confirmation
 func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.ResponseWriter, req *http.Request) {
 	fromBody := &models.Confirmation{}
@@ -160,16 +148,23 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		} else {
 
-			//has existing??
-			if a.hasDuplicateSignup(usrDetails.UserID) {
+			// get any existing confirmations
+			newSignUp, err := a.Store.FindConfirmation(&models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
+			if err != nil {
+				log.Printf("sendSignUp: error [%s]\n", err.Error())
+				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+				return
+			} else if newSignUp == nil {
+				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, "")
+				newSignUp.UserId = usrDetails.UserID
+				newSignUp.Email = usrDetails.Emails[0]
+			} else if newSignUp.Email != usrDetails.Emails[0] {
+				newSignUp.Email = usrDetails.Emails[0]
+			} else {
 				log.Printf("sendSignUp %s", STATUS_EXISTING_SIGNUP)
 				a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusForbidden, STATUS_EXISTING_SIGNUP), http.StatusForbidden)
 				return
 			}
-
-			newSignUp, _ := models.NewConfirmation(models.TypeSignUp, "")
-			newSignUp.UserId = usrDetails.UserID
-			newSignUp.Email = usrDetails.Emails[0]
 
 			if a.addOrUpdateConfirmation(newSignUp, res) {
 				a.logMetric("signup confirmation created", req)
