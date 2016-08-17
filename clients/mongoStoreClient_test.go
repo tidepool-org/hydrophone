@@ -16,7 +16,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 
 	doesNotExist, _ := models.NewConfirmation(models.TypePasswordReset, "123.456")
 
-	testingConfig := &mongo.Config{ConnectionString: "mongodb://localhost/hydrophone_test"}
+	testingConfig := &mongo.Config{ConnectionString: "mongodb://localhost/confirm_test"}
 
 	mc := NewMongoStoreClient(testingConfig)
 

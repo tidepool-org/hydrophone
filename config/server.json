@@ -7,7 +7,7 @@
     "certFile": "config/cert.pem"
   },
   "mongo": {
-    "connectionString": "mongodb://localhost/hydrophone"
+    "connectionString": "mongodb://localhost/confirm"
   },
   "hydrophone" : {
     "serverSecret": "This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy",
