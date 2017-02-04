@@ -50,14 +50,14 @@ func TestLoad(t *testing.T) {
 
 	tmpl := NewTemplate()
 
-	tmpl.Load(TypePasswordReset, cfg)
+	tmpl.Load(TemplateNamePasswordReset, cfg)
 
 	if tmpl.compiled == nil {
 		t.Fatal("a template should have been created")
 	}
 
-	if tmpl.compiled.Name() != string(TypePasswordReset) {
-		t.Fatalf("the name is [%s] but should be [%s]", tmpl.compiled.Name(), string(TypePasswordReset))
+	if tmpl.compiled.Name() != string(TemplateNamePasswordReset) {
+		t.Fatalf("the name is [%s] but should be [%s]", tmpl.compiled.Name(), string(TemplateNamePasswordReset))
 	}
 
 	if tmpl.BodyContent != "" {
@@ -84,7 +84,7 @@ func TestParse(t *testing.T) {
 
 	tmpl := NewTemplate()
 
-	tmpl.Load(TypeSignUp, cfg)
+	tmpl.Load(TemplateNameSignup, cfg)
 
 	tmpl.Parse(content)
 

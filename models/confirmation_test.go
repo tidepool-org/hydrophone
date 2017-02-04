@@ -15,7 +15,7 @@ var contextData = &Extras{Blah: "stuff", Email: "test@user.org"}
 
 func Test_NewConfirmation(t *testing.T) {
 
-	confirmation, _ := NewConfirmation(TypePasswordReset, USERID)
+	confirmation, _ := NewConfirmation(TypePasswordReset, TemplateNamePasswordReset, USERID)
 
 	if confirmation.Status != StatusPending {
 		t.Fatalf("Status should be [%s] but is [%s]", StatusPending, confirmation.Status)
@@ -35,6 +35,10 @@ func Test_NewConfirmation(t *testing.T) {
 
 	if confirmation.Type != TypePasswordReset {
 		t.Fatalf("The type should be [%s] but is [%s]", TypePasswordReset, confirmation.Type)
+	}
+
+	if confirmation.TemplateName != TemplateNamePasswordReset {
+		t.Fatalf("The template type should be [%s] but is [%s]", TemplateNamePasswordReset, confirmation.TemplateName)
 	}
 
 	if confirmation.UserId != "" {
@@ -71,7 +75,7 @@ func Test_NewConfirmation(t *testing.T) {
 
 func Test_NewConfirmationWithContext(t *testing.T) {
 
-	confirmation, _ := NewConfirmationWithContext(TypePasswordReset, USERID, contextData)
+	confirmation, _ := NewConfirmationWithContext(TypePasswordReset, TemplateNamePasswordReset, USERID, contextData)
 
 	myExtras := &Extras{}
 
@@ -91,7 +95,7 @@ func Test_NewConfirmationWithContext(t *testing.T) {
 
 func Test_Confirmation_AddContext(t *testing.T) {
 
-	confirmation, _ := NewConfirmation(TypePasswordReset, USERID)
+	confirmation, _ := NewConfirmation(TypePasswordReset, TemplateNamePasswordReset, USERID)
 
 	confirmation.AddContext(contextData)
 

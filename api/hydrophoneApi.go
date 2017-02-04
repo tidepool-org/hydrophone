@@ -210,9 +210,25 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 
 //Generate a notification from the given confirmation,write the error if it fails
 func (a *Api) createAndSendNotfication(conf *models.Confirmation, content interface{}) bool {
+	templateName := conf.TemplateName
+	if templateName == models.TemplateNameUndefined {
+		switch conf.Type {
+		case models.TypePasswordReset:
+			templateName = models.TemplateNamePasswordReset
+		case models.TypeCareteamInvite:
+			templateName = models.TemplateNameCareteamInvite
+		case models.TypeSignUp:
+			templateName = models.TemplateNameSignup
+		case models.TypeNoAccount:
+			templateName = models.TemplateNameNoAccount
+		default:
+			log.Printf("Unknown confirmation type %s", conf.Type)
+			return false
+		}
+	}
 
 	emailTemplate := models.NewTemplate()
-	emailTemplate.Load(conf.Type, a.Config.Templates)
+	emailTemplate.Load(templateName, a.Config.Templates)
 	emailTemplate.Parse(content)
 
 	if status, details := a.notifier.Send([]string{conf.Email}, emailTemplate.Subject, emailTemplate.BodyContent); status != http.StatusOK {

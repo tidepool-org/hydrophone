@@ -155,7 +155,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 				return
 			} else if newSignUp == nil {
-				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, "")
+				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, models.TemplateNameSignup, "")
 				newSignUp.UserId = usrDetails.UserID
 				newSignUp.Email = usrDetails.Emails[0]
 			} else if newSignUp.Email != usrDetails.Emails[0] {

@@ -17,10 +17,11 @@ type (
 		Creator   Creator         `json:"creator" bson:"creator"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
 		Created   time.Time       `json:"created" bson:"created"`
-		//don't reveal the status and modified data from consumers
-		UserId   string    `json:"-" bson:"userId"`
-		Status   Status    `json:"-" bson:"status"`
-		Modified time.Time `json:"-" bson:"modified"`
+
+		TemplateName TemplateName `json:"-" bson:"templateName"`
+		UserId       string       `json:"-" bson:"userId"`
+		Status       Status       `json:"-" bson:"status"`
+		Modified     time.Time    `json:"-" bson:"modified"`
 	}
 
 	//basic details for the creator of the confirmation
@@ -62,19 +63,20 @@ const (
 )
 
 //New confirmation with just the basics
-func NewConfirmation(theType Type, creatorId string) (*Confirmation, error) {
+func NewConfirmation(theType Type, templateName TemplateName, creatorId string) (*Confirmation, error) {
 
 	if key, err := generateKey(); err != nil {
 		return nil, err
 	} else {
 
 		conf := &Confirmation{
-			Key:       key,
-			Type:      theType,
-			CreatorId: creatorId,
-			Creator:   Creator{}, //set before sending back to client
-			Status:    StatusPending,
-			Created:   time.Now(),
+			Key:          key,
+			Type:         theType,
+			TemplateName: templateName,
+			CreatorId:    creatorId,
+			Creator:      Creator{}, //set before sending back to client
+			Status:       StatusPending,
+			Created:      time.Now(),
 		}
 
 		return conf, nil
@@ -82,9 +84,9 @@ func NewConfirmation(theType Type, creatorId string) (*Confirmation, error) {
 }
 
 //New confirmation that includes context data
-func NewConfirmationWithContext(theType Type, creatorId string, data interface{}) (*Confirmation, error) {
+func NewConfirmationWithContext(theType Type, templateName TemplateName, creatorId string, data interface{}) (*Confirmation, error) {
 
-	if conf, err := NewConfirmation(theType, creatorId); err != nil {
+	if conf, err := NewConfirmation(theType, templateName, creatorId); err != nil {
 		return nil, err
 	} else {
 		conf.AddContext(data)

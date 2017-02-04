@@ -54,7 +54,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		return
 	}
 
-	resetCnf, _ := models.NewConfirmation(models.TypePasswordReset, "")
+	resetCnf, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
 	resetCnf.Email = email
 
 	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
@@ -62,7 +62,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	} else {
 		log.Print(STATUS_RESET_NO_ACCOUNT)
 		log.Printf("email used [%s]", email)
-		resetCnf, _ = models.NewConfirmation(models.TypeNoAccount, "")
+		resetCnf, _ = models.NewConfirmation(models.TypeNoAccount, models.TemplateNameNoAccount, "")
 		resetCnf.Email = email
 		//there is nothing more to do other than notify the user
 		resetCnf.UpdateStatus(models.StatusCompleted)

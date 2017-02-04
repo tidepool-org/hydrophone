@@ -23,7 +23,21 @@ type (
 		Subject     string
 		BodyContent string
 	}
+
+	TemplateName string
 )
+
+const (
+	TemplateNameUndefined      TemplateName = ""
+	TemplateNamePasswordReset  TemplateName = "password_reset"
+	TemplateNameCareteamInvite TemplateName = "careteam_invitation"
+	TemplateNameSignup         TemplateName = "signup_confirmation"
+	TemplateNameNoAccount      TemplateName = "no_account"
+)
+
+func (t TemplateName) String() string {
+	return string(t)
+}
 
 func NewTemplate() *Template {
 	return &Template{}
@@ -32,31 +46,32 @@ func NewTemplate() *Template {
 /*
  * Load the correct template based on type and returned it compiled
  */
-func (t *Template) Load(templateType Type, cfg *TemplateConfig) {
+func (t *Template) Load(templateName TemplateName, cfg *TemplateConfig) {
 
 	var compiled *template.Template
 	var subject string
 
-	switch {
-	case templateType == TypeCareteamInvite:
-		compiled = template.Must(template.New(string(TypeCareteamInvite)).Parse(cfg.CareteamInvite))
+	switch templateName {
+	case TemplateNameCareteamInvite:
+		compiled = template.Must(template.New(templateName.String()).Parse(cfg.CareteamInvite))
 		subject = cfg.CareteamInviteSubject
 		break
-	case templateType == TypeSignUp:
-		compiled = template.Must(template.New(string(TypeSignUp)).Parse(cfg.Signup))
+	case TemplateNameSignup:
+		compiled = template.Must(template.New(templateName.String()).Parse(cfg.Signup))
 		subject = cfg.SignupSubject
 		break
-	case templateType == TypePasswordReset:
-		compiled = template.Must(template.New(string(TypePasswordReset)).Parse(cfg.PasswordReset))
+	case TemplateNamePasswordReset:
+		compiled = template.Must(template.New(templateName.String()).Parse(cfg.PasswordReset))
 		subject = cfg.PasswordResetSubject
 		break
-	case templateType == TypeNoAccount:
-		compiled = template.Must(template.New(string(TypeNoAccount)).Parse(cfg.NoAccount))
+	case TemplateNameNoAccount:
+		compiled = template.Must(template.New(templateName.String()).Parse(cfg.NoAccount))
 		subject = cfg.NoAccountSubject
 		break
 	default:
-		log.Println("Unknown type ", templateType)
+		log.Println("Unknown template name ", templateName)
 		compiled = nil
+		subject = ""
 		break
 	}
 

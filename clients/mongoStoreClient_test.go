@@ -11,10 +11,10 @@ import (
 
 func TestMongoStoreConfirmationOperations(t *testing.T) {
 
-	confirmation, _ := models.NewConfirmation(models.TypePasswordReset, "123.456")
+	confirmation, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
 	confirmation.Email = "test@test.com"
 
-	doesNotExist, _ := models.NewConfirmation(models.TypePasswordReset, "123.456")
+	doesNotExist, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
 
 	testingConfig := &mongo.Config{ConnectionString: "mongodb://localhost/confirm_test"}
 
@@ -83,13 +83,13 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 
 	//Find with other statuses
 	const fromUser, toUser, toEmail, toOtherEmail = "999.111", "312.123", "some@email.org", "some@other.org"
-	c1, _ := models.NewConfirmation(models.TypeCareteamInvite, fromUser)
+	c1, _ := models.NewConfirmation(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, fromUser)
 	c1.UserId = toUser
 	c1.Email = toEmail
 	c1.UpdateStatus(models.StatusDeclined)
 	mc.UpsertConfirmation(c1)
 
-	c2, _ := models.NewConfirmation(models.TypeCareteamInvite, fromUser)
+	c2, _ := models.NewConfirmation(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, fromUser)
 	c2.Email = toOtherEmail
 	c2.UpdateStatus(models.StatusCompleted)
 	mc.UpsertConfirmation(c2)
