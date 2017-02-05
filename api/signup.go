@@ -40,30 +40,22 @@ const (
 	ERROR_MISMATCH_BIRTHDAY = 1006
 )
 
-//try to find the signup confirmation and validate that it hasn't expired
-func (a *Api) findAndValidateSignUp(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
-
-	if found, err := a.findExistingConfirmation(conf, res); err != nil {
-		log.Printf("findAndValidateSignUp: error [%s]\n", err.Error())
+//try to find the signup confirmation
+func (a *Api) findSignUp(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
+	found, err := a.findExistingConfirmation(conf, res)
+	if err != nil {
+		log.Printf("findSignUp: error [%s]\n", err.Error())
 		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 		return nil
-	} else if found != nil {
-
-		expires := found.Created.Add(time.Duration(a.Config.SignUpTimeoutDays) * 24 * time.Hour)
-
-		if time.Now().Before(expires) {
-			return found
-		}
-
-		statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_SIGNUP_EXPIRED)}
-		log.Printf("findAndValidateSignUp: expired [%s]\n", statusErr.Error())
+	}
+	if found == nil {
+		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND)}
+		log.Printf("findSignUp: not found [%s]\n", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	}
-	statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND)}
-	log.Printf("findAndValidateSignUp: not found [%s]\n", statusErr.Error())
-	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-	return nil
+
+	return found
 }
 
 //update an existing signup confirmation
@@ -215,7 +207,6 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 		}
 	}
-	return
 }
 
 //If a user didn't receive the confirmation email and logs in, they're directed to the confirmation-required page which can
@@ -229,10 +220,16 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 
 	toFind := &models.Confirmation{Email: email, Status: models.StatusPending}
 
-	if found := a.findAndValidateSignUp(toFind, res); found != nil {
+	if found := a.findSignUp(toFind, res); found != nil {
+		if found.IsExpired() {
+			statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_SIGNUP_EXPIRED)}
+			log.Printf("findAndValidateSignUp: expired [%s]\n", statusErr.Error())
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+			return
+		}
 
 		if err := a.addProfile(found); err != nil {
-			log.Printf("sendSignUp: error when adding profile [%s]", err.Error())
+			log.Printf("resendSignUp: error when adding profile [%s]", err.Error())
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
 		} else {
@@ -261,10 +258,9 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				log.Print("resendSignUp: Something happened trying to resend a signup email")
 			}
 		}
+
+		res.WriteHeader(http.StatusOK)
 	}
-	//always return StatusOK so we don't leak details
-	res.WriteHeader(http.StatusOK)
-	return
 }
 
 //This would be PUT by the web page at the link in the signup email. No authentication is required.
@@ -291,7 +287,12 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 
 	toFind := &models.Confirmation{Key: confirmationId}
 
-	if found := a.findAndValidateSignUp(toFind, res); found != nil {
+	if found := a.findSignUp(toFind, res); found != nil {
+		if found.IsExpired() {
+			a.sendError(res, http.StatusNotFound, STATUS_SIGNUP_EXPIRED, "acceptSignUp: expired")
+			return
+		}
+
 		emailVerified := true
 		updates := shoreline.UserUpdate{EmailVerified: &emailVerified}
 
@@ -347,12 +348,10 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		found.UpdateStatus(models.StatusCompleted)
 		if a.addOrUpdateConfirmation(found, res) {
 			a.logMetricAsServer("accept signup")
-			res.WriteHeader(http.StatusOK)
-			return
 		}
-	}
 
-	return
+		res.WriteHeader(http.StatusOK)
+	}
 }
 
 //In the event that someone uses the wrong email address, the receiver could explicitly dismiss a signup attempt with this link (useful for metrics and to identify phishing attempts).

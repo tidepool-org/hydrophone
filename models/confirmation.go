@@ -47,6 +47,8 @@ type (
 		Password string `json:"password"`
 		Birthday string `json:"birthday"`
 	}
+
+	TypeDurations map[Type]time.Duration
 )
 
 const (
@@ -60,6 +62,14 @@ const (
 	TypeCareteamInvite Type = "careteam_invitation"
 	TypeSignUp         Type = "signup_confirmation"
 	TypeNoAccount      Type = "no_account"
+)
+
+var (
+	Timeouts TypeDurations = TypeDurations{
+		TypeCareteamInvite: 7 * 24 * time.Hour,
+		TypePasswordReset:  7 * 24 * time.Hour,
+		TypeSignUp:         31 * 24 * time.Hour,
+	}
 )
 
 //New confirmation with just the basics
@@ -118,6 +128,15 @@ func (c *Confirmation) DecodeContext(data interface{}) error {
 func (c *Confirmation) UpdateStatus(newStatus Status) {
 	c.Status = newStatus
 	c.Modified = time.Now()
+}
+
+func (c *Confirmation) IsExpired() bool {
+	timeout, ok := Timeouts[c.Type]
+	if !ok {
+		return false
+	}
+
+	return time.Now().After(c.Created.Add(timeout))
 }
 
 func generateKey() (string, error) {

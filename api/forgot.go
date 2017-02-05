@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	"../models"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -87,26 +86,26 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
 
 	log.Printf("findResetConfirmation: finding [%v]", conf)
-	if found, err := a.findExistingConfirmation(conf, res); err != nil {
+	found, err := a.findExistingConfirmation(conf, res)
+	if err != nil {
 		log.Printf("findResetConfirmation: error [%s]\n", err.Error())
 		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 		return nil
-	} else if found != nil {
-
-		expires := found.Created.Add(time.Duration(a.Config.ResetTimeoutDays) * 24 * time.Hour)
-
-		if time.Now().Before(expires) {
-			return found
-		}
+	}
+	if found == nil {
+		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND)}
+		log.Printf("findResetConfirmation: not found [%s]\n", statusErr.Error())
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		return nil
+	}
+	if found.IsExpired() {
 		statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
 		log.Printf("findResetConfirmation: expired [%s]\n", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	}
-	statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND)}
-	log.Printf("findResetConfirmation: not found [%s]\n", statusErr.Error())
-	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-	return nil
+
+	return found
 }
 
 //Accept the password change

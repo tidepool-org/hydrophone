@@ -36,10 +36,7 @@ var (
 	NO_PARAMS = map[string]string{}
 
 	FAKE_CONFIG = Config{
-		ServerSecret:      "shhh! don't tell",
-		InviteTimeoutDays: 7,
-		ResetTimeoutDays:  7,
-		SignUpTimeoutDays: 7,
+		ServerSecret: "shhh! don't tell",
 	}
 	/*
 	 * basics setup

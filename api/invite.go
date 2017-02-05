@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	"../models"
 	commonClients "github.com/tidepool-org/go-common/clients"
@@ -42,13 +41,10 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 
 	if len(invites) > 0 {
 
-		//rule is we cannot send if the invite is before the window opens
-		latestInvite := invites[0].Created
-		timeWindowOpens := latestInvite.Add(time.Duration(a.Config.InviteTimeoutDays) * 24 * time.Hour)
-
-		if timeWindowOpens.After(time.Now()) {
+		//rule is we cannot send if the invite is not yet expired
+		if !invites[0].IsExpired() {
 			log.Println(STATUS_EXISTING_INVITE)
-			log.Printf("last invite was [%v] and window opened [%v]", latestInvite, timeWindowOpens)
+			log.Println("last invite not yet expired")
 			statusErr := &status.StatusError{status.NewStatus(http.StatusConflict, STATUS_EXISTING_INVITE)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 			return true, nil

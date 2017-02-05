@@ -31,11 +31,8 @@ type (
 		Config     Config
 	}
 	Config struct {
-		ServerSecret      string `json:"serverSecret"` //used for services
-		BlipURL           string `json:"blipUrl"`
-		InviteTimeoutDays int    `json:"inviteTimeoutDays"`
-		ResetTimeoutDays  int    `json:"resetTimeoutDays"`
-		SignUpTimeoutDays int    `json:"signUpTimeoutDays"`
+		ServerSecret string `json:"serverSecret"` //used for services
+		BlipURL      string `json:"blipUrl"`
 	}
 
 	group struct {
