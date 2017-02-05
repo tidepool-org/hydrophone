@@ -139,6 +139,20 @@ func (c *Confirmation) IsExpired() bool {
 	return time.Now().After(c.Created.Add(timeout))
 }
 
+func (c *Confirmation) ResetKey() error {
+	key, err := generateKey()
+	if err != nil {
+		return err
+	}
+
+	c.Key = key
+	c.Status = StatusPending
+	c.Created = time.Now()
+	c.Modified = time.Time{}
+
+	return nil
+}
+
 func generateKey() (string, error) {
 
 	length := 24 // change the length of the generated random string here

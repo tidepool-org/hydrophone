@@ -162,6 +162,18 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				newSignUp.UserId = usrDetails.UserID
 				newSignUp.Email = usrDetails.Emails[0]
 			} else if newSignUp.Email != usrDetails.Emails[0] {
+				if err := a.Store.RemoveConfirmation(newSignUp); err != nil {
+					log.Printf("sendSignUp: error deleting old [%s]", err.Error())
+					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+					return
+				}
+
+				if err := newSignUp.ResetKey(); err != nil {
+					log.Printf("sendSignUp: error resetting key [%s]", err.Error())
+					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+					return
+				}
+
 				newSignUp.Email = usrDetails.Emails[0]
 			} else {
 				log.Printf("sendSignUp %s", STATUS_EXISTING_SIGNUP)
@@ -221,45 +233,54 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	toFind := &models.Confirmation{Email: email, Status: models.StatusPending}
 
 	if found := a.findSignUp(toFind, res); found != nil {
-		if found.IsExpired() {
-			statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_SIGNUP_EXPIRED)}
-			log.Printf("findAndValidateSignUp: expired [%s]\n", statusErr.Error())
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-			return
-		}
-
-		if err := a.addProfile(found); err != nil {
-			log.Printf("resendSignUp: error when adding profile [%s]", err.Error())
+		if err := a.Store.RemoveConfirmation(found); err != nil {
+			log.Printf("resendSignUp: error deleting old [%s]", err.Error())
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
-		} else {
-			profile := &models.Profile{}
-			if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
-				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "resendSignUp: error getting user profile: ", err.Error())
-				return
-			}
-
-			log.Printf("Resending email confirmation to %s with key %s", found.Email, found.Key)
-
-			emailContent := map[string]interface{}{
-				"Key":      found.Key,
-				"Email":    found.Email,
-				"FullName": profile.FullName,
-			}
-
-			if found.Creator.Profile != nil {
-				emailContent["CreatorName"] = found.Creator.Profile.FullName
-			}
-
-			if a.createAndSendNotification(found, emailContent) {
-				a.logMetricAsServer("signup confirmation re-sent")
-			} else {
-				a.logMetricAsServer("signup confirmation failed to be sent")
-				log.Print("resendSignUp: Something happened trying to resend a signup email")
-			}
 		}
 
-		res.WriteHeader(http.StatusOK)
+		if err := found.ResetKey(); err != nil {
+			log.Printf("resendSignUp: error resetting key [%s]", err.Error())
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+
+		if a.addOrUpdateConfirmation(found, res) {
+			a.logMetricAsServer("signup confirmation recreated")
+
+			if err := a.addProfile(found); err != nil {
+				log.Printf("resendSignUp: error when adding profile [%s]", err.Error())
+				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+				return
+			} else {
+				profile := &models.Profile{}
+				if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
+					a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "resendSignUp: error getting user profile: ", err.Error())
+					return
+				}
+
+				log.Printf("Resending email confirmation to %s with key %s", found.Email, found.Key)
+
+				emailContent := map[string]interface{}{
+					"Key":      found.Key,
+					"Email":    found.Email,
+					"FullName": profile.FullName,
+				}
+
+				if found.Creator.Profile != nil {
+					emailContent["CreatorName"] = found.Creator.Profile.FullName
+				}
+
+				if a.createAndSendNotification(found, emailContent) {
+					a.logMetricAsServer("signup confirmation re-sent")
+				} else {
+					a.logMetricAsServer("signup confirmation failed to be sent")
+					log.Print("resendSignUp: Something happened trying to resend a signup email")
+				}
+			}
+
+			res.WriteHeader(http.StatusOK)
+		}
 	}
 }
 
