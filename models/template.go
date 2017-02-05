@@ -2,99 +2,82 @@ package models
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"html/template"
-	"log"
+	"strconv"
 )
 
-type (
-	TemplateConfig struct {
-		PasswordReset         string `json:"passwordReset"`
-		PasswordResetSubject  string `json:"passwordResetSubject"`
-		CareteamInvite        string `json:"careteamInvite"`
-		CareteamInviteSubject string `json:"careteamInviteSubject"`
-		Signup                string `json:"signUp"`
-		SignupSubject         string `json:"signUpSubject"`
-		NoAccount             string `json:"noAccount"`
-		NoAccountSubject      string `json:"noAccountSubject"`
-	}
-
-	Template struct {
-		compiled    *template.Template
-		Subject     string
-		BodyContent string
-	}
-
-	TemplateName string
-)
-
-const (
-	TemplateNameUndefined      TemplateName = ""
-	TemplateNamePasswordReset  TemplateName = "password_reset"
-	TemplateNameCareteamInvite TemplateName = "careteam_invitation"
-	TemplateNameSignup         TemplateName = "signup_confirmation"
-	TemplateNameNoAccount      TemplateName = "no_account"
-)
+type TemplateName string
 
 func (t TemplateName) String() string {
 	return string(t)
 }
 
-func NewTemplate() *Template {
-	return &Template{}
+const (
+	TemplateNameCareteamInvite TemplateName = "careteam_invitation"
+	TemplateNameNoAccount      TemplateName = "no_account"
+	TemplateNamePasswordReset  TemplateName = "password_reset"
+	TemplateNameSignup         TemplateName = "signup_confirmation"
+	TemplateNameUndefined      TemplateName = ""
+)
+
+type Template interface {
+	Name() TemplateName
+	Execute(content interface{}) (string, string, error)
 }
 
-/*
- * Load the correct template based on type and returned it compiled
- */
-func (t *Template) Load(templateName TemplateName, cfg *TemplateConfig) {
+type Templates map[TemplateName]Template
 
-	var compiled *template.Template
-	var subject string
-
-	switch templateName {
-	case TemplateNameCareteamInvite:
-		compiled = template.Must(template.New(templateName.String()).Parse(cfg.CareteamInvite))
-		subject = cfg.CareteamInviteSubject
-		break
-	case TemplateNameSignup:
-		compiled = template.Must(template.New(templateName.String()).Parse(cfg.Signup))
-		subject = cfg.SignupSubject
-		break
-	case TemplateNamePasswordReset:
-		compiled = template.Must(template.New(templateName.String()).Parse(cfg.PasswordReset))
-		subject = cfg.PasswordResetSubject
-		break
-	case TemplateNameNoAccount:
-		compiled = template.Must(template.New(templateName.String()).Parse(cfg.NoAccount))
-		subject = cfg.NoAccountSubject
-		break
-	default:
-		log.Println("Unknown template name ", templateName)
-		compiled = nil
-		subject = ""
-		break
-	}
-
-	t.compiled = compiled
-	t.Subject = subject
+type PrecompiledTemplate struct {
+	name               TemplateName
+	precompiledSubject *template.Template
+	precompiledBody    *template.Template
 }
 
-/*
- * Parse the content into the compiled template
- */
-func (t *Template) Parse(content interface{}) {
-
-	if t.compiled == nil {
-		log.Println("there is no compiled template")
-		return
+func NewPrecompiledTemplate(name TemplateName, subjectTemplate string, bodyTemplate string) (*PrecompiledTemplate, error) {
+	if name == TemplateNameUndefined {
+		return nil, errors.New("models: name is missing")
+	}
+	if subjectTemplate == "" {
+		return nil, errors.New("models: subject template is missing")
+	}
+	if bodyTemplate == "" {
+		return nil, errors.New("models: body template is missing")
 	}
 
-	var buffer bytes.Buffer
-
-	if err := t.compiled.Execute(&buffer, content); err != nil {
-		log.Println("error parsing template ", err)
-		return
+	precompiledSubject, err := template.New(name.String()).Parse(subjectTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("models: failure to precompile subject template: %s", err)
 	}
 
-	t.BodyContent = buffer.String()
+	precompiledBody, err := template.New(name.String()).Parse(bodyTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("models: failure to precompile body template: %s", err)
+	}
+
+	return &PrecompiledTemplate{
+		name:               name,
+		precompiledSubject: precompiledSubject,
+		precompiledBody:    precompiledBody,
+	}, nil
+}
+
+func (p *PrecompiledTemplate) Name() TemplateName {
+	return p.name
+}
+
+func (p *PrecompiledTemplate) Execute(content interface{}) (string, string, error) {
+	var subjectBuffer bytes.Buffer
+	var bodyBuffer bytes.Buffer
+
+	if err := p.precompiledSubject.Execute(&subjectBuffer, content); err != nil {
+		return "", "", fmt.Errorf("models: failure to execute subject template %s with content", strconv.Quote(p.name.String()))
+	}
+
+	if err := p.precompiledBody.Execute(&bodyBuffer, content); err != nil {
+		return "", "", fmt.Errorf("models: failure to execute body template %s with content", strconv.Quote(p.name.String()))
+	}
+
+	return subjectBuffer.String(), bodyBuffer.String(), nil
 }

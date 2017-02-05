@@ -36,12 +36,7 @@ var (
 	NO_PARAMS = map[string]string{}
 
 	FAKE_CONFIG = Config{
-		ServerSecret: "shhh! don't tell",
-		Templates: &models.TemplateConfig{
-			PasswordReset:  `{{define "reset_test"}} {{ .Email }} {{ .Key }} {{end}}{{template "reset_test" .}}`,
-			CareteamInvite: `{{define "invite_test"}} {{ .CareteamName }} {{ .Key }} {{end}}{{template "invite_test" .}}`,
-			Signup:         `{{define "confirm_test"}} {{ .UserId }} {{ .Key }} {{end}}{{template "confirm_test" .}}`,
-		},
+		ServerSecret:      "shhh! don't tell",
 		InviteTimeoutDays: 7,
 		ResetTimeoutDays:  7,
 		SignUpTimeoutDays: 7,
@@ -56,6 +51,9 @@ var (
 
 	mockMetrics = highwater.NewMock()
 	mockSeagull = commonClients.NewSeagullMock()
+
+	mockTemplates = models.Templates{}
+
 	/*
 	 * stores
 	 */
@@ -70,7 +68,7 @@ var (
 	mock_uid1Shoreline     = newtestingShorelingMock(testing_uid1)
 
 	responsableGatekeeper = NewResponsableMockGatekeeper()
-	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, responsableGatekeeper, mockMetrics, mockSeagull)
+	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, responsableGatekeeper, mockMetrics, mockSeagull, mockTemplates)
 )
 
 // In an effort to mock shoreline so that we can return the token we wish
@@ -126,7 +124,7 @@ func TestGetStatus_StatusOk(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
-	hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull)
+	hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
 	hydrophone.SetHandlers("", rtr)
 
 	hydrophone.GetStatus(response, request)
@@ -142,7 +140,7 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
-	hydrophoneFails := InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull)
+	hydrophoneFails := InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
 	hydrophoneFails.SetHandlers("", rtr)
 
 	hydrophoneFails.GetStatus(response, request)

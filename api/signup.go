@@ -40,19 +40,6 @@ const (
 	ERROR_MISMATCH_BIRTHDAY = 1006
 )
 
-type (
-	//Content used to generate the signup email
-	signUpEmailContent struct {
-		Key   string
-		Email string
-	}
-	//signup details
-	signUpBody struct {
-		Key   string `json:"key"`
-		Email string `json:"email"`
-	}
-)
-
 //try to find the signup confirmation and validate that it hasn't expired
 func (a *Api) findAndValidateSignUp(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
 
@@ -168,15 +155,14 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 
 			if a.addOrUpdateConfirmation(newSignUp, res) {
 				a.logMetric("signup confirmation created", req)
+				log.Printf("Sending email confirmation to %s with key %s", newSignUp.Email, newSignUp.Key)
 
-				emailContent := &signUpEmailContent{
-					Key:   newSignUp.Key,
-					Email: newSignUp.Email,
+				emailContent := map[string]interface{}{
+					"Key":   newSignUp.Key,
+					"Email": newSignUp.Email,
 				}
 
-				log.Printf("Sending email confirmation to %s with key %s", emailContent.Email, emailContent.Key)
-
-				if a.createAndSendNotfication(newSignUp, emailContent) {
+				if a.createAndSendNotification(newSignUp, emailContent) {
 					a.logMetricAsServer("signup confirmation sent")
 					res.WriteHeader(http.StatusOK)
 					return
@@ -202,16 +188,14 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	toFind := &models.Confirmation{Email: email, Status: models.StatusPending}
 
 	if found := a.findAndValidateSignUp(toFind, res); found != nil {
+		log.Printf("Resending email confirmation to %s with key %s", found.Email, found.Key)
 
-		emailContent := &signUpEmailContent{
-			Key:   found.Key,
-			Email: found.Email,
+		emailContent := map[string]interface{}{
+			"Key":   found.Key,
+			"Email": found.Email,
 		}
 
-		log.Printf("content to send %v", emailContent)
-		log.Printf("signup found %v", found)
-
-		if a.createAndSendNotfication(found, emailContent) {
+		if a.createAndSendNotification(found, emailContent) {
 			a.logMetricAsServer("signup confirmation re-sent")
 		} else {
 			a.logMetricAsServer("signup confirmation failed to be sent")

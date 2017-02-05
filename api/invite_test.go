@@ -21,6 +21,7 @@ func initTestingRouterNoPerms() *mux.Router {
 		mock_NoPermsGatekeeper,
 		mockMetrics,
 		mockSeagull,
+		mockTemplates,
 	)
 
 	hydrophone.SetHandlers("", testRtr)
@@ -251,6 +252,7 @@ func TestInviteResponds(t *testing.T) {
 			mockGatekeeper,
 			mockMetrics,
 			mockSeagull,
+			mockTemplates,
 		)
 
 		//testing when there is nothing to return from the store
@@ -263,6 +265,7 @@ func TestInviteResponds(t *testing.T) {
 				mockGatekeeper,
 				mockMetrics,
 				mockSeagull,
+				mockTemplates,
 			)
 		}
 

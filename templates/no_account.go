@@ -1,4 +1,9 @@
-{{define \"reset\"}}
+package templates
+
+import "./../models"
+
+const _NoAccountSubjectTemplate string = `Password reset for your Tidepool account`
+const _NoAccountBodyTemplate string = `
 <html>
   <head>
     <meta name='viewport' content='width=device-width'/>
@@ -11,23 +16,23 @@
 
     <div class='container' style='background-color:#F5F5F5; padding:20px; margin:0 auto; max-width:500px'>
       <div align='center' style='padding:10px; margin:0;'>
-        <a href='https://blip.tidepool.org/'><img width='75' height='75' src='http://drive.google.com/uc?export=view&id=0BwI0YrjnbmtXTUoxc1JRdDViaWc' /></a>
+        <a href='{{ .BlipURL }}/'><img width='75' height='75' src='http://drive.google.com/uc?export=view&id=0BwI0YrjnbmtXTUoxc1JRdDViaWc' /></a>
       </div>
 
       <div align='center'>
         <p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:25px 0 15px; margin:0;'>Hey there!</p>
-        <p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:0 0 15px; margin:0;'>You requested a password reset. If you didn't request this, please ignore this email. Otherwise, click the link below.</p>
+        <p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:0 0 15px; margin:0;'>We heard you would like to reset your password for Blip or the Tidepool Uploader but no account has been created yet for your email address. Please click on the link below if you would like to create an account.</p>
       </div>
 
       <br>
 
       <div align='center' style='padding:0;'>
-        <a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='http://localhost:3000/#/confirm-password-reset?resetKey={{ .Key }}'>Reset Password</a>
+        <a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='{{ .BlipURL }}/#/signup'>Sign Up</a>
       </div>
 
       <br>
 
-      <div align='center'>      
+      <div align='center'>
         <p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:15px 0 40px; margin:0;'>Sincerely,<br>The Tidepool Team</p>
       </div>
 
@@ -41,4 +46,8 @@
 
   </body>
 </html>
-{{end}} {{template \"reset\" .}}
+`
+
+func NewNoAccountTemplate() (models.Template, error) {
+	return models.NewPrecompiledTemplate(models.TemplateNameNoAccount, _NoAccountSubjectTemplate, _NoAccountBodyTemplate)
+}

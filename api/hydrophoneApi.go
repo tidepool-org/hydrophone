@@ -23,7 +23,7 @@ type (
 	Api struct {
 		Store      clients.StoreClient
 		notifier   clients.Notifier
-		templates  models.TemplateConfig
+		templates  models.Templates
 		sl         shoreline.Client
 		gatekeeper commonClients.Gatekeeper
 		seagull    commonClients.Seagull
@@ -31,11 +31,11 @@ type (
 		Config     Config
 	}
 	Config struct {
-		ServerSecret      string                 `json:"serverSecret"` //used for services
-		Templates         *models.TemplateConfig `json:"emailTemplates"`
-		InviteTimeoutDays int                    `json:"inviteTimeoutDays"`
-		ResetTimeoutDays  int                    `json:"resetTimeoutDays"`
-		SignUpTimeoutDays int                    `json:"signUpTimeoutDays"`
+		ServerSecret      string `json:"serverSecret"` //used for services
+		BlipURL           string `json:"blipUrl"`
+		InviteTimeoutDays int    `json:"inviteTimeoutDays"`
+		ResetTimeoutDays  int    `json:"resetTimeoutDays"`
+		SignUpTimeoutDays int    `json:"signUpTimeoutDays"`
 	}
 
 	group struct {
@@ -73,6 +73,7 @@ func InitApi(
 	gatekeeper commonClients.Gatekeeper,
 	metrics highwater.Client,
 	seagull commonClients.Seagull,
+	templates models.Templates,
 ) *Api {
 	return &Api{
 		Store:      store,
@@ -82,6 +83,7 @@ func InitApi(
 		gatekeeper: gatekeeper,
 		metrics:    metrics,
 		seagull:    seagull,
+		templates:  templates,
 	}
 }
 
@@ -175,12 +177,12 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 //write error if it fails
 func (a *Api) addProfile(conf *models.Confirmation) error {
 
-	if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &conf.Creator.Profile); err != nil {
-		log.Printf("error getting the creators profile [%v] ", err)
-		return err
-	}
+		if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &conf.Creator.Profile); err != nil {
+			log.Printf("error getting the creators profile [%v] ", err)
+			return err
+		}
 
-	conf.Creator.UserId = conf.CreatorId
+		conf.Creator.UserId = conf.CreatorId
 	return nil
 }
 
@@ -209,7 +211,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 }
 
 //Generate a notification from the given confirmation,write the error if it fails
-func (a *Api) createAndSendNotfication(conf *models.Confirmation, content interface{}) bool {
+func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[string]interface{}) bool {
 	templateName := conf.TemplateName
 	if templateName == models.TemplateNameUndefined {
 		switch conf.Type {
@@ -227,11 +229,21 @@ func (a *Api) createAndSendNotfication(conf *models.Confirmation, content interf
 		}
 	}
 
-	emailTemplate := models.NewTemplate()
-	emailTemplate.Load(templateName, a.Config.Templates)
-	emailTemplate.Parse(content)
+	content["BlipURL"] = a.Config.BlipURL
 
-	if status, details := a.notifier.Send([]string{conf.Email}, emailTemplate.Subject, emailTemplate.BodyContent); status != http.StatusOK {
+	template, ok := a.templates[templateName]
+	if !ok {
+		log.Printf("Unknown template type %s", templateName)
+		return false
+	}
+
+	subject, body, err := template.Execute(content)
+	if err != nil {
+		log.Printf("Error executing email template %s", err)
+		return false
+	}
+
+	if status, details := a.notifier.Send([]string{conf.Email}, subject, body); status != http.StatusOK {
 		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
 		return false
 	}

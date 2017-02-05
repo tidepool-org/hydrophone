@@ -1,9 +1,6 @@
 package models
 
-import (
-	"strings"
-	"testing"
-)
+import "testing"
 
 type (
 	Data struct {
@@ -14,90 +11,100 @@ type (
 
 var (
 	content = Data{Username: "Test User", Key: "123.blah.456.blah"}
-	//config templates
-	cfg = &TemplateConfig{
-		PasswordReset: `
-{{define "reset_test"}}
-## Test Template
-Hi {{ .Username }}
-{{ .Key }}
-{{end}}
-{{template "reset_test" .}}
-`,
-		PasswordResetSubject: "A Password Reset",
-		CareteamInvite: `
-{{define "invite_test"}}
-## Test Template
-{{ .Username }}
-{{ .Key }}
-{{end}}
-{{template "invite_test" .}}
-`,
-		CareteamInviteSubject: "A Careteam Invite",
-		Signup: `
-{{define "confirm_test"}}
-## Test Template
-{{ .Username }}
-{{ .Key }}
-{{end}}
-{{template "confirm_test" .}}
-`,
-		SignupSubject: "A Confirmation",
-	}
+
+	name TemplateName = "test"
+
+	subjectSuccessTemplate = `Username is '{{ .Username }}'`
+	subjectFailureTemplate = `{{define "subjectFailure"}}`
+
+	bodySuccessTemplate = `Key is '{{ .Key }}'`
+	bodyFailureTemplate = `{{define "bodyFailure"}}`
 )
 
-func TestLoad(t *testing.T) {
-
-	tmpl := NewTemplate()
-
-	tmpl.Load(TemplateNamePasswordReset, cfg)
-
-	if tmpl.compiled == nil {
-		t.Fatal("a template should have been created")
+func Test_NewPrecompiledTemplate_NameMissing(t *testing.T) {
+	expectedError := "models: name is missing"
+	tmpl, err := NewPrecompiledTemplate("", subjectSuccessTemplate, bodySuccessTemplate)
+	if err == nil || err.Error() != expectedError {
+		t.Fatalf(`Error is "%s", but should be "%s"`, err, expectedError)
 	}
-
-	if tmpl.compiled.Name() != string(TemplateNamePasswordReset) {
-		t.Fatalf("the name is [%s] but should be [%s]", tmpl.compiled.Name(), string(TemplateNamePasswordReset))
-	}
-
-	if tmpl.BodyContent != "" {
-		t.Fatalf("Parsed content should be empty but is [%s]", tmpl.BodyContent)
-	}
-
-	if tmpl.Subject != cfg.PasswordResetSubject {
-		t.Fatalf("The subject should be [%s] as the config but is [%s]", cfg.PasswordResetSubject, tmpl.Subject)
+	if tmpl != nil {
+		t.Fatal("Template should be nil")
 	}
 }
 
-func TestParse_WhenNoLoadedTemplate(t *testing.T) {
-
-	tmpl := NewTemplate()
-
-	tmpl.Parse(content)
-
-	if tmpl.BodyContent != "" {
-		t.Fatal("parsed content should be empty as template is not set")
+func Test_NewPrecompiledTemplate_SubjectTemplateMissing(t *testing.T) {
+	expectedError := "models: subject template is missing"
+	tmpl, err := NewPrecompiledTemplate(name, "", bodySuccessTemplate)
+	if err == nil || err.Error() != expectedError {
+		t.Fatalf(`Error is "%s", but should be "%s"`, err, expectedError)
+	}
+	if tmpl != nil {
+		t.Fatal("Template should be nil")
 	}
 }
 
-func TestParse(t *testing.T) {
-
-	tmpl := NewTemplate()
-
-	tmpl.Load(TemplateNameSignup, cfg)
-
-	tmpl.Parse(content)
-
-	if tmpl.BodyContent == "" {
-		t.Fatal("The parased content should be set")
+func Test_NewPrecompiledTemplate_BodyTemplateMissing(t *testing.T) {
+	expectedError := "models: body template is missing"
+	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, "")
+	if err == nil || err.Error() != expectedError {
+		t.Fatalf(`Error is "%s", but should be "%s"`, err, expectedError)
 	}
-
-	if strings.Contains(tmpl.BodyContent, content.Username) == false {
-		t.Fatal("the name should be set")
+	if tmpl != nil {
+		t.Fatal("Template should be nil")
 	}
+}
 
-	if strings.Contains(tmpl.BodyContent, content.Key) == false {
-		t.Fatal("the key should be set")
+func Test_NewPrecompiledTemplate_SubjectTemplateNotPrecompiled(t *testing.T) {
+	expectedError := "models: failure to precompile subject template: template: test:1: unexpected EOF"
+	tmpl, err := NewPrecompiledTemplate(name, subjectFailureTemplate, bodySuccessTemplate)
+	if err == nil || err.Error() != expectedError {
+		t.Fatalf(`Error is "%s", but should be "%s"`, err, expectedError)
 	}
+	if tmpl != nil {
+		t.Fatal("Template should be nil")
+	}
+}
 
+func Test_NewPrecompiledTemplate_BodyTemplateNotPrecompiled(t *testing.T) {
+	expectedError := "models: failure to precompile body template: template: test:1: unexpected EOF"
+	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodyFailureTemplate)
+	if err == nil || err.Error() != expectedError {
+		t.Fatalf(`Error is "%s", but should be "%s"`, err, expectedError)
+	}
+	if tmpl != nil {
+		t.Fatal("Template should be nil")
+	}
+}
+
+func Test_NewPrecompiledTemplate_Success(t *testing.T) {
+	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate)
+	if err != nil {
+		t.Fatalf(`Error is "%s", but should be nil`, err)
+	}
+	if tmpl == nil {
+		t.Fatal("Template should be not nil")
+	}
+}
+
+func Test_NewPrecompiledTemplate_Name(t *testing.T) {
+	tmpl, _ := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate)
+	if tmpl.Name() != name {
+		t.Fatalf(`Name is "%s", but should be "%s"`, tmpl.Name(), name)
+	}
+}
+
+func Test_NewPrecompiledTemplate_ExecuteSuccess(t *testing.T) {
+	expectedSubject := `Username is 'Test User'`
+	expectedBody := `Key is '123.blah.456.blah'`
+	tmpl, _ := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate)
+	subject, body, err := tmpl.Execute(content)
+	if err != nil {
+		t.Fatalf(`Error is "%s", but should be nil`, err)
+	}
+	if subject != expectedSubject {
+		t.Fatalf(`Subject is "%s", but should be "%s"`, subject, expectedSubject)
+	}
+	if body != expectedBody {
+		t.Fatalf(`Body is "%s", but should be "%s"`, body, expectedBody)
+	}
 }

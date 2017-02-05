@@ -26,14 +26,6 @@ type (
 		Email       string                    `json:"email"`
 		Permissions commonClients.Permissions `json:"permissions"`
 	}
-	//Content used to generate the invite email
-	inviteEmailContent struct {
-		Key            string
-		Email          string
-		CareteamName   string
-		IsExistingUser bool
-		ViewOnlyPerms  bool
-	}
 )
 
 //Checks do they have an existing invite or are they already a team member
@@ -394,15 +386,15 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 					canUpload := ib.Permissions["upload"]
 
-					emailContent := &inviteEmailContent{
-						CareteamName:   invite.Creator.Profile.FullName,
-						Key:            invite.Key,
-						Email:          invite.Email,
-						IsExistingUser: invite.UserId != "",
-						ViewOnlyPerms:  canUpload == nil,
+					emailContent := map[string]interface{}{
+						"CareteamName":   invite.Creator.Profile.FullName,
+						"Key":            invite.Key,
+						"Email":          invite.Email,
+						"IsExistingUser": invite.UserId != "",
+						"ViewOnlyPerms":  canUpload == nil,
 					}
 
-					if a.createAndSendNotfication(invite, emailContent) {
+					if a.createAndSendNotification(invite, emailContent) {
 						a.logMetric("invite sent", req)
 					}
 				}

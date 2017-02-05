@@ -1,22 +1,24 @@
 package main
 
 import (
+	"crypto/tls"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"./api"
 	sc "./clients"
-	"crypto/tls"
+	"./templates"
 	"github.com/gorilla/mux"
-	"github.com/tidepool-org/go-common"
+	common "github.com/tidepool-org/go-common"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/hakken"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/go-common/clients/shoreline"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 type (
@@ -91,8 +93,13 @@ func main() {
 	store := sc.NewMongoStoreClient(&config.Mongo)
 	mail := sc.NewSesNotifier(&config.Mail)
 
+	emailTemplates, err := templates.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, highwater, seagull)
+	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, highwater, seagull, emailTemplates)
 	api.SetHandlers("", rtr)
 
 	/*

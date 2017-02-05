@@ -20,11 +20,6 @@ const (
 )
 
 type (
-	//Content used to generate the reset email
-	resetEmailContent struct {
-		Key   string
-		Email string
-	}
 	//reset details reseting a users password
 	resetBody struct {
 		Key      string `json:"key"`
@@ -71,12 +66,12 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	if a.addOrUpdateConfirmation(resetCnf, res) {
 		a.logMetricAsServer("reset confirmation created")
 
-		emailContent := &resetEmailContent{
-			Key:   resetCnf.Key,
-			Email: resetCnf.Email,
+		emailContent := map[string]interface{}{
+			"Key":   resetCnf.Key,
+			"Email": resetCnf.Email,
 		}
 
-		if a.createAndSendNotfication(resetCnf, emailContent) {
+		if a.createAndSendNotification(resetCnf, emailContent) {
 			a.logMetricAsServer("reset confirmation sent")
 		} else {
 			a.logMetricAsServer("reset confirmation failed to be sent")
