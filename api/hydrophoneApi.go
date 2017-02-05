@@ -176,13 +176,14 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 //Find this confirmation
 //write error if it fails
 func (a *Api) addProfile(conf *models.Confirmation) error {
-
+	if conf.CreatorId != "" {
 		if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &conf.Creator.Profile); err != nil {
 			log.Printf("error getting the creators profile [%v] ", err)
 			return err
 		}
 
 		conf.Creator.UserId = conf.CreatorId
+	}
 	return nil
 }
 

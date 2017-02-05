@@ -33,5 +33,17 @@ func New() (models.Templates, error) {
 		templates[template.Name()] = template
 	}
 
+	if template, err := NewSignupCustodialTemplate(); err != nil {
+		return nil, fmt.Errorf("templates: failure to create signup custodial template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
+	if template, err := NewSignupCustodialClinicTemplate(); err != nil {
+		return nil, fmt.Errorf("templates: failure to create signup custodial clinic template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
 	return templates, nil
 }

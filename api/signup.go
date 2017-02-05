@@ -129,7 +129,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if usrDetails, err := a.sl.GetUser(userId, req.Header.Get(TP_SESSION_TOKEN)); err != nil {
+		if usrDetails, err := a.sl.GetUser(userId, a.sl.TokenProvide()); err != nil {
 			log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
 			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
 			return
@@ -142,7 +142,31 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 				return
 			} else if newSignUp == nil {
-				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, models.TemplateNameSignup, "")
+				var templateName models.TemplateName
+				var creatorID string
+
+				if !usrDetails.IsCustodial() {
+					templateName = models.TemplateNameSignup
+				} else if token.IsServer {
+					templateName = models.TemplateNameSignupCustodial
+				} else {
+					tokenUserDetails, err := a.sl.GetUser(token.UserID, a.sl.TokenProvide())
+					if err != nil {
+						log.Printf("sendSignUp: error when getting token user [%s]", err.Error())
+						a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+						return
+					}
+
+					creatorID = token.UserID
+
+					if tokenUserDetails.IsClinic() {
+						templateName = models.TemplateNameSignupCustodialClinic
+					} else {
+						templateName = models.TemplateNameSignupCustodial
+					}
+				}
+
+				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, templateName, creatorID)
 				newSignUp.UserId = usrDetails.UserID
 				newSignUp.Email = usrDetails.Emails[0]
 			} else if newSignUp.Email != usrDetails.Emails[0] {
@@ -155,20 +179,38 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 
 			if a.addOrUpdateConfirmation(newSignUp, res) {
 				a.logMetric("signup confirmation created", req)
-				log.Printf("Sending email confirmation to %s with key %s", newSignUp.Email, newSignUp.Key)
 
-				emailContent := map[string]interface{}{
-					"Key":   newSignUp.Key,
-					"Email": newSignUp.Email,
-				}
-
-				if a.createAndSendNotification(newSignUp, emailContent) {
-					a.logMetricAsServer("signup confirmation sent")
-					res.WriteHeader(http.StatusOK)
+				if err := a.addProfile(newSignUp); err != nil {
+					log.Printf("sendSignUp: error when adding profile [%s]", err.Error())
+					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 					return
 				} else {
-					a.logMetric("signup confirmation failed to be sent", req)
-					log.Print("Something happened generating a signup email")
+					profile := &models.Profile{}
+					if err := a.seagull.GetCollection(newSignUp.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
+						a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "sendSignUp: error getting user profile: ", err.Error())
+						return
+					}
+
+					log.Printf("Sending email confirmation to %s with key %s", newSignUp.Email, newSignUp.Key)
+
+					emailContent := map[string]interface{}{
+						"Key":      newSignUp.Key,
+						"Email":    newSignUp.Email,
+						"FullName": profile.FullName,
+					}
+
+					if newSignUp.Creator.Profile != nil {
+						emailContent["CreatorName"] = newSignUp.Creator.Profile.FullName
+					}
+
+					if a.createAndSendNotification(newSignUp, emailContent) {
+						a.logMetricAsServer("signup confirmation sent")
+						res.WriteHeader(http.StatusOK)
+						return
+					} else {
+						a.logMetric("signup confirmation failed to be sent", req)
+						log.Print("Something happened generating a signup email")
+					}
 				}
 			}
 		}
@@ -188,18 +230,36 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	toFind := &models.Confirmation{Email: email, Status: models.StatusPending}
 
 	if found := a.findAndValidateSignUp(toFind, res); found != nil {
-		log.Printf("Resending email confirmation to %s with key %s", found.Email, found.Key)
 
-		emailContent := map[string]interface{}{
-			"Key":   found.Key,
-			"Email": found.Email,
-		}
-
-		if a.createAndSendNotification(found, emailContent) {
-			a.logMetricAsServer("signup confirmation re-sent")
+		if err := a.addProfile(found); err != nil {
+			log.Printf("sendSignUp: error when adding profile [%s]", err.Error())
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
 		} else {
-			a.logMetricAsServer("signup confirmation failed to be sent")
-			log.Print("resendSignUp: Something happened trying to resend a signup email")
+			profile := &models.Profile{}
+			if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
+				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "resendSignUp: error getting user profile: ", err.Error())
+				return
+			}
+
+			log.Printf("Resending email confirmation to %s with key %s", found.Email, found.Key)
+
+			emailContent := map[string]interface{}{
+				"Key":      found.Key,
+				"Email":    found.Email,
+				"FullName": profile.FullName,
+			}
+
+			if found.Creator.Profile != nil {
+				emailContent["CreatorName"] = found.Creator.Profile.FullName
+			}
+
+			if a.createAndSendNotification(found, emailContent) {
+				a.logMetricAsServer("signup confirmation re-sent")
+			} else {
+				a.logMetricAsServer("signup confirmation failed to be sent")
+				log.Print("resendSignUp: Something happened trying to resend a signup email")
+			}
 		}
 	}
 	//always return StatusOK so we don't leak details
