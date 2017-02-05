@@ -1,7 +1,7 @@
 package clients
 
 import (
-	"./../models"
+	"../models"
 )
 
 type StoreClient interface {

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"./../models"
+	"../models"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 )

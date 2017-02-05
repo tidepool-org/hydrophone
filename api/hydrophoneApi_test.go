@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
-	"./../clients"
-	"./../models"
+	"../clients"
+	"../models"
 
 	"github.com/gorilla/mux"
 	commonClients "github.com/tidepool-org/go-common/clients"

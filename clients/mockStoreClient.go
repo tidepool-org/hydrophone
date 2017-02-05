@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"./../models"
+	"../models"
 )
 
 type MockStoreClient struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"labix.org/v2/mgo"
 
-	"./../models"
+	"../models"
 )
 
 func TestMongoStoreConfirmationOperations(t *testing.T) {
