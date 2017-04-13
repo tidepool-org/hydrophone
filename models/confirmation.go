@@ -29,10 +29,11 @@ type (
 		*Profile `json:"profile" bson:"-"`
 		UserId   string `json:"userid" bson:"-"` //for compatability with blip
 	}
-
-	//cutdown verson of a profile used for confirmations
 	Patient struct {
-		Birthday string `json:"birthday"`
+		Birthday      string `json:"birthday"`
+		DiagnosisDate string `json:"diagnosisDate"`
+		IsOtherPerson bool   `json:"isOtherPerson"`
+		FullName      string `json:"fullName"`
 	}
 	Profile struct {
 		FullName string  `json:"fullName"`
@@ -95,7 +96,6 @@ func NewConfirmation(theType Type, templateName TemplateName, creatorId string) 
 
 //New confirmation that includes context data
 func NewConfirmationWithContext(theType Type, templateName TemplateName, creatorId string, data interface{}) (*Confirmation, error) {
-
 	if conf, err := NewConfirmation(theType, templateName, creatorId); err != nil {
 		return nil, err
 	} else {

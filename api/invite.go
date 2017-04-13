@@ -381,9 +381,14 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 				} else {
 
 					canUpload := ib.Permissions["upload"]
+					fullName := invite.Creator.Profile.FullName
+
+					if invite.Creator.Profile.Patient.IsOtherPerson {
+						fullName = invite.Creator.Profile.Patient.FullName
+					}
 
 					emailContent := map[string]interface{}{
-						"CareteamName":   invite.Creator.Profile.FullName,
+						"CareteamName":   fullName,
 						"Key":            invite.Key,
 						"Email":          invite.Email,
 						"IsExistingUser": invite.UserId != "",
