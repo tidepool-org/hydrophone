@@ -28,11 +28,11 @@ const _CareteamInviteBodyTemplate string = `
 
       {{if .IsExistingUser}}
       <div align='center' style='padding:0;'>
-        <a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='{{ .BlipURL }}/#/login?inviteEmail={{ .Email }}&inviteKey={{ .Key }}'>Join {{ .CareteamName }}'s Care Team</a>
+        <a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='{{ .BlipURL }}/login?inviteEmail={{ .Email }}&inviteKey={{ .Key }}'>Join {{ .CareteamName }}'s Care Team</a>
       </div>
       {{else}}
       <div align='center' style='padding:0;'>
-        <a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='{{ .BlipURL }}/#/signup?inviteEmail={{ .Email }}&inviteKey={{ .Key }}'>Join {{ .CareteamName }}'s Care Team</a>
+        <a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='{{ .BlipURL }}/signup?inviteEmail={{ .Email }}&inviteKey={{ .Key }}'>Join {{ .CareteamName }}'s Care Team</a>
       </div>
       {{end}}
 
