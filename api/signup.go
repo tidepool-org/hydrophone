@@ -137,25 +137,29 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				var templateName models.TemplateName
 				var creatorID string
 
-				if !usrDetails.IsCustodial() {
-					templateName = models.TemplateNameSignup
-				} else if token.IsServer {
-					templateName = models.TemplateNameSignupCustodial
-				} else {
-					tokenUserDetails, err := a.sl.GetUser(token.UserID, a.sl.TokenProvide())
-					if err != nil {
-						log.Printf("sendSignUp: error when getting token user [%s]", err.Error())
-						a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-						return
-					}
-
-					creatorID = token.UserID
-
-					if tokenUserDetails.IsClinic() {
-						templateName = models.TemplateNameSignupCustodialClinic
-					} else {
+				if usrDetails.IsClinic() {
+					templateName = models.TemplateNameSignupClinic
+				} else if usrDetails.IsCustodial() {
+					if token.IsServer {
 						templateName = models.TemplateNameSignupCustodial
+					} else {
+						tokenUserDetails, err := a.sl.GetUser(token.UserID, a.sl.TokenProvide())
+						if err != nil {
+							log.Printf("sendSignUp: error when getting token user [%s]", err.Error())
+							a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+							return
+						}
+
+						creatorID = token.UserID
+
+						if tokenUserDetails.IsClinic() {
+							templateName = models.TemplateNameSignupCustodialClinic
+						} else {
+							templateName = models.TemplateNameSignupCustodial
+						}
 					}
+				} else {
+					templateName = models.TemplateNameSignup
 				}
 
 				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, templateName, creatorID)

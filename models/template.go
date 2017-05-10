@@ -19,6 +19,7 @@ const (
 	TemplateNameNoAccount             TemplateName = "no_account"
 	TemplateNamePasswordReset         TemplateName = "password_reset"
 	TemplateNameSignup                TemplateName = "signup_confirmation"
+	TemplateNameSignupClinic          TemplateName = "signup_clinic_confirmation"
 	TemplateNameSignupCustodial       TemplateName = "signup_custodial_confirmation"
 	TemplateNameSignupCustodialClinic TemplateName = "signup_custodial_clinic_confirmation"
 	TemplateNameUndefined             TemplateName = ""
