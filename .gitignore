@@ -1,9 +1,4 @@
-bin
-src
-pkg
-dist
-.idea
-*.iml
-hydrophone
+deploy/
+dist/
 
-*.sublime-*
+artifact_go.sh
