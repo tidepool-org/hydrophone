@@ -8,10 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"./api"
-	sc "./clients"
-	"./templates"
 	"github.com/gorilla/mux"
+
 	common "github.com/tidepool-org/go-common"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
@@ -19,6 +17,9 @@ import (
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/tidepool-org/hydrophone/api"
+	sc "github.com/tidepool-org/hydrophone/clients"
+	"github.com/tidepool-org/hydrophone/templates"
 )
 
 type (

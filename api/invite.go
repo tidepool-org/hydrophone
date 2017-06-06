@@ -5,10 +5,10 @@ import (
 	"log"
 	"net/http"
 
-	"../models"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
+	"github.com/tidepool-org/hydrophone/models"
 )
 
 const (

@@ -1,8 +1,6 @@
 package clients
 
-import (
-	"../models"
-)
+import "github.com/tidepool-org/hydrophone/models"
 
 type StoreClient interface {
 	Close()

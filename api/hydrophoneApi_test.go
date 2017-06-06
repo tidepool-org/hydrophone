@@ -9,14 +9,14 @@ import (
 	"reflect"
 	"testing"
 
-	"../clients"
-	"../models"
-
 	"github.com/gorilla/mux"
+
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
+	"github.com/tidepool-org/hydrophone/clients"
+	"github.com/tidepool-org/hydrophone/models"
 )
 
 const (
