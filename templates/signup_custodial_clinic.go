@@ -1,6 +1,6 @@
 package templates
 
-import "./../models"
+import "github.com/tidepool-org/hydrophone/models"
 
 const _SignupCustodialClinicSubjectTemplate string = `Diabetes Clinic Follow Up - Claim Your Account`
 const _SignupCustodialClinicBodyTemplate string = `

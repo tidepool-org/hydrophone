@@ -1,6 +1,6 @@
 package templates
 
-import "./../models"
+import "github.com/tidepool-org/hydrophone/models"
 
 const _CareteamInviteSubjectTemplate string = `Diabetes care team invitation`
 const _CareteamInviteBodyTemplate string = `

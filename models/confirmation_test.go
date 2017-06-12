@@ -1,8 +1,6 @@
 package models
 
-import (
-	"testing"
-)
+import "testing"
 
 const USERID = "1234-555"
 

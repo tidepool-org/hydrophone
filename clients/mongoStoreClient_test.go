@@ -3,10 +3,10 @@ package clients
 import (
 	"testing"
 
-	"github.com/tidepool-org/go-common/clients/mongo"
 	"labix.org/v2/mgo"
 
-	"../models"
+	"github.com/tidepool-org/go-common/clients/mongo"
+	"github.com/tidepool-org/hydrophone/models"
 )
 
 func TestMongoStoreConfirmationOperations(t *testing.T) {

@@ -1,6 +1,6 @@
 package templates
 
-import "./../models"
+import "github.com/tidepool-org/hydrophone/models"
 
 const _PasswordResetSubjectTemplate string = `Password reset for your Tidepool account`
 const _PasswordResetBodyTemplate string = `

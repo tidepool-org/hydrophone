@@ -1,4 +1,0 @@
-labix.org/v2/mgo git https://github.com/go-mgo/mgo.git 2e26580ebcca4eca6533535f2dd062cd6bff44ac
-github.com/gorilla/mux git https://github.com/gorilla/mux.git 14cafe28513321476c73967a5a4f3454b6129c46
-github.com/gorilla/context git https://github.com/gorilla/context.git 14f550f51af52180c2eefed15e5fd18d63c0a64a
-github.com/tidepool-org/go-common git https://github.com/tidepool-org/go-common.git 023d0826496c7a3a155fbda2058224602b731b26

@@ -1,6 +1,6 @@
 package templates
 
-import "./../models"
+import "github.com/tidepool-org/hydrophone/models"
 
 const _SignupSubjectTemplate string = `Verify your Tidepool account`
 const _SignupBodyTemplate string = `

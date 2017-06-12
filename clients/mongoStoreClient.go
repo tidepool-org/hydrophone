@@ -5,10 +5,11 @@ import (
 	"log"
 	"regexp"
 
-	"../models"
-	"github.com/tidepool-org/go-common/clients/mongo"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+
+	"github.com/tidepool-org/go-common/clients/mongo"
+	"github.com/tidepool-org/hydrophone/models"
 )
 
 const (

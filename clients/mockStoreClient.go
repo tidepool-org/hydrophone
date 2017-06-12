@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"../models"
+	"github.com/tidepool-org/hydrophone/models"
 )
 
 type MockStoreClient struct {

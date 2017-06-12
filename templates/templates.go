@@ -3,7 +3,7 @@ package templates
 import (
 	"fmt"
 
-	"./../models"
+	"github.com/tidepool-org/hydrophone/models"
 )
 
 func New() (models.Templates, error) {
