@@ -35,8 +35,6 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorId, token string, res
 	invites, _ := a.Store.FindConfirmations(
 		&models.Confirmation{CreatorId: invitorId, Email: inviteeEmail, Type: models.TypeCareteamInvite},
 		models.StatusPending,
-		models.StatusDeclined,
-		models.StatusCompleted,
 	)
 
 	if len(invites) > 0 {

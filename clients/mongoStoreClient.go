@@ -91,7 +91,7 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 	cpy := d.session.Copy()
 	defer cpy.Close()
 
-	if err = mgoConfirmationsCollection(cpy).Find(query).One(&result); err != nil && err != mgo.ErrNotFound {
+	if err = mgoConfirmationsCollection(cpy).Find(query).Sort("-created").One(&result); err != nil && err != mgo.ErrNotFound {
 		log.Printf("FindConfirmation: something bad happened [%v]", err)
 		return result, err
 	}
@@ -126,7 +126,7 @@ func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 	cpy := d.session.Copy()
 	defer cpy.Close()
 
-	if err = mgoConfirmationsCollection(cpy).Find(query).Sort("created").All(&results); err != nil && err != mgo.ErrNotFound {
+	if err = mgoConfirmationsCollection(cpy).Find(query).Sort("-created").All(&results); err != nil && err != mgo.ErrNotFound {
 		log.Printf("FindConfirmations: something bad happened [%v]", err)
 		return results, err
 	}

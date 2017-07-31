@@ -2,6 +2,7 @@ package clients
 
 import (
 	"testing"
+	"time"
 
 	"labix.org/v2/mgo"
 
@@ -89,6 +90,9 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	c1.UpdateStatus(models.StatusDeclined)
 	mc.UpsertConfirmation(c1)
 
+	// Sleep some so the second confirmation created time is after the first confirmation created time
+	time.Sleep(time.Second)
+
 	c2, _ := models.NewConfirmation(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, fromUser)
 	c2.Email = toOtherEmail
 	c2.UpdateStatus(models.StatusCompleted)
@@ -104,12 +108,18 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 		t1 := confirmations[0].Created
 		t2 := confirmations[1].Created
 
-		if t1.After(t2) {
+		if !t1.After(t2) {
 			t.Fatalf("the newest confirmtion should be first %v", confirmations)
 		}
 
+		if confirmations[0].Email != toOtherEmail {
+			t.Fatalf("email invalid: %s", confirmations[0].Email)
+		}
 		if confirmations[0].Status != models.StatusCompleted && confirmations[0].Status != models.StatusDeclined {
 			t.Fatalf("status invalid: %s", confirmations[0].Status)
+		}
+		if confirmations[1].Email != toEmail {
+			t.Fatalf("email invalid: %s", confirmations[1].Email)
 		}
 		if confirmations[1].Status != models.StatusCompleted && confirmations[1].Status != models.StatusDeclined {
 			t.Fatalf("status invalid: %s", confirmations[1].Status)
