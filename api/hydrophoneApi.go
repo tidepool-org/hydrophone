@@ -229,6 +229,7 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 	}
 
 	content["BlipURL"] = a.Config.BlipURL
+	content["AssetURL"] = a.Config.AssetURL
 
 	template, ok := a.templates[templateName]
 	if !ok {
