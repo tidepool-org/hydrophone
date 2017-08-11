@@ -33,6 +33,7 @@ type (
 	Config struct {
 		ServerSecret string `json:"serverSecret"` //used for services
 		BlipURL      string `json:"blipUrl"`
+		AssetURL     string `json:"assetUrl"`
 	}
 
 	group struct {

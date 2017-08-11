@@ -4,50 +4,157 @@ import "github.com/tidepool-org/hydrophone/models"
 
 const _SignupCustodialClinicSubjectTemplate string = `Diabetes Clinic Follow Up - Claim Your Account`
 const _SignupCustodialClinicBodyTemplate string = `
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta name='viewport' content='width=device-width'/>
-    <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
-    <title>Diabetes Clinic Follow Up - Claim Your Account</title>
-    <link href='http://fonts.googleapis.com/css?family=Nunito:400,300,700' rel='stylesheet' type='text/css'>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <!--[if !mso]><!-->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!--<![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <!--[if (gte mso 9)|(IE)]>
+      <style type="text/css">
+        table {border-collapse: collapse;}
+      </style>
+    <![endif]-->
+    <style type="text/css">
+      /* Media Queries */
+      @media screen and (max-width: 360px) {
+        p.attribution {
+          font-size: 10px;
+          padding: 0 0 0 4px;
+        }
+      }
+    </style>
   </head>
-
-  <body style='background-color: #FFFFFF'>
-
-    <div class='container' style='background-color:#F5F5F5; padding:20px; margin:0 auto; max-width:500px'>
-      <div align='center' style='padding:10px 10px 0; margin:0;'>
-        <a href='https://www.tidepool.org'><img width='185.348837209' height='20' src='http://drive.google.com/uc?export=view&id=0BwI0YrjnbmtXYkdQS0xqaThyTGc'/></a>
+  <body style="padding:0;background-color:#ffffff;font-family:'Open Sans', 'Helvetica Neue', Helvetica, sans-serif;Margin:8px !important;">
+    <center class="wrapper" style="width:100%;table-layout:fixed;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+      <div class="webkit" style="max-width:560px;margin:0 auto;background-color:#F5F5F5;">
+        <!--[if (gte mso 9)|(IE)]>
+        <table bgcolor="#F5F5F5" width="560" cellpadding="0" cellspacing="0" border="0" align="center">
+        <tr>
+        <td>
+        <![endif]-->
+        <table class="outer" align="center" style="border-spacing:0;color:#333333;Margin:0 auto;width:95%;max-width:560px;padding-top:42px;padding-bottom:15px;">
+          <tr>
+            <td class="one-column" style="padding:0;">
+              <table width="100%" style="border-spacing:0;color:#333333;">
+                <tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <p class="h1 content-width" style="color:#281946;font-size:14px;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:18px;font-weight:600;Margin-bottom:32px;Margin-left:auto;Margin-right:auto;max-width:400px;">
+                      Hi, {{ .FullName }}!
+                    </p>
+                    <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:14px;font-weight:600;Margin-bottom:28px;Margin-left:auto;Margin-right:auto;max-width:400px;">
+                      {{ .CreatorName }} created a Tidepool account for your diabetes device data.<br /><br />You can take ownership of your free account to view and upload data from home.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <!--[if (gte mso 9)|(IE)]>
+                    <table bgcolor="#627CFF">
+                    <tr>
+                    <td>
+                    <![endif]-->
+                    <a class="btn primary" href="{{ .BlipURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;Margin-bottom:10px;">
+                      Claim Your Account
+                    </a>
+                    <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                    </tr>
+                    </table>
+                    <![endif]-->
+                  </td>
+                </tr>
+                <tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <p style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;">Sincerely,<br/>The Tidepool Team</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <a href="{{ .BlipURL }}" style="color:#627CFF;text-decoration:none;"><img class="logo" width="220" height="24" src="{{ .AssetURL }}/img/tidepool_logo_light_x2.png" alt="Tidepool logo" style="border:0;display:inline-block;Margin-bottom:36px;max-width:220px;height:auto;"/></a>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <table class="links primary" align="center" style="border-spacing:0;color:#333333;">
+                      <tr>
+                        <td class="no-left-padding" valign="middle" style="padding:0;padding:0 8px;padding-left:0;">
+                          <a href="https://www.twitter.com/Tidepool_org" style="color:#627CFF;text-decoration:none;">
+                            <img width="32" height="24" src="{{ .AssetURL }}/img/twitter_white_x2.png" alt="Twitter logo" style="border:0;"/>
+                          </a>
+                        </td>
+                        <td valign="middle" style="padding:0;padding:0 8px;">
+                          <a href="http://www.facebook.com/TidepoolOrg" style="color:#627CFF;text-decoration:none;">
+                            <img width="14" height="24" src="{{ .AssetURL }}/img/facebook_white_x2.png" alt="Facebook logo" style="border:0;"/>
+                          </a>
+                        </td>
+                        <td class="no-right-padding" valign="middle" style="padding:0;padding:0 8px;padding-right:0;">
+                          <p class="attribution" style="color:#281946;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;font-size:14px;color:#9b9b9b;padding:0 0 0 8px;Margin-bottom:0;">Made possible by</p>
+                        </td>
+                        <td class="no-right-padding" valign="middle" style="padding:0;padding:0 8px;padding-right:0;">
+                          <a href="http://www.jdrf.org/" style="color:#627CFF;text-decoration:none;">
+                            <img width="94" height="24" src="{{ .AssetURL }}/img/jdrf_logo_reverse_x2.png" alt="JDRF logo" style="border:0;"/>
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <p class="about content-width narrow" style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;font-size:10px;font-weight:300;color:#6d6d6d;Margin-bottom:0;max-width:400px;Margin-left:auto;Margin-right:auto;max-width:350px;">
+                      <a href="https://www.tidepool.org" style="color:#627CFF;text-decoration:none;">Tidepool</a>
+                      An open source, not-for-profit effort to build an open data platform and better applications that reduce the burden of diabetes.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <table class="links secondary" align="center" style="border-spacing:0;color:#333333;">
+                      <tr>
+                        <td height="24" class="no-left-padding" valign="top" style="padding:0;padding:0 2px;padding-left:0;">
+                          <!--[if (gte mso 9)|(IE)]>
+                          <table bgcolor="#FFFFFF">
+                          <tr>
+                          <td>
+                          <![endif]-->
+                          <a class="btn secondary small" href="http://support.tidepool.org" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;border:1px solid #dbdee0;background-color:#FFFFFF;color:#281946;font-weight:normal;padding:4px 10px 5px;Margin-left:3px;Margin-right:3px;font-size:10px;border-radius:2px;">
+                            Get Support
+                          </a>
+                          <!--[if (gte mso 9)|(IE)]>
+                          </td>
+                          </tr>
+                          </table>
+                          <![endif]-->
+                        </td>
+                        <td valign="top" style="padding:0;padding:0 2px;">
+                          <a href="https://itunes.apple.com/us/app/blip-notes/id1026395200?mt=8" style="color:#627CFF;text-decoration:none;">
+                            <img width="81" height="24" src="{{ .AssetURL }}/img/app_store_badge_x2.png" alt="App Store badge" style="border:0;"/>
+                          </a>
+                        </td>
+                        <td class="no-right-padding" valign="top" style="padding:0;padding:0 2px;padding-right:0;">
+                          <a href="https://play.google.com/store/apps/details?id=io.tidepool.urchin&hl=en" style="color:#627CFF;text-decoration:none;">
+                            <img width="72" height="24" src="{{ .AssetURL }}/img/google_play_badge_x2.png" alt="Google Play badge" style="border:0;"/>
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        <!--[if (gte mso 9)|(IE)]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
       </div>
-
-      <br>
-
-      <div align='center'>
-        <p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:15px 0 15px; margin:0;'>Hi, {{ .FullName }}!</p>
-        <p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:0 0 30px; margin:0;'>{{ .CreatorName }} created a Tidepool account for your diabetes device data. You can take ownership of your free account to view and upload data from home.</p>
-      </div>
-
-      <br>
-
-      <div align='center' style='padding:0;'>
-        <a style='background-color:#627CFB; font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:400; font-size: 14px; color:#FFFFFF; padding:10px 20px; margin:0; border-radius:20px; text-decoration: none;' href='{{ .BlipURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}'>Claim Your Account</a>
-      </div>
-
-      <br>
-
-      <div align='center' style='padding:0 60px 0; margin:0'>
-        <p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:30px 0 15px; margin:0;'>To upload new data, get the <a href='https://chrome.google.com/webstore/detail/tidepool-uploader/cabklgajffclbljkhmjphejemhpbghfb'>Tidepool Uploader</a>. It works on Mac and PC, using the Chrome browser.</p>
-        <p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:0 0 15px; margin:0;'>For Dexcom + iPhone users, upload automatically using Tidepool’s mobile app, <a href='https://itunes.apple.com/us/app/blip-notes/id1026395200?mt=8'>Blip Notes</a>.</p>
-        <p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 14px; color:#000; line-height:1.1; padding:0 0 15px; margin:0;'>If you have any questions, reach out to us at support@tidepool.org.</p>
-      </div>
-
-      <div align='center'>
-        <p style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-style: italic; font-size: 13px; color:#000; line-height:1.1; padding:30px 0 15px; margin:0;'>Tidepool is a non-profit company with the mission of making diabetes easier for you and your clinician. Our software is free for you and your care team, forever. We fundamentally believe that you own your data and will never do anything with it without your explicit permission.</p>
-      </div>
-
-      <div align='center' style='font-family: Nunito, sans-serif, Helvetica Neue, Helvetica; font-weight:300; font-size: 12px; color:#444; line-height:1.8; padding:5px 0 0 0; margin:0;'>
-        <a style='margin:0; display:block; text-decoration:none; color:#444' href='https://www.tidepool.org'>tidepool.org</a>
-      </div>
-    </div>
+    </center>
   </body>
 </html>
 `
