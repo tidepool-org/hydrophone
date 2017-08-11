@@ -386,16 +386,16 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						fullName = invite.Creator.Profile.Patient.FullName
 					}
 
-					var blipPath = "signup"
+					var webPath = "signup"
 
 					if invite.UserId != "" {
-						blipPath = "login"
+						webPath = "login"
 					}
 
 					emailContent := map[string]interface{}{
 						"CareteamName": fullName,
 						"Email":        invite.Email,
-						"BlipPath":     blipPath,
+						"WebPath":      webPath,
 					}
 
 					if a.createAndSendNotification(invite, emailContent) {

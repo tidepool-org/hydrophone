@@ -39,7 +39,7 @@ So the logo image for the dev environment may be found at:
 
 `https://s3-us-west-2.amazonaws.com/tidepool-dev-asset/img/tidepool_logo_light_x2.png`
 
-Currently, only the backend engineering team has access to these buckets, so all image change requests should go through Darin.
+Currently, only the backend engineering team has access to these buckets, so all image change requests should go through the backend engineering team lead.
 
 During development, you should change the image sources to use files in the local `img` folder. This way, you won't need to ask to have the files uploaded to S3 until you're sure they're ready for QA. This is also helpful, as it keeps a record of intended file changes in version control.
 
@@ -68,16 +68,21 @@ with
 So, for instance
 
 ```html
-<a href="{{%20.BlipURL%20}}" />
+<a href="{{%20.WebURL%20}}" />
 ```
 
 becomes
 
 ```html
-<a href="{{ .BlipURL }}" />
+<a href="{{ .WebURL }}" />
 ```
+#### Local Email Testing
 
-#### Email Client Testing
+Testing locally requires that you have a temporary AWS SES credentials provide to you by the backend engineering team lead. These credentials must be kept private, as soon as testing is complete, the engineering team lead mush be informed so as to revoke them.
+
+Extreme care must be taken to not commit this to out public git repo. If that were to happen, for any reason or lenght of time, the backend engineering team lead MUST be notified immediately.
+
+#### Multiple Email Client Testing
 
 It's important to test the final email rendering in as many email clients as possible.  Emails are notorioulsy fickle, and using a testing service such as Litmus or Email on Acid is recommended before going to production with any markup/styling changes.
 

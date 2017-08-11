@@ -32,7 +32,7 @@ type (
 	}
 	Config struct {
 		ServerSecret string `json:"serverSecret"` //used for services
-		BlipURL      string `json:"blipUrl"`
+		WebURL      string `json:"webUrl"`
 		AssetURL     string `json:"assetUrl"`
 	}
 
@@ -228,7 +228,7 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 		}
 	}
 
-	content["BlipURL"] = a.Config.BlipURL
+	content["WebURL"] = a.Config.WebURL
 	content["AssetURL"] = a.Config.AssetURL
 
 	template, ok := a.templates[templateName]

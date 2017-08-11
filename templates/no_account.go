@@ -57,7 +57,7 @@ const _NoAccountBodyTemplate string = `
                     <tr>
                     <td>
                     <![endif]-->
-                    <a class="btn primary" href="{{ .BlipURL }}/signup" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;Margin-bottom:10px;">
+                    <a class="btn primary" href="{{ .WebURL }}/signup" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;Margin-bottom:10px;">
                       Sign Up
                     </a>
                     <!--[if (gte mso 9)|(IE)]>
@@ -74,7 +74,7 @@ const _NoAccountBodyTemplate string = `
                 </tr>
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                    <a href="{{ .BlipURL }}" style="color:#627CFF;text-decoration:none;"><img class="logo" width="220" height="24" src="{{ .AssetURL }}/img/tidepool_logo_light_x2.png" alt="Tidepool logo" style="border:0;display:inline-block;Margin-bottom:36px;max-width:220px;height:auto;"/></a>
+                    <a href="{{ .WebURL }}" style="color:#627CFF;text-decoration:none;"><img class="logo" width="220" height="24" src="{{ .AssetURL }}/img/tidepool_logo_light_x2.png" alt="Tidepool logo" style="border:0;display:inline-block;Margin-bottom:36px;max-width:220px;height:auto;"/></a>
                   </td>
                 </tr>
                 <tr>
