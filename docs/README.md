@@ -15,7 +15,7 @@ The goal here is to ensure that we keep the many email templates consistent with
 
 #### Developing with Source Files
 
-For now, all the source files for development are in the `email-templates-source` folder sitting alongside this doc.
+For now, all the source files for development are in the `templates-source` folder sitting alongside this doc.
 
 You can serve these files however you like for local development. One simple solution is to, from the terminal in the `templates-source` directory, run python's SimpleHTTPServer like this:
 
@@ -45,7 +45,7 @@ During development, you should change the image sources to use files in the loca
 
 #### Inlining the CSS
 
-Until we implement the [Recommended Future Improvements](#recommended-future-improvements) detailed later in this doc, this will be a manual process. After some brief copy/pasting of the , we then use the online [PutsMail CSS Inliner](https://www.putsmail.com/inliner) tool made by the email testing company, Litmus.
+Until we implement the [Recommended Future Improvements](#recommended-future-improvements) detailed later in this doc, inlining the CSS will be a manual process. We currently use the online [PutsMail CSS Inliner](https://www.putsmail.com/inliner) tool made by the email testing company, Litmus.
 
 To prepare the markup for PutsMail, we need to remove the external stylesheet link to `styles.css` from the `<head>` of each template, and replace it with the actual content of styles.css within proper `<style>` tags.
 
@@ -63,7 +63,7 @@ with
 </style>
 ```
 
-*__IMPORTANT GOTCHA__*: The PutsMail CSS Inliner doesn't properly handle the Go template variables in html attributes, so we need to manually find/replace all occurences of `%20` with and empty space.
+*__IMPORTANT GOTCHA__*: The PutsMail CSS Inliner doesn't properly handle the Go template variables in html attributes, so we need to manually find/replace all occurences of `%20` with an empty space.
 
 So, for instance
 
@@ -111,8 +111,8 @@ with
 
 For now, what we're doing is better than in-place editing of the templates for the reasons noted above. There are, however, many ways this process could be improved in the future.
 
-The most notable candidtate for improvement is to perform the CSS _inlining_ with a local build tool (perhaps Gulp) to avoid relying on a 3rd party online service, and avoid the manual copy/pasting required.
+The most notable candidate for improvement is to perform the CSS _inlining_ with a local build tool (perhaps Gulp) to avoid relying on a 3rd party online service, and avoid the manual copy/pasting required.
 
-Another would be to share all of the common markup in HTML templates, and piece them together at build time. Again, Gulp could be used for this, and would be rather quick to implement. There is a good writup [here](https://bitsofco.de/a-gulp-workflow-for-building-html-email/) on one possible approach using gulp. There is even a [github repo](https://github.com/ireade/gulp-email-workflow/tree/master/src/templates) from this example that is meant as a starting point, so we could basically plug our styles and templates in to it and it should be done at that point.
+Another would be to share all of the common markup in HTML templates, and piece them together at build time. Again, Gulp could be used for this, and would be rather quick to implement. There is a good writeup [here](https://bitsofco.de/a-gulp-workflow-for-building-html-email/) on one possible approach using gulp. There is even a [github repo](https://github.com/ireade/gulp-email-workflow/tree/master/src/templates) from this example that is meant as a starting point, so we could basically plug our styles and templates in to it and it should be done at that point.
 
 This process would also take care of all of the other small manual final prepartation steps outlined in our current process above.
