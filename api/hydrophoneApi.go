@@ -248,25 +248,25 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 	return true
 }
 
-func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
-
-	var token string
-	if authorization := req.Header.Get("Authorization"); authorization != "" {
+func getTokenString(request *http.Request) string {
+	if authorization := request.Header.Get("Authorization"); authorization != "" {
 		if parts := strings.Split(authorization, " "); len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
 			log.Println("Validating with access_token")
-			token = parts[1]
+			return parts[1]
 		}
 	}
+	return request.Header.Get(TP_SESSION_TOKEN)
+}
+
+func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
+	token := getTokenString(req)
 	if token == "" {
-		token = req.Header.Get(TP_SESSION_TOKEN)
-		if token == "" {
-			statusErr := &status.StatusError{
-				Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN),
-			}
-			log.Printf("token %s err[%v] ", STATUS_NO_TOKEN, statusErr)
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
-			return nil
+		statusErr := &status.StatusError{
+			Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN),
 		}
+		log.Printf("token %s err[%v] ", STATUS_NO_TOKEN, statusErr)
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
+		return nil
 	}
 
 	tokenData := a.sl.CheckToken(token)
@@ -284,9 +284,8 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 
 //send metric
 func (a *Api) logMetric(name string, req *http.Request) {
-	token := req.Header.Get(TP_SESSION_TOKEN)
 	emptyParams := make(map[string]string)
-	a.metrics.PostThisUser(name, token, emptyParams)
+	a.metrics.PostThisUser(name, getTokenString(req), emptyParams)
 	return
 }
 

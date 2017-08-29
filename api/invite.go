@@ -86,7 +86,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			return
 		}
 
-		invitedUsr := a.findExistingUser(inviteeId, req.Header.Get(TP_SESSION_TOKEN))
+		invitedUsr := a.findExistingUser(inviteeId, getTokenString(req))
 
 		//find all oustanding invites were this user is the invite//
 		found, err := a.Store.FindConfirmations(&models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
@@ -359,7 +359,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if existingInvite, invitedUsr := a.checkForDuplicateInvite(ib.Email, invitorId, req.Header.Get(TP_SESSION_TOKEN), res); existingInvite == true {
+		if existingInvite, invitedUsr := a.checkForDuplicateInvite(ib.Email, invitorId, getTokenString(req), res); existingInvite == true {
 			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
 			return
 		} else {
