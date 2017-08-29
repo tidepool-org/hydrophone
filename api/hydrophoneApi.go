@@ -258,7 +258,7 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 		}
 	}
 	if token == "" {
-		token = r.Header.Get(TP_SESSION_TOKEN)
+		token = req.Header.Get(TP_SESSION_TOKEN)
 		if token == "" {
 			statusErr := &status.StatusError{
 				Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN),
