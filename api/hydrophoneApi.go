@@ -248,24 +248,38 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 	return true
 }
 
-//find and validate the token
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
-	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
-		td := a.sl.CheckToken(token)
 
-		if td == nil {
-			statusErr := &status.StatusError{status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
-			log.Printf("token %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+	var token string
+	if authorization := req.Header.Get("Authorization"); authorization != "" {
+		if parts := strings.Split(authorization, " "); len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+			log.Println("Validating with access_token")
+			token = parts[1]
+		}
+	}
+	if token == "" {
+		token = r.Header.Get(TP_SESSION_TOKEN)
+		if token == "" {
+			statusErr := &status.StatusError{
+				Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN),
+			}
+			log.Printf("token %s err[%v] ", STATUS_NO_TOKEN, statusErr)
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
 			return nil
 		}
-		//all good!
-		return td
 	}
-	statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
-	log.Printf("token %s err[%v] ", STATUS_NO_TOKEN, statusErr)
-	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
-	return nil
+
+	tokenData := a.sl.CheckToken(token)
+	if tokenData == nil {
+		statusErr := &status.StatusError{
+			Status: status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN),
+		}
+		log.Printf("token %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+		return nil
+	}
+	//all good!
+	return tokenData
 }
 
 //send metric
