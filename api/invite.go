@@ -82,20 +82,32 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeId != token.UserID {
 			log.Printf("GetReceivedInvitations %s ", STATUS_UNAUTHORIZED)
-			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+			a.sendModelAsResWithStatus(
+				res,
+				status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)},
+				http.StatusUnauthorized,
+			)
 			return
 		}
 
 		invitedUsr := a.findExistingUser(inviteeId, getTokenString(req))
-
-		//find all oustanding invites were this user is the invite//
-		found, err := a.Store.FindConfirmations(&models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
-
-		log.Printf("GetReceivedInvitations: found [%d] pending invite(s)", len(found))
-		if err != nil {
-			log.Printf("GetReceivedInvitations: error [%v] when finding peding invites ", err)
+		if invitedUsr == nil {
+			log.Println("GetReceivedInvitations found no existing user")
+			return
 		}
 
+		//find all oustanding invites were this user is the invite//
+		found, err := a.Store.FindConfirmations(
+			&models.Confirmation{
+				Email: invitedUsr.Emails[0],
+				Type:  models.TypeCareteamInvite,
+			},
+			models.StatusPending,
+		)
+		if err != nil {
+			log.Printf("GetReceivedInvitations: error [%v] when finding pending invites ", err)
+			return
+		}
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(inviteeId, invites)
 			log.Printf("GetReceivedInvitations: found and have checked [%d] invites ", len(invites))
