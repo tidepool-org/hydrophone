@@ -378,19 +378,22 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 					log.Println("SendInvite: ", err.Error())
 				} else {
 
-					canUpload := ib.Permissions["upload"]
 					fullName := invite.Creator.Profile.FullName
 
 					if invite.Creator.Profile.Patient.IsOtherPerson {
 						fullName = invite.Creator.Profile.Patient.FullName
 					}
 
+					var webPath = "signup"
+
+					if invite.UserId != "" {
+						webPath = "login"
+					}
+
 					emailContent := map[string]interface{}{
-						"CareteamName":   fullName,
-						"Key":            invite.Key,
-						"Email":          invite.Email,
-						"IsExistingUser": invite.UserId != "",
-						"ViewOnlyPerms":  canUpload == nil,
+						"CareteamName": fullName,
+						"Email":        invite.Email,
+						"WebPath":      webPath,
 					}
 
 					if a.createAndSendNotification(invite, emailContent) {
