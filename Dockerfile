@@ -1,4 +1,4 @@
-FROM golang:1.7.1-alpine
+FROM golang:1.9.1-alpine
 
 # Common ENV
 ENV API_SECRET="This is a local API secret for everyone. BsscSHqSHiwrBMJsEGqbvXiuIUPAjQXU" \
