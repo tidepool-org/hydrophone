@@ -112,21 +112,17 @@ func TestDismissInvite_NoPerms(t *testing.T) {
 
 func TestInviteResponds(t *testing.T) {
 
-	postResquestMethod := "POST"
-	getResquestMethod := "GET"
-	putResquestMethod := "PUT"
-
 	inviteTests := []toTest{
 		{
 			desc:     "can't invite without a body",
-			method:   postResquestMethod,
+			method:   http.MethodPost,
 			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
 			token:    testing_token_uid1,
 			respCode: http.StatusBadRequest,
 		},
 		{
 			desc:     "can't invite without permissions",
-			method:   postResquestMethod,
+			method:   http.MethodPost,
 			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
 			token:    testing_token_uid1,
 			respCode: http.StatusBadRequest,
@@ -136,7 +132,7 @@ func TestInviteResponds(t *testing.T) {
 		},
 		{
 			desc:     "can't invite without email",
-			method:   postResquestMethod,
+			method:   http.MethodPost,
 			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
 			token:    testing_token_uid1,
 			respCode: http.StatusBadRequest,
@@ -147,7 +143,7 @@ func TestInviteResponds(t *testing.T) {
 		},
 		{
 			desc:     "can't have a duplicate invite",
-			method:   postResquestMethod,
+			method:   http.MethodPost,
 			url:      fmt.Sprintf("/send/invite/%s", testing_uid2),
 			token:    testing_token_uid1,
 			respCode: http.StatusConflict,
@@ -162,7 +158,7 @@ func TestInviteResponds(t *testing.T) {
 		{
 			desc:       "invite valid if email, permissons and not a duplicate",
 			returnNone: true,
-			method:     postResquestMethod,
+			method:     http.MethodPost,
 			url:        fmt.Sprintf("/send/invite/%s", testing_uid2),
 			token:      testing_token_uid1,
 			respCode:   http.StatusOK,
@@ -173,7 +169,7 @@ func TestInviteResponds(t *testing.T) {
 		},
 		{
 			desc:     "invitations gives list of our outstanding invitations",
-			method:   getResquestMethod,
+			method:   http.MethodGet,
 			url:      fmt.Sprintf("/invitations/%s", testing_uid1),
 			token:    testing_token_uid1,
 			respCode: http.StatusOK,
@@ -187,25 +183,14 @@ func TestInviteResponds(t *testing.T) {
 		},
 		{
 			desc:     "request not found without the full path",
-			method:   putResquestMethod,
+			method:   http.MethodPut,
 			url:      "/accept/invite",
 			token:    testing_token_uid1,
 			respCode: http.StatusNotFound,
 		},
-		// TODO: don't have success path as would need to inject expetced confirmation
-		// {
-		// 	desc:     "valid request to accept an invite",
-		// 	method:   putResquestMethod,
-		// 	url:      fmt.Sprintf("/accept/invite/%s/%s", testing_uid1, testing_uid2),
-		// 	token:    testing_token_uid1,
-		// 	respCode: http.StatusOK,
-		// 	body: testJSONObject{
-		// 		"key": "careteam_invite/1234",
-		// 	},
-		// },
 		{
 			desc:     "invalid request to accept an invite when user ID's not expected",
-			method:   putResquestMethod,
+			method:   http.MethodPut,
 			url:      fmt.Sprintf("/accept/invite/%s/%s", testing_uid1, "badID"),
 			token:    testing_token_uid1,
 			respCode: http.StatusForbidden,
@@ -215,7 +200,7 @@ func TestInviteResponds(t *testing.T) {
 		},
 		{
 			desc:     "invite will get invitations we sent",
-			method:   getResquestMethod,
+			method:   http.MethodGet,
 			url:      fmt.Sprintf("/invite/%s", testing_uid2),
 			token:    testing_token_uid1,
 			respCode: http.StatusOK,
@@ -229,7 +214,7 @@ func TestInviteResponds(t *testing.T) {
 		},
 		{
 			desc:     "dismiss an invitation we were sent",
-			method:   putResquestMethod,
+			method:   http.MethodPut,
 			url:      fmt.Sprintf("/dismiss/invite/%s/%s", testing_uid2, testing_uid1),
 			token:    testing_token_uid1,
 			respCode: http.StatusOK,
@@ -239,7 +224,7 @@ func TestInviteResponds(t *testing.T) {
 		},
 		{
 			desc:     "delete the other invitation we sent",
-			method:   putResquestMethod,
+			method:   http.MethodPut,
 			url:      fmt.Sprintf("/%s/invited/other@youremail.com", testing_uid1),
 			token:    testing_token_uid1,
 			respCode: http.StatusOK,
@@ -294,13 +279,7 @@ func TestInviteResponds(t *testing.T) {
 		testRtr.ServeHTTP(response, request)
 
 		if response.Code != inviteTest.respCode {
-			t.Logf(
-				"TestId `%d` `%s` expected `%d` actual `%d`",
-				idx,
-				inviteTest.desc,
-				inviteTest.respCode,
-				response.Code,
-			)
+			t.Logf("TestId `%d` `%s` expected `%d` actual `%d`", idx, inviteTest.desc, inviteTest.respCode, response.Code)
 			t.Fail()
 		}
 
@@ -310,25 +289,13 @@ func TestInviteResponds(t *testing.T) {
 			if err != nil {
 				//TODO: not dealing with arrays at the moment ....
 				if err.Error() != "json: cannot unmarshal array into Go value of type api.testJSONObject" {
-					t.Logf(
-						"TestId `%d` `%s` errored `%s` body `%v`",
-						idx,
-						inviteTest.desc,
-						err.Error(),
-						response.Body,
-					)
+					t.Logf("TestId `%d` `%s` errored `%s` body `%v`", idx, inviteTest.desc, err.Error(), response.Body)
 					t.Fail()
 				}
 			}
 
 			if cmp := result.deepCompare(&inviteTest.response); cmp != "" {
-				t.Logf(
-					"TestId `%d` `%s` URL `%s` body `%s`",
-					idx,
-					inviteTest.desc,
-					inviteTest.url,
-					cmp,
-				)
+				t.Logf("TestId `%d` `%s` URL `%s` body `%s`", idx, inviteTest.desc, inviteTest.url, cmp)
 				t.Fail()
 			}
 		}

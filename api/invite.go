@@ -149,7 +149,6 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 // http.StatusBadRequest when the incoming data is incomplete or incorrect
 // http.StatusForbidden when mismatch of user ID's, type or status
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
 	if token := a.token(res, req); token != nil {
 
 		inviteeID := vars["userid"]
@@ -195,60 +194,57 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
 		}
-		if conf != nil {
-
-			validationErrors := []error{}
-
-			conf.ValidateStatus(models.StatusPending, &validationErrors).
-				ValidateType(models.TypeCareteamInvite, &validationErrors).
-				ValidateUserID(inviteeID, &validationErrors).
-				ValidateCreatorID(invitorID, &validationErrors)
-
-			if len(validationErrors) > 0 {
-				for _, validationError := range validationErrors {
-					log.Println("AcceptInvite forbidden as there was a expectation mismatch", validationError)
-				}
-				a.sendModelAsResWithStatus(
-					res,
-					&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
-					http.StatusForbidden,
-				)
-				return
-			}
-
-			//New set the permissions for the invite
-			var permissions commonClients.Permissions
-			conf.DecodeContext(&permissions)
-
-			setPerms, err := a.gatekeeper.SetPermissions(inviteeID, invitorID, permissions)
-			if err != nil {
-				log.Printf("AcceptInvite error setting permissions [%v]\n", err)
-				a.sendModelAsResWithStatus(
-					res,
-					&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)},
-					http.StatusInternalServerError,
-				)
-				return
-			}
-			log.Printf("AcceptInvite: permissions were set as [%v] after an invite was accepted", setPerms)
-			//we know the user now
-			//TODO - is this legit
-			conf.UserId = inviteeID
-
-			conf.UpdateStatus(models.StatusCompleted)
-			if a.addOrUpdateConfirmation(conf, res) {
-				a.logMetric("acceptinvite", req)
-				res.WriteHeader(http.StatusOK)
-				res.Write([]byte(STATUS_OK))
-				return
-			}
+		if conf == nil {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
+			log.Println("AcceptInvite ", statusErr.Error())
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+			return
 		}
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
-		log.Println("AcceptInvite ", statusErr.Error())
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+
+		validationErrors := []error{}
+
+		conf.ValidateStatus(models.StatusPending, &validationErrors).
+			ValidateType(models.TypeCareteamInvite, &validationErrors).
+			ValidateUserID(inviteeID, &validationErrors).
+			ValidateCreatorID(invitorID, &validationErrors)
+
+		if len(validationErrors) > 0 {
+			for _, validationError := range validationErrors {
+				log.Println("AcceptInvite forbidden as there was a expectation mismatch", validationError)
+			}
+			a.sendModelAsResWithStatus(
+				res,
+				&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		var permissions commonClients.Permissions
+		conf.DecodeContext(&permissions)
+		setPerms, err := a.gatekeeper.SetPermissions(inviteeID, invitorID, permissions)
+		if err != nil {
+			log.Printf("AcceptInvite error setting permissions [%v]\n", err)
+			a.sendModelAsResWithStatus(
+				res,
+				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)},
+				http.StatusInternalServerError,
+			)
+			return
+		}
+		log.Printf("AcceptInvite: permissions were set as [%v] after an invite was accepted", setPerms)
+		conf.UpdateStatus(models.StatusCompleted)
+		if !a.addOrUpdateConfirmation(conf, res) {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+			log.Println("AcceptInvite ", statusErr.Error())
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+			return
+		}
+		a.logMetric("acceptinvite", req)
+		res.WriteHeader(http.StatusOK)
+		res.Write([]byte(STATUS_OK))
 		return
 	}
-	return
 }
 
 // Cancel an invite the has been sent to an email address
