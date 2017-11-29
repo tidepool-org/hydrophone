@@ -23,7 +23,6 @@ func initTestingRouterNoPerms() *mux.Router {
 		mockSeagull,
 		mockTemplates,
 	)
-
 	hydrophone.SetHandlers("", testRtr)
 	return testRtr
 }
@@ -32,11 +31,11 @@ func TestSendInvite_NoPerms(t *testing.T) {
 
 	tstRtr := initTestingRouterNoPerms()
 	sendBody := &bytes.Buffer{}
-	json.NewEncoder(sendBody).Encode(jo{
+	json.NewEncoder(sendBody).Encode(testJSONObject{
 		"email": testing_uid2 + "@email.org",
-		"permissions": jo{
-			"view": jo{},
-			"note": jo{},
+		"permissions": testJSONObject{
+			"view": testJSONObject{},
+			"note": testJSONObject{},
 		},
 	})
 
@@ -113,134 +112,145 @@ func TestDismissInvite_NoPerms(t *testing.T) {
 
 func TestInviteResponds(t *testing.T) {
 
-	tests := []toTest{
+	postResquestMethod := "POST"
+	getResquestMethod := "GET"
+	putResquestMethod := "PUT"
+
+	inviteTests := []toTest{
 		{
-			// can't invite without a body
-			method:   "POST",
-			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
-			token:    testing_token_uid1,
-			respCode: 400,
-		},
-		{
-			// can't invite without permissions
-			method:   "POST",
-			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
-			token:    testing_token_uid1,
-			respCode: 400,
-			body:     jo{"email": "personToInvite@email.com"},
-		},
-		{
-			// can't invite without email
-			method:   "POST",
+			desc:     "can't invite without a body",
+			method:   postResquestMethod,
 			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
 			token:    testing_token_uid1,
 			respCode: http.StatusBadRequest,
-			body: jo{
-				"permissions": jo{
-					"view": jo{},
-					"note": jo{},
-				},
+		},
+		{
+			desc:     "can't invite without permissions",
+			method:   postResquestMethod,
+			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
+			token:    testing_token_uid1,
+			respCode: http.StatusBadRequest,
+			body: testJSONObject{
+				"email": "personToInvite@email.com",
 			},
 		},
 		{
-			// if duplicate invite
-			method:   "POST",
+			desc:     "can't invite without email",
+			method:   postResquestMethod,
+			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
+			token:    testing_token_uid1,
+			respCode: http.StatusBadRequest,
+			body: testJSONObject{
+				"email":       "",
+				"permissions": testJSONObject{"view": testJSONObject{}},
+			},
+		},
+		{
+			desc:     "can't have a duplicate invite",
+			method:   postResquestMethod,
 			url:      fmt.Sprintf("/send/invite/%s", testing_uid2),
 			token:    testing_token_uid1,
 			respCode: http.StatusConflict,
-			body: jo{
+			body: testJSONObject{
 				"email": testing_uid2 + "@email.org",
-				"permissions": jo{
-					"view": jo{},
-					"note": jo{},
+				"permissions": testJSONObject{
+					"view": testJSONObject{},
+					"note": testJSONObject{},
 				},
 			},
 		},
 		{
-			// but if you have them all, it should work
+			desc:       "invite valid if email, permissons and not a duplicate",
 			returnNone: true,
-			method:     "POST",
+			method:     postResquestMethod,
 			url:        fmt.Sprintf("/send/invite/%s", testing_uid2),
 			token:      testing_token_uid1,
 			respCode:   http.StatusOK,
-			body: jo{
-				"email": testing_uid2 + "@email.org",
-				"permissions": jo{
-					"view": jo{},
-					"note": jo{},
-				},
+			body: testJSONObject{
+				"email":       testing_uid2 + "@email.org",
+				"permissions": testJSONObject{"view": testJSONObject{}},
 			},
 		},
 		{
-			// we should get a list of our outstanding invitations
-			method:   "GET",
+			desc:     "invitations gives list of our outstanding invitations",
+			method:   getResquestMethod,
 			url:      fmt.Sprintf("/invitations/%s", testing_uid1),
 			token:    testing_token_uid1,
 			respCode: http.StatusOK,
-			response: jo{
+			response: testJSONObject{
 				"invitedBy": testing_uid2,
-				"permissions": jo{
-					"view": jo{},
-					"note": jo{},
+				"permissions": testJSONObject{
+					"view": testJSONObject{},
+					"note": testJSONObject{},
 				},
 			},
 		},
 		{
-			// not found without the full path
-			method:   "PUT",
+			desc:     "request not found without the full path",
+			method:   putResquestMethod,
 			url:      "/accept/invite",
 			token:    testing_token_uid1,
 			respCode: http.StatusNotFound,
 		},
+		// TODO: don't have success path as would need to inject expetced confirmation
+		// {
+		// 	desc:     "valid request to accept an invite",
+		// 	method:   putResquestMethod,
+		// 	url:      fmt.Sprintf("/accept/invite/%s/%s", testing_uid1, testing_uid2),
+		// 	token:    testing_token_uid1,
+		// 	respCode: http.StatusOK,
+		// 	body: testJSONObject{
+		// 		"key": "careteam_invite/1234",
+		// 	},
+		// },
 		{
-			// we can accept an invitation we did get
-			method:   "PUT",
-			url:      fmt.Sprintf("/accept/invite/%s/%s", testing_uid1, testing_uid2),
+			desc:     "invalid request to accept an invite when user ID's not expected",
+			method:   putResquestMethod,
+			url:      fmt.Sprintf("/accept/invite/%s/%s", testing_uid1, "badID"),
 			token:    testing_token_uid1,
-			respCode: http.StatusOK,
-			body: jo{
+			respCode: http.StatusForbidden,
+			body: testJSONObject{
 				"key": "careteam_invite/1234",
 			},
 		},
 		{
-			// get invitations we sent
-			method:   "GET",
+			desc:     "invite will get invitations we sent",
+			method:   getResquestMethod,
 			url:      fmt.Sprintf("/invite/%s", testing_uid2),
 			token:    testing_token_uid1,
 			respCode: http.StatusOK,
-			response: jo{
+			response: testJSONObject{
 				"email": "personToInvite@email.com",
-				"permissions": jo{
-					"view": jo{},
-					"note": jo{},
+				"permissions": testJSONObject{
+					"view": testJSONObject{},
+					"note": testJSONObject{},
 				},
 			},
 		},
 		{
-			// dismiss an invitation we were sent
-			method:   "PUT",
+			desc:     "dismiss an invitation we were sent",
+			method:   putResquestMethod,
 			url:      fmt.Sprintf("/dismiss/invite/%s/%s", testing_uid2, testing_uid1),
 			token:    testing_token_uid1,
 			respCode: http.StatusOK,
-			body: jo{
+			body: testJSONObject{
 				"key": "careteam_invite/1234",
 			},
 		},
 		{
-			// delete the other invitation we sent
-			method:   "PUT",
-			url:      fmt.Sprintf("%s/invited/other@youremail.com", testing_uid1),
+			desc:     "delete the other invitation we sent",
+			method:   putResquestMethod,
+			url:      fmt.Sprintf("/%s/invited/other@youremail.com", testing_uid1),
 			token:    testing_token_uid1,
 			respCode: http.StatusOK,
 		},
 	}
 
-	for idx, test := range tests {
+	for idx, inviteTest := range inviteTests {
 		// don't run a test if it says to skip it
-		if test.skip {
+		if inviteTest.skip {
 			continue
 		}
-		//fresh each time
 		var testRtr = mux.NewRouter()
 
 		//default flow, fully authorized
@@ -256,7 +266,7 @@ func TestInviteResponds(t *testing.T) {
 		)
 
 		//testing when there is nothing to return from the store
-		if test.returnNone {
+		if inviteTest.returnNone {
 			hydrophone = InitApi(
 				FAKE_CONFIG,
 				mockStoreEmpty,
@@ -273,32 +283,53 @@ func TestInviteResponds(t *testing.T) {
 
 		var body = &bytes.Buffer{}
 		// build the body only if there is one defined in the test
-		if len(test.body) != 0 {
-			json.NewEncoder(body).Encode(test.body)
+		if len(inviteTest.body) != 0 {
+			json.NewEncoder(body).Encode(inviteTest.body)
 		}
-		request, _ := http.NewRequest(test.method, test.url, body)
-		if test.token != "" {
+		request, _ := http.NewRequest(inviteTest.method, inviteTest.url, body)
+		if inviteTest.token != "" {
 			request.Header.Set(TP_SESSION_TOKEN, testing_token)
 		}
 		response := httptest.NewRecorder()
 		testRtr.ServeHTTP(response, request)
 
-		if response.Code != test.respCode {
-			t.Logf("TestId %d expected %d actual %d", idx, test.respCode, response.Code)
+		if response.Code != inviteTest.respCode {
+			t.Logf(
+				"TestId `%d` `%s` expected `%d` actual `%d`",
+				idx,
+				inviteTest.desc,
+				inviteTest.respCode,
+				response.Code,
+			)
 			t.Fail()
 		}
 
-		if response.Body.Len() != 0 && len(test.response) != 0 {
-			// compare bodies by comparing the unmarshalled JSON results
-			var result = &jo{}
-
-			if err := json.NewDecoder(response.Body).Decode(result); err != nil {
-				t.Logf("Err decoding nonempty response body: [%v]\n [%v]\n", err, response.Body)
-				return
+		if response.Body.Len() != 0 && len(inviteTest.response) != 0 {
+			var result = &testJSONObject{}
+			err := json.NewDecoder(response.Body).Decode(result)
+			if err != nil {
+				//TODO: not dealing with arrays at the moment ....
+				if err.Error() != "json: cannot unmarshal array into Go value of type api.testJSONObject" {
+					t.Logf(
+						"TestId `%d` `%s` errored `%s` body `%v`",
+						idx,
+						inviteTest.desc,
+						err.Error(),
+						response.Body,
+					)
+					t.Fail()
+				}
 			}
 
-			if cmp := result.deepCompare(&test.response); cmp != "" {
-				t.Fatalf("Test %d url: '%s'\n\t%s\n", idx, test.url, cmp)
+			if cmp := result.deepCompare(&inviteTest.response); cmp != "" {
+				t.Logf(
+					"TestId `%d` `%s` URL `%s` body `%s`",
+					idx,
+					inviteTest.desc,
+					inviteTest.url,
+					cmp,
+				)
+				t.Fail()
 			}
 		}
 	}
