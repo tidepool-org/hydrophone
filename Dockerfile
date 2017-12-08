@@ -9,20 +9,17 @@ ENV API_SECRET="This is a local API secret for everyone. BsscSHqSHiwrBMJsEGqbvXi
     METRICS_SERVICE="{ \"type\": \"static\", \"hosts\": [{ \"protocol\": \"http\", \"host\": \"highwater:9191\" }] }" \
     USER_API_SERVICE="{ \"type\": \"static\", \"hosts\": [{ \"protocol\": \"http\", \"host\": \"shoreline:9107\" }] }" \
     SEAGULL_SERVICE="{ \"type\": \"static\", \"hosts\": [{ \"protocol\": \"http\", \"host\": \"seagull:9120\" }] }" \
-    GATEKEEPER_SERVICE="{ \"type\": \"static\", \"hosts\": [{ \"protocol\": \"http\", \"host\": \"gatekeeper:9123\" }] }"
+    GATEKEEPER_SERVICE="{ \"type\": \"static\", \"hosts\": [{ \"protocol\": \"http\", \"host\": \"gatekeeper:9123\" }] }" \
+# Container specific ENV
+    TIDEPOOL_HYDROPHONE_ENV='{\"hakken\": { \"host\": \"hakken:8000\" },\"gatekeeper\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://gatekeeper:9123\"] } },\"seagull\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://seagull:9120\"]}},\"highwater\": {\"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://highwater:9191\"]},\"name\": \"highwater\",\"metricsSource\" : \"hydrophone-local\",\"metricsVersion\" : \"v0.0.1\"},\"shoreline\": {\"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://shoreline:9107\"] },\"name\": \"hydrophone-local\",\"secret\": \"This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy\",\"tokenRefreshInterval\": \"1h\"}}' \
+    TIDEPOOL_HYDROPHONE_SERVICE='{\"service\": {\"service\": \"hydrophone-local\",\"protocol\": \"http\",\"host\": \"localhost:9157\",\"keyFile\": \"config/key.pem\",\"certFile\": \"config/cert.pem\"},\"mongo\": {\"connectionString\": \"mongodb://mongo/confirm\"},\"hydrophone\" : {\"serverSecret\": \"This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy\",\"webUrl\": \"http://localhost:3000\",\"assetUrl\": \"https://s3-us-west-2.amazonaws.com/tidepool-dev-asset\"},\"sesEmail\" : {\"serverEndpoint\":\"https://email.us-west-2.amazonaws.com\",\"fromAddress\" : \"AWS_AUTHENTICATED_EMAIL\",\"accessKey\": \"AWS_KEY\",\"secretKey\": \"AWS_SECRET\"}}'
+
 
 WORKDIR /go/src/github.com/tidepool-org/hydrophone
 
 COPY . /go/src/github.com/tidepool-org/hydrophone
 
 # Update config to work with Docker hostnames
-RUN sed -i -e 's/mongodb:\/\/localhost\/confirm/mongodb:\/\/mongo\/confirm/g' config/server.json \
- && sed -i -e 's/localhost:8000/hakken:8000/g' \
-           -e 's/localhost:9191/highwater:9191/g' \
-           -e 's/localhost:9123/gatekeeper:9123/g' \
-           -e 's/localhost:9120/seagull:9120/g' \
-           -e 's/localhost:9107/shoreline:9107/g' config/env.json \
- && ./build.sh \
- && rm -rf .git .gitignore
+RUN ./build.sh && rm -rf .git .gitignore
 
 CMD ["./dist/hydrophone"]
