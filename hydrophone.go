@@ -36,7 +36,7 @@ func main() {
 	var config Config
 
 	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
-		log.Panic("Problem loading config", err)
+		log.Panic("Problem loading config ", err)
 	}
 
 	/*
