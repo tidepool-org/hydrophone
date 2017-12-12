@@ -30,7 +30,7 @@ func TestForgotResponds(t *testing.T) {
 			method:   "PUT",
 			url:      "/accept/forgot",
 			respCode: 200,
-			body: jo{
+			body: testJSONObject{
 				"key":      "1234_aK3yxxx123",
 				"email":    "me@myemail.com",
 				"password": "myN3wpa55w0rd",
@@ -48,7 +48,7 @@ func TestForgotResponds(t *testing.T) {
 			method:     "PUT",
 			url:        "/accept/forgot",
 			respCode:   404,
-			body: jo{
+			body: testJSONObject{
 				"key":      "1234_no_match",
 				"email":    "me@myemail.com",
 				"password": "myN3wpa55w0rd",
@@ -88,7 +88,7 @@ func TestForgotResponds(t *testing.T) {
 
 		if response.Body.Len() != 0 && len(test.response) != 0 {
 			// compare bodies by comparing the unmarshalled JSON results
-			var result = &jo{}
+			var result = &testJSONObject{}
 
 			if err := json.NewDecoder(response.Body).Decode(result); err != nil {
 				t.Logf("Err decoding nonempty response body: [%v]\n [%v]\n", err, response.Body)
