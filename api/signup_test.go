@@ -73,7 +73,7 @@ func TestSignupResponds(t *testing.T) {
 			method:   "PUT",
 			url:      "/accept/signup/WithoutPassword",
 			respCode: 409,
-			response: jo{
+			response: testJSONObject{
 				"code":   float64(409),
 				"error":  float64(1001),
 				"reason": "User does not have a password",
@@ -83,11 +83,11 @@ func TestSignupResponds(t *testing.T) {
 			// failure - user does not yet have a password; password missing, but birthday correct
 			method: "PUT",
 			url:    "/accept/signup/WithoutPassword",
-			body: jo{
+			body: testJSONObject{
 				"birthday": "2016-01-01",
 			},
 			respCode: 409,
-			response: jo{
+			response: testJSONObject{
 				"code":   float64(409),
 				"error":  float64(1002),
 				"reason": "Password is missing",
@@ -97,12 +97,12 @@ func TestSignupResponds(t *testing.T) {
 			// failure - user does not yet have a password; password invalid, but birthday correct
 			method: "PUT",
 			url:    "/accept/signup/WithoutPassword",
-			body: jo{
+			body: testJSONObject{
 				"password": "1234",
 				"birthday": "2016-01-01",
 			},
 			respCode: 409,
-			response: jo{
+			response: testJSONObject{
 				"code":   float64(409),
 				"error":  float64(1003),
 				"reason": "Password specified is invalid",
@@ -112,11 +112,11 @@ func TestSignupResponds(t *testing.T) {
 			// failure - user does not yet have a password; password valid and birthday missing
 			method: "PUT",
 			url:    "/accept/signup/WithoutPassword",
-			body: jo{
+			body: testJSONObject{
 				"password": "12345678",
 			},
 			respCode: 409,
-			response: jo{
+			response: testJSONObject{
 				"code":   float64(409),
 				"error":  float64(1004),
 				"reason": "Birthday is missing",
@@ -126,12 +126,12 @@ func TestSignupResponds(t *testing.T) {
 			// failure - user does not yet have a password; password valid and birthday invalid
 			method: "PUT",
 			url:    "/accept/signup/WithoutPassword",
-			body: jo{
+			body: testJSONObject{
 				"password": "12345678",
 				"birthday": "aaaaaaaa",
 			},
 			respCode: 409,
-			response: jo{
+			response: testJSONObject{
 				"code":   float64(409),
 				"error":  float64(1005),
 				"reason": "Birthday specified is invalid",
@@ -141,12 +141,12 @@ func TestSignupResponds(t *testing.T) {
 			// failure - user does not yet have a password; password valid and birthday not correct
 			method: "PUT",
 			url:    "/accept/signup/WithoutPassword",
-			body: jo{
+			body: testJSONObject{
 				"password": "12345678",
 				"birthday": "2015-12-31",
 			},
 			respCode: 409,
-			response: jo{
+			response: testJSONObject{
 				"code":   float64(409),
 				"error":  float64(1006),
 				"reason": "Birthday specified does not match patient birthday",
@@ -156,7 +156,7 @@ func TestSignupResponds(t *testing.T) {
 			// all good - user does not yet have a password; password valid and birthday correct
 			method: "PUT",
 			url:    "/accept/signup/WithoutPassword",
-			body: jo{
+			body: testJSONObject{
 				"password": "12345678",
 				"birthday": "2016-01-01",
 			},
@@ -172,7 +172,7 @@ func TestSignupResponds(t *testing.T) {
 			method:   "PUT",
 			url:      "/dismiss/signup/UID",
 			respCode: 200,
-			body: jo{
+			body: testJSONObject{
 				"key": "1234-xXd",
 			},
 		},
@@ -186,7 +186,7 @@ func TestSignupResponds(t *testing.T) {
 			method:   "PUT",
 			url:      "/signup/UID",
 			respCode: 200,
-			body: jo{
+			body: testJSONObject{
 				"key": "1234-xXd",
 			},
 		},
@@ -253,7 +253,7 @@ func TestSignupResponds(t *testing.T) {
 
 		if response.Body.Len() != 0 && len(test.response) != 0 {
 			// compare bodies by comparing the unmarshalled JSON results
-			var result = &jo{}
+			var result = &testJSONObject{}
 
 			if err := json.NewDecoder(response.Body).Decode(result); err != nil {
 				t.Logf("Err decoding nonempty response body: [%v]\n [%v]\n", err, response.Body)

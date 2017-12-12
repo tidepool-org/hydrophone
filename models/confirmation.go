@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 )
@@ -128,6 +129,46 @@ func (c *Confirmation) DecodeContext(data interface{}) error {
 func (c *Confirmation) UpdateStatus(newStatus Status) {
 	c.Status = newStatus
 	c.Modified = time.Now()
+}
+
+func (c *Confirmation) ValidateCreatorID(expectedCreatorID string, validationErrors *[]error) *Confirmation {
+	if expectedCreatorID != c.CreatorId {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("Confirmation expected CreatorID `%s` but had `%s`", expectedCreatorID, c.CreatorId),
+		)
+	}
+	return c
+}
+
+func (c *Confirmation) ValidateUserID(expectedUserID string, validationErrors *[]error) *Confirmation {
+	if expectedUserID != c.UserId {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("Confirmation expected UserID of `%s` but had `%s`", expectedUserID, c.UserId),
+		)
+	}
+	return c
+}
+
+func (c *Confirmation) ValidateStatus(expectedStatus Status, validationErrors *[]error) *Confirmation {
+	if expectedStatus != c.Status {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("Confirmation expected Status of `%s` but had `%s`", expectedStatus, c.Status),
+		)
+	}
+	return c
+}
+
+func (c *Confirmation) ValidateType(expectedType Type, validationErrors *[]error) *Confirmation {
+	if expectedType != c.Type {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("Confirmation expected Type `%s` but had `%s`", expectedType, c.Type),
+		)
+	}
+	return c
 }
 
 func (c *Confirmation) IsExpired() bool {
