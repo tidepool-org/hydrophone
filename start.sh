@@ -1,4 +1,4 @@
 #!/bin/sh -eu
 
-source env.sh
+. env.sh
 exec ./hydrophone
