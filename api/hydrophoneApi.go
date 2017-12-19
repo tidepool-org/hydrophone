@@ -32,7 +32,7 @@ type (
 	}
 	Config struct {
 		ServerSecret string `json:"serverSecret"` //used for services
-		WebURL      string `json:"webUrl"`
+		WebURL       string `json:"webUrl"`
 		AssetURL     string `json:"assetUrl"`
 	}
 
@@ -261,27 +261,21 @@ func getTokenString(request *http.Request) string {
 }
 
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
-	token := getTokenString(req)
-	if token == "" {
-		statusErr := &status.StatusError{
-			Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN),
-		}
-		log.Printf("token %s err[%v] ", STATUS_NO_TOKEN, statusErr)
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
-		return nil
-	}
+	if token := getTokenString(req); token != "" {
+		td := a.sl.CheckToken(token)
 
-	tokenData := a.sl.CheckToken(token)
-	if tokenData == nil {
-		statusErr := &status.StatusError{
-			Status: status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN),
+		if td == nil {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
+			log.Printf("token %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+			return nil
 		}
-		log.Printf("token %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
-		return nil
+		return td
 	}
-	//all good!
-	return tokenData
+	statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
+	log.Printf("token %s err[%v] ", STATUS_NO_TOKEN, statusErr)
+	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
+	return nil
 }
 
 //send metric

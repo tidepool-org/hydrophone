@@ -97,20 +97,21 @@ func (m *testingShorelingMock) CheckToken(token string) *shoreline.TokenData {
 type (
 	//common test structure
 	toTest struct {
+		desc       string
 		skip       bool
 		returnNone bool
 		method     string
 		url        string
-		body       jo
+		body       testJSONObject
 		token      string
 		respCode   int
-		response   jo
+		response   testJSONObject
 	}
 	// These two types make it easier to define blobs of json inline.
 	// We don't use the types defined by the API because we want to
 	// be able to test with partial data structures.
-	// jo is a generic json object
-	jo map[string]interface{}
+	// testJSONObject is a generic json object
+	testJSONObject map[string]interface{}
 
 	// and ja is a generic json array
 	ja []interface{}
@@ -153,10 +154,10 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 	}
 }
 
-func (i *jo) deepCompare(j *jo) string {
-	for k, _ := range *i {
+func (i *testJSONObject) deepCompare(j *testJSONObject) string {
+	for k := range *i {
 		if reflect.DeepEqual((*i)[k], (*j)[k]) == false {
-			return fmt.Sprintf("for [%s] was [%v] expected [%v] ", k, (*i)[k], (*j)[k])
+			return fmt.Sprintf("`%s` expected `%v` actual `%v` ", k, (*j)[k], (*i)[k])
 		}
 	}
 	return ""
