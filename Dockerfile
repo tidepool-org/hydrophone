@@ -12,7 +12,9 @@ CMD ["./dist/hydrophone"]
 # Release
 FROM alpine:latest AS release
 
-RUN adduser -D hydrophone
+RUN ["apk", "add", "--no-cache", "ca-certificates"]
+
+RUN ["adduser", "-D", "hydrophone"]
 
 WORKDIR /home/hydrophone
 
