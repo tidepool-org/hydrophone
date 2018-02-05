@@ -14,12 +14,12 @@ FROM alpine:latest AS release
 
 RUN ["apk", "add", "--no-cache", "ca-certificates"]
 
-RUN ["adduser", "-D", "hydrophone"]
+RUN ["adduser", "-D", "tidepool"]
 
-WORKDIR /home/hydrophone
+WORKDIR /home/tidepool
 
-USER hydrophone
+USER tidepool
 
-COPY --from=development --chown=hydrophone /go/src/github.com/tidepool-org/hydrophone/dist/hydrophone .
+COPY --from=development --chown=tidepool /go/src/github.com/tidepool-org/hydrophone/dist/hydrophone .
 
 CMD ["./hydrophone"]
