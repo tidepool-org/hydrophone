@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/tidepool-org/go-common/tokens"
 )
 
 func TestForgotResponds(t *testing.T) {
@@ -76,7 +77,7 @@ func TestForgotResponds(t *testing.T) {
 		}
 		request, _ := http.NewRequest(test.method, test.url, body)
 		if test.token != "" {
-			request.Header.Set(TP_SESSION_TOKEN, testing_token)
+			request.Header.Set(tokens.TidepoolSessionTokenName, testing_token)
 		}
 		response := httptest.NewRecorder()
 		testRtr.ServeHTTP(response, request)

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/tidepool-org/go-common/tokens"
 )
 
 func TestSignupResponds(t *testing.T) {
@@ -33,7 +34,7 @@ func TestSignupResponds(t *testing.T) {
 			returnNone: true,
 			method:     "POST",
 			url:        "/send/signup/NewUserID",
-			respCode:   401,
+			respCode:   403,
 		},
 		{
 			// second time you ask, it fails with a limit
@@ -213,7 +214,7 @@ func TestSignupResponds(t *testing.T) {
 			//no token is no good
 			method:   "GET",
 			url:      "/signup/UID",
-			respCode: 401,
+			respCode: 403,
 		},
 	}
 
@@ -241,7 +242,7 @@ func TestSignupResponds(t *testing.T) {
 		}
 		request, _ := http.NewRequest(test.method, test.url, body)
 		if test.token != "" {
-			request.Header.Set(TP_SESSION_TOKEN, testing_token)
+			request.Header.Set(tokens.TidepoolSessionTokenName, testing_token)
 		}
 		response := httptest.NewRecorder()
 		testRtr.ServeHTTP(response, request)

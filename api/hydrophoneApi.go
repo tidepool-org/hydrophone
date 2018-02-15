@@ -15,6 +15,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
+	"github.com/tidepool-org/go-common/tokens"
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/models"
 )
@@ -44,7 +45,6 @@ type (
 )
 
 const (
-	TP_SESSION_TOKEN = "x-tidepool-session-token"
 
 	//returned error messages
 	STATUS_ERR_SENDING_EMAIL         = "Error sending email"
@@ -93,28 +93,38 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// POST /confirm/send/forgot/:useremail
 	// POST /confirm/send/invite/:userid
 	send := rtr.PathPrefix("/send").Subrouter()
-	send.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
-	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
-	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
+	send.Handle("/signup/{userid}",
+		varsHandler(a.sendSignUp)).Methods("POST")
+	send.Handle("/forgot/{useremail}",
+		varsHandler(a.passwordReset)).Methods("POST")
+	send.Handle("/invite/{userid}",
+		varsHandler(a.SendInvite)).Methods("POST")
 
 	// POST /confirm/resend/signup/:useremail
-	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
+	rtr.Handle("/resend/signup/{useremail}",
+		varsHandler(a.resendSignUp)).Methods("POST")
 
 	// PUT /confirm/accept/signup/:confirmationID
 	// PUT /confirm/accept/forgot/
 	// PUT /confirm/accept/invite/:userid/:invited_by
 	accept := rtr.PathPrefix("/accept").Subrouter()
-	accept.Handle("/signup/{confirmationid}", varsHandler(a.acceptSignUp)).Methods("PUT")
-	accept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
-	accept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
+	accept.Handle("/signup/{confirmationid}",
+		varsHandler(a.acceptSignUp)).Methods("PUT")
+	accept.Handle("/forgot",
+		varsHandler(a.acceptPassword)).Methods("PUT")
+	accept.Handle("/invite/{userid}/{invitedby}",
+		varsHandler(a.AcceptInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid
-	rtr.Handle("/signup/{userid}", varsHandler(a.getSignUp)).Methods("GET")
-	rtr.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
+	rtr.Handle("/signup/{userid}",
+		varsHandler(a.getSignUp)).Methods("GET")
+	rtr.Handle("/invite/{userid}",
+		varsHandler(a.GetSentInvitations)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
-	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
+	rtr.Handle("/invitations/{userid}",
+		varsHandler(a.GetReceivedInvitations)).Methods("GET")
 
 	// PUT /confirm/dismiss/invite/:userid/:invited_by
 	// PUT /confirm/dismiss/signup/:userid
@@ -126,8 +136,10 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	// PUT /confirm/:userid/invited/:invited_address
 	// PUT /confirm/signup/:userid
-	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
-	rtr.Handle("/signup/{userid}", varsHandler(a.cancelSignUp)).Methods("PUT")
+	rtr.Handle("/{userid}/invited/{invited_address}",
+		varsHandler(a.CancelInvite)).Methods("PUT")
+	rtr.Handle("/signup/{userid}",
+		varsHandler(a.cancelSignUp)).Methods("PUT")
 }
 
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
@@ -250,31 +262,9 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 	return true
 }
 
-//find and validate the token
-func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
-	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
-		td := a.sl.CheckToken(token)
-
-		if td == nil {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
-			log.Printf("token %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
-			return nil
-		}
-		//all good!
-		return td
-	}
-	statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
-	log.Printf("token %s err[%v] ", STATUS_NO_TOKEN, statusErr)
-	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
-	return nil
-}
-
-//send metric
 func (a *Api) logMetric(name string, req *http.Request) {
-	token := req.Header.Get(TP_SESSION_TOKEN)
 	emptyParams := make(map[string]string)
-	a.metrics.PostThisUser(name, token, emptyParams)
+	a.metrics.PostThisUser(name, tokens.GetHeaderToken(req), emptyParams)
 	return
 }
 
@@ -289,12 +279,12 @@ func (a *Api) logMetricAsServer(name string) {
 //Find existing user based on the given indentifier
 //The indentifier could be either an id or email address
 func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
-	if usr, err := a.sl.GetUser(indentifier, token); err != nil {
+	usr, err := a.sl.GetUser(indentifier, token)
+	if err != nil {
 		log.Printf("Error [%s] trying to get existing users details", err.Error())
 		return nil
-	} else {
-		return usr
 	}
+	return usr
 }
 
 //Makesure we have set the userId on these confirmations
@@ -367,17 +357,19 @@ func (a *Api) sendErrorWithCode(res http.ResponseWriter, statusCode int, errorCo
 func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, groupId string, requestedPermissions commonClients.Permissions) (commonClients.Permissions, error) {
 	if tokenData.IsServer {
 		return requestedPermissions, nil
-	} else if tokenData.UserID == groupId {
-		return requestedPermissions, nil
-	} else if actualPermissions, err := a.gatekeeper.UserInGroup(tokenData.UserID, groupId); err != nil {
-		return commonClients.Permissions{}, err
-	} else {
-		finalPermissions := make(commonClients.Permissions, 0)
-		for permission, _ := range requestedPermissions {
-			if reflect.DeepEqual(requestedPermissions[permission], actualPermissions[permission]) {
-				finalPermissions[permission] = requestedPermissions[permission]
-			}
-		}
-		return finalPermissions, nil
 	}
+	if tokenData.UserID == groupId {
+		return requestedPermissions, nil
+	}
+	actualPermissions, err := a.gatekeeper.UserInGroup(tokenData.UserID, groupId)
+	if err != nil {
+		return commonClients.Permissions{}, err
+	}
+	finalPermissions := make(commonClients.Permissions, 0)
+	for permission := range requestedPermissions {
+		if reflect.DeepEqual(requestedPermissions[permission], actualPermissions[permission]) {
+			finalPermissions[permission] = requestedPermissions[permission]
+		}
+	}
+	return finalPermissions, nil
 }

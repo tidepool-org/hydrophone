@@ -10,6 +10,7 @@ import (
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
+	"github.com/tidepool-org/go-common/tokens"
 	"github.com/tidepool-org/hydrophone/models"
 )
 
@@ -105,122 +106,122 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 // status: 403 STATUS_EXISTING_SIGNUP
 // status: 500 STATUS_ERR_FINDING_USER
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if token := a.token(res, req); token != nil {
-		userId := vars["userid"]
-		if userId == "" {
-			log.Printf("sendSignUp %s", STATUS_SIGNUP_NO_ID)
-			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
-			return
-		}
+	tokenData := tokens.CheckToken(res, req, tokens.TidepoolInternalScope, a.sl)
+	if tokenData == nil {
+		return
+	}
+	userID := vars["userid"]
+	if userID == "" {
+		log.Printf("sendSignUp %s", STATUS_SIGNUP_NO_ID)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+		return
+	}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
-			return
-		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
-			return
-		}
+	if permissions, err := a.tokenUserHasRequestedPermissions(tokenData, userID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+		return
+	} else if permissions["root"] == nil && permissions["custodian"] == nil {
+		a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+		return
+	}
 
-		if usrDetails, err := a.sl.GetUser(userId, a.sl.TokenProvide()); err != nil {
-			log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
-			a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
-			return
-		} else {
+	if usrDetails, err := a.sl.GetUser(userID, a.sl.TokenProvide()); err != nil {
+		log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
+		a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
+		return
+	} else {
 
-			// get any existing confirmations
-			newSignUp, err := a.Store.FindConfirmation(&models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
-			if err != nil {
-				log.Printf("sendSignUp: error [%s]\n", err.Error())
+		// get any existing confirmations
+		newSignUp, err := a.Store.FindConfirmation(&models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
+		if err != nil {
+			log.Printf("sendSignUp: error [%s]\n", err.Error())
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		} else if newSignUp == nil {
+			var templateName models.TemplateName
+			var creatorID string
+
+			if usrDetails.IsClinic() {
+				templateName = models.TemplateNameSignupClinic
+			} else if usrDetails.IsCustodial() {
+				if tokenData.IsServer {
+					templateName = models.TemplateNameSignupCustodial
+				} else {
+					tokenUserDetails, err := a.sl.GetUser(tokenData.UserID, a.sl.TokenProvide())
+					if err != nil {
+						log.Printf("sendSignUp: error when getting token user [%s]", err.Error())
+						a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+						return
+					}
+
+					creatorID = tokenData.UserID
+
+					if tokenUserDetails.IsClinic() {
+						templateName = models.TemplateNameSignupCustodialClinic
+					} else {
+						templateName = models.TemplateNameSignupCustodial
+					}
+				}
+			} else {
+				templateName = models.TemplateNameSignup
+			}
+
+			newSignUp, _ = models.NewConfirmation(models.TypeSignUp, templateName, creatorID)
+			newSignUp.UserId = usrDetails.UserID
+			newSignUp.Email = usrDetails.Emails[0]
+		} else if newSignUp.Email != usrDetails.Emails[0] {
+			if err := a.Store.RemoveConfirmation(newSignUp); err != nil {
+				log.Printf("sendSignUp: error deleting old [%s]", err.Error())
 				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 				return
-			} else if newSignUp == nil {
-				var templateName models.TemplateName
-				var creatorID string
+			}
 
-				if usrDetails.IsClinic() {
-					templateName = models.TemplateNameSignupClinic
-				} else if usrDetails.IsCustodial() {
-					if token.IsServer {
-						templateName = models.TemplateNameSignupCustodial
-					} else {
-						tokenUserDetails, err := a.sl.GetUser(token.UserID, a.sl.TokenProvide())
-						if err != nil {
-							log.Printf("sendSignUp: error when getting token user [%s]", err.Error())
-							a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-							return
-						}
-
-						creatorID = token.UserID
-
-						if tokenUserDetails.IsClinic() {
-							templateName = models.TemplateNameSignupCustodialClinic
-						} else {
-							templateName = models.TemplateNameSignupCustodial
-						}
-					}
-				} else {
-					templateName = models.TemplateNameSignup
-				}
-
-				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, templateName, creatorID)
-				newSignUp.UserId = usrDetails.UserID
-				newSignUp.Email = usrDetails.Emails[0]
-			} else if newSignUp.Email != usrDetails.Emails[0] {
-				if err := a.Store.RemoveConfirmation(newSignUp); err != nil {
-					log.Printf("sendSignUp: error deleting old [%s]", err.Error())
-					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-					return
-				}
-
-				if err := newSignUp.ResetKey(); err != nil {
-					log.Printf("sendSignUp: error resetting key [%s]", err.Error())
-					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-					return
-				}
-
-				newSignUp.Email = usrDetails.Emails[0]
-			} else {
-				log.Printf("sendSignUp %s", STATUS_EXISTING_SIGNUP)
-				a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusForbidden, STATUS_EXISTING_SIGNUP), http.StatusForbidden)
+			if err := newSignUp.ResetKey(); err != nil {
+				log.Printf("sendSignUp: error resetting key [%s]", err.Error())
+				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 				return
 			}
 
-			if a.addOrUpdateConfirmation(newSignUp, res) {
-				a.logMetric("signup confirmation created", req)
+			newSignUp.Email = usrDetails.Emails[0]
+		} else {
+			log.Printf("sendSignUp %s", STATUS_EXISTING_SIGNUP)
+			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusForbidden, STATUS_EXISTING_SIGNUP), http.StatusForbidden)
+			return
+		}
 
-				if err := a.addProfile(newSignUp); err != nil {
-					log.Printf("sendSignUp: error when adding profile [%s]", err.Error())
-					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-					return
-				} else {
-					profile := &models.Profile{}
-					if err := a.seagull.GetCollection(newSignUp.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
-						a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "sendSignUp: error getting user profile: ", err.Error())
-						return
-					}
+		if a.addOrUpdateConfirmation(newSignUp, res) {
+			a.logMetric("signup confirmation created", req)
 
-					log.Printf("Sending email confirmation to %s with key %s", newSignUp.Email, newSignUp.Key)
-
-					emailContent := map[string]interface{}{
-						"Key":      newSignUp.Key,
-						"Email":    newSignUp.Email,
-						"FullName": profile.FullName,
-					}
-
-					if newSignUp.Creator.Profile != nil {
-						emailContent["CreatorName"] = newSignUp.Creator.Profile.FullName
-					}
-
-					if a.createAndSendNotification(newSignUp, emailContent) {
-						a.logMetricAsServer("signup confirmation sent")
-						res.WriteHeader(http.StatusOK)
-						return
-					} else {
-						a.logMetric("signup confirmation failed to be sent", req)
-						log.Print("Something happened generating a signup email")
-					}
-				}
+			if err := a.addProfile(newSignUp); err != nil {
+				log.Printf("sendSignUp: error when adding profile [%s]", err.Error())
+				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+				return
 			}
+			profile := &models.Profile{}
+			if err := a.seagull.GetCollection(newSignUp.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
+				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "sendSignUp: error getting user profile: ", err.Error())
+				return
+			}
+
+			log.Printf("Sending email confirmation to %s with key %s", newSignUp.Email, newSignUp.Key)
+
+			emailContent := map[string]interface{}{
+				"Key":      newSignUp.Key,
+				"Email":    newSignUp.Email,
+				"FullName": profile.FullName,
+			}
+
+			if newSignUp.Creator.Profile != nil {
+				emailContent["CreatorName"] = newSignUp.Creator.Profile.FullName
+			}
+
+			if a.createAndSendNotification(newSignUp, emailContent) {
+				a.logMetricAsServer("signup confirmation sent")
+				res.WriteHeader(http.StatusOK)
+				return
+			}
+			a.logMetric("signup confirmation failed to be sent", req)
+			log.Print("Something happened generating a signup email")
 		}
 	}
 }
@@ -256,33 +257,31 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				log.Printf("resendSignUp: error when adding profile [%s]", err.Error())
 				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 				return
-			} else {
-				profile := &models.Profile{}
-				if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
-					a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "resendSignUp: error getting user profile: ", err.Error())
-					return
-				}
-
-				log.Printf("Resending email confirmation to %s with key %s", found.Email, found.Key)
-
-				emailContent := map[string]interface{}{
-					"Key":      found.Key,
-					"Email":    found.Email,
-					"FullName": profile.FullName,
-				}
-
-				if found.Creator.Profile != nil {
-					emailContent["CreatorName"] = found.Creator.Profile.FullName
-				}
-
-				if a.createAndSendNotification(found, emailContent) {
-					a.logMetricAsServer("signup confirmation re-sent")
-				} else {
-					a.logMetricAsServer("signup confirmation failed to be sent")
-					log.Print("resendSignUp: Something happened trying to resend a signup email")
-				}
+			}
+			profile := &models.Profile{}
+			if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
+				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "resendSignUp: error getting user profile: ", err.Error())
+				return
 			}
 
+			log.Printf("Resending email confirmation to %s with key %s", found.Email, found.Key)
+
+			emailContent := map[string]interface{}{
+				"Key":      found.Key,
+				"Email":    found.Email,
+				"FullName": profile.FullName,
+			}
+
+			if found.Creator.Profile != nil {
+				emailContent["CreatorName"] = found.Creator.Profile.FullName
+			}
+
+			if a.createAndSendNotification(found, emailContent) {
+				a.logMetricAsServer("signup confirmation re-sent")
+			} else {
+				a.logMetricAsServer("signup confirmation failed to be sent")
+				log.Print("resendSignUp: Something happened trying to resend a signup email")
+			}
 			res.WriteHeader(http.StatusOK)
 		}
 	}
@@ -408,35 +407,36 @@ func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map
 // status: 200 with a single result in an array
 // status: 404
 func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if token := a.token(res, req); token != nil {
-
-		userId := vars["userid"]
-
-		if userId == "" {
-			log.Printf("getSignUp %s", STATUS_SIGNUP_NO_ID)
-			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
-			return
-		}
-
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
-			return
-		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
-			return
-		}
-
-		if signups, _ := a.Store.FindConfirmations(&models.Confirmation{UserId: userId, Type: models.TypeSignUp}, models.StatusPending); signups == nil {
-			log.Printf("getSignUp %s", STATUS_SIGNUP_NOT_FOUND)
-			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
-			return
-		} else {
-			a.logMetric("get signups", req)
-			log.Printf("getSignUp found %d for user %s", len(signups), userId)
-			a.sendModelAsResWithStatus(res, signups, http.StatusOK)
-			return
-		}
+	token := tokens.CheckToken(res, req, tokens.TidepoolInternalScope, a.sl)
+	if token == nil {
+		return
 	}
+
+	userId := vars["userid"]
+
+	if userId == "" {
+		log.Printf("getSignUp %s", STATUS_SIGNUP_NO_ID)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+		return
+	}
+
+	if permissions, err := a.tokenUserHasRequestedPermissions(token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+		return
+	} else if permissions["root"] == nil && permissions["custodian"] == nil {
+		a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+		return
+	}
+
+	signups, _ := a.Store.FindConfirmations(&models.Confirmation{UserId: userId, Type: models.TypeSignUp}, models.StatusPending)
+	if signups == nil {
+		log.Printf("getSignUp %s", STATUS_SIGNUP_NOT_FOUND)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
+		return
+	}
+	a.logMetric("get signups", req)
+	log.Printf("getSignUp found %d for user %s", len(signups), userId)
+	a.sendModelAsResWithStatus(res, signups, http.StatusOK)
 	return
 }
 
