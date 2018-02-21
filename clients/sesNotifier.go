@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/smtp"
 	"net/url"
 	"strings"
 	"time"
@@ -22,6 +23,7 @@ type (
 		From      string `json:"fromAddress"`
 		SecretKey string `json:"secretKey"`
 		AccessKey string `json:"accessKey"`
+		SmtpHost  string `json:"smtpHost"`
 	}
 )
 
@@ -41,6 +43,9 @@ func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string
 	data.Add("Message.Body.Html.Data", msg)
 	data.Add("AWSAccessKeyId", c.Config.AccessKey)
 
+	if c.Config.SmtpHost != "" {
+		return c.smptSend(to, subject, msg)
+	}
 	return c.sesPost(data)
 }
 
@@ -49,6 +54,25 @@ func (c *SesNotifier) generateAuthHeader(date string) string {
 	h.Write([]uint8(date))
 	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
 	return fmt.Sprintf("AWS3-HTTPS AWSAccessKeyId=%s, Algorithm=HmacSHA256, Signature=%s", c.Config.AccessKey, signature)
+}
+
+func (c *SesNotifier) smptSend(to []string, subject string, body string) (int, string) {
+	from := c.Config.From
+	smtpHost := c.Config.SmtpHost
+
+	msg := []byte(fmt.Sprintf("To: %s\r\n" +
+		"Subject: %s\r\n" +
+		"MIME-version: 1.0\r\n" +
+		"Content-Type: text/html; charset=\"UTF-8\"\r\n" +
+		"\r\n" +
+		"%s\r\n", strings.Join(to, ","), subject, body))
+
+	err := smtp.SendMail(smtpHost, nil, from, to, msg)
+	if err != nil {
+		log.Printf("smtp error: %s", err)
+		return 500, err.Error()
+	}
+	return 200, "Message Sent"
 }
 
 func (c *SesNotifier) sesPost(data url.Values) (int, string) {
