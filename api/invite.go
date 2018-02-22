@@ -53,7 +53,7 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorID, token string, res
 	}
 
 	//already in the group?
-	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
+	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.SecretProvide())
 
 	if invitedUsr != nil && invitedUsr.UserID != "" {
 		if perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorID); err != nil {

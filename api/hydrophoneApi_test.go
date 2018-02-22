@@ -83,13 +83,14 @@ func (m *testingShorelineMock) Login(username, password string) (*shoreline.User
 func (m *testingShorelineMock) Signup(username, password, email string) (*shoreline.UserData, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
-func (m *testingShorelineMock) TokenProvide() string { return testing_token }
+func (m *testingShorelineMock) SecretProvide() string { return testing_token }
 func (m *testingShorelineMock) GetUser(userID, token string) (*shoreline.UserData, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
 func (m *testingShorelineMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate, token string) error {
 	return nil
 }
+
 func (m *testingShorelineMock) CheckToken(token string) *shoreline.TokenData {
 	return &shoreline.TokenData{UserID: m.userid, IsServer: false}
 }

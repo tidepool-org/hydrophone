@@ -57,8 +57,8 @@ const (
 
 	//returned status messages
 	STATUS_NOT_FOUND     = "Nothing found"
-	STATUS_NO_TOKEN      = "No x-tidepool-session-token was found"
-	STATUS_INVALID_TOKEN = "The x-tidepool-session-token was invalid"
+	STATUS_NO_TOKEN      = "No token was found"
+	STATUS_INVALID_TOKEN = "The token was invalid"
 	STATUS_UNAUTHORIZED  = "Not authorized for requested operation"
 	STATUS_OK            = "OK"
 )
@@ -187,7 +187,7 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 //write error if it fails
 func (a *Api) addProfile(conf *models.Confirmation) error {
 	if conf.CreatorId != "" {
-		if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &conf.Creator.Profile); err != nil {
+		if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.SecretProvide(), &conf.Creator.Profile); err != nil {
 			log.Printf("error getting the creators profile [%v] ", err)
 			return err
 		}
@@ -270,7 +270,7 @@ func (a *Api) logMetric(name string, req *http.Request) {
 
 //send metric
 func (a *Api) logMetricAsServer(name string) {
-	token := a.sl.TokenProvide()
+	token := a.sl.SecretProvide()
 	emptyParams := make(map[string]string)
 	a.metrics.PostServer(name, token, emptyParams)
 	return

@@ -51,7 +51,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	resetCnf, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
 	resetCnf.Email = email
 
-	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
+	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.SecretProvide()); resetUsr != nil {
 		resetCnf.UserId = resetUsr.UserID
 	} else {
 		log.Print(STATUS_RESET_NO_ACCOUNT)
@@ -137,7 +137,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 
 	if conf := a.findResetConfirmation(resetCnf, res); conf != nil {
 
-		token := a.sl.TokenProvide()
+		token := a.sl.SecretProvide()
 
 		if usr := a.findExistingUser(rb.Email, token); usr != nil {
 

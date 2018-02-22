@@ -42,7 +42,7 @@ func TestSendInvite_NoPerms(t *testing.T) {
 	})
 
 	request, _ := http.NewRequest("POST", fmt.Sprintf("/send/invite/%s", testing_uid2), sendBody)
-	request.Header.Set(tokens.TidepoolSessionTokenName, testing_uid1)
+	request.Header.Set(tokens.TidepoolLegacyServiceSecretHeaderKey, testing_uid1)
 	response := httptest.NewRecorder()
 	tstRtr.ServeHTTP(response, request)
 
@@ -57,7 +57,7 @@ func TestGetReceivedInvitations_NoPerms(t *testing.T) {
 	tstRtr := initTestingRouterNoPerms()
 
 	request, _ := http.NewRequest("GET", fmt.Sprintf("/invitations/%s", testing_uid2), nil)
-	request.Header.Set(tokens.TidepoolSessionTokenName, testing_uid1)
+	request.Header.Set(tokens.TidepoolLegacyServiceSecretHeaderKey, testing_uid1)
 	response := httptest.NewRecorder()
 	tstRtr.ServeHTTP(response, request)
 
@@ -72,7 +72,7 @@ func TestGetSentInvitations_NoPerms(t *testing.T) {
 	tstRtr := initTestingRouterNoPerms()
 
 	request, _ := http.NewRequest("GET", fmt.Sprintf("/invite/%s", testing_uid2), nil)
-	request.Header.Set(tokens.TidepoolSessionTokenName, testing_uid1)
+	request.Header.Set(tokens.TidepoolLegacyServiceSecretHeaderKey, testing_uid1)
 	response := httptest.NewRecorder()
 	tstRtr.ServeHTTP(response, request)
 
@@ -87,7 +87,7 @@ func TestAcceptInvite_NoPerms(t *testing.T) {
 	tstRtr := initTestingRouterNoPerms()
 
 	request, _ := http.NewRequest("PUT", fmt.Sprintf("/accept/invite/%s/%s", testing_uid2, testing_uid1), nil)
-	request.Header.Set(tokens.TidepoolSessionTokenName, testing_uid1)
+	request.Header.Set(tokens.TidepoolLegacyServiceSecretHeaderKey, testing_uid1)
 	response := httptest.NewRecorder()
 	tstRtr.ServeHTTP(response, request)
 
@@ -102,7 +102,7 @@ func TestDismissInvite_NoPerms(t *testing.T) {
 	tstRtr := initTestingRouterNoPerms()
 
 	request, _ := http.NewRequest("PUT", fmt.Sprintf("/dismiss/invite/%s/%s", testing_uid2, testing_uid1), nil)
-	request.Header.Set(tokens.TidepoolSessionTokenName, testing_uid1)
+	request.Header.Set(tokens.TidepoolLegacyServiceSecretHeaderKey, testing_uid1)
 	response := httptest.NewRecorder()
 	tstRtr.ServeHTTP(response, request)
 
@@ -275,7 +275,7 @@ func TestInviteResponds(t *testing.T) {
 		}
 		request, _ := http.NewRequest(inviteTest.method, inviteTest.url, body)
 		if inviteTest.token != "" {
-			request.Header.Set(tokens.TidepoolSessionTokenName, testing_token)
+			request.Header.Set(tokens.TidepoolLegacyServiceSecretHeaderKey, testing_token)
 		}
 		response := httptest.NewRecorder()
 		testRtr.ServeHTTP(response, request)

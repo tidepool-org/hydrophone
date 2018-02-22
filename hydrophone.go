@@ -74,18 +74,20 @@ func main() {
 	gatekeeper := clients.NewGatekeeperClientBuilder().
 		WithHostGetter(config.GatekeeperConfig.ToHostGetter(hakkenClient)).
 		WithHttpClient(httpClient).
-		WithTokenProvider(shoreline).
+		WithSecretProvider(shoreline).
 		Build()
 
 	highwater := highwater.NewHighwaterClientBuilder().
 		WithHostGetter(config.HighwaterConfig.ToHostGetter(hakkenClient)).
 		WithHttpClient(httpClient).
 		WithConfig(&config.HighwaterConfig.HighwaterClientConfig).
+		WithSecretProvider(shoreline).
 		Build()
 
 	seagull := clients.NewSeagullClientBuilder().
 		WithHostGetter(config.SeagullConfig.ToHostGetter(hakkenClient)).
 		WithHttpClient(httpClient).
+		WithSecretProvider(shoreline).
 		Build()
 
 	/*
