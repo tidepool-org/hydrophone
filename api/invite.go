@@ -32,7 +32,7 @@ type (
 
 //Checks do they have an existing invite or are they already a team member
 //Or are they an existing user and already in the group?
-func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorID, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
+func (a *Api) checkForDuplicateInvite(inviteeEmail string, invitorID string, res http.ResponseWriter) (bool, *shoreline.UserData) {
 
 	//already has invite from this user?
 	invites, _ := a.Store.FindConfirmations(
@@ -53,7 +53,7 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorID, token string, res
 	}
 
 	//already in the group?
-	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.SecretProvide())
+	invitedUsr := a.findExistingUser(inviteeEmail)
 
 	if invitedUsr != nil && invitedUsr.UserID != "" {
 		if perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorID); err != nil {
@@ -96,7 +96,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		return
 	}
 
-	invitedUsr := a.findExistingUser(inviteeID, tokens.GetHeaderToken(req))
+	invitedUsr := a.findExistingUser(inviteeID)
 	if invitedUsr == nil {
 		log.Println("GetReceivedInvitations found no existing user")
 		return
@@ -414,7 +414,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		return
 	}
 
-	if existingInvite, invitedUsr := a.checkForDuplicateInvite(ib.Email, invitorID, tokens.GetHeaderToken(req), res); existingInvite == true {
+	if existingInvite, invitedUsr := a.checkForDuplicateInvite(ib.Email, invitorID, res); existingInvite == true {
 		log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
 		return
 	} else {

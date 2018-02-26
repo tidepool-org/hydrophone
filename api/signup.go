@@ -125,7 +125,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 		return
 	}
 
-	if usrDetails, err := a.sl.GetUser(userID, a.sl.SecretProvide()); err != nil {
+	if usrDetails, err := a.sl.GetUser(userID); err != nil {
 		log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
 		a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
 		return
@@ -147,7 +147,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				if tokenData.IsServer {
 					templateName = models.TemplateNameSignupCustodial
 				} else {
-					tokenUserDetails, err := a.sl.GetUser(tokenData.UserID, a.sl.SecretProvide())
+					tokenUserDetails, err := a.sl.GetUser(tokenData.UserID)
 					if err != nil {
 						log.Printf("sendSignUp: error when getting token user [%s]", err.Error())
 						a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
@@ -198,7 +198,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				return
 			}
 			profile := &models.Profile{}
-			if err := a.seagull.GetCollection(newSignUp.UserId, "profile", a.sl.SecretProvide(), profile); err != nil {
+			if err := a.seagull.GetCollection(newSignUp.UserId, "profile", profile); err != nil {
 				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "sendSignUp: error getting user profile: ", err.Error())
 				return
 			}
@@ -259,7 +259,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				return
 			}
 			profile := &models.Profile{}
-			if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.SecretProvide(), profile); err != nil {
+			if err := a.seagull.GetCollection(found.UserId, "profile", profile); err != nil {
 				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "resendSignUp: error getting user profile: ", err.Error())
 				return
 			}
@@ -320,7 +320,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		emailVerified := true
 		updates := shoreline.UserUpdate{EmailVerified: &emailVerified}
 
-		if user, err := a.sl.GetUser(found.UserId, a.sl.SecretProvide()); err != nil {
+		if user, err := a.sl.GetUser(found.UserId); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error trying to get user to check email verified: ", err.Error())
 			return
 
@@ -351,7 +351,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			}
 
 			profile := &models.Profile{}
-			if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.SecretProvide(), profile); err != nil {
+			if err := a.seagull.GetCollection(found.UserId, "profile", profile); err != nil {
 				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error getting the users profile: ", err.Error())
 				return
 			}
@@ -364,7 +364,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			updates.Password = &acceptance.Password
 		}
 
-		if err := a.sl.UpdateUser(found.UserId, updates, a.sl.SecretProvide()); err != nil {
+		if err := a.sl.UpdateUser(found.UserId, updates); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_UPDATING_USR, "acceptSignUp error trying to update user to be email verified: ", err.Error())
 			return
 		}

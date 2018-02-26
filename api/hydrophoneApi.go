@@ -187,7 +187,7 @@ func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.Respo
 //write error if it fails
 func (a *Api) addProfile(conf *models.Confirmation) error {
 	if conf.CreatorId != "" {
-		if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.SecretProvide(), &conf.Creator.Profile); err != nil {
+		if err := a.seagull.GetCollection(conf.CreatorId, "profile", &conf.Creator.Profile); err != nil {
 			log.Printf("error getting the creators profile [%v] ", err)
 			return err
 		}
@@ -264,22 +264,21 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 
 func (a *Api) logMetric(name string, req *http.Request) {
 	emptyParams := make(map[string]string)
-	a.metrics.PostThisUser(name, tokens.GetHeaderToken(req), emptyParams)
+	a.metrics.PostThisUser(name, tokens.GetBearerToken(req), emptyParams)
 	return
 }
 
 //send metric
 func (a *Api) logMetricAsServer(name string) {
-	token := a.sl.SecretProvide()
 	emptyParams := make(map[string]string)
-	a.metrics.PostServer(name, token, emptyParams)
+	a.metrics.PostServer(name, emptyParams)
 	return
 }
 
 //Find existing user based on the given indentifier
 //The indentifier could be either an id or email address
-func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
-	usr, err := a.sl.GetUser(indentifier, token)
+func (a *Api) findExistingUser(indentifier string) *shoreline.UserData {
+	usr, err := a.sl.GetUser(indentifier)
 	if err != nil {
 		log.Printf("Error [%s] trying to get existing users details", err.Error())
 		return nil

@@ -67,27 +67,23 @@ func main() {
 		WithConfig(&config.ShorelineConfig.ShorelineClientConfig).
 		Build()
 
-	if err := shoreline.Start(); err != nil {
-		log.Fatal(err)
-	}
-
 	gatekeeper := clients.NewGatekeeperClientBuilder().
 		WithHostGetter(config.GatekeeperConfig.ToHostGetter(hakkenClient)).
 		WithHttpClient(httpClient).
-		WithSecretProvider(shoreline).
+		WithSecret(config.ShorelineConfig.ShorelineClientConfig.Secret).
 		Build()
 
 	highwater := highwater.NewHighwaterClientBuilder().
 		WithHostGetter(config.HighwaterConfig.ToHostGetter(hakkenClient)).
 		WithHttpClient(httpClient).
 		WithConfig(&config.HighwaterConfig.HighwaterClientConfig).
-		WithSecretProvider(shoreline).
+		WithSecret(config.ShorelineConfig.ShorelineClientConfig.Secret).
 		Build()
 
 	seagull := clients.NewSeagullClientBuilder().
 		WithHostGetter(config.SeagullConfig.ToHostGetter(hakkenClient)).
 		WithHttpClient(httpClient).
-		WithSecretProvider(shoreline).
+		WithSecret(config.ShorelineConfig.ShorelineClientConfig.Secret).
 		Build()
 
 	/*

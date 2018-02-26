@@ -242,7 +242,7 @@ func TestSignupResponds(t *testing.T) {
 		}
 		request, _ := http.NewRequest(test.method, test.url, body)
 		if test.token != "" {
-			request.Header.Set(tokens.TidepoolLegacyServiceSecretHeaderKey, testing_token)
+			request.Header.Set(tokens.AuthorizationHeaderKey, testing_token)
 		}
 		response := httptest.NewRecorder()
 		testRtr.ServeHTTP(response, request)

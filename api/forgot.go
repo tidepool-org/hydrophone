@@ -51,7 +51,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	resetCnf, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
 	resetCnf.Email = email
 
-	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.SecretProvide()); resetUsr != nil {
+	if resetUsr := a.findExistingUser(resetCnf.Email); resetUsr != nil {
 		resetCnf.UserId = resetUsr.UserID
 	} else {
 		log.Print(STATUS_RESET_NO_ACCOUNT)
@@ -136,12 +136,9 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
 
 	if conf := a.findResetConfirmation(resetCnf, res); conf != nil {
+		if usr := a.findExistingUser(rb.Email); usr != nil {
 
-		token := a.sl.SecretProvide()
-
-		if usr := a.findExistingUser(rb.Email, token); usr != nil {
-
-			if err := a.sl.UpdateUser(usr.UserID, shoreline.UserUpdate{Password: &rb.Password}, token); err != nil {
+			if err := a.sl.UpdateUser(usr.UserID, shoreline.UserUpdate{Password: &rb.Password}); err != nil {
 				log.Printf("acceptPassword: error updating password as part of password reset [%v]", err)
 				status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
 				a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)

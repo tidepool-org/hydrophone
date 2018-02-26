@@ -23,12 +23,12 @@ const (
 	make_store_fail           = true
 	make_store_return_nothing = true
 
-	testing_token = "a.fake.token.to.use.in.tests"
+	testing_token = "Bearer a.fake.token.to.use.in.tests"
 
-	testing_token_uid1 = "a.fake.token.for.uid.1"
+	testing_token_uid1 = "Bearer a.fake.token.for.uid.1"
 	testing_uid1       = "UID123"
 
-	testing_token_uid2 = "a.fake.token.for.uid.2"
+	testing_token_uid2 = "Bearer a.fake.token.for.uid.2"
 	testing_uid2       = "UID999"
 )
 
@@ -75,19 +75,17 @@ func newTestingShorelineMock(userid string) *testingShorelineMock {
 	return &testingShorelineMock{userid: userid}
 }
 
-func (m *testingShorelineMock) Start() error { return nil }
-func (m *testingShorelineMock) Close()       { return }
 func (m *testingShorelineMock) Login(username, password string) (*shoreline.UserData, string, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, "", nil
 }
 func (m *testingShorelineMock) Signup(username, password, email string) (*shoreline.UserData, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
-func (m *testingShorelineMock) SecretProvide() string { return testing_token }
-func (m *testingShorelineMock) GetUser(userID, token string) (*shoreline.UserData, error) {
+func (m *testingShorelineMock) GetSecret() string { return testing_token }
+func (m *testingShorelineMock) GetUser(userID string) (*shoreline.UserData, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
-func (m *testingShorelineMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate, token string) error {
+func (m *testingShorelineMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate) error {
 	return nil
 }
 

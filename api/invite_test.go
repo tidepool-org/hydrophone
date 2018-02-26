@@ -275,7 +275,7 @@ func TestInviteResponds(t *testing.T) {
 		}
 		request, _ := http.NewRequest(inviteTest.method, inviteTest.url, body)
 		if inviteTest.token != "" {
-			request.Header.Set(tokens.TidepoolLegacyServiceSecretHeaderKey, testing_token)
+			request.Header.Set(tokens.AuthorizationHeaderKey, testing_token)
 		}
 		response := httptest.NewRecorder()
 		testRtr.ServeHTTP(response, request)
