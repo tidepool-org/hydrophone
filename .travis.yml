@@ -3,13 +3,12 @@ sudo: false
 language: go
 
 go:
-  - 1.8.3
-  - tip
+  - 1.9.2
 
 addons:
   apt:
     sources:
-      - mongodb-3.2-precise
+      - mongodb-3.2-trusty
     packages:
       - mongodb-org-server
   artifacts:
@@ -20,18 +19,10 @@ addons:
       - /
 
 services:
+  - docker
   - mongodb
 
 script:
   - ./build.sh
   - ./test.sh
   - ./artifact.sh
-
-matrix:
-  allow_failures:
-    - go: tip
-
-notifications:
-  email:
-    on_success: change
-    on_failure: always

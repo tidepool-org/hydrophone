@@ -35,8 +35,8 @@ type (
 func main() {
 	var config Config
 
-	if err := common.LoadConfig([]string{"./config/env.json", "./config/server.json"}, &config); err != nil {
-		log.Panic("Problem loading config", err)
+	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
+		log.Panic("Problem loading config ", err)
 	}
 
 	/*
