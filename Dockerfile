@@ -16,7 +16,9 @@ WORKDIR /go/src/github.com/tidepool-org/hydrophone
 COPY . /go/src/github.com/tidepool-org/hydrophone
 
 # Update config to work with Docker hostnames
-RUN sed -i -e 's/mongodb:\/\/localhost\/confirm/mongodb:\/\/mongo\/confirm/g' config/server.json \
+RUN apk --no-cache update \
+ && apk --no-cache upgrade \
+ && sed -i -e 's/mongodb:\/\/localhost\/confirm/mongodb:\/\/mongo\/confirm/g' config/server.json \
  && sed -i -e 's/localhost:8000/hakken:8000/g' \
            -e 's/localhost:9191/highwater:9191/g' \
            -e 's/localhost:9123/gatekeeper:9123/g' \
