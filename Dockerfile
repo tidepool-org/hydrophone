@@ -1,14 +1,9 @@
 # Development
 FROM golang:1.10.2-alpine AS development
 
-WORKDIR /go/src/github.com/tidepool-org/tide-whisperer
-
-COPY . .
-
 WORKDIR /go/src/github.com/tidepool-org/hydrophone
 
 COPY . .
-
 
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
@@ -21,9 +16,11 @@ CMD ["./dist/hydrophone"]
 # Release
 FROM alpine:latest AS release
 
-RUN ["apk", "add", "--no-cache", "ca-certificates", "libsasl"]
-
-RUN ["adduser", "-D", "tidepool"]
+RUN apk --no-cache update && \
+    apk --no-cache upgrade && \
+    apk add --no-cache ca-certificates && \
+	apk add --no-cache libsasl	&& \
+    adduser -D tidepool
 
 WORKDIR /home/tidepool
 
