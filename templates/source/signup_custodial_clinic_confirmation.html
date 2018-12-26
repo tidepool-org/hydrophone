@@ -31,10 +31,10 @@
               <tr>
                 <td class="inner centered">
                   <p class="h1 content-width">
-                    Hey there!
+                    {{.SignupCustodialClinicHello}}
                   </p>
                   <p class="h2 content-width">
-                    You requested a password reset. If you didn't request this, please ignore this email.<br /><br />Otherwise, click the link below.
+                    {{.SignupCustodialClinicAccount}}<br /><br />{{.SignupCustodialClinicOwnership}}
                   </p>
                 </td>
               </tr>
@@ -45,8 +45,8 @@
                   <tr>
                   <td>
                   <![endif]-->
-                  <a class="btn primary" href="{{ .WebURL }}/confirm-password-reset?resetKey={{ .Key }}">
-                    Reset Password
+                  <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}">
+                    {{.SignupCustodialClinicClaim}}
                   </a>
                   <!--[if (gte mso 9)|(IE)]>
                   </td>
@@ -57,7 +57,7 @@
               </tr>
               <tr>
                 <td class="inner centered">
-                  <p>Sincerely,<br />The Tidepool Team</p>
+                  <p>{{.FooterSincerely}}<br/>{{.FooterSignature}}</p>
                 </td>
               </tr>
               <tr>
@@ -80,7 +80,7 @@
                         </a>
                       </td>
                       <td class="no-right-padding" valign="middle">
-                        <p class="attribution">Made possible by</p>
+                        <p class="attribution">{{.FooterMadePossible}}</p>
                       </td>
                       <td class="no-right-padding" valign="middle">
                         <a href="http://www.jdrf.org/">
@@ -95,7 +95,7 @@
                 <td class="inner centered">
                   <p class="about content-width narrow">
                     <a href="https://www.tidepool.org">Tidepool</a>
-                    An open source, not-for-profit effort to build an open data platform and better applications that reduce the burden of diabetes.
+                    {{.FooterOpenSource}}
                   </p>
                 </td>
               </tr>
@@ -110,7 +110,7 @@
                         <td>
                         <![endif]-->
                         <a class="btn secondary small" href="http://support.tidepool.org">
-                          Get Support
+                          {{.FooterGetSupport}}
                         </a>
                         <!--[if (gte mso 9)|(IE)]>
                         </td>

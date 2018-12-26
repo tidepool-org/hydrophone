@@ -361,6 +361,9 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 // status: 409 statusExistingMemberMessage - user is already part of the team
 // status: 400
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	// By default, the invitee language will be "en" for Englih (as we don't know which language suits him)
+	// In case the invitee is a known user, the language will be overriden in a later step
+	var inviteeLanguage = "en"
 	if token := a.token(res, req); token != nil {
 
 		invitorID := vars["userid"]
@@ -399,9 +402,21 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			//None exist so lets create the invite
 			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
 
+			// if the invitee is already a Tidepool user, we can use his preferences
 			invite.Email = ib.Email
 			if invitedUsr != nil {
 				invite.UserId = invitedUsr.UserID
+
+				// let's get the invitee user preferences
+				inviteePreferences := &models.Preferences{}
+				if err := a.seagull.GetCollection(invite.UserId, "preferences", a.sl.TokenProvide(), inviteePreferences); err != nil {
+					a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "send invitation: error getting invitee user preferences: ", err.Error())
+					return
+				}
+				// does the invitee have a preferred language?
+				if inviteePreferences.DisplayLanguage != "" {
+					inviteeLanguage = inviteePreferences.DisplayLanguage
+				}
 			}
 
 			if a.addOrUpdateConfirmation(invite, res) {
@@ -419,6 +434,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 					var webPath = "signup"
 
+					// if invitee is already a user (ie already has an account), he won't go to signup but login instead
 					if invite.UserId != "" {
 						webPath = "login"
 					}
@@ -429,7 +445,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						"WebPath":      webPath,
 					}
 
-					if a.createAndSendNotification(invite, emailContent) {
+					if a.createAndSendNotification(invite, emailContent, inviteeLanguage) {
 						a.logMetric("invite sent", req)
 					}
 				}

@@ -1,0 +1,20 @@
+{
+    "name": "careteam_invitation",
+    "description": "email for those that invited someone to join medical crew",
+    "templateFilename": "careteam_invitation.html",
+    "subject": "CareTeamInvitationSubject",
+    "contentParts":[
+        "CareTeamInviteHello",
+        "CareTeamInviteInvitation",
+        "CareTeamInviteClick",
+        "CareTeamInviteJoin",
+        "FooterOpenSource",
+        "FooterGetSupport",
+        "FooterSincerely",
+        "FooterSignature",
+        "FooterMadePossible"
+    ],
+    "escapeContentParts":[
+        "CareteamName"
+    ]
+}
