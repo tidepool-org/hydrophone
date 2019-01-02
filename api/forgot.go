@@ -41,6 +41,12 @@ type (
 // status: 200
 // status: 400 no email given
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	// By default, the reseter language will be his browser's or "en" for Englih
+	// In case the reseter is found a known user and has a language set, the language will be overriden in a later step
+	var reseterLanguage string
+	if reseterLanguage = getBrowserPreferredLanguage(req); reseterLanguage == "" {
+		reseterLanguage = "en"
+	}
 
 	email := vars["useremail"]
 	if email == "" {
@@ -51,8 +57,23 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	resetCnf, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
 	resetCnf.Email = email
 
+	// if the reseter is already a Tidepool user, we can use his preferences
 	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
 		resetCnf.UserId = resetUsr.UserID
+
+		// let's get the reseter user preferences
+		reseterPreferences := &models.Preferences{}
+		if err := a.seagull.GetCollection(resetCnf.UserId, "preferences", a.sl.TokenProvide(), reseterPreferences); err != nil {
+			a.sendError(res, http.StatusInternalServerError,
+				STATUS_ERR_FINDING_USR,
+				"forgot password: error getting reseter user preferences: ",
+				err.Error())
+			return
+		}
+		// if reseter has a profile and a language we override the previously set language (browser's or "en")
+		if reseterPreferences.DisplayLanguage != "" {
+			reseterLanguage = reseterPreferences.DisplayLanguage
+		}
 	} else {
 		log.Print(STATUS_RESET_NO_ACCOUNT)
 		log.Printf("email used [%s]", email)
@@ -70,7 +91,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 			"Email": resetCnf.Email,
 		}
 
-		if a.createAndSendNotification(resetCnf, emailContent) {
+		if a.createAndSendNotification(resetCnf, emailContent, reseterLanguage) {
 			a.logMetricAsServer("reset confirmation sent")
 		} else {
 			a.logMetricAsServer("reset confirmation failed to be sent")

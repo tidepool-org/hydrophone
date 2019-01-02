@@ -36,6 +36,9 @@ type (
 		IsOtherPerson bool   `json:"isOtherPerson"`
 		FullName      string `json:"fullName"`
 	}
+	Preferences struct {
+		DisplayLanguage string `json:"displayLanguageCode"`
+	}
 	Profile struct {
 		FullName string  `json:"fullName"`
 		Patient  Patient `json:"patient"`

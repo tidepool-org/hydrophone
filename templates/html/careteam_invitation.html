@@ -1,9 +1,3 @@
-package templates
-
-import "github.com/tidepool-org/hydrophone/models"
-
-const _PasswordResetSubjectTemplate string = `Password reset for your Tidepool account`
-const _PasswordResetBodyTemplate string = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -43,10 +37,10 @@ const _PasswordResetBodyTemplate string = `
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
                     <p class="h1 content-width" style="color:#281946;font-size:14px;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:18px;font-weight:600;Margin-bottom:32px;Margin-left:auto;Margin-right:auto;max-width:400px;">
-                      Hey there!
+                      {{.CareTeamInviteHello}}
                     </p>
                     <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:14px;font-weight:600;Margin-bottom:28px;Margin-left:auto;Margin-right:auto;max-width:400px;">
-                      You requested a password reset. If you didn't request this, please ignore this email.<br /><br />Otherwise, click the link below.
+                      {{ .CareTeamInviteInvitation }}<br/><br/>{{.CareTeamInviteClick}}
                     </p>
                   </td>
                 </tr>
@@ -57,8 +51,8 @@ const _PasswordResetBodyTemplate string = `
                     <tr>
                     <td>
                     <![endif]-->
-                    <a class="btn primary" href="{{ .WebURL }}/confirm-password-reset?resetKey={{ .Key }}" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;Margin-bottom:10px;">
-                      Reset Password
+                    <a class="btn primary" href="{{ .WebURL }}/{{ .WebPath }}?inviteEmail={{ .Email }}" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;Margin-bottom:10px;">
+                      {{.CareTeamInviteJoin}}
                     </a>
                     <!--[if (gte mso 9)|(IE)]>
                     </td>
@@ -69,7 +63,7 @@ const _PasswordResetBodyTemplate string = `
                 </tr>
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                    <p style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;">Sincerely,<br/>The Tidepool Team</p>
+                    <p style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;">{{.FooterSincerely}}<br/>{{.FooterSignature}}</p>
                   </td>
                 </tr>
                 <tr>
@@ -92,7 +86,7 @@ const _PasswordResetBodyTemplate string = `
                           </a>
                         </td>
                         <td class="no-right-padding" valign="middle" style="padding:0;padding:0 8px;padding-right:0;">
-                          <p class="attribution" style="color:#281946;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;font-size:14px;color:#9b9b9b;padding:0 0 0 8px;Margin-bottom:0;">Made possible by</p>
+                          <p class="attribution" style="color:#281946;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;font-size:14px;color:#9b9b9b;padding:0 0 0 8px;Margin-bottom:0;">{{.FooterMadePossible}}</p>
                         </td>
                         <td class="no-right-padding" valign="middle" style="padding:0;padding:0 8px;padding-right:0;">
                           <a href="http://www.jdrf.org/" style="color:#627CFF;text-decoration:none;">
@@ -107,7 +101,7 @@ const _PasswordResetBodyTemplate string = `
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
                     <p class="about content-width narrow" style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;font-size:10px;font-weight:300;color:#6d6d6d;Margin-bottom:0;max-width:400px;Margin-left:auto;Margin-right:auto;max-width:350px;">
                       <a href="https://www.tidepool.org" style="color:#627CFF;text-decoration:none;">Tidepool</a>
-                      An open source, not-for-profit effort to build an open data platform and better applications that reduce the burden of diabetes.
+                      {{.FooterOpenSource}}
                     </p>
                   </td>
                 </tr>
@@ -122,7 +116,7 @@ const _PasswordResetBodyTemplate string = `
                           <td>
                           <![endif]-->
                           <a class="btn secondary small" href="http://support.tidepool.org" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;border:1px solid #dbdee0;background-color:#FFFFFF;color:#281946;font-weight:normal;padding:4px 10px 5px;Margin-left:3px;Margin-right:3px;font-size:10px;border-radius:2px;">
-                            Get Support
+                            {{.FooterGetSupport}}
                           </a>
                           <!--[if (gte mso 9)|(IE)]>
                           </td>
@@ -157,8 +151,3 @@ const _PasswordResetBodyTemplate string = `
     </center>
   </body>
 </html>
-`
-
-func NewPasswordResetTemplate() (models.Template, error) {
-	return models.NewPrecompiledTemplate(models.TemplateNamePasswordReset, _PasswordResetSubjectTemplate, _PasswordResetBodyTemplate)
-}
