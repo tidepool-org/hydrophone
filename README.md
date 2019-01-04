@@ -28,6 +28,23 @@ $ cd ./api
 $ gotest
 ```
 
+## Testing with docker-compose 
+
+Hydrophone, running locally on your machine, can be tested with all othere services running in docker compose by making some small changes in docker-compose.yml and making changes in local /etc/host
+
+Here is the change that has to be done in docker-compose.yml, so that styx can redirect request to the service running on your localhost: 
+```
+HYDROPHONE_HOST=host.docker.internal
+# HYDROPHONE_HOST=hydrophone
+```
+
+and then add the floowing hakken line in your local host:
+- Windows: C:\Windows\System32\drivers\etc\hosts
+- Linux: /etc/hosts
+
+```
+127.0.0.1   hakken
+```
 
 ## Config
 The configuration is provided to Hydrophone via 2 environment variables: `TIDEPOOL_HYDROPHONE_ENV` and `TIDEPOOL_HYDROPHONE_SERVICE`.  
