@@ -22,12 +22,16 @@ const (
 	TemplateNameSignupClinic          TemplateName = "signup_clinic_confirmation"
 	TemplateNameSignupCustodial       TemplateName = "signup_custodial_confirmation"
 	TemplateNameSignupCustodialClinic TemplateName = "signup_custodial_clinic_confirmation"
+	TemplateNameTest                  TemplateName = "test_template"
 	TemplateNameUndefined             TemplateName = ""
 )
 
 type Template interface {
 	Name() TemplateName
 	Execute(content interface{}) (string, string, error)
+	ContentParts() []string
+	EscapeParts() []string
+	Subject() string
 }
 
 type Templates map[TemplateName]Template
@@ -36,9 +40,13 @@ type PrecompiledTemplate struct {
 	name               TemplateName
 	precompiledSubject *template.Template
 	precompiledBody    *template.Template
+	contentParts       []string
+	subject            string
+	escapeParts        []string
 }
 
-func NewPrecompiledTemplate(name TemplateName, subjectTemplate string, bodyTemplate string) (*PrecompiledTemplate, error) {
+// NewPrecompiledTemplate creates a new pre-compiled template
+func NewPrecompiledTemplate(name TemplateName, subjectTemplate string, bodyTemplate string, contentParts []string, escapeParts []string) (*PrecompiledTemplate, error) {
 	if name == TemplateNameUndefined {
 		return nil, errors.New("models: name is missing")
 	}
@@ -63,14 +71,37 @@ func NewPrecompiledTemplate(name TemplateName, subjectTemplate string, bodyTempl
 		name:               name,
 		precompiledSubject: precompiledSubject,
 		precompiledBody:    precompiledBody,
+		subject:            subjectTemplate,
+		contentParts:       contentParts,
+		escapeParts:        escapeParts,
 	}, nil
 }
 
+// Name of the template
 func (p *PrecompiledTemplate) Name() TemplateName {
 	return p.name
 }
 
+// Subject of the template
+func (p *PrecompiledTemplate) Subject() string {
+	return p.subject
+}
+
+// ContentParts returns the content parts of the template
+// Content parts are the items that are dynamically localized and added in the html tags
+func (p *PrecompiledTemplate) ContentParts() []string {
+	return p.contentParts
+}
+
+// EscapeParts returns the escape parts of the template
+// These parts are those that are not translated with go-i18n but need to be replaced dynamically by Tidepool engine
+func (p *PrecompiledTemplate) EscapeParts() []string {
+	return p.escapeParts
+}
+
+// Execute compiles the pre-compiled template with provided content
 func (p *PrecompiledTemplate) Execute(content interface{}) (string, string, error) {
+
 	var subjectBuffer bytes.Buffer
 	var bodyBuffer bytes.Buffer
 

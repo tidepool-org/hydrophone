@@ -105,6 +105,7 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 // status: 403 STATUS_EXISTING_SIGNUP
 // status: 500 STATUS_ERR_FINDING_USER
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	var signerLanguage string
 	if token := a.token(res, req); token != nil {
 		userId := vars["userid"]
 		if userId == "" {
@@ -211,7 +212,14 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 						emailContent["CreatorName"] = newSignUp.Creator.Profile.FullName
 					}
 
-					if a.createAndSendNotification(newSignUp, emailContent) {
+					// although technically there exists a profile at the signup stage, the preferred language would always be empty here
+					// as it is set in the app and once the signup procedure is complete (after signup email has been confirmed)
+					// -> get browser's or "en" for English in case there is no browser's
+					if signerLanguage = getBrowserPreferredLanguage(req); signerLanguage == "" {
+						signerLanguage = "en"
+					}
+
+					if a.createAndSendNotification(newSignUp, emailContent, signerLanguage) {
 						a.logMetricAsServer("signup confirmation sent")
 						res.WriteHeader(http.StatusOK)
 						return
@@ -232,6 +240,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 // status: 404 STATUS_SIGNUP_EXPIRED
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
+	var signerLanguage string
 	email := vars["useremail"]
 
 	toFind := &models.Confirmation{Email: email, Status: models.StatusPending}
@@ -275,7 +284,14 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					emailContent["CreatorName"] = found.Creator.Profile.FullName
 				}
 
-				if a.createAndSendNotification(found, emailContent) {
+				// although technically there exists a profile at the signup stage, the preferred language would always be empty here
+				// as it is set in the app and once the signup procedure is complete (after signup email has been confirmed)
+				// -> get browser's or "en" for English in case there is no browser's
+				if signerLanguage = getBrowserPreferredLanguage(req); signerLanguage == "" {
+					signerLanguage = "en"
+				}
+
+				if a.createAndSendNotification(found, emailContent, signerLanguage) {
 					a.logMetricAsServer("signup confirmation re-sent")
 				} else {
 					a.logMetricAsServer("signup confirmation failed to be sent")

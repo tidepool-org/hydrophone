@@ -1,0 +1,61 @@
+# Footer 
+# (for all emails)
+FooterOpenSource: "An open source, not-for-profit effort to build an open data platform and better applications that reduce the burden of diabetes."
+FooterGetSupport: "Get Support"
+FooterSincerely: "Sincerely,"
+FooterSignature: "The Tidepool Team"
+FooterMadePossible: "Made possible by"
+
+# No account 
+# (email for those that requested password reset but did not create their account before)
+NoAccountSubject: "Password reset for your Tidepool account"
+NoAccountHello: "Hey there!"
+NoAccountNoAccount: "We heard you would like to reset your Tidepool password but no account has been created yet for your email address."
+NoAccountClick: "Please click on the link below if you would like to create an account."
+NoAccountSignUp: "Sign Up"
+
+# Password Reset
+# (email for those that requested password reset)
+PasswordResetSubject: "Password reset for your Tidepool account"
+PasswordResetHello: "Hey there!"
+PasswordResetRequest: "You requested a password reset."
+PasswordResetDidNotRequest: "If you didn't request this, please ignore this email."
+PasswordResetOtherwise: "Otherwise, click the link below."
+PasswordResetClick: "Reset Password"
+
+# CareTeamInvite
+# (email for those that invited someone to join medical crew)
+CareTeamInvitationSubject: "Diabetes care team invitation"
+CareTeamInviteHello: "Hey there!"
+CareTeamInviteInvitation: "{{ .CareteamName }} invited you to be on their care team."
+CareTeamInviteClick: "Please click the link below to accept and see {{ .CareteamName }}'s data."
+CareTeamInviteJoin: "Join {{ .CareteamName }}'s Care Team"
+
+# Signup
+# (email to ask patient for verification of email)
+SignupConfirmationSubject: "Verify your Tidepool account"
+SignupHello: "Hey there!"
+SignupCongrats: "Congrats on creating your Tidepool account!"
+SignupVerify: "Verify Your Account"
+
+# Signup Clinic
+# (email to ask clinician for verification of email)
+SignupClinicConfirmationSubject: "Verify your Tidepool account"
+SignupClinicHello: "Hey there!"
+SignupClinicCongrats: "Congrats on creating your Tidepool account!"
+SignupClinicVerify: "Verify Your Account"
+
+# Signup Custodial
+# (email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
+SignupCustodialConfirmationSubject: "Verify your YourLoops account"
+SignupCustodialHello: "Hello,"
+SignupCustodialCongrats: "Congrats on creating your YourLoops account!"
+SignupCustodialVerify: "Verify Your Account"
+
+# Signup Custodial Clinic
+# (email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
+SignupCustodialClinicConfirmationSubject: "Diabetes Clinic Follow Up - Claim Your Account"
+SignupCustodialClinicHello: "Hi, {{ .FullName }}!"
+SignupCustodialClinicAccount: "{{ .CreatorName }} created a Tidepool account for your diabetes device data."
+SignupCustodialClinicOwnership: "You can take ownership of your free account to view and upload data from home."
+SignupCustodialClinicClaim: "Claim Your Account"

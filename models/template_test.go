@@ -23,7 +23,7 @@ var (
 
 func Test_NewPrecompiledTemplate_NameMissing(t *testing.T) {
 	expectedError := "models: name is missing"
-	tmpl, err := NewPrecompiledTemplate("", subjectSuccessTemplate, bodySuccessTemplate)
+	tmpl, err := NewPrecompiledTemplate("", subjectSuccessTemplate, bodySuccessTemplate, nil, nil)
 	if err == nil || err.Error() != expectedError {
 		t.Fatalf(`Error is "%s", but should be "%s"`, err, expectedError)
 	}
@@ -34,7 +34,7 @@ func Test_NewPrecompiledTemplate_NameMissing(t *testing.T) {
 
 func Test_NewPrecompiledTemplate_SubjectTemplateMissing(t *testing.T) {
 	expectedError := "models: subject template is missing"
-	tmpl, err := NewPrecompiledTemplate(name, "", bodySuccessTemplate)
+	tmpl, err := NewPrecompiledTemplate(name, "", bodySuccessTemplate, nil, nil)
 	if err == nil || err.Error() != expectedError {
 		t.Fatalf(`Error is "%s", but should be "%s"`, err, expectedError)
 	}
@@ -45,7 +45,7 @@ func Test_NewPrecompiledTemplate_SubjectTemplateMissing(t *testing.T) {
 
 func Test_NewPrecompiledTemplate_BodyTemplateMissing(t *testing.T) {
 	expectedError := "models: body template is missing"
-	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, "")
+	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, "", nil, nil)
 	if err == nil || err.Error() != expectedError {
 		t.Fatalf(`Error is "%s", but should be "%s"`, err, expectedError)
 	}
@@ -56,7 +56,7 @@ func Test_NewPrecompiledTemplate_BodyTemplateMissing(t *testing.T) {
 
 func Test_NewPrecompiledTemplate_SubjectTemplateNotPrecompiled(t *testing.T) {
 	expectedError := "models: failure to precompile subject template: template: test:1: unexpected EOF"
-	tmpl, err := NewPrecompiledTemplate(name, subjectFailureTemplate, bodySuccessTemplate)
+	tmpl, err := NewPrecompiledTemplate(name, subjectFailureTemplate, bodySuccessTemplate, nil, nil)
 	if err == nil || err.Error() != expectedError {
 		t.Fatalf(`Error is "%s", but should be "%s"`, err, expectedError)
 	}
@@ -67,7 +67,7 @@ func Test_NewPrecompiledTemplate_SubjectTemplateNotPrecompiled(t *testing.T) {
 
 func Test_NewPrecompiledTemplate_BodyTemplateNotPrecompiled(t *testing.T) {
 	expectedError := "models: failure to precompile body template: template: test:1: unexpected EOF"
-	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodyFailureTemplate)
+	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodyFailureTemplate, nil, nil)
 	if err == nil || err.Error() != expectedError {
 		t.Fatalf(`Error is "%s", but should be "%s"`, err, expectedError)
 	}
@@ -77,7 +77,7 @@ func Test_NewPrecompiledTemplate_BodyTemplateNotPrecompiled(t *testing.T) {
 }
 
 func Test_NewPrecompiledTemplate_Success(t *testing.T) {
-	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate)
+	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate, nil, nil)
 	if err != nil {
 		t.Fatalf(`Error is "%s", but should be nil`, err)
 	}
@@ -87,7 +87,7 @@ func Test_NewPrecompiledTemplate_Success(t *testing.T) {
 }
 
 func Test_NewPrecompiledTemplate_Name(t *testing.T) {
-	tmpl, _ := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate)
+	tmpl, _ := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate, nil, nil)
 	if tmpl.Name() != name {
 		t.Fatalf(`Name is "%s", but should be "%s"`, tmpl.Name(), name)
 	}
@@ -96,7 +96,7 @@ func Test_NewPrecompiledTemplate_Name(t *testing.T) {
 func Test_NewPrecompiledTemplate_ExecuteSuccess(t *testing.T) {
 	expectedSubject := `Username is 'Test User'`
 	expectedBody := `Key is '123.blah.456.blah'`
-	tmpl, _ := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate)
+	tmpl, _ := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate, nil, nil)
 	subject, body, err := tmpl.Execute(content)
 	if err != nil {
 		t.Fatalf(`Error is "%s", but should be nil`, err)
