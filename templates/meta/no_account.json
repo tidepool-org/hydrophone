@@ -8,11 +8,9 @@
         "NoAccountNoAccount",
         "NoAccountClick",
         "NoAccountSignUp",
-        "FooterOpenSource",
         "FooterGetSupport",
         "FooterSincerely",
-        "FooterSignature",
-        "FooterMadePossible"
+        "FooterSignature"
     ],
     "escapeContentParts":[]
 }

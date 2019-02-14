@@ -1,61 +1,59 @@
 # Footer
 # (for all emails)
-FooterOpenSource: "Un projet open source, non profitable, pour construire une plateforme et des applications qui réduisent le fardeau du diabète."
-FooterGetSupport: "Contacter le support"
+FooterGetSupport: "Support"
 FooterSincerely: "Cordialement,"
-FooterSignature: "L'équipe Tidepool"
-FooterMadePossible: "Rendu possible grâce à"
+FooterSignature: "L'équipe Diabeloop"
 
 # No account
 # (email for those that requested password reset but did not create their account before)
-NoAccountSubject: "Réinitialisation de votre mot de passe Tidepool"
+NoAccountSubject: "Réinitialisation de votre mot de passe YourLoops"
 NoAccountHello: "Bonjour,"
-NoAccountNoAccount: "Nous nous sommes laissés dire que vous vouliez réinitialiser votre mot de passe Tidepool. Mais il n'existe pas de compte pour cette adresse email."
-NoAccountClick: "Veuillez cliquer sur le lien ci-dessous si vous voulez créer un compte."
-NoAccountSignUp: "M'enregistrer"
+NoAccountNoAccount: "Vous avez demandé la réinitialisation de votre mot de passe YourLoops. Or, il n'existe pas de compte lié à cette adresse email."
+NoAccountClick: "Veuillez cliquer sur le lien ci-dessous pour créer un compte."
+NoAccountSignUp: "S'inscrire"
 
 # Password Reset
 # (email for those that requested password reset)
-PasswordResetSubject: "Réinitialisation de votre mot de passe Tidepool"
+PasswordResetSubject: "Réinitialisation de votre mot de passe YourLoops"
 PasswordResetHello: "Bonjour,"
-PasswordResetRequest: "Vous avez demandé une réinitialisation de votre mot de passe Tidepool."
+PasswordResetRequest: "Vous avez demandé la réinitialisation de votre mot de passe YourLoops."
 PasswordResetDidNotRequest: "Si vous n'êtes pas à l'origine de cette demande, merci d'ignorer cet email."
 PasswordResetOtherwise: "Sinon, veuillez cliquer sur le lien ci-dessous."
-PasswordResetClick: "Réinitialiser mon mot de passe"
+PasswordResetClick: "Réinitialiser le mot de passe"
 
 # CareTeamInvite
 # (email for those that invited someone to join medical crew)
-CareTeamInvitationSubject: "Invitation à rejoindre une équipe de suivi d'un diabétique"
+CareTeamInvitationSubject: "Invitation à rejoindre une équipe de suivi"
 CareTeamInviteHello: "Bonjour,"
-CareTeamInviteInvitation: "{{ .CareteamName }} vous a invité à rejoindre son équipe de suivi."
+CareTeamInviteInvitation: "{{ .CareteamName }} vous a invité à rejoindre son équipe de suivi sur YourLoops."
 CareTeamInviteClick: "Veuillez cliquer sur le lien ci-dessous pour accepter et voir les données de {{ .CareteamName }}."
-CareTeamInviteJoin: "Réjoindre l'équipe de {{ .CareteamName }}"
+CareTeamInviteJoin: "Rejoindre l'équipe"
 
 # Signup
 # (email to ask patient for verification of email)
-SignupConfirmationSubject: "Vérification de votre compte Tidepool"
+SignupConfirmationSubject: "Vérification de votre compte YourLoops"
 SignupHello: "Bonjour,"
-SignupCongrats: "Félicitations pour la création de votre compte Tidepool !"
-SignupVerify: "Vérifier mon compte"
+SignupCongrats: "Félicitations pour la création de votre compte YourLoops !"
+SignupVerify: "Vérifier votre compte"
 
 # Signup Clinic
 # (email to ask clinician for verification of email)
-SignupClinicConfirmationSubject: "Vérification de votre compte Tidepool"
+SignupClinicConfirmationSubject: "Vérification de votre compte YourLoops"
 SignupClinicHello: "Bonjour,"
-SignupClinicCongrats: "Félicitations pour la création de votre compte Tidepool !"
-SignupClinicVerify: "Vérifier mon compte"
+SignupClinicCongrats: "Félicitations pour la création de votre compte YourLoops !"
+SignupClinicVerify: "Vérifier votre compte"
 
 # Signup Custodial
 # (email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
 SignupCustodialConfirmationSubject: "Vérification de votre compte Tidepool"
 SignupCustodialHello: "Bonjour,"
-SignupCustodialCongrats: "Félicitations pour la création de votre compte Tidepool !"
+SignupCustodialCongrats: "Félicitations pour la création de votre compte YourLoops !"
 SignupCustodialVerify: "Vérifier mon compte"
 
 # Signup Custodial Clinic
 # (email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
 SignupCustodialClinicConfirmationSubject: "Suivi Diabète - Réclamer votre compte"
 SignupCustodialClinicHello: "Bonjour {{ .FullName }} !"
-SignupCustodialClinicAccount: "{{ .CreatorName }} a créé pour vous un compte Tidepool pour que vous puissiez visualiser vos données de diabète."
+SignupCustodialClinicAccount: "{{ .CreatorName }} a créé pour vous un compte YourLoops pour que vous puissiez visualiser vos données de diabète."
 SignupCustodialClinicOwnership: "Vous pouvez réclamer votre compte gratuit pour voir et charger vos données depuis la maison."
 SignupCustodialClinicClaim: "Réclamer mon compte"

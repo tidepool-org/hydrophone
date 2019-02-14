@@ -110,7 +110,7 @@ a.btn {
 }
 
 a.btn.primary {
-  background-color: #627CFF;
+  background-color: #e72980;
   color: #FFFFFF;
   Margin-left: 5px;
   Margin-right: 5px;
@@ -119,7 +119,7 @@ a.btn.primary {
 
 a.btn.secondary {
   border: 1px solid #dbdee0;
-  background-color: #FFFFFF;
+
   color: #281946;
   font-weight: normal;
   padding: 4px 10px 5px;

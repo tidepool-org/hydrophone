@@ -7,11 +7,9 @@
         "SignupClinicHello",
         "SignupClinicCongrats",
         "SignupClinicVerify",
-        "FooterOpenSource",
         "FooterGetSupport",
         "FooterSincerely",
-        "FooterSignature",
-        "FooterMadePossible"
+        "FooterSignature"
     ],
     "escapeContentParts":[]
 }

@@ -7,11 +7,9 @@
         "SignupHello",
         "SignupCongrats",
         "SignupVerify",
-        "FooterOpenSource",
         "FooterGetSupport",
         "FooterSincerely",
-        "FooterSignature",
-        "FooterMadePossible"
+        "FooterSignature"
     ],
     "escapeContentParts":[]
 }

@@ -8,11 +8,9 @@
         "SignupCustodialClinicAccount",
         "SignupCustodialClinicOwnership",
         "SignupCustodialClinicClaim",
-        "FooterOpenSource",
         "FooterGetSupport",
         "FooterSincerely",
-        "FooterSignature",
-        "FooterMadePossible"
+        "FooterSignature"
     ],
     "escapeContentParts":[
         "CreatorName",

@@ -8,11 +8,9 @@
         "CareTeamInviteInvitation",
         "CareTeamInviteClick",
         "CareTeamInviteJoin",
-        "FooterOpenSource",
         "FooterGetSupport",
         "FooterSincerely",
-        "FooterSignature",
-        "FooterMadePossible"
+        "FooterSignature"
     ],
     "escapeContentParts":[
         "CareteamName"
