@@ -16,7 +16,7 @@ const (
 	STATUS_RESET_EXPIRED    = "Password reset confirmation has expired."
 	STATUS_RESET_ERROR      = "Error while resetting password; reset confirmation remains active until it expires."
 	STATUS_RESET_NO_ACCOUNT = "No matching account for the email was found."
-	STATUS_RESET_PATIENT    = "Patient are not allowed to reset his password."
+	STATUS_RESET_PATIENT    = "Patients are not allowed to reset their password."
 )
 
 type (
