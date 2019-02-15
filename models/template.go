@@ -18,6 +18,7 @@ const (
 	TemplateNameCareteamInvite        TemplateName = "careteam_invitation"
 	TemplateNameNoAccount             TemplateName = "no_account"
 	TemplateNamePasswordReset         TemplateName = "password_reset"
+	TemplateNamePatientPasswordReset  TemplateName = "patient_password_reset"
 	TemplateNameSignup                TemplateName = "signup_confirmation"
 	TemplateNameSignupClinic          TemplateName = "signup_clinic_confirmation"
 	TemplateNameSignupCustodial       TemplateName = "signup_custodial_confirmation"

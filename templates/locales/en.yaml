@@ -1,10 +1,10 @@
-# Footer 
+# Footer
 # (for all emails)
 FooterGetSupport: "Support"
 FooterSincerely: "Sincerely,"
 FooterSignature: "The Diabeloop Team"
 
-# No account 
+# No account
 # (email for those that requested password reset but did not create their account before)
 NoAccountSubject: "Password reset for your YourLoops account"
 NoAccountHello: "Hello,"
@@ -20,6 +20,15 @@ PasswordResetRequest: "You requested a password reset."
 PasswordResetDidNotRequest: "If you didn't request this, please ignore this email."
 PasswordResetOtherwise: "Otherwise, click the link below."
 PasswordResetClick: "Reset Password"
+
+# Patient Password Reset
+# (email for patients that requested password reset)
+PatientPasswordResetSubject: "Password reset for your YourLoops account"
+PatientPasswordResetHello: "Hello,"
+PatientPasswordResetRequest: "You requested a password reset."
+PatientPasswordResetDidNotRequest: "If you didn't request this, please ignore this email."
+PatientPasswordResetByDevice: "Resetting your password has to be done on your Diabeloop device."
+PatientPasswordResetClick: "Please click here to see the detailled instructions."
 
 # CareTeamInvite
 # (email for those that invited someone to join medical crew)

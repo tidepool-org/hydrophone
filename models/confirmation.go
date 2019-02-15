@@ -63,10 +63,11 @@ const (
 	StatusCanceled  Status = "canceled"
 	StatusDeclined  Status = "declined"
 	//Available Type's
-	TypePasswordReset  Type = "password_reset"
-	TypeCareteamInvite Type = "careteam_invitation"
-	TypeSignUp         Type = "signup_confirmation"
-	TypeNoAccount      Type = "no_account"
+	TypePasswordReset        Type = "password_reset"
+	TypePatientPasswordReset Type = "patient_password_reset"
+	TypeCareteamInvite       Type = "careteam_invitation"
+	TypeSignUp               Type = "signup_confirmation"
+	TypeNoAccount            Type = "no_account"
 )
 
 var (

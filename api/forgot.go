@@ -16,6 +16,7 @@ const (
 	STATUS_RESET_EXPIRED    = "Password reset confirmation has expired."
 	STATUS_RESET_ERROR      = "Error while resetting password; reset confirmation remains active until it expires."
 	STATUS_RESET_NO_ACCOUNT = "No matching account for the email was found."
+	STATUS_RESET_PATIENT    = "Patient are not allowed to reset his password."
 )
 
 type (
@@ -41,9 +42,11 @@ type (
 // status: 200
 // status: 400 no email given
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	var resetCnf *models.Confirmation
+	var reseterLanguage string
+
 	// By default, the reseter language will be his browser's or "en" for Englih
 	// In case the reseter is found a known user and has a language set, the language will be overriden in a later step
-	var reseterLanguage string
 	if reseterLanguage = getBrowserPreferredLanguage(req); reseterLanguage == "" {
 		reseterLanguage = "en"
 	}
@@ -54,11 +57,19 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		return
 	}
 
-	resetCnf, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
-	resetCnf.Email = email
-
 	// if the reseter is already a Tidepool user, we can use his preferences
-	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
+	if resetUsr := a.findExistingUser(email, a.sl.TokenProvide()); resetUsr != nil {
+		if resetUsr.IsClinic() || a.Config.AllowPatientResetPassword {
+			resetCnf, _ = models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
+		} else {
+			log.Print(STATUS_RESET_PATIENT)
+			log.Printf("email used [%s]", email)
+			resetCnf, _ = models.NewConfirmation(models.TypePatientPasswordReset, models.TemplateNamePatientPasswordReset, "")
+			// a patient is not allowed to reset his password, close the request
+			resetCnf.UpdateStatus(models.StatusCompleted)
+		}
+
+		resetCnf.Email = email
 		resetCnf.UserId = resetUsr.UserID
 
 		// let's get the reseter user preferences
@@ -83,7 +94,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.UpdateStatus(models.StatusCompleted)
 	}
 
-	if a.addOrUpdateConfirmation(resetCnf, res) {
+	if resetCnf != nil && a.addOrUpdateConfirmation(resetCnf, res) {
 		a.logMetricAsServer("reset confirmation created")
 
 		emailContent := map[string]interface{}{

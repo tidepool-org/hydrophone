@@ -40,6 +40,12 @@ func New(templatesPath string) (models.Templates, error) {
 		templates[template.Name()] = template
 	}
 
+	if template, err := NewTemplate(templatesPath, models.TemplateNamePatientPasswordReset); err != nil {
+		return nil, fmt.Errorf("templates: failure to create password reset template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
 	if template, err := NewTemplate(templatesPath, models.TemplateNameSignup); err != nil {
 		return nil, fmt.Errorf("templates: failure to create signup template: %s", err)
 	} else {
