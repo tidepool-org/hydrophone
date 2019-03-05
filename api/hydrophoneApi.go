@@ -33,10 +33,11 @@ type (
 		LanguageBundle *i18n.Bundle
 	}
 	Config struct {
-		ServerSecret              string `json:"serverSecret"` //used for services
-		WebURL                    string `json:"webUrl"`
-		AssetURL                  string `json:"assetUrl"`
-		I18nTemplatesPath         string `json:"i18nTemplatesPath"`
+		ServerSecret              string `json:"serverSecret"`              //used for services
+		WebURL                    string `json:"webUrl"`                    // used for link to blip
+		SupportURL                string `json:"supportUrl"`                // used for link to support
+		AssetURL                  string `json:"assetUrl"`                  // used for location of the images
+		I18nTemplatesPath         string `json:"i18nTemplatesPath"`         // where are the templates located?
 		AllowPatientResetPassword bool   `json:"allowPatientResetPassword"` // true means that patients can reset their password, false means that only clinicianc can reset their password
 		WebHelp                   string `json:"webHelp"`                   // URL of the help web site that is used to give instructions to reset password for patients
 	}
@@ -269,6 +270,7 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 
 	// Content collection is here to replace placeholders in template body/content
 	content["WebURL"] = a.Config.WebURL
+	content["SupportURL"] = a.Config.SupportURL
 	content["AssetURL"] = a.Config.AssetURL
 	content["WebHelp"] = a.Config.WebHelp
 

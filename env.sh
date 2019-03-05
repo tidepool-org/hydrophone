@@ -30,6 +30,7 @@ export TIDEPOOL_HYDROPHONE_SERVICE='{
     "hydrophone" : {
         "serverSecret": "This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy",
         "webUrl": "http://localhost:3000",
+        "supportUrl": "https://diabeloop.zendesk.com",
         "assetUrl": "https://s3-us-west-2.amazonaws.com/tidepool-dev-asset",
         "i18nTemplatesPath": "/go/src/github.com/tidepool-org/hydrophone/templates",
         "allowPatientResetPassword": true,
