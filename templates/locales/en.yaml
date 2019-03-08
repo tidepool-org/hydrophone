@@ -1,6 +1,6 @@
 # Footer
 # (for all emails)
-FooterGetSupport: "Support"
+FooterGetSupport: "SUPPORT"
 FooterSincerely: "Sincerely,"
 FooterSignature: "The Diabeloop Team"
 
@@ -10,7 +10,7 @@ NoAccountSubject: "Password reset for your YourLoops account"
 NoAccountHello: "Hello,"
 NoAccountNoAccount: "You asked to change your YourLoops password but no account has been created yet with this email address."
 NoAccountClick: "Please click on the link below if you would like to create an account."
-NoAccountSignUp: "Sign Up"
+NoAccountSignUp: "SIGN UP"
 
 # Password Reset
 # (email for those that requested password reset)
@@ -28,7 +28,7 @@ PatientPasswordResetHello: "Hello,"
 PatientPasswordResetRequest: "You requested a password reset."
 PatientPasswordResetDidNotRequest: "If you didn't request this, please ignore this email."
 PatientPasswordResetByDevice: "Resetting your password has to be done on your Diabeloop device."
-PatientPasswordResetClick: "Please click here to see the detailled instructions."
+PatientPasswordResetClick: "Please click here to see the detailled instructions"
 
 # CareTeamInvite
 # (email for those that invited someone to join medical crew)
@@ -43,6 +43,7 @@ CareTeamInviteJoin: "Join {{ .CareteamName }}'s Care Team"
 SignupConfirmationSubject: "Verify your YourLoops account"
 SignupHello: "Hello,"
 SignupCongrats: "Congrats on creating your YourLoops account!"
+SignupAction: "We just need one last thing from you (promised):"
 SignupVerify: "Verify Your Account"
 
 # Signup Clinic
@@ -50,6 +51,7 @@ SignupVerify: "Verify Your Account"
 SignupClinicConfirmationSubject: "Verify your YourLoops account"
 SignupClinicHello: "Hello,"
 SignupClinicCongrats: "Congrats on creating your YourLoops account!"
+SignupClinicAction: "We just need one last thing from you (promised):"
 SignupClinicVerify: "Verify Your Account"
 
 # Signup Custodial => SUPPRIMER

@@ -72,19 +72,7 @@ We also have an `index.html` file set up with links to all the templates, `http:
 
 ## Assets (Images) file locations
 
-All the email assets must be stored in a publicly accessible location. We use Amazon S3 buckets for this.  Assets are stored per environment, so we can have different assets on `dev`, `stg`, `int`, and `prd`
-
-The bucket urls follow this pattern:
-
-`https://s3-us-west-2.amazonaws.com/tidepool-[env]-asset/[type]/[file]`
-
-So the logo image for the dev environment may be found at:
-
-`https://s3-us-west-2.amazonaws.com/tidepool-dev-asset/img/tidepool_logo_light_x2.png`
-
-Currently, only the backend engineering team has access to these buckets, so all image change requests should go through the backend engineering team lead.
-
-During development, you should change the image sources to use files in the local `img` folder. This way, you won't need to ask to have the files uploaded to S3 until you're sure they're ready for QA. This is also helpful, as it keeps a record of intended file changes in version control.
+All the email assets must be stored in a publicly accessible location. We use Amazon S3 buckets for this. Assets are stored in `https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets/`.
 
 ## Inlining the CSS
 
@@ -122,21 +110,19 @@ becomes
 
 ## Final Post-Inlining Steps
 
-Once our CSS is inlined properly, there are a couple of things we need to do before pasting the resulting code into the corresponding Go templates.
+Once our CSS is inlined properly, there are a couple of things we need to do before pasting the resulting code into the corresponding Go templates (`templates/html`).
 
 Any Asset URLs need to be replaced with with the `{{ .AssetURL }}` Go template variable. This allows us to set the appropriate asset url for each environment via build-time config.
 
 For instance, replace
 ```html
-<img src="https://s3-us-west-2.amazonaws.com/tidepool-dev-asset/img/tidepool_logo_light_x2.png" />
-or
-<img src="img/tidepool_logo_light_x2.png" />
+<img src="[https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets/img/facebook.png" />
 ```
 
 with
 
 ```html
-<img src="{{ .AssetURL }}/img/tidepool_logo_light_x2.png" />
+<img src="{{ .AssetURL }}/img/facebook.png" />
 ```
 
 # Testing

@@ -1,6 +1,6 @@
 # Footer
 # (for all emails)
-FooterGetSupport: "Support"
+FooterGetSupport: "SUPPORT"
 FooterSincerely: "Cordialement,"
 FooterSignature: "L'équipe Diabeloop"
 
@@ -10,7 +10,7 @@ NoAccountSubject: "Réinitialisation de votre mot de passe YourLoops"
 NoAccountHello: "Bonjour,"
 NoAccountNoAccount: "Vous avez demandé la réinitialisation de votre mot de passe YourLoops. Or, il n'existe pas de compte lié à cette adresse email."
 NoAccountClick: "Veuillez cliquer sur le lien ci-dessous pour créer un compte."
-NoAccountSignUp: "S'inscrire"
+NoAccountSignUp: "S'INSCRIRE"
 
 # Password Reset
 # (email for those that requested password reset)
@@ -27,8 +27,8 @@ PatientPasswordResetSubject: "Réinitialisation de votre mot de passe YourLoops"
 PatientPasswordResetHello: "Bonjour,"
 PatientPasswordResetRequest: "Vous avez demandé une réinitialisation de votre mot de passe YourLoops."
 PatientPasswordResetDidNotRequest: "Si vous n'êtes pas à l'origine de cette demande, merci d'ignorer cet email."
-PatientPasswordResetByDevice: "La réinitialisation de votre mot de passe s'éffectue via votre terminal Diabeloop."
-PatientPasswordResetClick: "Cliquez ici pour voir la procédure détaillée."
+PatientPasswordResetByDevice: "La réinitialisation de votre mot de passe s'effectue via votre terminal Diabeloop."
+PatientPasswordResetClick: "Cliquez ici pour voir la procédure détaillée"
 
 # CareTeamInvite
 # (email for those that invited someone to join medical crew)
@@ -43,6 +43,7 @@ CareTeamInviteJoin: "Rejoindre l'équipe"
 SignupConfirmationSubject: "Vérification de votre compte YourLoops"
 SignupHello: "Bonjour,"
 SignupCongrats: "Félicitations pour la création de votre compte YourLoops !"
+SignupAction: "Nous avons simplement besoin d'une dernière action de votre part (promis) :"
 SignupVerify: "Vérifier votre compte"
 
 # Signup Clinic
@@ -50,6 +51,7 @@ SignupVerify: "Vérifier votre compte"
 SignupClinicConfirmationSubject: "Vérification de votre compte YourLoops"
 SignupClinicHello: "Bonjour,"
 SignupClinicCongrats: "Félicitations pour la création de votre compte YourLoops !"
+SignupClinicAction: "Nous avons simplement besoin d'une dernière action de votre part (promis) :"
 SignupClinicVerify: "Vérifier votre compte"
 
 # Signup Custodial

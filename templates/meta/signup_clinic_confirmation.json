@@ -6,6 +6,7 @@
     "contentParts":[
         "SignupClinicHello",
         "SignupClinicCongrats",
+        "SignupClinicAction",
         "SignupClinicVerify",
         "FooterGetSupport",
         "FooterSincerely",

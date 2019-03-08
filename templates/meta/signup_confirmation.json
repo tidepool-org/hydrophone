@@ -6,6 +6,7 @@
     "contentParts":[
         "SignupHello",
         "SignupCongrats",
+        "SignupAction",
         "SignupVerify",
         "FooterGetSupport",
         "FooterSincerely",
