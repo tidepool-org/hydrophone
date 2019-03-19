@@ -70,6 +70,12 @@ func New(templatesPath string) (models.Templates, error) {
 		templates[template.Name()] = template
 	}
 
+	if template, err := NewTemplate(templatesPath, models.TemplateNamePatientInformation); err != nil {
+		return nil, fmt.Errorf("templates: failure to create patient information template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
 	return templates, nil
 }
 

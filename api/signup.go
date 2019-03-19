@@ -93,6 +93,61 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 	}
 }
 
+func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	var signerLanguage string
+	userID := vars["userid"]
+	if userID == "" {
+		log.Printf("sendSignUp %s", STATUS_SIGNUP_NO_ID)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+		return
+	}
+	if usrDetails, err := a.sl.GetUser(userID, a.sl.TokenProvide()); err != nil {
+		log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
+		a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
+		return
+	} else {
+		// get any existing confirmations
+		newSignUp, err := a.Store.FindConfirmation(&models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
+		if err != nil {
+			log.Printf("sendSignUp: error [%s]\n", err.Error())
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+		if usrDetails.IsClinic() {
+			log.Printf("Clinician account [%s] cannot receive information message", usrDetails.UserID)
+			a.sendModelAsResWithStatus(res, STATUS_ERR_CLINICAL_USR, http.StatusForbidden)
+			return
+		}
+		if newSignUp != nil {
+			// send information message to patient
+			var templateName = models.TemplateNamePatientInformation
+
+			emailContent := map[string]interface{}{
+				"Email": usrDetails.Emails[0],
+			}
+
+			newSignUp, _ = models.NewConfirmation(models.TypeInformation, templateName, usrDetails.UserID)
+			newSignUp.Email = usrDetails.Emails[0]
+
+			// this one may not work if the language is not set by the caller
+			if signerLanguage = getBrowserPreferredLanguage(req); signerLanguage == "" {
+				signerLanguage = "en"
+			}
+
+			if a.createAndSendNotification(newSignUp, emailContent, signerLanguage) {
+				log.Printf("signup information sent for %s", userID)
+				a.logMetricAsServer("signup information sent")
+				res.WriteHeader(http.StatusOK)
+				return
+			} else {
+				a.logMetric("signup confirmation failed to be sent", req)
+				log.Print("Something happened generating a signup email")
+			}
+		}
+	}
+
+}
+
 //Send a signup confirmation email to a userid.
 //
 //This post is sent by the signup logic. In this state, the user account has been created but has a flag that

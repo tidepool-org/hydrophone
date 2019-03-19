@@ -56,6 +56,7 @@ const (
 	STATUS_ERR_SENDING_EMAIL         = "Error sending email"
 	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
+	STATUS_ERR_CLINICAL_USR          = "Cannot send an information to clinical"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
@@ -130,6 +131,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	send.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
 	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
+	// POST /confirm/send/inform/:userid
+	send.Handle("/inform/{userid}", varsHandler(a.sendSignUpInformation)).Methods("POST")
 
 	// POST /confirm/resend/signup/:useremail
 	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
@@ -262,6 +265,8 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 			templateName = models.TemplateNameSignup
 		case models.TypeNoAccount:
 			templateName = models.TemplateNameNoAccount
+		case models.TypeInformation:
+			templateName = models.TemplateNamePatientInformation
 		default:
 			log.Printf("Unknown confirmation type %s", conf.Type)
 			return false

@@ -1,0 +1,15 @@
+{
+    "name": "patient_information",
+    "description": "email to send information to patient",
+    "templateFilename": "patient_information.html",
+    "subject": "InformationSubject",
+    "contentParts":[
+        "SignupHello",
+        "PatientInformation",
+        "PatientLogin",
+        "FooterGetSupport",
+        "FooterSincerely",
+        "FooterSignature"
+    ],
+    "escapeContentParts":[]
+}

@@ -68,6 +68,7 @@ const (
 	TypeCareteamInvite       Type = "careteam_invitation"
 	TypeSignUp               Type = "signup_confirmation"
 	TypeNoAccount            Type = "no_account"
+	TypeInformation          Type = "patient_information"
 )
 
 var (

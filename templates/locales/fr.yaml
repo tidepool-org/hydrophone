@@ -68,3 +68,8 @@ SignupCustodialClinicHello: "Bonjour {{ .FullName }} !"
 SignupCustodialClinicAccount: "{{ .CreatorName }} a créé pour vous un compte YourLoops pour que vous puissiez visualiser vos données de diabète."
 SignupCustodialClinicOwnership: "Vous pouvez réclamer votre compte gratuit pour voir et charger vos données depuis la maison."
 SignupCustodialClinicClaim: "Réclamer mon compte"
+
+# Patient Information
+InformationSubject: "Information YourLoops"
+PatientInformation: "Vous venez d'activer votre système Diabeloop. Ce message vous confirme la création de votre compte compte YourLoops qui a été configuré sur votre système Diabeloop. "
+PatientLogin: "Se Connecter à YourLoops"
