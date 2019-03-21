@@ -39,6 +39,23 @@ func main() {
 		log.Panic("Problem loading config ", err)
 	}
 
+	// ses secrets may be passed via a separate env variable to accomodate easy secrets injection via Kubernetes
+	accessSecret, found := os.LookupEnv("SES_ACCESS_KEY")
+	if found {
+		config.Mail.AccessKey = accessSecret
+	}
+
+	secretKey, found := os.LookupEnv("SES_SECRET_KEY")
+	if found {
+		config.Mail.SecretKey = secretKey
+	}
+
+	// server secret may be passed via a separate env variable to accomodate easy secrets injection via Kubernetes
+	serverSecret, found := os.LookupEnv("SERVER_SECRET")
+	if found {
+		config.ShorelineConfig.Secret = serverSecret
+		config.Api.ServerSecret = serverSecret
+	}
 	/*
 	 * Hakken setup
 	 */
@@ -46,10 +63,12 @@ func main() {
 		WithConfig(&config.HakkenConfig).
 		Build()
 
-	if err := hakkenClient.Start(); err != nil {
-		log.Fatal(err)
+	if !config.HakkenConfig.SkipHakken {
+		if err := hakkenClient.Start(); err != nil {
+			log.Fatal(err)
+		}
+		defer hakkenClient.Close()
 	}
-	defer hakkenClient.Close()
 
 	/*
 	 * Clients
