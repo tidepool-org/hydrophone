@@ -5,6 +5,8 @@ This API sends notifications to users for things like forgotten passwords, initi
 
 ## [Unreleased]
 
+## dblp.0.3.0 - 2019-03-21
+
 ### Added
 - PT-232 New api route to send information message to patients when automatically created. 
 
