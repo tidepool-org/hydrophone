@@ -9,6 +9,7 @@ This API sends notifications to users for things like forgotten passwords, initi
 
 ### Added
 - PT-232 New api route to send information message to patients when automatically created. 
+- Change version of GO engines from 1.9.2 to 1.10.2 to align all versions with Dockerfile's
 
 ## dblp 0.2.2 - 2019-03-12
 
