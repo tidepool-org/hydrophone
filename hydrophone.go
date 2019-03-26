@@ -23,6 +23,7 @@ import (
 )
 
 type (
+	// Config is the configuration for the service
 	Config struct {
 		clients.Config
 		Service disc.ServiceListing  `json:"service"`
@@ -39,15 +40,9 @@ func main() {
 		log.Panic("Problem loading config ", err)
 	}
 
-	// ses secrets may be passed via a separate env variable to accomodate easy secrets injection via Kubernetes
-	accessSecret, found := os.LookupEnv("SES_ACCESS_KEY")
+	region, found := os.LookupEnv("REGION")
 	if found {
-		config.Mail.AccessKey = accessSecret
-	}
-
-	secretKey, found := os.LookupEnv("SES_SECRET_KEY")
-	if found {
-		config.Mail.SecretKey = secretKey
+		config.Mail.Region = region
 	}
 
 	// server secret may be passed via a separate env variable to accomodate easy secrets injection via Kubernetes
@@ -111,7 +106,11 @@ func main() {
 	 * hydrophone setup
 	 */
 	store := sc.NewMongoStoreClient(&config.Mongo)
-	mail := sc.NewSesNotifier(&config.Mail)
+	mail, err := sc.NewSesNotifier(&config.Mail)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	emailTemplates, err := templates.New()
 	if err != nil {
