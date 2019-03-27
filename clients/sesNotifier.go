@@ -48,7 +48,7 @@ func NewSesNotifier(cfg *SesNotifierConfig) (*SesNotifier, error) {
 	}, nil
 }
 
-// Send an meeeage to a list of recipients with a given subject
+// Send a message to a list of recipients with a given subject
 func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string) {
 	var toAwsAddress = make([]*string, len(to))
 	for i, x := range to {
