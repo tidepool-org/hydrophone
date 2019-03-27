@@ -101,7 +101,7 @@ func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string
 			log.Println(err.Error())
 		}
 
-		return 500, result.String()
+		return 400, result.String()
 	}
 	return 200, result.String()
 }
