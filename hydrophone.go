@@ -45,6 +45,10 @@ func main() {
 		config.Mail.Region = region
 	}
 
+	if config.Mail.Region == "" {
+		config.Mail.Region = "us-west-2"
+	}
+
 	// server secret may be passed via a separate env variable to accomodate easy secrets injection via Kubernetes
 	serverSecret, found := os.LookupEnv("SERVER_SECRET")
 	if found {
