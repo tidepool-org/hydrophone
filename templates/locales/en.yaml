@@ -28,7 +28,7 @@ PatientPasswordResetHello: "Hello,"
 PatientPasswordResetRequest: "You requested a password reset."
 PatientPasswordResetDidNotRequest: "If you didn't request this, please ignore this email."
 PatientPasswordResetByDevice: "Resetting your password has to be done on your Diabeloop device."
-PatientPasswordResetClick: "Please click here to see the detailled instructions"
+PatientPasswordResetClick: "Please click here to see the detailed instructions"
 
 # CareTeamInvite
 # (email for those that invited someone to join medical crew)
