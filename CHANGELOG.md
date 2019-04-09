@@ -5,6 +5,9 @@ This API sends notifications to users for things like forgotten passwords, initi
 
 ## [Unreleased]
 
+### Changed
+- PT-305 Fix issue: email is not sent when confirmation does not exist in database.
+
 ## dblp.0.3.0 - 2019-03-21
 
 ### Added

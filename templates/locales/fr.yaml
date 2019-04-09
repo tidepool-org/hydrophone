@@ -71,5 +71,6 @@ SignupCustodialClinicClaim: "Réclamer mon compte"
 
 # Patient Information
 InformationSubject: "Information YourLoops"
-PatientInformation: "Vous venez d'activer votre système Diabeloop. Ce message vous confirme la création de votre compte compte YourLoops qui a été configuré sur votre système Diabeloop. "
+PatientInformation: "L'équipe Diabeloop vous félicite pour l'activation de votre dispositif médical et la création de votre compte YourLoops."
 PatientLogin: "Se Connecter à YourLoops"
+
