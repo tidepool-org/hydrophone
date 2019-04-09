@@ -5,6 +5,8 @@ This API sends notifications to users for things like forgotten passwords, initi
 
 ## [Unreleased]
 
+## dblp.0.3.1 - 2019-04-09
+
 ### Changed
 - PT-301 Fix wrong link to detailed instructions for Patient Reset Password. Complete link is now entirely in configuration
 - Support URL has been changed in base configuration to be a mailto instead of https website
