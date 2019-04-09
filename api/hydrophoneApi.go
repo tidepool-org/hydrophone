@@ -39,7 +39,7 @@ type (
 		AssetURL                  string `json:"assetUrl"`                  // used for location of the images
 		I18nTemplatesPath         string `json:"i18nTemplatesPath"`         // where are the templates located?
 		AllowPatientResetPassword bool   `json:"allowPatientResetPassword"` // true means that patients can reset their password, false means that only clinicianc can reset their password
-		WebHelp                   string `json:"webHelp"`                   // URL of the help web site that is used to give instructions to reset password for patients
+		PatientPasswordResetURL   string `json:"patientPasswordResetUrl"`   // URL of the help web site that is used to give instructions to reset password for patients
 	}
 
 	group struct {
@@ -278,7 +278,7 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 	content["WebURL"] = a.Config.WebURL
 	content["SupportURL"] = a.Config.SupportURL
 	content["AssetURL"] = a.Config.AssetURL
-	content["WebHelp"] = a.Config.WebHelp
+	content["PatientPasswordResetURL"] = a.Config.PatientPasswordResetURL
 
 	// Retrieve the template from all the preloaded templates
 	template, ok := a.templates[templateName]

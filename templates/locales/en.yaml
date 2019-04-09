@@ -28,7 +28,7 @@ PatientPasswordResetHello: "Hello,"
 PatientPasswordResetRequest: "You requested a password reset."
 PatientPasswordResetDidNotRequest: "If you didn't request this, please ignore this email."
 PatientPasswordResetByDevice: "Resetting your password has to be done on your Diabeloop device."
-PatientPasswordResetClick: "Please click here to see the detailled instructions"
+PatientPasswordResetClick: "Please click here to see the detailed instructions"
 
 # CareTeamInvite
 # (email for those that invited someone to join medical crew)
@@ -71,5 +71,5 @@ SignupCustodialClinicClaim: "Claim Your Account"
 
 # Patient Information
 InformationSubject: "YourLoops Information"
-PatientInformation: "You have recently activated your Diabeloop system. This message is to confirm the creation of your YourLoops account that has been configured on your Diabeloop system. "
+PatientInformation: "Congrats from Diabeloop team on activating your medical device and creating your YourLoops account. "
 PatientLogin: "Login to YourLoops"
