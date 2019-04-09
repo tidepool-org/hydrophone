@@ -95,6 +95,8 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 
 func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	var signerLanguage string
+	var newSignUp *models.Confirmation
+
 	userID := vars["userid"]
 	if userID == "" {
 		log.Printf("sendSignUp %s", STATUS_SIGNUP_NO_ID)
@@ -106,19 +108,16 @@ func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, 
 		a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
 		return
 	} else {
-		// get any existing confirmations
-		newSignUp, err := a.Store.FindConfirmation(&models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
-		if err != nil {
-			log.Printf("sendSignUp: error [%s]\n", err.Error())
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-			return
-		}
 		if usrDetails.IsClinic() {
 			log.Printf("Clinician account [%s] cannot receive information message", usrDetails.UserID)
 			a.sendModelAsResWithStatus(res, STATUS_ERR_CLINICAL_USR, http.StatusForbidden)
 			return
 		}
-		if newSignUp != nil {
+		if !usrDetails.EmailVerified {
+			log.Printf("User [%s] is not yet verified", usrDetails.UserID)
+			a.sendModelAsResWithStatus(res, STATUS_ERR_FINDING_VALIDATION, http.StatusForbidden)
+			return
+		} else {
 			// send information message to patient
 			var templateName = models.TemplateNamePatientInformation
 

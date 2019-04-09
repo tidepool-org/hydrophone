@@ -61,6 +61,7 @@ const (
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
+	STATUS_ERR_FINDING_VALIDATION    = "Error finding the account validation"
 
 	//returned status messages
 	STATUS_NOT_FOUND     = "Nothing found"
