@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"labix.org/v2/mgo"
+	"globalsign/mgo"
 
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
