@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"globalsign/mgo"
+	"github.com/globalsign/mgo"
 
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
