@@ -1,76 +1,107 @@
 package clients
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
-	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ses"
+)
+
+const (
+	// CharSet The character encoding for the email.
+	CharSet = "UTF-8"
+
+	// DefaultTextMessage will be sent to non-HTML email clients that receive our messages
+	DefaultTextMessage = "You need an HTML client to read this email."
 )
 
 type (
+	// SesNotifier contains all information needed to send Amazon SES messages
 	SesNotifier struct {
 		Config *SesNotifierConfig
+		SES    *ses.SES
 	}
+
+	// SesNotifierConfig contains the static configuration for the Amazon SES service
+	// Credentials come from the environment and are not passed in via configuration variables.
 	SesNotifierConfig struct {
-		EndPoint  string `json:"serverEndpoint"`
-		From      string `json:"fromAddress"`
-		SecretKey string `json:"secretKey"`
-		AccessKey string `json:"accessKey"`
+		From   string `json:"fromAddress"`
+		Region string `json:"region"`
 	}
 )
 
-func NewSesNotifier(cfg *SesNotifierConfig) *SesNotifier {
+//NewSesNotifier creates a new Amazon SES notifier
+func NewSesNotifier(cfg *SesNotifierConfig) (*SesNotifier, error) {
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(cfg.Region)},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &SesNotifier{
 		Config: cfg,
-	}
+		SES:    ses.New(sess),
+	}, nil
 }
 
+// Send a message to a list of recipients with a given subject
 func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string) {
-
-	data := make(url.Values)
-	data.Add("Action", "SendEmail")
-	data.Add("Source", c.Config.From)
-	data.Add("Destination.ToAddresses.member.1", strings.Join(to, ", "))
-	data.Add("Message.Subject.Data", subject)
-	data.Add("Message.Body.Html.Data", msg)
-	data.Add("AWSAccessKeyId", c.Config.AccessKey)
-
-	return c.sesPost(data)
-}
-
-func (c *SesNotifier) generateAuthHeader(date string) string {
-	h := hmac.New(sha256.New, []uint8(c.Config.SecretKey))
-	h.Write([]uint8(date))
-	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
-	return fmt.Sprintf("AWS3-HTTPS AWSAccessKeyId=%s, Algorithm=HmacSHA256, Signature=%s", c.Config.AccessKey, signature)
-}
-
-func (c *SesNotifier) sesPost(data url.Values) (int, string) {
-	body := strings.NewReader(data.Encode())
-	req, err := http.NewRequest("POST", c.Config.EndPoint, body)
-	if err != nil {
-		return http.StatusInternalServerError, err.Error()
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	date := time.Now().UTC().Format("Mon, 02 Jan 2006 15:04:05 -0700")
-	req.Header.Set("Date", date)
-	req.Header.Set("X-Amzn-Authorization", c.generateAuthHeader(date))
-
-	r, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Printf("http error: %s", err)
-		return http.StatusInternalServerError, err.Error()
+	var toAwsAddress = make([]*string, len(to))
+	for i, x := range to {
+		toAwsAddress[i] = aws.String(x)
 	}
 
-	resultbody, _ := ioutil.ReadAll(r.Body)
-	r.Body.Close()
+	input := &ses.SendEmailInput{
+		Destination: &ses.Destination{
+			CcAddresses: []*string{},
+			ToAddresses: toAwsAddress,
+		},
+		Message: &ses.Message{
+			Body: &ses.Body{
+				Html: &ses.Content{
+					Charset: aws.String(CharSet),
+					Data:    aws.String(msg),
+				},
+				Text: &ses.Content{
+					Charset: aws.String(CharSet),
+					Data:    aws.String(DefaultTextMessage),
+				},
+			},
+			Subject: &ses.Content{
+				Charset: aws.String(CharSet),
+				Data:    aws.String(subject),
+			},
+		},
+		Source: aws.String(c.Config.From),
+	}
 
-	return r.StatusCode, string(resultbody)
+	// Attempt to send the email.
+	result, err := c.SES.SendEmail(input)
+
+	// Display error messages if they occur.
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case ses.ErrCodeMessageRejected:
+				log.Printf("%v: %v\n", ses.ErrCodeMessageRejected, aerr.Error())
+			case ses.ErrCodeMailFromDomainNotVerifiedException:
+				log.Printf("%v: %v\n", ses.ErrCodeMailFromDomainNotVerifiedException, aerr.Error())
+			case ses.ErrCodeConfigurationSetDoesNotExistException:
+				log.Printf("%v: %v\n", ses.ErrCodeConfigurationSetDoesNotExistException, aerr.Error())
+			default:
+				log.Println(aerr.Error())
+			}
+		} else {
+			// Print the error, cast err to awserr.Error to get the Code and
+			// Message from an error.
+			log.Println(err.Error())
+		}
+
+		return 400, result.String()
+	}
+	return 200, result.String()
 }
