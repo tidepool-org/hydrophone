@@ -3,7 +3,10 @@
 Hydrophone is the module responsible of sending emails. 
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations. 
 
-## [Unreleased]
+## dblp.0.3.2 - 2019-04-17
+
+### Changed
+- Fix status response of the service. On some cases (MongoDb restart mainly) the status was in error whereas all other entrypoints responded. 
 
 ## dblp.0.3.1 - 2019-04-09
 
