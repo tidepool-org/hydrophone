@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:6e4809a5c0999ffd66a6b1dfe2a97e028fd529366b11b861142eec41d12fbad5"
+  digest = "1:7b0257d86ee4593834562401388aad5f3e559b41d9ad009cbe17f48dc40b5728"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -37,8 +37,8 @@
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "56c1def75689cceec1fa6f14c2eedb4b798827f9"
-  version = "v1.19.11"
+  revision = "bdd9cf7816bd404510114e712564cf76683b8355"
+  version = "v1.19.26"
 
 [[projects]]
   branch = "master"
@@ -70,8 +70,7 @@
   revision = "c2b33e84"
 
 [[projects]]
-  branch = "mgodriver"
-  digest = "1:00109e2676f15ab74cd02d20911851f7c74564871c0a0753b8b12c874bc6ab55"
+  digest = "1:d913a60fe8d4fd2a440696721c1d60ffba10c40b80bb3d380d57237c5a293999"
   name = "github.com/tidepool-org/go-common"
   packages = [
     ".",
@@ -86,7 +85,8 @@
     "jepson",
   ]
   pruneopts = "UT"
-  revision = "98e8aeba86a1ccfc954900290819c0e9b483abd4"
+  revision = "b509b0e7d1a5f36e7e8556b3dac17155e6050375"
+  version = "v0.2.0"
 
 [solve-meta]
   analyzer-name = "dep"
