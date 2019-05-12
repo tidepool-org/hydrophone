@@ -105,6 +105,8 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 // status: 403 STATUS_EXISTING_SIGNUP
 // status: 500 STATUS_ERR_FINDING_USER
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	log.Printf("sendSignUp %v", req)
+
 	if token := a.token(res, req); token != nil {
 		userId := vars["userid"]
 		if userId == "" {
@@ -231,6 +233,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 // status: 200
 // status: 404 STATUS_SIGNUP_EXPIRED
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	log.Printf("resendSignUp %v", req)
 
 	email := vars["useremail"]
 
@@ -301,6 +304,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // status: 400 STATUS_INVALID_BIRTHDAY
 // status: 400 STATUS_MISMATCH_BIRTHDAY
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	log.Printf("acceptSignUp %v", req)
 
 	confirmationId := vars["confirmationid"]
 
@@ -389,6 +393,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // status: 400 STATUS_ERR_DECODING_CONFIRMATION
 // status: 404 STATUS_SIGNUP_NOT_FOUND
 func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	log.Printf("dismissSignUp %v", req)
 
 	userId := vars["userid"]
 
@@ -408,6 +413,8 @@ func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map
 // status: 200 with a single result in an array
 // status: 404
 func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	log.Printf("getSignUp %v", req)
+
 	if token := a.token(res, req); token != nil {
 
 		userId := vars["userid"]
@@ -443,6 +450,7 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 // status: 200
 // status: 400 STATUS_SIGNUP_NO_ID
 func (a *Api) cancelSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	log.Printf("cancelSignUp %v", req)
 	userId := vars["userid"]
 
 	if userId == "" {

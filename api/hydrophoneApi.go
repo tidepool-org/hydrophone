@@ -252,6 +252,8 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 
 //find and validate the token
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
+	log.Printf("token %v", req)
+
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
 		td := a.sl.CheckToken(token)
 
