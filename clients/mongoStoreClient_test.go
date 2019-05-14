@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	mgo "gopkg.in/mgo.v2"
+	"github.com/globalsign/mgo"
 
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
@@ -32,7 +32,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	mgoConfirmationsCollection(cpy).DropCollection()
 
 	if err := mgoConfirmationsCollection(cpy).Create(&mgo.CollectionInfo{}); err != nil {
-		t.Fatalf("We couldn't created the users collection for these tests - err [%v]", err)
+		t.Fatalf("We couldn't created the users collection for these tests %v", err)
 	}
 
 	//The basics

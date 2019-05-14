@@ -1,5 +1,5 @@
 # Development
-FROM golang:1.10.2-alpine AS development
+FROM golang:1.11.4-alpine AS development
 
 WORKDIR /go/src/github.com/tidepool-org/hydrophone
 

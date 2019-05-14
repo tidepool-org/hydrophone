@@ -50,7 +50,7 @@ func Test_NewConfirmation(t *testing.T) {
 	}
 
 	if confirmation.Creator.Profile != nil {
-		t.Logf("expected `nil` actual [%s]", confirmation.Creator.Profile.FullName)
+		t.Logf("expected `nil` actual [%v]", confirmation.Creator.Profile)
 		t.Fail()
 	}
 
