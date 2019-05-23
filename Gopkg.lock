@@ -2,42 +2,62 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:78102ee4d536347316bc42e818340cc50902e45dbd7fdd524c5a1fc0cb07b588"
-  name = "github.com/globalsign/mgo"
+  digest = "1:dfbaef49cec8445748822346a7cf949c06339eb6effad4eb71cbfcb2d8fc9086"
+  name = "github.com/aws/aws-sdk-go"
   packages = [
-    ".",
-    "bson",
-    "internal/json",
-    "internal/sasl",
-    "internal/scram",
+    "aws",
+    "aws/awserr",
+    "aws/awsutil",
+    "aws/client",
+    "aws/client/metadata",
+    "aws/corehandlers",
+    "aws/credentials",
+    "aws/credentials/ec2rolecreds",
+    "aws/credentials/endpointcreds",
+    "aws/credentials/processcreds",
+    "aws/credentials/stscreds",
+    "aws/csm",
+    "aws/defaults",
+    "aws/ec2metadata",
+    "aws/endpoints",
+    "aws/request",
+    "aws/session",
+    "aws/signer/v4",
+    "internal/ini",
+    "internal/sdkio",
+    "internal/sdkrand",
+    "internal/sdkuri",
+    "internal/shareddefaults",
+    "private/protocol",
+    "private/protocol/query",
+    "private/protocol/query/queryutil",
+    "private/protocol/rest",
+    "private/protocol/xml/xmlutil",
+    "service/ses",
+    "service/sts",
   ]
   pruneopts = "UT"
-  revision = "eeefdecb41b842af6dc652aaea4026e8403e62df"
+  revision = "97ab38e1626747eaa660ff7e5e7d3f1a37172b36"
+  version = "v1.19.9"
 
 [[projects]]
-  digest = "1:3af6be4fee7c08f81f13d36f04ffb63ad4b6b5aaba12cce96095c7c2863d4912"
+  digest = "1:ca59b1175189b3f0e9f1793d2c350114be36eaabbe5b9f554b35edee1de50aea"
   name = "github.com/gorilla/mux"
   packages = ["."]
   pruneopts = "UT"
-  revision = "ed099d42384823742bba0bf9a72b53b55c9e2e38"
-  version = "v1.7.2"
+  revision = "a7962380ca08b5a188038c69871b8d3fbdf31e89"
+  version = "v1.7.0"
 
 [[projects]]
-  digest = "1:c0feb3014ad00e3c2fc6a59fa6448f2a59f6a6bc2a0c7f026939a7a8a50792cb"
-  name = "github.com/nicksnyder/go-i18n"
-  packages = [
-    "v2/i18n",
-    "v2/internal",
-    "v2/internal/plural",
-  ]
+  digest = "1:bb81097a5b62634f3e9fec1014657855610c82d19b9a40c17612e32651e35dca"
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
   pruneopts = "UT"
-  revision = "9c0db6e2b3a591b2dfabb8ef487e53cd080c57bf"
-  version = "v2.0.0-beta.6"
+  revision = "c2b33e84"
 
 [[projects]]
   branch = "master"
-  digest = "1:00e53e7a2614a1ef7c2e0b8afe42c17471cbeb62d8186313dca64de1653e25f0"
+  digest = "1:8d2948d501e8fdc1eac0c4d2c1aeed8a7a8d5f3de5a35c7bb410d74923bece77"
   name = "github.com/tidepool-org/go-common"
   packages = [
     ".",
@@ -52,40 +72,29 @@
     "jepson",
   ]
   pruneopts = "UT"
-  revision = "e336b9e03d13813a5e3b16c7391bcfac0819379f"
-  source = "github.com/mdblp/go-common"
+  revision = "917f1c799174c7d00c672467c2e0de79378f9bf4"
 
 [[projects]]
-  digest = "1:d55e0738476edb61bb4f763f407b80df7243480b84ba46ddeda64e43c26a7136"
-  name = "golang.org/x/text"
+  branch = "(default)"
+  digest = "1:d5534b5d370b8f83a981a454c3e21e2d0be531e9927fcc65e3ef979c75a55e06"
+  name = "labix.org/v2/mgo"
   packages = [
-    "internal/gen",
-    "internal/language",
-    "internal/language/compact",
-    "internal/tag",
-    "language",
-    "unicode/cldr",
+    ".",
+    "bson",
+    "sasl",
   ]
   pruneopts = "UT"
-  revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
-  version = "v0.3.2"
-
-[[projects]]
-  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
-  name = "gopkg.in/yaml.v2"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
-  version = "v2.2.2"
+  revision = "gustavo@niemeyer.net-20140701140051-90be2tvk93pcczzi"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/globalsign/mgo",
-    "github.com/globalsign/mgo/bson",
+    "github.com/aws/aws-sdk-go/aws",
+    "github.com/aws/aws-sdk-go/aws/awserr",
+    "github.com/aws/aws-sdk-go/aws/session",
+    "github.com/aws/aws-sdk-go/service/ses",
     "github.com/gorilla/mux",
-    "github.com/nicksnyder/go-i18n/v2/i18n",
     "github.com/tidepool-org/go-common",
     "github.com/tidepool-org/go-common/clients",
     "github.com/tidepool-org/go-common/clients/disc",
@@ -94,8 +103,8 @@
     "github.com/tidepool-org/go-common/clients/mongo",
     "github.com/tidepool-org/go-common/clients/shoreline",
     "github.com/tidepool-org/go-common/clients/status",
-    "golang.org/x/text/language",
-    "gopkg.in/yaml.v2",
+    "labix.org/v2/mgo",
+    "labix.org/v2/mgo/bson",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
