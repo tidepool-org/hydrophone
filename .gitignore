@@ -1,6 +1,6 @@
 deploy/
 dist/
-.vscode/
+.vscode/launch.json
 vendor/
 
 hydrophone

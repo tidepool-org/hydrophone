@@ -117,6 +117,9 @@ func main() {
 
 	if err != nil {
 		log.Fatal(err)
+	} else {
+		// SES Client can be created even though no credential is found
+		log.Printf("SES client created %s", mail.SES.ClientInfo)
 	}
 
 	// Create collection of pre-compiled templates

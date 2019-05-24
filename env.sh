@@ -16,6 +16,12 @@ export TIDEPOOL_HYDROPHONE_ENV='{
     }
 }'
 
+# Use this below to override local AWS credentials. Otherwise local credentials will be used so the user/profile needs to have rights for sending emails
+# export "AWS_PROFILE" = "${NON_DEFAULT_PROFILE}" for using a .aws/credentials non default profile
+# OR
+# export "AWS_ACCESS_KEY_ID" = "${AWS_ACCESS_KEY_ID}"
+# export "AWS_SECRET_ACCESS_KEY" = "${AWS_SECRET_ACCESS_KEY}"
+
 export TIDEPOOL_HYDROPHONE_SERVICE='{
     "service": {
         "service": "hydrophone-local",
@@ -37,9 +43,7 @@ export TIDEPOOL_HYDROPHONE_SERVICE='{
         "patientPasswordResetUrl": "https://diabeloop.zendesk.com/hc/articles/360021365373"
     },
     "sesEmail" : {
-        "serverEndpoint":"https://email.us-west-2.amazonaws.com",
-        "fromAddress" : "AWS_AUTHENTICATED_EMAIL",
-        "accessKey": "AWS_KEY",
-        "secretKey": "AWS_SECRET"
+        "region":"eu-west-1",
+        "fromAddress" : "${SUPPORT_EMAIL_ADDR}"
     }
 }'

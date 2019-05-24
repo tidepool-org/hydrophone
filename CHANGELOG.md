@@ -3,6 +3,18 @@
 Hydrophone is the module responsible of sending emails. 
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations. 
 
+## [Unreleased]
+
+### Added
+
+- Integrate Tidepool latest changes 
+  
+  __!!! There are changes in the way the AWS credentials are challenged !!!__ (see [docs/README.md](docs/README.md) for more information on this)
+  
+### Changed
+
+- Update to MongoDb 3.6 drivers in order to use replica set connections
+
 ## dblp.0.3.2 - 2019-04-17
 
 ### Changed

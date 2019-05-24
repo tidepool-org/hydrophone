@@ -42,6 +42,16 @@ func NewSesNotifier(cfg *SesNotifierConfig) (*SesNotifier, error) {
 		return nil, err
 	}
 
+	// Verify whether we have actual credentials to connect to AWS SES
+	creds, err := sess.Config.Credentials.Get()
+	if err != nil {
+		// If no credential is found, last chance for being able to send email through SES is the IAM roles attached to the EC2 instance
+		log.Printf("No AWS credentials found. Error: %s", err.Error())
+		log.Print("Now expecting an IAM role to assume for being able to connect to SES")
+	} else {
+		log.Printf("AWS Access Key found: %s", creds.AccessKeyID)
+	}
+
 	return &SesNotifier{
 		Config: cfg,
 		SES:    ses.New(sess),
