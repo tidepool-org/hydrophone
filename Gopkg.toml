@@ -1,16 +1,16 @@
 [[constraint]]
-  # Required: the root import path of the project being constrained.
   name = "github.com/tidepool-org/go-common"
   source = "github.com/mdblp/go-common"
-  # Recommended: the version constraint to enforce for the project.
-  # Note that only one of "branch", "version" or "revision" can be specified.
   branch = "master"
+
 [[constraint]]
   name = "github.com/nicksnyder/go-i18n"
   version = "=v2.0.0-beta.6"
+
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   version = "2.0.0"
+  
 [prune]
   go-tests = true
   unused-packages = true

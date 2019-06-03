@@ -1,6 +1,22 @@
 Hydrophone Dev Docs
 ===
 
+# AWS Credentials
+
+  An AWS Credential is a pair {access key;secret access key}.
+  
+  Since last Tidepool upstream integration (v0.9.0), AWS Credentials to send emails are not challenged in the _TIDEPOOL_HYDROPHONE_SERVICE/sesEMail_ configuration anymore. Also, _serverEndpoint_ is not needed anymore and has been replaced by _region_. _fromAddress_ still is challenged there.  
+  (see [.vscode/launch.json.template](.vscode/launch.json.template) or [env.sh](env.sh) for example)
+
+  Moreover, Hydrophone does not use any mechanism to push specific AWS credentials when instanciating a new AWS SES Client. I.e. there is no overriding of credentials done by the code itself.
+
+  As a matter of fact, it is necessary to provide AWS credentials differently. The credentials provider chain looks for credentials in this order. It stops when one working credential is found:
+  - Environment variables (_AWS_ACCESS_KEY_ID_ and _AWS_SECRET_ACCESS_KEY_)
+  - Shared Credentials file present in home directory (use environment variable _AWS_PROFILE_ if several profiles are present and you don't want the default one to be used)
+  - It the application is running on an EC2 instance, IAM roles for the said instance
+
+  This order is the reverse order of preference for enhanced security (IAM roles being the preferred way of doing).
+
 # HTML files templates and Internationalization
 
 ## Notice
