@@ -9,6 +9,8 @@ RUN apk --no-cache update && \
     apk --no-cache upgrade && \
     apk add build-base git cyrus-sasl-dev rsync
 
+RUN go get -u github.com/golang/dep/cmd/dep
+
 RUN  dos2unix build.sh && ./build.sh && \
      dos2unix test.sh && \
      dos2unix env.sh && \
