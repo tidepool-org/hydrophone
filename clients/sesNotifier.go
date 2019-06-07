@@ -2,9 +2,11 @@ package clients
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
 )
@@ -27,29 +29,43 @@ type (
 	// SesNotifierConfig contains the static configuration for the Amazon SES service
 	// Credentials come from the environment and are not passed in via configuration variables.
 	SesNotifierConfig struct {
-		From   string `json:"fromAddress"`
-		Region string `json:"region"`
+		From     string `json:"fromAddress"`
+		Region   string `json:"region"`
+		Endpoint string `json:"serverEndpoint"`
 	}
 )
 
 //NewSesNotifier creates a new Amazon SES notifier
 func NewSesNotifier(cfg *SesNotifierConfig) (*SesNotifier, error) {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(cfg.Region)},
-	)
 
-	if err != nil {
-		return nil, err
+	// For SES, if there is a serverEndpoint specified in config, AWS' default is overriden
+	myCustomResolver := func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+		if service == endpoints.EmailServiceID && cfg.Endpoint != "" {
+			return endpoints.ResolvedEndpoint{
+				URL:           cfg.Endpoint,
+				SigningRegion: "custom-signing-region",
+			}, nil
+		}
+
+		return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
 	}
 
-	// Verify whether we have actual credentials to connect to AWS SES
+	sess := session.Must(session.NewSession(&aws.Config{
+		Region:           aws.String(cfg.Region),
+		EndpointResolver: endpoints.ResolverFunc(myCustomResolver),
+	}))
+
+	// Verify whether we have actual credentials (for information tracing)
+	// It is looking for credentials in this order:
+	// - environment variables AWS_ACCESS_KEY_ID + AWS_ACCESS_SECRET_KEY
+	// - existing .aws profile
+	// - EC role to be assumed
+	// Note: validity of found credentials is not performed at this stage
 	creds, err := sess.Config.Credentials.Get()
 	if err != nil {
-		// If no credential is found, last chance for being able to send email through SES is the IAM roles attached to the EC2 instance
-		log.Printf("No AWS credentials found. Error: %s", err.Error())
-		log.Print("Now expecting an IAM role to assume for being able to connect to SES")
+		log.Printf("No AWS credentials were found. Email will not be sent. Error: %s", err.Error())
 	} else {
-		log.Printf("AWS Access Key found: %s", creds.AccessKeyID)
+		log.Printf("AWS credentials found with provider %s", creds.ProviderName)
 	}
 
 	return &SesNotifier{
@@ -92,26 +108,13 @@ func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string
 	// Attempt to send the email.
 	result, err := c.SES.SendEmail(input)
 
-	// Display error messages if they occur.
+	// Return error messages if they occur. They are traced in the caller function
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case ses.ErrCodeMessageRejected:
-				log.Printf("%v: %v\n", ses.ErrCodeMessageRejected, aerr.Error())
-			case ses.ErrCodeMailFromDomainNotVerifiedException:
-				log.Printf("%v: %v\n", ses.ErrCodeMailFromDomainNotVerifiedException, aerr.Error())
-			case ses.ErrCodeConfigurationSetDoesNotExistException:
-				log.Printf("%v: %v\n", ses.ErrCodeConfigurationSetDoesNotExistException, aerr.Error())
-			default:
-				log.Println(aerr.Error())
-			}
+			return http.StatusInternalServerError, aerr.Error()
 		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
-			log.Println(err.Error())
+			return http.StatusInternalServerError, err.Error()
 		}
-
-		return 400, result.String()
 	}
-	return 200, result.String()
+	return http.StatusOK, result.String()
 }

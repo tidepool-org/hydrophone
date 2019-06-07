@@ -37,13 +37,14 @@ export TIDEPOOL_HYDROPHONE_SERVICE='{
         "serverSecret": "This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy",
         "webUrl": "http://localhost:3000",
         "supportUrl": "mailto:yourloops@diabeloop.fr",
-        "assetUrl": "https://s3-us-west-2.amazonaws.com/tidepool-dev-asset",
+        "assetUrl": "https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets",
         "i18nTemplatesPath": "/go/src/github.com/tidepool-org/hydrophone/templates",
         "allowPatientResetPassword": true,
         "patientPasswordResetUrl": "https://diabeloop.zendesk.com/hc/articles/360021365373"
     },
     "sesEmail" : {
         "region":"eu-west-1",
-        "fromAddress" : "${SUPPORT_EMAIL_ADDR}"
+        "fromAddress": "${SUPPORT_EMAIL_ADDR}"
+        "serverEndpoint": ""
     }
 }'

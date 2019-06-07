@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:38ca2881c875ea098dac4f78fdbb6e9c266af1c424b323a459c6e4f11cf7a537"
+  digest = "1:d4811b28c318a726c23775c47e7e44a84df4264168172771651c86c3e635c530"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -38,8 +38,8 @@
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "d6c5ccab427af7408a67e0f45c6e6a3d515fdaee"
-  version = "v1.19.39"
+  revision = "1fbd98bfc4019214235f69e4863bad1147765c49"
+  version = "v1.19.43"
 
 [[projects]]
   branch = "master"
@@ -83,7 +83,7 @@
   version = "v2.0.0-beta.6"
 
 [[projects]]
-  branch = "merge/tidepool"
+  branch = "master"
   digest = "1:a72c9d98cb9ac6ce839cac5f40fa39b2ac096d7c3bcd201ed63f21ff5b4d776f"
   name = "github.com/tidepool-org/go-common"
   packages = [
@@ -99,7 +99,7 @@
     "jepson",
   ]
   pruneopts = "UT"
-  revision = "5195218bce7076dd18e13fc4f5e83a2dc994d163"
+  revision = "a100338f629465cc8ee9598e57db6187c0eaf7a9"
   source = "github.com/mdblp/go-common"
 
 [[projects]]
@@ -131,6 +131,7 @@
   input-imports = [
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/awserr",
+    "github.com/aws/aws-sdk-go/aws/endpoints",
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/ses",
     "github.com/globalsign/mgo",
