@@ -1,0 +1,42 @@
+global:
+  ports:
+    gatekeeper: 9123
+    highwater: 9191
+    hydrophone: 9157
+    seagull: 9120
+    shoreline: 9107
+  aws:
+    region: us-west-2
+  image:
+    pullPolicy: IfNotPresent
+  mongo: 
+    enabled: true
+    host: 'mongodb'
+    username: ''
+    password: ''
+    port: 27017
+    tls: 'false'
+    optParams: ''
+  resources:
+    {}
+  gateway:
+    domain:
+      name: "tidepool.org"
+    name: gloo
+    proxy:
+      name:  gateway-proxy
+      namespace: gloo-system
+    tlssecret:
+      name: tidepool-org
+      namespace: default
+    https:
+      enabled: true
+    http:
+      enabled: false
+
+hydrophone:
+  image: tidepool/hydrophone:v0.9.0-release.1
+  ses:
+    fromAddress: "Tidepool <noreply@tidepool.org>"
+  #bucket: ''
+
