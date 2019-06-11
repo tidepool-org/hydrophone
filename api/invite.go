@@ -429,7 +429,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						"WebPath":      webPath,
 					}
 
-					if a.createAndSendNotification(invite, emailContent) {
+					if a.createAndSendNotification(req, invite, emailContent) {
 						a.logMetric("invite sent", req)
 					}
 				}

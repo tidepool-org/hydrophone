@@ -34,6 +34,7 @@ type (
 		ServerSecret string `json:"serverSecret"` //used for services
 		WebURL       string `json:"webUrl"`
 		AssetURL     string `json:"assetUrl"`
+		Protocol     string `json:"protocol"`
 	}
 
 	group struct {
@@ -83,6 +84,14 @@ func InitApi(
 		seagull:    seagull,
 		templates:  templates,
 	}
+}
+
+func (a *Api) getWebURL(req *http.Request) string {
+	if a.Config.WebURL == "" {
+	    host := req.Header.Get("Host")
+	    return a.Config.Protocol + "://" + host
+	}
+	return a.Config.WebURL
 }
 
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
@@ -210,7 +219,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 }
 
 //Generate a notification from the given confirmation,write the error if it fails
-func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[string]interface{}) bool {
+func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}) bool {
 	templateName := conf.TemplateName
 	if templateName == models.TemplateNameUndefined {
 		switch conf.Type {
@@ -228,7 +237,7 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 		}
 	}
 
-	content["WebURL"] = a.Config.WebURL
+	content["WebURL"] = a.getWebURL(req)
 	content["AssetURL"] = a.Config.AssetURL
 
 	template, ok := a.templates[templateName]

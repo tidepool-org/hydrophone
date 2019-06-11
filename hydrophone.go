@@ -55,6 +55,13 @@ func main() {
 		config.ShorelineConfig.Secret = serverSecret
 		config.Api.ServerSecret = serverSecret
 	}
+
+	protocol, found := os.LookupEnv("PROTOCOL")
+	if found {
+		config.Api.Protocol = protocol
+	} else {
+		config.Api.Protocol = "https"
+	}
 	/*
 	 * Hakken setup
 	 */

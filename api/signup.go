@@ -211,7 +211,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 						emailContent["CreatorName"] = newSignUp.Creator.Profile.FullName
 					}
 
-					if a.createAndSendNotification(newSignUp, emailContent) {
+					if a.createAndSendNotification(req, newSignUp, emailContent) {
 						a.logMetricAsServer("signup confirmation sent")
 						res.WriteHeader(http.StatusOK)
 						return
@@ -231,7 +231,6 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 // status: 200
 // status: 404 STATUS_SIGNUP_EXPIRED
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
 	email := vars["useremail"]
 
 	toFind := &models.Confirmation{Email: email, Status: models.StatusPending}
@@ -275,7 +274,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					emailContent["CreatorName"] = found.Creator.Profile.FullName
 				}
 
-				if a.createAndSendNotification(found, emailContent) {
+				if a.createAndSendNotification(req, found, emailContent) {
 					a.logMetricAsServer("signup confirmation re-sent")
 				} else {
 					a.logMetricAsServer("signup confirmation failed to be sent")
@@ -301,7 +300,6 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // status: 400 STATUS_INVALID_BIRTHDAY
 // status: 400 STATUS_MISMATCH_BIRTHDAY
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
 	confirmationId := vars["confirmationid"]
 
 	if confirmationId == "" {
@@ -389,7 +387,6 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // status: 400 STATUS_ERR_DECODING_CONFIRMATION
 // status: 404 STATUS_SIGNUP_NOT_FOUND
 func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
 	userId := vars["userid"]
 
 	if userId == "" {
