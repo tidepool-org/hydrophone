@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:7b0257d86ee4593834562401388aad5f3e559b41d9ad009cbe17f48dc40b5728"
+  digest = "1:a52a283a7ec33f7f0af4b424c4e68b0104b1351c898adbc7a57e326252b87509"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -29,6 +29,7 @@
     "internal/sdkuri",
     "internal/shareddefaults",
     "private/protocol",
+    "private/protocol/json/jsonutil",
     "private/protocol/query",
     "private/protocol/query/queryutil",
     "private/protocol/rest",
@@ -37,8 +38,8 @@
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "bdd9cf7816bd404510114e712564cf76683b8355"
-  version = "v1.19.26"
+  revision = "b0b59fd2ceb03908e5d3bcd1449b46ce75508f4b"
+  version = "v1.20.7"
 
 [[projects]]
   branch = "master"
@@ -55,12 +56,12 @@
   revision = "eeefdecb41b842af6dc652aaea4026e8403e62df"
 
 [[projects]]
-  digest = "1:d5f97fc268267ec1b61c3453058c738246fc3e746f14b1ae25161513b7367b0c"
+  digest = "1:3af6be4fee7c08f81f13d36f04ffb63ad4b6b5aaba12cce96095c7c2863d4912"
   name = "github.com/gorilla/mux"
   packages = ["."]
   pruneopts = "UT"
-  revision = "c5c6c98bc25355028a63748a498942a6398ccd22"
-  version = "v1.7.1"
+  revision = "ed099d42384823742bba0bf9a72b53b55c9e2e38"
+  version = "v1.7.2"
 
 [[projects]]
   digest = "1:bb81097a5b62634f3e9fec1014657855610c82d19b9a40c17612e32651e35dca"
@@ -70,7 +71,7 @@
   revision = "c2b33e84"
 
 [[projects]]
-  digest = "1:d913a60fe8d4fd2a440696721c1d60ffba10c40b80bb3d380d57237c5a293999"
+  digest = "1:bba15c5ba5b5c9e2bfac3e969b1090e259d793f77488e354b1093a275b2d3cf7"
   name = "github.com/tidepool-org/go-common"
   packages = [
     ".",
@@ -85,8 +86,8 @@
     "jepson",
   ]
   pruneopts = "UT"
-  revision = "b509b0e7d1a5f36e7e8556b3dac17155e6050375"
-  version = "v0.2.0"
+  revision = "d61883919ae5dd8085fc313d3058269941b4f234"
+  version = "v0.3.2"
 
 [solve-meta]
   analyzer-name = "dep"
