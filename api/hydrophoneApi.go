@@ -89,7 +89,6 @@ func InitApi(
 func (a *Api) getWebURL(req *http.Request) string {
 	if a.Config.WebURL == "" {
 	    host := req.Header.Get("Host")
-	    log.Printf("host %v", host)
 	    return a.Config.Protocol + "://" + host
 	}
 	return a.Config.WebURL
