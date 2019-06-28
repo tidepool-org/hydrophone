@@ -3,7 +3,11 @@
 Hydrophone is the module responsible of sending emails. 
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations. 
 
-## unreleased 
+## [Unreleased] 
+
+## [dblp.0.3.3] - 2019-06-28
+
+### Fixed
 
 - PT-449 Fix Error when several invitations are sent to a person who does not have an account yet. The first invitation can be accepted but the remaining ones cannot be.
 
