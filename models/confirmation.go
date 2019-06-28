@@ -146,7 +146,21 @@ func (c *Confirmation) ValidateCreatorID(expectedCreatorID string, validationErr
 	return c
 }
 
-func (c *Confirmation) ValidateUserID(expectedUserID string, validationErrors *[]error) *Confirmation {
+// ValidateUserID
+// Validate the user based on UserID and Email (entered as username)
+//
+// expectedUserID: userid of the account
+// expectedEmail: username of the account (email)
+// validationErrors: array of error filled in case of error, empty if everything is ok
+//
+func (c *Confirmation) ValidateUserID(expectedUserID string, expectedEmail string, validationErrors *[]error) *Confirmation {
+
+	if expectedEmail == c.Email && expectedUserID != c.UserId {
+		// corner case where UserID is not available for new accounts.
+		// in that case we rely on the email and we override the UserId with
+		// the expectedUserID
+		c.UserId = expectedUserID
+	}
 	if expectedUserID != c.UserId {
 		*validationErrors = append(
 			*validationErrors,
