@@ -203,23 +203,9 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 
 		validationErrors := []error{}
 
-		/* get the invitee details so that we can use its username/email to
-		*  validate it when the invitation was sent while inviteeID was not
-		*  yet created.
-		 */
-		inviteeDetails, err := a.sl.GetUser(inviteeID, a.sl.TokenProvide())
-		if err != nil {
-			log.Printf("AcceptInvite InviteeID not found %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
-				http.StatusForbidden,
-			)
-			return
-		}
 		conf.ValidateStatus(models.StatusPending, &validationErrors).
 			ValidateType(models.TypeCareteamInvite, &validationErrors).
-			ValidateUserID(inviteeID, inviteeDetails.Username, &validationErrors).
+			ValidateUserID(inviteeID, &validationErrors).
 			ValidateCreatorID(invitorID, &validationErrors)
 
 		if len(validationErrors) > 0 {
