@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:a52a283a7ec33f7f0af4b424c4e68b0104b1351c898adbc7a57e326252b87509"
+  digest = "1:a0e1cc399e9cba9bf0ff26d09878e7b9311728d93d4ed38203a5eaec8ad0b83c"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -38,8 +38,8 @@
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "b0b59fd2ceb03908e5d3bcd1449b46ce75508f4b"
-  version = "v1.20.7"
+  revision = "5995f581282b82398d39fa11a1f059fd6a3ee737"
+  version = "v1.20.18"
 
 [[projects]]
   branch = "master"
@@ -56,12 +56,12 @@
   revision = "eeefdecb41b842af6dc652aaea4026e8403e62df"
 
 [[projects]]
-  digest = "1:3af6be4fee7c08f81f13d36f04ffb63ad4b6b5aaba12cce96095c7c2863d4912"
+  digest = "1:cbec35fe4d5a4fba369a656a8cd65e244ea2c743007d8f6c1ccb132acf9d1296"
   name = "github.com/gorilla/mux"
   packages = ["."]
   pruneopts = "UT"
-  revision = "ed099d42384823742bba0bf9a72b53b55c9e2e38"
-  version = "v1.7.2"
+  revision = "00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15"
+  version = "v1.7.3"
 
 [[projects]]
   digest = "1:bb81097a5b62634f3e9fec1014657855610c82d19b9a40c17612e32651e35dca"
@@ -71,7 +71,7 @@
   revision = "c2b33e84"
 
 [[projects]]
-  digest = "1:bba15c5ba5b5c9e2bfac3e969b1090e259d793f77488e354b1093a275b2d3cf7"
+  digest = "1:fe7e869da0acf05b5745d238d5d74cc1a0930260b02591c0b8faf96dce54ab06"
   name = "github.com/tidepool-org/go-common"
   packages = [
     ".",
@@ -86,8 +86,8 @@
     "jepson",
   ]
   pruneopts = "UT"
-  revision = "d61883919ae5dd8085fc313d3058269941b4f234"
-  version = "v0.3.2"
+  revision = "0556ae3f1c8e2004207b7c594fbc8c97b2777109"
+  version = "v0.4.0"
 
 [solve-meta]
   analyzer-name = "dep"
