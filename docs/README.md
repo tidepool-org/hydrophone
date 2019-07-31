@@ -1,6 +1,53 @@
 Hydrophone Dev Docs
 ===
 
+# Configuration
+
+See [.vscode/launch.json.template](../.vscode/launch.json.template) or [env.sh](../env.sh) for examples.
+
+## TIDEPOOL_HYDROPHONE_ENV
+
+Contains configuration about the stack where Hydrophone is running.
+
+## TIDEPOOL_HYDROPHONE_SERVICE
+
+Contains configuration necessary to run Hydrophone as a microservice.
+
+### sesEmail
+
+This configuration item is a JSON string that uses the following:
+- _fromAddress_: the email address to be used as the email sender
+- _region_: the AWS region to be used for AWS SES service
+- _serverEndpoint_: (if present) this will be used to override the AWS SES default endpoint (can be used in conjunction with MockServer for example) 
+
+**!!! WARNING !!! Since last Tidepool integration, AWS Credentials to send emails are not used here anymore. See [below](#aws-credentials).**
+
+### hydrophone
+
+This configuration item is a JSON string that uses the following:
+- _serverSecret_: the secret to be used to connect to shoreline and get server token
+- _webUrl_: URL for the links to "Blip" in the emails
+- _supportUrl_: URL for the links to "Support" in the emails
+- _assetUrl_: where public artefacts needed by emails are present (like images)
+- _i18nTemplatesPath_: where the HTML templates for emails reside
+- _allowPatientResetPassword_: toggle to allow/disallow patient to reset their password (if disallowed, a specific mail is sent to the patient)
+- _patientPasswordResetUrl_: URL where the instructions for the patient to reset his email are
+  
+# AWS Credentials
+
+  An AWS Credential is a pair {access key;secret access key}.
+  
+  Since last Tidepool upstream integration, AWS Credentials to send emails are not challenged in the _TIDEPOOL_HYDROPHONE_SERVICE/sesEMail_ configuration anymore. 
+  
+  Moreover, Hydrophone does not use any mechanism to push specific AWS credentials when instanciating a new AWS SES Client. I.e. there is no overriding of credentials done by the code itself.
+
+  **As a matter of fact**, it is necessary to provide AWS credentials differently. The credentials provider chain looks for credentials in this order. It stops when one working credential is found:
+  - Environment variables (_AWS_ACCESS_KEY_ID_ and _AWS_SECRET_ACCESS_KEY_)
+  - Shared Credentials file present in home directory (use environment variable _AWS_PROFILE_ if several profiles are present and you don't want the default one to be used)
+  - If the application is running on an EC2 instance, IAM roles for the said instance
+
+  This order is the reverse order of preference for enhanced security (IAM roles being the preferred way of doing).
+
 # HTML files templates and Internationalization
 
 ## Notice
@@ -127,11 +174,12 @@ with
 
 # Testing
 
-## Local Email Testing
+## Mocking AWS SES
 
-Testing locally requires that you have a temporary AWS SES credentials provide to you by the backend engineering team lead. These credentials must be kept private, as soon as testing is complete, the engineering team lead mush be informed so as to revoke them.
+In order to test emails without actually sending them, it is possible to mock the AWS SES service. This can be achieved by using [MockServer](http://www.mock-server.com/) that is capturing all the HTTP traffic and acting upon email pattern matching.
+For that, it is possible to override the AWS SES endpoint using _TIDEPOOL_HYDROPHONE_SERVICE/sesEmail/serverEndpoint_ item. See [above](#sesemail)
 
-Extreme care must be taken to not commit this to out public git repo. If that were to happen, for any reason or lenght of time, the backend engineering team lead MUST be notified immediately.
+**Note**: it is necessary to pass AWS Credentials even if using a Mock. These credentials are still challenged by the SDK before the actual attempt to send email, even if not checked for actual validity.
 
 ## Multiple Email Client Testing
 

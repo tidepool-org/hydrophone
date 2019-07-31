@@ -107,6 +107,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		} else {
 			a.logMetricAsServer("reset confirmation failed to be sent")
 			log.Print("Something happened generating a passwordReset email")
+			// TODO: do not respond with http.StatusOK (see Jira PT-311)
 		}
 	}
 	//unless no email was given we say its all good

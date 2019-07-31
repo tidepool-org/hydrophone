@@ -3,20 +3,27 @@
 Hydrophone is the module responsible of sending emails. 
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations. 
 
-## [Unreleased] 
+## 0.4.0 - 2019-07-31
+### Added
+- Add capacity to override the AWS SES endpoint through the environment variable TIDEPOOL_HYDROPHONE_SERVICE/sesEMail
+- Integrate Tidepool latest changes 
+  
+  __!!! There are changes in the way the AWS credentials are challenged !!!__ (see [docs/README.md](docs/README.md) for more information on this)
+  
+### Changed
+- Review AWS SES Errors handling
+- Update to MongoDb 3.6 drivers in order to use replica set connections
 
-## [dblp.0.3.3] - 2019-06-28
-
+## 0.3.3 - 2019-06-28
 ### Fixed
-
 - PT-449 Fix Error when several invitations are sent to a person who does not have an account yet. The first invitation can be accepted but the remaining ones cannot be.
 
-## dblp.0.3.2 - 2019-04-17
+## 0.3.2 - 2019-04-17
 
 ### Changed
 - Fix status response of the service. On some cases (MongoDb restart mainly) the status was in error whereas all other entrypoints responded. 
 
-## dblp.0.3.1 - 2019-04-09
+## 0.3.1 - 2019-04-09
 
 ### Changed
 - PT-301 Fix wrong link to detailed instructions for Patient Reset Password. Complete link is now entirely in configuration

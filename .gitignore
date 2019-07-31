@@ -1,6 +1,8 @@
 deploy/
 dist/
-.vscode/
+.vscode/launch.json
+vendor/
 
+hydrophone
 artifact_go.sh
 *.exe

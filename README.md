@@ -1,7 +1,7 @@
 hydrophone
 ==========
 
-[![Build Status](https://travis-ci.org/tidepool-org/hydrophone.png)](https://travis-ci.org/tidepool-org/hydrophone)
+[![Build Status](https://travis-ci.com/tidepool-org/hydrophone.png)](https://travis-ci.com/tidepool-org/hydrophone)
 
 This API sends notifications (using relevant language) to users for things like forgotten passwords, initial signup, and invitations.  
 

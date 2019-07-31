@@ -1,76 +1,120 @@
 package clients
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
-	"strings"
-	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ses"
+)
+
+const (
+	// CharSet The character encoding for the email.
+	CharSet = "UTF-8"
+
+	// DefaultTextMessage will be sent to non-HTML email clients that receive our messages
+	DefaultTextMessage = "You need an HTML client to read this email."
 )
 
 type (
+	// SesNotifier contains all information needed to send Amazon SES messages
 	SesNotifier struct {
 		Config *SesNotifierConfig
+		SES    *ses.SES
 	}
+
+	// SesNotifierConfig contains the static configuration for the Amazon SES service
+	// Credentials come from the environment and are not passed in via configuration variables.
 	SesNotifierConfig struct {
-		EndPoint  string `json:"serverEndpoint"`
-		From      string `json:"fromAddress"`
-		SecretKey string `json:"secretKey"`
-		AccessKey string `json:"accessKey"`
+		From     string `json:"fromAddress"`
+		Region   string `json:"region"`
+		Endpoint string `json:"serverEndpoint"`
 	}
 )
 
-func NewSesNotifier(cfg *SesNotifierConfig) *SesNotifier {
+//NewSesNotifier creates a new Amazon SES notifier
+func NewSesNotifier(cfg *SesNotifierConfig) (*SesNotifier, error) {
+
+	// For SES, if there is a serverEndpoint specified in config, AWS' default is overriden
+	myCustomResolver := func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+		if service == endpoints.EmailServiceID && cfg.Endpoint != "" {
+			return endpoints.ResolvedEndpoint{
+				URL:           cfg.Endpoint,
+				SigningRegion: "custom-signing-region",
+			}, nil
+		}
+
+		return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
+	}
+
+	sess := session.Must(session.NewSession(&aws.Config{
+		Region:           aws.String(cfg.Region),
+		EndpointResolver: endpoints.ResolverFunc(myCustomResolver),
+	}))
+
+	// Verify whether we have actual credentials (for information tracing)
+	// It is looking for credentials in this order:
+	// - environment variables AWS_ACCESS_KEY_ID + AWS_ACCESS_SECRET_KEY
+	// - existing .aws profile
+	// - EC role to be assumed
+	// Note: validity of found credentials is not performed at this stage
+	creds, err := sess.Config.Credentials.Get()
+	if err != nil {
+		log.Printf("No AWS credentials were found. Email will not be sent. Error: %s", err.Error())
+	} else {
+		log.Printf("AWS credentials found with provider %s", creds.ProviderName)
+	}
+
 	return &SesNotifier{
 		Config: cfg,
-	}
+		SES:    ses.New(sess),
+	}, nil
 }
 
+// Send a message to a list of recipients with a given subject
 func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string) {
-
-	data := make(url.Values)
-	data.Add("Action", "SendEmail")
-	data.Add("Source", c.Config.From)
-	data.Add("Destination.ToAddresses.member.1", strings.Join(to, ", "))
-	data.Add("Message.Subject.Data", subject)
-	data.Add("Message.Body.Html.Data", msg)
-	data.Add("AWSAccessKeyId", c.Config.AccessKey)
-
-	return c.sesPost(data)
-}
-
-func (c *SesNotifier) generateAuthHeader(date string) string {
-	h := hmac.New(sha256.New, []uint8(c.Config.SecretKey))
-	h.Write([]uint8(date))
-	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
-	return fmt.Sprintf("AWS3-HTTPS AWSAccessKeyId=%s, Algorithm=HmacSHA256, Signature=%s", c.Config.AccessKey, signature)
-}
-
-func (c *SesNotifier) sesPost(data url.Values) (int, string) {
-	body := strings.NewReader(data.Encode())
-	req, err := http.NewRequest("POST", c.Config.EndPoint, body)
-	if err != nil {
-		return http.StatusInternalServerError, err.Error()
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	date := time.Now().UTC().Format("Mon, 02 Jan 2006 15:04:05 -0700")
-	req.Header.Set("Date", date)
-	req.Header.Set("X-Amzn-Authorization", c.generateAuthHeader(date))
-
-	r, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Printf("http error: %s", err)
-		return http.StatusInternalServerError, err.Error()
+	var toAwsAddress = make([]*string, len(to))
+	for i, x := range to {
+		toAwsAddress[i] = aws.String(x)
 	}
 
-	resultbody, _ := ioutil.ReadAll(r.Body)
-	r.Body.Close()
+	input := &ses.SendEmailInput{
+		Destination: &ses.Destination{
+			CcAddresses: []*string{},
+			ToAddresses: toAwsAddress,
+		},
+		Message: &ses.Message{
+			Body: &ses.Body{
+				Html: &ses.Content{
+					Charset: aws.String(CharSet),
+					Data:    aws.String(msg),
+				},
+				Text: &ses.Content{
+					Charset: aws.String(CharSet),
+					Data:    aws.String(DefaultTextMessage),
+				},
+			},
+			Subject: &ses.Content{
+				Charset: aws.String(CharSet),
+				Data:    aws.String(subject),
+			},
+		},
+		Source: aws.String(c.Config.From),
+	}
 
-	return r.StatusCode, string(resultbody)
+	// Attempt to send the email.
+	result, err := c.SES.SendEmail(input)
+
+	// Return error messages if they occur. They are traced in the caller function
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			return http.StatusInternalServerError, aerr.Error()
+		} else {
+			return http.StatusInternalServerError, err.Error()
+		}
+	}
+	return http.StatusOK, result.String()
 }

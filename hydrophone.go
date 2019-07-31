@@ -23,6 +23,7 @@ import (
 )
 
 type (
+	// Config is the configuration for the service
 	Config struct {
 		clients.Config
 		Service disc.ServiceListing  `json:"service"`
@@ -40,6 +41,21 @@ func main() {
 		log.Panic("Problem loading config ", err)
 	}
 
+	region, found := os.LookupEnv("REGION")
+	if found {
+		config.Mail.Region = region
+	}
+
+	if config.Mail.Region == "" {
+		config.Mail.Region = "us-west-2"
+	}
+
+	// server secret may be passed via a separate env variable to accomodate easy secrets injection via Kubernetes
+	serverSecret, found := os.LookupEnv("SERVER_SECRET")
+	if found {
+		config.ShorelineConfig.Secret = serverSecret
+		config.Api.ServerSecret = serverSecret
+	}
 	/*
 	 * Hakken setup
 	 */
@@ -47,10 +63,12 @@ func main() {
 		WithConfig(&config.HakkenConfig).
 		Build()
 
-	if err := hakkenClient.Start(); err != nil {
-		log.Fatal(err)
+	if !config.HakkenConfig.SkipHakken {
+		if err := hakkenClient.Start(); err != nil {
+			log.Fatal(err)
+		}
+		defer hakkenClient.Close()
 	}
-	defer hakkenClient.Close()
 
 	/*
 	 * Clients
@@ -95,7 +113,14 @@ func main() {
 	 * hydrophone setup
 	 */
 	store := sc.NewMongoStoreClient(&config.Mongo)
-	mail := sc.NewSesNotifier(&config.Mail)
+	mail, err := sc.NewSesNotifier(&config.Mail)
+
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		// SES Client can be created even though no credential is found
+		log.Printf("SES client created %s", mail.SES.ClientInfo)
+	}
 
 	// Create collection of pre-compiled templates
 	// Templates are built based on HTML files which location is calculated from config
