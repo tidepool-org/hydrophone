@@ -372,8 +372,8 @@ func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
 			confirmations[i].UserId = userId
 			a.Store.UpsertConfirmation(confirmations[i])
 		}
-		return
 	}
+	return
 }
 
 func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
