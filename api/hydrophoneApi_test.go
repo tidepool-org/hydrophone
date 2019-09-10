@@ -36,7 +36,8 @@ var (
 	NO_PARAMS = map[string]string{}
 
 	FAKE_CONFIG = Config{
-		ServerSecret: "shhh! don't tell",
+		ServerSecret:      "shhh! don't tell",
+		I18nTemplatesPath: "../templates",
 	}
 	/*
 	 * basics setup

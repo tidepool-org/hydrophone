@@ -447,6 +447,11 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 					if a.createAndSendNotification(invite, emailContent, inviteeLanguage) {
 						a.logMetric("invite sent", req)
+					} else {
+						a.logMetric("invite failed to be sent", req)
+						log.Print("Something happened generating an invite email")
+						res.WriteHeader(http.StatusUnprocessableEntity)
+						return
 					}
 				}
 

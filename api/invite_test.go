@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/tidepool-org/hydrophone/templates"
 )
 
 func initTestingRouterNoPerms() *mux.Router {
@@ -231,6 +233,12 @@ func TestInviteResponds(t *testing.T) {
 		},
 	}
 
+	templatesPath, found := os.LookupEnv("TEMPLATE_PATH")
+	if found {
+		FAKE_CONFIG.I18nTemplatesPath = templatesPath
+	}
+	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath)
+
 	for idx, inviteTest := range inviteTests {
 		// don't run a test if it says to skip it
 		if inviteTest.skip {
@@ -239,7 +247,7 @@ func TestInviteResponds(t *testing.T) {
 		var testRtr = mux.NewRouter()
 
 		//default flow, fully authorized
-		hydrophone := InitApi(
+		hydrophone := InitApiWithI18n(
 			FAKE_CONFIG,
 			mockStore,
 			mockNotifier,
@@ -252,7 +260,7 @@ func TestInviteResponds(t *testing.T) {
 
 		//testing when there is nothing to return from the store
 		if inviteTest.returnNone {
-			hydrophone = InitApi(
+			hydrophone = InitApiWithI18n(
 				FAKE_CONFIG,
 				mockStoreEmpty,
 				mockNotifier,

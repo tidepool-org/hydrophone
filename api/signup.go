@@ -141,6 +141,7 @@ func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, 
 			} else {
 				a.logMetric("signup confirmation failed to be sent", req)
 				log.Print("Something happened generating a signup email")
+				res.WriteHeader(http.StatusUnprocessableEntity)
 			}
 		}
 	}
@@ -280,6 +281,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 					} else {
 						a.logMetric("signup confirmation failed to be sent", req)
 						log.Print("Something happened generating a signup email")
+						res.WriteHeader(http.StatusUnprocessableEntity)
 					}
 				}
 			}
@@ -350,6 +352,8 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				} else {
 					a.logMetricAsServer("signup confirmation failed to be sent")
 					log.Print("resendSignUp: Something happened trying to resend a signup email")
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					return
 				}
 			}
 

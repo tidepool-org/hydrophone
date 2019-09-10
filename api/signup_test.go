@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/tidepool-org/hydrophone/templates"
 )
 
 func TestSignupResponds(t *testing.T) {
@@ -51,7 +53,7 @@ func TestSignupResponds(t *testing.T) {
 		{
 			// no token is all good
 			method:   "POST",
-			url:      "/resend/signup/email@address.org",
+			url:      "/resend/signup/email.resend@address.org",
 			respCode: 200,
 		},
 		{
@@ -217,6 +219,12 @@ func TestSignupResponds(t *testing.T) {
 		},
 	}
 
+	templatesPath, found := os.LookupEnv("TEMPLATE_PATH")
+	if found {
+		FAKE_CONFIG.I18nTemplatesPath = templatesPath
+	}
+	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath)
+
 	for idx, test := range tests {
 
 		if test.skip {
@@ -227,10 +235,10 @@ func TestSignupResponds(t *testing.T) {
 		var testRtr = mux.NewRouter()
 
 		if test.returnNone {
-			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
+			hydrophoneFindsNothing := InitApiWithI18n(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
-			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
+			hydrophone := InitApiWithI18n(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
 			hydrophone.SetHandlers("", testRtr)
 		}
 
