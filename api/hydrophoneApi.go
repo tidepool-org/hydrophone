@@ -125,6 +125,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	rtr.HandleFunc("/status", a.GetStatus).Methods("GET")
 
+	rtr.Handle("/sanity_check/{userid}", varsHandler(a.sendSanityCheckEmail)).Methods("POST")
+
 	// POST /confirm/send/signup/:userid
 	// POST /confirm/send/forgot/:useremail
 	// POST /confirm/send/invite/:userid

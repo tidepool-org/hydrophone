@@ -93,6 +93,7 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 	}
 }
 
+// send an informative email about patient account creation
 func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	var signerLanguage string
 	var newSignUp *models.Confirmation

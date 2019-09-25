@@ -7,6 +7,11 @@ This API sends notifications to users for things like forgotten passwords, initi
 ### Fixed
 - PT-311 Hydrophone service return HTTP 200 when the SES email service returned an error
 
+## [Unreleased]
+
+### Added
+- PT-636 Add a new route for sanity check email to ensure configuration is allowing emails to actually be sent
+
 ## 0.4.0 - 2019-07-31
 ### Added
 - Add capacity to override the AWS SES endpoint through the environment variable TIDEPOOL_HYDROPHONE_SERVICE/sesEMail
