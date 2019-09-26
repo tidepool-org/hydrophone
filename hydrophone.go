@@ -18,8 +18,8 @@ import (
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/hydrophone/api"
-	sc "github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/templates"
+	sc "github.com/tidepool-org/hydrophone/clients"
 )
 
 type (
