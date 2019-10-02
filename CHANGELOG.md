@@ -3,14 +3,12 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
-## Unreleased
-### Fixed
-- PT-311 Hydrophone service return HTTP 200 when the SES email service returned an error
-
-## [Unreleased]
-
+## [0.5.0] - 2019-10-02
 ### Added
 - PT-636 Add a new route for sanity check email to ensure configuration is allowing emails to actually be sent
+
+### Fixed
+- PT-311 Hydrophone service return HTTP 200 when the SES email service returned an error
 
 ## 0.4.0 - 2019-07-31
 ### Added
