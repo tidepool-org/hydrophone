@@ -266,7 +266,8 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 
 		if td == nil {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
-			log.Printf("token %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
+			log.Printf("token %v err[%v] ", token, statusErr)
+			log.Printf("request %v", req)
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
 			return nil
 		}
