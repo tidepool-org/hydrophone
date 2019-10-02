@@ -3,7 +3,10 @@ sudo: false
 language: go
 
 go:
-  - 1.11.4
+  - 1.12.7
+
+env:
+  - GO111MODULE=on
 
 go_import_path: github.com/tidepool-org/hydrophone
 

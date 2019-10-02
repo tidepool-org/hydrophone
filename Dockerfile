@@ -1,5 +1,5 @@
 # Development
-FROM golang:1.11.4-alpine AS development
+FROM golang:1.12.7-alpine AS development
 
 WORKDIR /go/src/github.com/tidepool-org/hydrophone
 
@@ -20,6 +20,7 @@ RUN apk --no-cache update && \
 WORKDIR /home/tidepool
 
 USER tidepool
+ENV GO111MODULE=on
 
 COPY --from=development --chown=tidepool /go/src/github.com/tidepool-org/hydrophone/dist/hydrophone .
 
