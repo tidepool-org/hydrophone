@@ -182,6 +182,7 @@ func (client *ShorelineClient) Start() error {
 			case <-timer:
 				if err := client.serverLogin(); err != nil {
 					log.Print("Error when refreshing server login", err)
+					panic(err)
 				}
 			}
 		}
@@ -225,7 +226,6 @@ func (client *ShorelineClient) serverLogin() error {
 			status.NewStatusf(res.StatusCode, "Unknown response code from service[%s]", req.URL)}
 	}
 	token := res.Header.Get("x-tidepool-session-token")
-	log.Printf("server token succeded %", token)
 
 	client.mut.Lock()
 	defer client.mut.Unlock()
@@ -320,7 +320,6 @@ func (client *ShorelineClient) CheckToken(token string) *TokenData {
 	host.Path = path.Join(host.Path, "token", token)
 
 	req, _ := http.NewRequest("GET", host.String(), nil)
-	log.Printf("server token %", client.serverToken)
 	req.Header.Add("x-tidepool-session-token", client.serverToken)
 
 	res, err := client.httpClient.Do(req)
