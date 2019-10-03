@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"crypto/tls"
+	"log"
 	"os"
 	"net"
 	"time"
