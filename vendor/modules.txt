@@ -40,7 +40,7 @@ github.com/globalsign/mgo/internal/scram
 github.com/gorilla/mux
 # github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
 github.com/jmespath/go-jmespath
-# github.com/tidepool-org/go-common v0.4.0
+# github.com/tidepool-org/go-common v0.4.2-0.20191003013345-f59c7f922088
 github.com/tidepool-org/go-common
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc

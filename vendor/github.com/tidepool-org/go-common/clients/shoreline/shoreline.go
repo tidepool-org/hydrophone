@@ -1,4 +1,4 @@
-// This is a client module to support server-side use of the Tidepool
+// Package shoreline is a client module to support server-side use of the Tidepool
 // service called user-api.
 package shoreline
 
@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path"
 	"sync"
 	"time"
 
@@ -19,7 +20,7 @@ import (
 	"github.com/tidepool-org/go-common/jepson"
 )
 
-//Generic client interface that we will implement and mock
+// Client interface that we will implement and mock
 type Client interface {
 	Start() error
 	Close()
@@ -31,7 +32,7 @@ type Client interface {
 	UpdateUser(userID string, userUpdate UserUpdate, token string) error
 }
 
-// UserApiClient manages the local data for a client. A client is intended to be shared among multiple
+// ShorelineClient manages the local data for a client. A client is intended to be shared among multiple
 // goroutines so it's OK to treat it as a singleton (and probably a good idea).
 type ShorelineClient struct {
 	httpClient *http.Client           // store a reference to the http client so we can reuse it
@@ -203,10 +204,10 @@ func (client *ShorelineClient) Close() {
 func (client *ShorelineClient) serverLogin() error {
 	host := client.getHost()
 	if host == nil {
-		return errors.New("No known user-api hosts.")
+		return errors.New("No known user-api hosts")
 	}
 
-	host.Path += "/serverlogin"
+	host.Path = path.Join(host.Path, "serverlogin")
 
 	req, _ := http.NewRequest("POST", host.String(), nil)
 	req.Header.Add("x-tidepool-server-name", client.config.Name)
@@ -223,6 +224,7 @@ func (client *ShorelineClient) serverLogin() error {
 			status.NewStatusf(res.StatusCode, "Unknown response code from service[%s]", req.URL)}
 	}
 	token := res.Header.Get("x-tidepool-session-token")
+	log.Printf("server token succeded %", token)
 
 	client.mut.Lock()
 	defer client.mut.Unlock()
@@ -247,7 +249,7 @@ func (client *ShorelineClient) Signup(username, password, email string) (*UserDa
 		return nil, errors.New("No known user-api hosts.")
 	}
 
-	host.Path += "/user"
+	host.Path = path.Join(host.Path, "user")
 	data := []byte(fmt.Sprintf(`{"username": "%s", "password": "%s","emails":["%s"]}`, username, password, email))
 
 	req, _ := http.NewRequest("POST", host.String(), bytes.NewBuffer(data))
@@ -279,7 +281,7 @@ func (client *ShorelineClient) Login(username, password string) (*UserData, stri
 		return nil, "", errors.New("No known user-api hosts.")
 	}
 
-	host.Path += "/login"
+	host.Path = path.Join(host.Path, "login")
 
 	req, _ := http.NewRequest("POST", host.String(), nil)
 	req.SetBasicAuth(username, password)
@@ -314,9 +316,10 @@ func (client *ShorelineClient) CheckToken(token string) *TokenData {
 		return nil
 	}
 
-	host.Path += "/token/" + token
+	host.Path = path.Join(host.Path, "token", token)
 
 	req, _ := http.NewRequest("GET", host.String(), nil)
+	log.Printf("server token %", client.serverToken)
 	req.Header.Add("x-tidepool-session-token", client.serverToken)
 
 	res, err := client.httpClient.Do(req)
@@ -357,7 +360,7 @@ func (client *ShorelineClient) GetUser(userID, token string) (*UserData, error) 
 		return nil, errors.New("No known user-api hosts.")
 	}
 
-	host.Path += fmt.Sprintf("user/%s", userID)
+	host.Path = path.Join(host.Path, "user", userID)
 
 	req, _ := http.NewRequest("GET", host.String(), nil)
 	req.Header.Add("x-tidepool-session-token", token)
@@ -396,7 +399,7 @@ func (client *ShorelineClient) UpdateUser(userID string, userUpdate UserUpdate, 
 		Updates UserUpdate `json:"updates"`
 	}
 
-	host.Path += "/user/" + userID
+	host.Path = path.Join(host.Path, "user", userID)
 
 	if jsonUser, err := json.Marshal(updatesToApply{Updates: userUpdate}); err != nil {
 		return &status.StatusError{
