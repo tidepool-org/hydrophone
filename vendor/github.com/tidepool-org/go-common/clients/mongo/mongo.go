@@ -85,6 +85,7 @@ func (config *Config) ToConnectionString() (string, error) {
 func Connect(config *Config) (*mgo.Session, error) {
 	connectionString, err := config.ToConnectionString()
 	if err != nil {
+		log.Printf("connection string %v, err %v", connectionString, err)
 		return nil, err
 	}
 	dur := 20 * time.Second
@@ -94,6 +95,7 @@ func Connect(config *Config) (*mgo.Session, error) {
 
 	dialInfo, err := mgo.ParseURL(connectionString)
 	if err != nil {
+		log.Printf("connection string %v, err %v", connectionString, err)
 		return nil, err
 	}
 	dialInfo.Timeout = dur
