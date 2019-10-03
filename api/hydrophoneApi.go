@@ -88,8 +88,8 @@ func InitApi(
 
 func (a *Api) getWebURL(req *http.Request) string {
 	if a.Config.WebURL == "" {
-	    host := req.Header.Get("Host")
-	    return a.Config.Protocol + "://" + host
+		host := req.Header.Get("Host")
+		return a.Config.Protocol + "://" + host
 	}
 	return a.Config.WebURL
 }
@@ -267,7 +267,6 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 		if td == nil {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
 			log.Printf("token %v err[%v] ", token, statusErr)
-			log.Printf("request %v", req)
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
 			return nil
 		}
@@ -275,7 +274,6 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 		return td
 	}
 	statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
-	log.Printf("token %s err[%v] ", STATUS_NO_TOKEN, statusErr)
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
 	return nil
 }
