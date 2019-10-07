@@ -26,11 +26,12 @@ type (
 	// Config is the configuration for the service
 	Config struct {
 		clients.Config
-		Service disc.ServiceListing   `json:"service"`
-		Mongo   mongo.Config          `json:"mongo"`
-		Api     api.Config            `json:"hydrophone"`
-		Ses     sc.SesNotifierConfig  `json:"sesEmail"`
-		Smtp    sc.SmtpNotifierConfig `json:"smtpEmail"`
+		Service      disc.ServiceListing   `json:"service"`
+		Mongo        mongo.Config          `json:"mongo"`
+		Api          api.Config            `json:"hydrophone"`
+		Ses          sc.SesNotifierConfig  `json:"sesEmail"`
+		Smtp         sc.SmtpNotifierConfig `json:"smtpEmail"`
+		NotifierType string                `json:"notifierType"`
 	}
 )
 
@@ -116,14 +117,27 @@ func main() {
 		WithHttpClient(httpClient).
 		Build()
 
-	/*
-	 * hydrophone setup
-	 */
+		/*
+		 * hydrophone setup
+		 */
+	log.Printf("try to create the email notifier %s", config.NotifierType)
 	store := sc.NewMongoStoreClient(&config.Mongo)
-	mail, err := sc.NewSesNotifier(&config.Ses)
 
-	if err != nil {
-		log.Fatal(err)
+	// Create a notifier based on configuration
+	var mail sc.Notifier
+	var mailErr error
+	switch config.NotifierType {
+	case "ses":
+		mail, mailErr = sc.NewSesNotifier(&config.Ses)
+	case "smtp":
+		mail, mailErr = sc.NewSmtpNotifier(&config.Smtp)
+	default:
+		log.Fatalf("the mail system provided in the configuration (%s) is invalid", config.NotifierType)
+	}
+	if mailErr != nil {
+		log.Fatal(mailErr)
+	} else {
+		log.Printf("Mail client %s created", config.NotifierType)
 	}
 
 	emailTemplates, err := templates.New()
