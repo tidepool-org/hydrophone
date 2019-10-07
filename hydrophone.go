@@ -120,12 +120,15 @@ func main() {
 		/*
 		 * hydrophone setup
 		 */
-	log.Printf("try to create the email notifier %s", config.NotifierType)
 	store := sc.NewMongoStoreClient(&config.Mongo)
 
 	// Create a notifier based on configuration
 	var mail sc.Notifier
 	var mailErr error
+	//defaults the mail exchange service to ses
+	if config.NotifierType == "" {
+		config.NotifierType = "ses"
+	}
 	switch config.NotifierType {
 	case "ses":
 		mail, mailErr = sc.NewSesNotifier(&config.Ses)
