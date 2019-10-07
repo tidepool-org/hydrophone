@@ -32,6 +32,7 @@ export TIDEPOOL_HYDROPHONE_SERVICE='{
         "webUrl": "http://localhost:3000",
         "assetUrl": "https://s3-us-west-2.amazonaws.com/tidepool-dev-asset"
     },
+    "notifierType": "ses",
     "sesEmail" : {
         "serverEndpoint":"https://email.us-west-2.amazonaws.com",
         "fromAddress" : "AWS_AUTHENTICATED_EMAIL",
