@@ -38,5 +38,12 @@ export TIDEPOOL_HYDROPHONE_SERVICE='{
         "fromAddress" : "AWS_AUTHENTICATED_EMAIL",
         "accessKey": "AWS_KEY",
         "secretKey": "AWS_SECRET"
+    },
+    "smtpEmail": {
+        "fromAddress": "${SUPPORT_EMAIL_ADDR}",
+        "serverAdress": "smtp.ethereal.email",
+        "serverPort": "587",
+        "user": "",
+        "password": ""
     }
 }'

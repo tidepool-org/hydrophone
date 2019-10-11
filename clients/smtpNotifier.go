@@ -16,6 +16,7 @@ type (
 	SmtpNotifierConfig struct {
 		From     string `json:"fromAddress"`
 		Server   string `json:"serverAdress"`
+		Port     string `json:"serverPort"`
 		User     string `json:"user"`
 		Password string `json:"password"`
 	}
@@ -32,7 +33,7 @@ func NewSmtpNotifier(cfg *SmtpNotifierConfig) (*SmtpNotifier, error) {
 func (c *SmtpNotifier) Send(to []string, subject string, msg string) (int, string) {
 	// Set up authentication information.
 	var auth smtp.Auth
-	// If not user is provided, then do not try to authenticate to the server (for dev only)
+	// If no user is provided, then do not try to authenticate to the server (for dev only)
 	if c.Config.User != "" {
 		auth = smtp.PlainAuth("", c.Config.User, c.Config.Password, c.Config.Server)
 	}
@@ -43,7 +44,7 @@ func (c *SmtpNotifier) Send(to []string, subject string, msg string) (int, strin
 
 		mime + "\r\n" +
 		msg + "\r\n")
-	err := smtp.SendMail(c.Config.Server, auth, c.Config.From, to, body)
+	err := smtp.SendMail(c.Config.Server+":"+c.Config.Port, auth, c.Config.From, to, body)
 	if err != nil {
 		log.Println(err.Error())
 		return 400, err.Error()
