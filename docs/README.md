@@ -33,7 +33,7 @@ Hydrophone currently support 2 sending methods:
 * AWS SES (default)
 * SMTP
 
-The mail service is specified in the configuration variable `TIDEPOOL_HYDROPHONE_SERVICE.notifierType`. It accepts `ses` or `smtp`.  
+The mail service is specified in the configuration variable `TIDEPOOL_HYDROPHONE_SERVICE.notifierType`. It accepts `ses` or `smtp` (`ses` by default).  
 
 #### smtpEmail
 This configuration item is a JSON string that uses the following:
