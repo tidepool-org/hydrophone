@@ -1,3 +1,5 @@
+dist: trusty
+
 sudo: false
 
 language: go
@@ -54,6 +56,7 @@ deploy:
 
 services:
   - docker
+  - mongodb
 
 script:
   - ./test.sh

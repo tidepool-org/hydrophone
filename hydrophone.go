@@ -26,10 +26,12 @@ type (
 	// Config is the configuration for the service
 	Config struct {
 		clients.Config
-		Service disc.ServiceListing  `json:"service"`
-		Mongo   mongo.Config         `json:"mongo"`
-		Api     api.Config           `json:"hydrophone"`
-		Mail    sc.SesNotifierConfig `json:"sesEmail"`
+		Service      disc.ServiceListing   `json:"service"`
+		Mongo        mongo.Config          `json:"mongo"`
+		Api          api.Config            `json:"hydrophone"`
+		Ses          sc.SesNotifierConfig  `json:"sesEmail"`
+		Smtp         sc.SmtpNotifierConfig `json:"smtpEmail"`
+		NotifierType string                `json:"notifierType"`
 	}
 )
 
@@ -43,11 +45,11 @@ func main() {
 
 	region, found := os.LookupEnv("REGION")
 	if found {
-		config.Mail.Region = region
+		config.Ses.Region = region
 	}
 
-	if config.Mail.Region == "" {
-		config.Mail.Region = "us-west-2"
+	if config.Ses.Region == "" {
+		config.Ses.Region = "us-west-2"
 	}
 
 	// server secret may be passed via a separate env variable to accomodate easy secrets injection via Kubernetes
@@ -109,17 +111,30 @@ func main() {
 		WithHttpClient(httpClient).
 		Build()
 
-	/*
-	 * hydrophone setup
-	 */
+		/*
+		 * hydrophone setup
+		 */
 	store := sc.NewMongoStoreClient(&config.Mongo)
-	mail, err := sc.NewSesNotifier(&config.Mail)
 
-	if err != nil {
-		log.Fatal(err)
+	// Create a notifier based on configuration
+	var mail sc.Notifier
+	var mailErr error
+	//defaults the mail exchange service to ses
+	if config.NotifierType == "" {
+		config.NotifierType = "ses"
+	}
+	switch config.NotifierType {
+	case "ses":
+		mail, mailErr = sc.NewSesNotifier(&config.Ses)
+	case "smtp":
+		mail, mailErr = sc.NewSmtpNotifier(&config.Smtp)
+	default:
+		log.Fatalf("the mail system provided in the configuration (%s) is invalid", config.NotifierType)
+	}
+	if mailErr != nil {
+		log.Fatal(mailErr)
 	} else {
-		// SES Client can be created even though no credential is found
-		log.Printf("SES client created %s", mail.SES.ClientInfo)
+		log.Printf("Mail client %s created", config.NotifierType)
 	}
 
 	// Create collection of pre-compiled templates

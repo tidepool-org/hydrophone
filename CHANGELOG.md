@@ -3,7 +3,10 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
-## [0.5.0] - 2019-10-02
+## 0.6.0 - 2019-10-11
+- PT-175: implement an STMP notifier to offer an alternative to aws ses.
+
+## 0.5.0 - 2019-10-02
 ### Added
 - PT-636 Add a new route for sanity check email to ensure configuration is allowing emails to actually be sent
 

@@ -44,8 +44,21 @@ This configuration item is a JSON string that uses the following:
 - _allowPatientResetPassword_: toggle to allow/disallow patient to reset their password (if disallowed, a specific mail is sent to the patient)
 - _patientPasswordResetUrl_: URL where the instructions for the patient to reset his email are
 
-### sesEmail
+### notifierType
+Hydrophone currently support 2 sending methods:
+* AWS SES (default)
+* SMTP
 
+The mail service is specified in the configuration variable `TIDEPOOL_HYDROPHONE_SERVICE.notifierType`. It accepts `ses` or `smtp` (`ses` by default).  
+
+### smtpEmail
+This configuration item is a JSON string that uses the following:
+- _fromAddress_: the email address to be used as the email sender
+- _serverAdress_: the smtp server adress
+- _user_: (if present) this will be used to authenticate to the smtp server
+- _password_: (if present) this will be used to authenticate to the smtp server
+
+### sesEmail
 This configuration item is a JSON string that uses the following:
 - _fromAddress_: the email address to be used as the email sender
 - _region_: the AWS region to be used for AWS SES service
