@@ -3,7 +3,16 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
+## 0.7.0 - 2019-10-18
+### Added
+- PT-671: Display the application version number on the status endpoint (/status).  
+  This depends on go-common v0.3.0
+### Changed
+- Switch from dep to go modules to manage go dependencies.
+- Upgrade to GO 1.12.7
+
 ## 0.6.0 - 2019-10-11
+### Added
 - PT-175: implement an STMP notifier to offer an alternative to aws ses.
 
 ## 0.5.0 - 2019-10-02

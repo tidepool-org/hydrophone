@@ -40,7 +40,7 @@ func (a *Api) InitI18n(templatesPath string) {
 	if err != nil {
 		log.Printf("Error initialising localization, %v", err)
 	} else {
-		log.Printf("Localizer bundle created with default language: %s", locBundle.DefaultLanguage.String())
+		log.Printf("Localizer bundle created with default language: english")
 	}
 
 	a.LanguageBundle = locBundle
@@ -49,7 +49,7 @@ func (a *Api) InitI18n(templatesPath string) {
 // createLocalizerBundle reads language files and registers them in i18n bundle
 func createLocalizerBundle(langFiles []string) (*i18n.Bundle, error) {
 	// Bundle stores a set of messages
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle := i18n.NewBundle(language.English)
 
 	// Enable bundle to understand yaml
 	bundle.RegisterUnmarshalFunc("yaml", yaml.Unmarshal)

@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/tidepool-org/go-common/clients/version"
+
 	"github.com/gorilla/mux"
 
 	common "github.com/tidepool-org/go-common"
@@ -37,7 +39,7 @@ type (
 
 func main() {
 	var config Config
-
+	log.Printf("Starting Hydrophone version %s", version.GetVersion().String())
 	// Load configuration from environment variables
 	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
 		log.Panic("Problem loading config ", err)
