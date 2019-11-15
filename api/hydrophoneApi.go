@@ -204,7 +204,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 		return nil
 	} else if results == nil || len(results) == 0 {
 		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
-		log.Println("No confirmations were found ", statusErr.Error())
+		//log.Println("No confirmations were found ", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	} else {
