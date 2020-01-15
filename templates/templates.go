@@ -1,3 +1,6 @@
+/**
+* Package templates allow you to create a collection of email templates based on html template files
+**/
 package templates
 
 import (
@@ -7,6 +10,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/tidepool-org/hydrophone/localize"
 	"github.com/tidepool-org/hydrophone/models"
 )
 
@@ -19,58 +23,58 @@ type TemplateMeta struct {
 	EscapeContentParts []string `json:"escapeContentParts"`
 }
 
-func New(templatesPath string) (models.Templates, error) {
+func New(templatesPath string, localizer localize.Localizer) (models.Templates, error) {
 	templates := models.Templates{}
 
-	if template, err := NewTemplate(templatesPath, models.TemplateNameCareteamInvite); err != nil {
+	if template, err := newTemplate(templatesPath, models.TemplateNameCareteamInvite, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create careteam invite template: %s", err)
 	} else {
 		templates[template.Name()] = template
 	}
 
-	if template, err := NewTemplate(templatesPath, models.TemplateNameNoAccount); err != nil {
+	if template, err := newTemplate(templatesPath, models.TemplateNameNoAccount, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create no account template: %s", err)
 	} else {
 		templates[template.Name()] = template
 	}
 
-	if template, err := NewTemplate(templatesPath, models.TemplateNamePasswordReset); err != nil {
+	if template, err := newTemplate(templatesPath, models.TemplateNamePasswordReset, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create password reset template: %s", err)
 	} else {
 		templates[template.Name()] = template
 	}
 
-	if template, err := NewTemplate(templatesPath, models.TemplateNamePatientPasswordReset); err != nil {
+	if template, err := newTemplate(templatesPath, models.TemplateNamePatientPasswordReset, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create password reset template: %s", err)
 	} else {
 		templates[template.Name()] = template
 	}
 
-	if template, err := NewTemplate(templatesPath, models.TemplateNameSignup); err != nil {
+	if template, err := newTemplate(templatesPath, models.TemplateNameSignup, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create signup template: %s", err)
 	} else {
 		templates[template.Name()] = template
 	}
 
-	if template, err := NewTemplate(templatesPath, models.TemplateNameSignupClinic); err != nil {
+	if template, err := newTemplate(templatesPath, models.TemplateNameSignupClinic, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create signup clinic template: %s", err)
 	} else {
 		templates[template.Name()] = template
 	}
 
-	if template, err := NewTemplate(templatesPath, models.TemplateNameSignupCustodial); err != nil {
+	if template, err := newTemplate(templatesPath, models.TemplateNameSignupCustodial, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create signup custodial template: %s", err)
 	} else {
 		templates[template.Name()] = template
 	}
 
-	if template, err := NewTemplate(templatesPath, models.TemplateNameSignupCustodialClinic); err != nil {
+	if template, err := newTemplate(templatesPath, models.TemplateNameSignupCustodialClinic, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create signup custodial clinic template: %s", err)
 	} else {
 		templates[template.Name()] = template
 	}
 
-	if template, err := NewTemplate(templatesPath, models.TemplateNamePatientInformation); err != nil {
+	if template, err := newTemplate(templatesPath, models.TemplateNamePatientInformation, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create patient information template: %s", err)
 	} else {
 		templates[template.Name()] = template
@@ -81,12 +85,12 @@ func New(templatesPath string) (models.Templates, error) {
 
 //NewTemplate returns the requested template
 //templateName is the name of the template to be returned
-func NewTemplate(templatesPath string, templateName models.TemplateName) (models.Template, error) {
+func newTemplate(templatesPath string, templateName models.TemplateName, localizer localize.Localizer) (models.Template, error) {
 	// Get template Metadata
 	var templateMeta = getTemplateMeta(templatesPath + "/meta/" + string(templateName) + ".json")
 	var templateFileName = templatesPath + "/html/" + templateMeta.TemplateFilename
 
-	return models.NewPrecompiledTemplate(templateName, templateMeta.Subject, getBodySkeleton(templateFileName), templateMeta.ContentParts, templateMeta.EscapeContentParts)
+	return models.NewPrecompiledTemplate(templateName, templateMeta.Subject, getBodySkeleton(templateFileName), templateMeta.ContentParts, templateMeta.EscapeContentParts, localizer)
 }
 
 // getTemplateMeta returns the template metadata
