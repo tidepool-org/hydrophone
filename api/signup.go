@@ -130,7 +130,7 @@ func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, 
 			newSignUp.Email = usrDetails.Emails[0]
 
 			// this one may not work if the language is not set by the caller
-			if signerLanguage = getBrowserPreferredLanguage(req); signerLanguage == "" {
+			if signerLanguage = GetBrowserPreferredLanguage(req); signerLanguage == "" {
 				signerLanguage = "en"
 			}
 
@@ -271,7 +271,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 					// although technically there exists a profile at the signup stage, the preferred language would always be empty here
 					// as it is set in the app and once the signup procedure is complete (after signup email has been confirmed)
 					// -> get browser's or "en" for English in case there is no browser's
-					if signerLanguage = getBrowserPreferredLanguage(req); signerLanguage == "" {
+					if signerLanguage = GetBrowserPreferredLanguage(req); signerLanguage == "" {
 						signerLanguage = "en"
 					}
 
@@ -344,7 +344,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				// although technically there exists a profile at the signup stage, the preferred language would always be empty here
 				// as it is set in the app and once the signup procedure is complete (after signup email has been confirmed)
 				// -> get browser's or "en" for English in case there is no browser's
-				if signerLanguage = getBrowserPreferredLanguage(req); signerLanguage == "" {
+				if signerLanguage = GetBrowserPreferredLanguage(req); signerLanguage == "" {
 					signerLanguage = "en"
 				}
 

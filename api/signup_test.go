@@ -223,7 +223,7 @@ func TestSignupResponds(t *testing.T) {
 	if found {
 		FAKE_CONFIG.I18nTemplatesPath = templatesPath
 	}
-	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath)
+	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath, mockLocalizer)
 
 	for idx, test := range tests {
 
@@ -235,10 +235,10 @@ func TestSignupResponds(t *testing.T) {
 		var testRtr = mux.NewRouter()
 
 		if test.returnNone {
-			hydrophoneFindsNothing := InitApiWithI18n(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
+			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
-			hydrophone := InitApiWithI18n(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
+			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
 			hydrophone.SetHandlers("", testRtr)
 		}
 

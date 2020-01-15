@@ -237,7 +237,7 @@ func TestInviteResponds(t *testing.T) {
 	if found {
 		FAKE_CONFIG.I18nTemplatesPath = templatesPath
 	}
-	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath)
+	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath, mockLocalizer)
 
 	for idx, inviteTest := range inviteTests {
 		// don't run a test if it says to skip it
@@ -247,7 +247,7 @@ func TestInviteResponds(t *testing.T) {
 		var testRtr = mux.NewRouter()
 
 		//default flow, fully authorized
-		hydrophone := InitApiWithI18n(
+		hydrophone := InitApi(
 			FAKE_CONFIG,
 			mockStore,
 			mockNotifier,
@@ -260,7 +260,7 @@ func TestInviteResponds(t *testing.T) {
 
 		//testing when there is nothing to return from the store
 		if inviteTest.returnNone {
-			hydrophone = InitApiWithI18n(
+			hydrophone = InitApi(
 				FAKE_CONFIG,
 				mockStoreEmpty,
 				mockNotifier,

@@ -47,7 +47,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 	// By default, the reseter language will be his browser's or "en" for Englih
 	// In case the reseter is found a known user and has a language set, the language will be overriden in a later step
-	if reseterLanguage = getBrowserPreferredLanguage(req); reseterLanguage == "" {
+	if reseterLanguage = GetBrowserPreferredLanguage(req); reseterLanguage == "" {
 		reseterLanguage = "en"
 	}
 

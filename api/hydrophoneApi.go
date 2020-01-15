@@ -94,33 +94,6 @@ func InitApi(
 	}
 }
 
-// InitApiI18n initializes both the API and the i18n artefacts
-func InitApiWithI18n(
-	cfg Config,
-	store clients.StoreClient,
-	ntf clients.Notifier,
-	sl shoreline.Client,
-	gatekeeper commonClients.Gatekeeper,
-	metrics highwater.Client,
-	seagull commonClients.Seagull,
-	templates models.Templates,
-) *Api {
-	var theAPI *Api
-	theAPI = &Api{
-		Store:          store,
-		Config:         cfg,
-		notifier:       ntf,
-		sl:             sl,
-		gatekeeper:     gatekeeper,
-		metrics:        metrics,
-		seagull:        seagull,
-		templates:      templates,
-		LanguageBundle: nil,
-	}
-	theAPI.InitI18n(cfg.I18nTemplatesPath)
-	return theAPI
-}
-
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	rtr.HandleFunc("/status", a.GetStatus).Methods("GET")
@@ -289,19 +262,14 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 		return false
 	}
 
-	// Add dynamic content to the template
-	fillTemplate(template, a.LanguageBundle, lang, content)
-
 	// Email information (subject and body) are retrieved from the "executed" email template
 	// "Execution" adds dynamic content using text/template lib
-	_, body, err := template.Execute(content)
+	subject, body, err := template.Execute(content, lang)
 
 	if err != nil {
 		log.Printf("Error executing email template '%s'", err)
 		return false
 	}
-	// Get localized subject of email
-	subject, err := getLocalizedSubject(a.LanguageBundle, template.Subject(), lang)
 
 	// Finally send the email
 	if status, details := a.notifier.Send([]string{conf.Email}, subject, body); status != http.StatusOK {

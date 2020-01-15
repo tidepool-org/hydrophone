@@ -17,6 +17,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/go-common/clients/version"
 	"github.com/tidepool-org/hydrophone/clients"
+	"github.com/tidepool-org/hydrophone/localize"
 	"github.com/tidepool-org/hydrophone/models"
 )
 
@@ -68,6 +69,8 @@ var (
 
 	responsableGatekeeper = NewResponsableMockGatekeeper()
 	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, responsableGatekeeper, mockMetrics, mockSeagull, mockTemplates)
+
+	mockLocalizer, _ = localize.NewI18nLocalizer("../templates/locales")
 )
 
 // In an effort to mock shoreline so that we can return the token we wish
