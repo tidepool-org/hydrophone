@@ -9,7 +9,8 @@ import (
 // StoreClient - interface for data storage
 type StoreClient interface {
 	Ping() error
-	WithContext(ctx context.Context) *MongoStoreClient
+	WithContext(ctx context.Context) StoreClient
+	EnsureIndexes() error
 	UpsertConfirmation(confirmation *models.Confirmation) error
 	FindConfirmations(confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error)
 	FindConfirmation(confirmation *models.Confirmation) (result *models.Confirmation, err error)
