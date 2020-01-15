@@ -12,6 +12,8 @@ github.com/mdblp/go-common v0.1.1-0.20191017141406-f0ea67f4edf5 h1:4kS1CQ0fy7kze
 github.com/mdblp/go-common v0.1.1-0.20191017141406-f0ea67f4edf5/go.mod h1:EmpjlH/eTkSyv2HOvH4CfAH8Gg3h0tBw+mOSYjS5OaU=
 github.com/mdblp/go-common v0.1.1-config-from-env.1.0.20191018064735-58c518ef96ca h1:PBaMsJKEr0p0hS87G2UxvDpEejOqK5PCVGWepEnyuNE=
 github.com/mdblp/go-common v0.1.1-config-from-env.1.0.20191018064735-58c518ef96ca/go.mod h1:EmpjlH/eTkSyv2HOvH4CfAH8Gg3h0tBw+mOSYjS5OaU=
+github.com/mdblp/go-common v0.3.0 h1:EoOBT+HhkGDdACvR8IZKtNGOnPNXXZY+OP/mxw78Nc4=
+github.com/mdblp/go-common v0.3.0/go.mod h1:EmpjlH/eTkSyv2HOvH4CfAH8Gg3h0tBw+mOSYjS5OaU=
 github.com/nicksnyder/go-i18n/v2 v2.0.2 h1:KsHGcTByIM0mHZKQGy0nlJLOjPNjQ6MVib/3PvsBDNY=
 github.com/nicksnyder/go-i18n/v2 v2.0.2/go.mod h1:JXS4+OKhbcwDoVTEj0sLFWL1vOwec2g/YBAxZ9owJqY=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
