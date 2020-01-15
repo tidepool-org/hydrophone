@@ -2,8 +2,8 @@ package clients
 
 import "github.com/tidepool-org/hydrophone/models"
 
+// StoreClient - interface for data storage
 type StoreClient interface {
-	Close()
 	Ping() error
 	UpsertConfirmation(confirmation *models.Confirmation) error
 	FindConfirmations(confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error)
