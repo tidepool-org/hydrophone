@@ -18,7 +18,13 @@ func NewMockStoreClient(returnNone, doBad bool) *MockStoreClient {
 	return &MockStoreClient{doBad: doBad, returnNone: returnNone, now: time.Now()}
 }
 
-func (d *MockStoreClient) WithContext(ctx context.Context) *MongoStoreClient { return nil }
+func (d *MockStoreClient) WithContext(ctx context.Context) StoreClient {
+	// For mock clients, return itself, since the mock client has state
+	// for testing that we need to preserve.
+	return d
+}
+
+func (d *MockStoreClient) EnsureIndexes() error { return nil }
 
 func (d *MockStoreClient) Ping() error {
 	if d.doBad {
