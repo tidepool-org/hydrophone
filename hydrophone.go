@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -119,6 +121,15 @@ func main() {
 	 * hydrophone setup
 	 */
 	store := sc.NewMongoStoreClient(&config.Mongo)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	err := store.WithContext(ctx).EnsureIndexes()
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		cancel()
+	}
+
 	mail, err := sc.NewSesNotifier(&config.Mail)
 
 	if err != nil {

@@ -62,7 +62,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.UpdateStatus(models.StatusCompleted)
 	}
 
-	if a.addOrUpdateConfirmation(resetCnf, res) {
+	if a.addOrUpdateConfirmation(resetCnf, req.Context(), res) {
 		a.logMetricAsServer("reset confirmation created")
 
 		emailContent := map[string]interface{}{
@@ -148,7 +148,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 				return
 			}
 			conf.UpdateStatus(models.StatusCompleted)
-			if a.addOrUpdateConfirmation(conf, res) {
+			if a.addOrUpdateConfirmation(conf, req.Context(), res) {
 				//STATUS_RESET_ACCEPTED
 				a.logMetricAsServer("password reset")
 				a.sendModelAsResWithStatus(
