@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -17,7 +18,7 @@ func NewMockStoreClient(returnNone, doBad bool) *MockStoreClient {
 	return &MockStoreClient{doBad: doBad, returnNone: returnNone, now: time.Now()}
 }
 
-func (d *MockStoreClient) Close() {}
+func (d *MockStoreClient) WithContext(ctx context.Context) *MongoStoreClient { return nil }
 
 func (d *MockStoreClient) Ping() error {
 	if d.doBad {

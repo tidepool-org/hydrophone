@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -145,7 +146,7 @@ func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
-	if err := a.Store.Ping(); err != nil {
+	if err := a.Store.WithContext(req.Context()).Ping(); err != nil {
 		log.Printf("Error getting status [%v]", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, err.Error())}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
@@ -158,8 +159,8 @@ func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
 
 //Save this confirmation or
 //write an error if it all goes wrong
-func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.ResponseWriter) bool {
-	if err := a.Store.UpsertConfirmation(conf); err != nil {
+func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, ctx context.Context, res http.ResponseWriter) bool {
+	if err := a.Store.WithContext(ctx).UpsertConfirmation(conf); err != nil {
 		log.Printf("Error saving the confirmation [%v]", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
