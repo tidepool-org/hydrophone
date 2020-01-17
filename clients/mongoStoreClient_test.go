@@ -1,10 +1,9 @@
 package clients
 
 import (
+	"context"
 	"testing"
 	"time"
-
-	"github.com/globalsign/mgo"
 
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
@@ -17,7 +16,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 
 	doesNotExist, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
 
-	testingConfig := &mongo.Config{ConnectionString: "mongodb://127.0.0.1/confirm_test"}
+	testingConfig := &mongo.Config{ConnectionString: "mongodb://127.0.0.1/confirm_test", Database: "confirm_test"}
 
 	mc := NewMongoStoreClient(testingConfig)
 
@@ -26,14 +25,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	 */
 
 	//drop it like its hot
-	cpy := mc.session.Copy()
-	defer cpy.Close()
-
-	mgoConfirmationsCollection(cpy).DropCollection()
-
-	if err := mgoConfirmationsCollection(cpy).Create(&mgo.CollectionInfo{}); err != nil {
-		t.Fatalf("We couldn't created the users collection for these tests %v", err)
-	}
+	confirmationsCollection(mc).Drop(context.Background())
 
 	//The basics
 	//+++++++++++++++++++++++++++
@@ -109,7 +101,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 		t2 := confirmations[1].Created
 
 		if !t1.After(t2) {
-			t.Fatalf("the newest confirmtion should be first %v", confirmations)
+			t.Fatalf("the newest confirmation should be first %v", confirmations)
 		}
 
 		if confirmations[0].Email != toOtherEmail {

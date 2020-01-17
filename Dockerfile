@@ -2,6 +2,7 @@
 FROM golang:1.12.7-alpine AS development
 WORKDIR /go/src/github.com/tidepool-org/hydrophone
 RUN adduser -D tidepool && \
+    apk add --no-cache gcc musl-dev && \
     chown -R tidepool /go/src/github.com/tidepool-org/hydrophone
 USER tidepool
 COPY --chown=tidepool . .

@@ -1,76 +1,116 @@
 package clients
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
+	"time"
 
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/tidepool-org/go-common/clients/mongo"
+	tpMongo "github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
 )
 
 const (
-	CONFIRMATIONS_COLLECTION = "confirmations"
+	confirmationsCollectionName = "confirmations"
 )
 
+// MongoStoreClient - Mongo Storage Client
 type MongoStoreClient struct {
-	session        *mgo.Session
-	confirmationsC *mgo.Collection
+	client   *mongo.Client
+	context  context.Context
+	database string
 }
 
-func NewMongoStoreClient(config *mongo.Config) *MongoStoreClient {
+// NewMongoStoreClient creates a new MongoStoreClient
+func NewMongoStoreClient(config *tpMongo.Config) *MongoStoreClient {
+	connectionString, err := config.ToConnectionString()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	mongoSession, err := mongo.Connect(config)
+	clientOptions := options.Client().ApplyURI(connectionString)
+	mongoClient, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return &MongoStoreClient{
-		session:        mongoSession,
-		confirmationsC: mongoSession.DB("").C(CONFIRMATIONS_COLLECTION),
+		client:   mongoClient,
+		context:  context.Background(),
+		database: config.Database,
 	}
 }
 
-//warpper function for consistent access to the collection
-func mgoConfirmationsCollection(cpy *mgo.Session) *mgo.Collection {
-	return cpy.DB("").C(CONFIRMATIONS_COLLECTION)
+// WithContext returns a shallow copy of c with its context changed
+// to ctx. The provided ctx must be non-nil.
+func (c *MongoStoreClient) WithContext(ctx context.Context) StoreClient {
+	if ctx == nil {
+		panic("nil context")
+	}
+	c2 := new(MongoStoreClient)
+	*c2 = *c
+	c2.context = ctx
+	return c2
 }
 
-func (d MongoStoreClient) Close() {
-	log.Println("Close the session")
-	d.session.Close()
-	return
+// EnsureIndexes exist for the MongoDB collection
+// TODO: There could be more indexes here for performance reasons.
+// Current performance as of 2020-01 is sufficient.
+func (c *MongoStoreClient) EnsureIndexes() error {
+	indexes := []mongo.IndexModel{
+		{
+			Keys: bson.D{{Key: "type", Value: 1}, {Key: "status", Value: 1}},
+			Options: options.Index().
+				SetBackground(true),
+		},
+	}
+
+	opts := options.CreateIndexes().SetMaxTime(10 * time.Second)
+
+	if _, err := confirmationsCollection(c).Indexes().CreateMany(c.context, indexes, opts); err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	return nil
 }
 
-func (d MongoStoreClient) Ping() error {
+// wrapper function for consistent access to the collection
+func confirmationsCollection(c *MongoStoreClient) *mongo.Collection {
+	return c.client.Database(c.database).Collection(confirmationsCollectionName)
+}
+
+// Ping the MongoDB database
+func (c *MongoStoreClient) Ping() error {
 	// do we have a store session
-	if err := d.session.Ping(); err != nil {
-		return err
+	return c.client.Ping(c.context, nil)
+}
+
+// UpsertConfirmation updates an existing confirmation, or inserts a new one if not already present.
+func (c *MongoStoreClient) UpsertConfirmation(confirmation *models.Confirmation) error {
+	opts := options.FindOneAndUpdate().SetUpsert(true)
+	result := confirmationsCollection(c).FindOneAndUpdate(c.context, bson.M{"_id": confirmation.Key}, bson.D{{Key: "$set", Value: confirmation}}, opts)
+	if result.Err() != mongo.ErrNoDocuments {
+		return result.Err()
 	}
 	return nil
 }
 
-func (d MongoStoreClient) UpsertConfirmation(confirmation *models.Confirmation) error {
-
-	cpy := d.session.Copy()
-	defer cpy.Close()
-
-	// if the user already exists we update otherwise we add
-	if _, err := mgoConfirmationsCollection(cpy).Upsert(bson.M{"_id": confirmation.Key}, confirmation); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (result *models.Confirmation, err error) {
-
+// FindConfirmation - find and return an existing confirmation
+func (c *MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (result *models.Confirmation, err error) {
 	var query bson.M = bson.M{}
 
 	if confirmation.Email != "" {
-		query["email"] = bson.M{"$regex": bson.RegEx{fmt.Sprintf("^%s$", regexp.QuoteMeta(confirmation.Email)), "i"}}
+		// case insensitive match
+		// TODO: should use an index with collation, not a case-insensitive regex, since that can't use an index
+		// However, we need MongoDB 3.2 to do this. See https://tidepool.atlassian.net/browse/BACK-1133
+		query["email"] = bson.M{"$regex": primitive.Regex{Pattern: fmt.Sprintf("^%s$", regexp.QuoteMeta(confirmation.Email)), Options: "i"}}
 	}
 	if confirmation.Key != "" {
 		query["_id"] = confirmation.Key
@@ -88,10 +128,9 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 		query["userId"] = confirmation.UserId
 	}
 
-	cpy := d.session.Copy()
-	defer cpy.Close()
+	opts := options.FindOne().SetSort(bson.D{{"created", -1}})
 
-	if err = mgoConfirmationsCollection(cpy).Find(query).Sort("-created").One(&result); err != nil && err != mgo.ErrNotFound {
+	if err = confirmationsCollection(c).FindOne(c.context, query, opts).Decode(&result); err != nil && err != mongo.ErrNoDocuments {
 		log.Printf("FindConfirmation: something bad happened [%v]", err)
 		return result, err
 	}
@@ -99,12 +138,15 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 	return result, nil
 }
 
-func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
-
+// FindConfirmations - find and return existing confirmations
+func (c *MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
 	var query bson.M = bson.M{}
 
 	if confirmation.Email != "" {
-		query["email"] = bson.M{"$regex": bson.RegEx{fmt.Sprintf("^%s$", regexp.QuoteMeta(confirmation.Email)), "i"}}
+		// case insensitive match
+		// TODO: should use an index with collation, not a case-insensitive regex, since that can't use an index
+		// However, we need MongoDB 3.2 to do this. See https://tidepool.atlassian.net/browse/BACK-1133
+		query["email"] = bson.M{"$regex": primitive.Regex{Pattern: fmt.Sprintf("^%s$", regexp.QuoteMeta(confirmation.Email)), Options: "i"}}
 	}
 	if confirmation.Key != "" {
 		query["_id"] = confirmation.Key
@@ -123,23 +165,24 @@ func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 		query["status"] = bson.M{"$in": statuses}
 	}
 
-	cpy := d.session.Copy()
-	defer cpy.Close()
+	opts := options.Find().SetSort(bson.D{{"created", -1}})
+	cursor, err := confirmationsCollection(c).Find(c.context, query, opts)
+	if err != nil {
+		return nil, err
+	}
 
-	if err = mgoConfirmationsCollection(cpy).Find(query).Sort("-created").All(&results); err != nil && err != mgo.ErrNotFound {
+	if err = cursor.All(c.context, &results); err != nil {
 		log.Printf("FindConfirmations: something bad happened [%v]", err)
 		return results, err
 	}
 	return results, nil
 }
 
-func (d MongoStoreClient) RemoveConfirmation(confirmation *models.Confirmation) error {
-
-	cpy := d.session.Copy()
-	defer cpy.Close()
-
-	if err := mgoConfirmationsCollection(cpy).Remove(bson.M{"_id": confirmation.Key}); err != nil {
-		return err
+// RemoveConfirmation - Remove a confirmation from the database
+func (c *MongoStoreClient) RemoveConfirmation(confirmation *models.Confirmation) error {
+	result := confirmationsCollection(c).FindOneAndDelete(c.context, bson.M{"_id": confirmation.Key})
+	if result.Err() != mongo.ErrNoDocuments {
+		return result.Err()
 	}
 	return nil
 }

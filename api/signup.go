@@ -81,7 +81,7 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 		log.Printf("updateSignupConfirmation: %s", updatedStatus)
 		found.UpdateStatus(newStatus)
 
-		if a.addOrUpdateConfirmation(found, res) {
+		if a.addOrUpdateConfirmation(found, req.Context(), res) {
 			a.logMetricAsServer(updatedStatus)
 			res.WriteHeader(http.StatusOK)
 			return
@@ -185,7 +185,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				return
 			}
 
-			if a.addOrUpdateConfirmation(newSignUp, res) {
+			if a.addOrUpdateConfirmation(newSignUp, req.Context(), res) {
 				a.logMetric("signup confirmation created", req)
 
 				if err := a.addProfile(newSignUp); err != nil {
@@ -248,7 +248,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		if a.addOrUpdateConfirmation(found, res) {
+		if a.addOrUpdateConfirmation(found, req.Context(), res) {
 			a.logMetricAsServer("signup confirmation recreated")
 
 			if err := a.addProfile(found); err != nil {
@@ -369,7 +369,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		found.UpdateStatus(models.StatusCompleted)
-		if a.addOrUpdateConfirmation(found, res) {
+		if a.addOrUpdateConfirmation(found, req.Context(), res) {
 			a.logMetricAsServer("accept signup")
 		}
 

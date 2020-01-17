@@ -234,7 +234,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 		}
 		log.Printf("AcceptInvite: permissions were set as [%v] after an invite was accepted", setPerms)
 		conf.UpdateStatus(models.StatusCompleted)
-		if !a.addOrUpdateConfirmation(conf, res) {
+		if !a.addOrUpdateConfirmation(conf, req.Context(), res) {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 			log.Println("AcceptInvite ", statusErr.Error())
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
@@ -285,7 +285,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			//cancel the invite
 			conf.UpdateStatus(models.StatusCanceled)
 
-			if a.addOrUpdateConfirmation(conf, res) {
+			if a.addOrUpdateConfirmation(conf, req.Context(), res) {
 				a.logMetric("canceled invite", req)
 				res.WriteHeader(http.StatusOK)
 				return
@@ -340,7 +340,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 
 			conf.UpdateStatus(models.StatusDeclined)
 
-			if a.addOrUpdateConfirmation(conf, res) {
+			if a.addOrUpdateConfirmation(conf, req.Context(), res) {
 				a.logMetric("dismissinvite", req)
 				res.WriteHeader(http.StatusOK)
 				return
@@ -404,7 +404,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 				invite.UserId = invitedUsr.UserID
 			}
 
-			if a.addOrUpdateConfirmation(invite, res) {
+			if a.addOrUpdateConfirmation(invite, req.Context(), res) {
 				a.logMetric("invite created", req)
 
 				if err := a.addProfile(invite); err != nil {
