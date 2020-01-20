@@ -38,6 +38,10 @@ type (
 func main() {
 	var config Config
 
+	log.SetOutput(os.Stdout)
+	log.SetPrefix("api/hydrophone ")
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
 		log.Panic("Problem loading config ", err)
 	}
