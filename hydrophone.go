@@ -36,7 +36,6 @@ type (
 func main() {
 	var config Config
 
-	log.SetOutput(os.Stdout)
 	log.SetPrefix("api/hydrophone ")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
