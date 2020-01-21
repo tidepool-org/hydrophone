@@ -1,14 +1,12 @@
 package main
 
 import (
-	"context"
 	"crypto/tls"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/gorilla/mux"
 
@@ -37,6 +35,9 @@ type (
 
 func main() {
 	var config Config
+
+	log.SetPrefix("api/hydrophone ")
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
 		log.Panic("Problem loading config ", err)
@@ -121,14 +122,8 @@ func main() {
 	 * hydrophone setup
 	 */
 	store := sc.NewMongoStoreClient(&config.Mongo)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-
-	err := store.WithContext(ctx).EnsureIndexes()
-	if err != nil {
-		log.Fatal(err)
-	} else {
-		cancel()
-	}
+	defer store.Disconnect()
+	store.EnsureIndexes()
 
 	mail, err := sc.NewSesNotifier(&config.Mail)
 
