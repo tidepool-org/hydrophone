@@ -31,13 +31,13 @@ type MongoStoreClient struct {
 func NewMongoStoreClient(config *tpMongo.Config) *MongoStoreClient {
 	connectionString, err := config.ToConnectionString()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprintf("Invalid MongoDB configuration: %s", err))
 	}
 
 	clientOptions := options.Client().ApplyURI(connectionString)
-	mongoClient, err := mongo.Connect(context.TODO(), clientOptions)
+	mongoClient, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprintf("Invalid MongoDB connection string: %s", err))
 	}
 
 	return &MongoStoreClient{
@@ -59,7 +59,8 @@ func (c *MongoStoreClient) WithContext(ctx context.Context) StoreClient {
 	return c2
 }
 
-// EnsureIndexes exist for the MongoDB collection
+// EnsureIndexes exist for the MongoDB collection. EnsureIndexes uses the Background() context, in order
+// to pass back the MongoDB errors, rather than any context errors.
 // TODO: There could be more indexes here for performance reasons.
 // Current performance as of 2020-01 is sufficient.
 func (c *MongoStoreClient) EnsureIndexes() error {
@@ -73,7 +74,7 @@ func (c *MongoStoreClient) EnsureIndexes() error {
 
 	opts := options.CreateIndexes().SetMaxTime(10 * time.Second)
 
-	if _, err := confirmationsCollection(c).Indexes().CreateMany(c.context, indexes, opts); err != nil {
+	if _, err := confirmationsCollection(c).Indexes().CreateMany(context.Background(), indexes, opts); err != nil {
 		log.Fatal(err)
 		return err
 	}
@@ -90,6 +91,11 @@ func confirmationsCollection(c *MongoStoreClient) *mongo.Collection {
 func (c *MongoStoreClient) Ping() error {
 	// do we have a store session
 	return c.client.Ping(c.context, nil)
+}
+
+// Disconnect from the MongoDB database
+func (c *MongoStoreClient) Disconnect() error {
+	return c.client.Disconnect(c.context)
 }
 
 // UpsertConfirmation updates an existing confirmation, or inserts a new one if not already present.
