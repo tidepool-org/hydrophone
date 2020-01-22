@@ -1,3 +1,20 @@
+// @title Hydrophone API
+// @version 0.0.1
+// @description The purpose of this API is to send notifications to users: forgotten passwords, initial signup, invitations and more
+// @license.name BSD 2-Clause "Simplified" License
+// @host localhost
+// @BasePath /confirm
+// @accept json
+// @produce json
+// @schemes https
+
+// @securityDefinitions.basic BasicAuth
+// @in header
+// @name Authorization
+
+// @securityDefinitions.apikey TidepoolAuth
+// @in header
+// @name x-tidepool-session-token
 package main
 
 import (

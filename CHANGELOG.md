@@ -6,6 +6,7 @@ This API sends notifications to users for things like forgotten passwords, initi
 ## Unreleased
 ### Added
 - PT-899: Preview emails
+- PT-995: Document the api using openApi and swaggo
 
 ## 0.7.0 - 2019-10-18
 ### Added

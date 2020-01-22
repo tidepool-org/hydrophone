@@ -58,7 +58,6 @@ func (a *Api) findSignUp(conf *models.Confirmation, res http.ResponseWriter) *mo
 	return found
 }
 
-//update an existing signup confirmation
 func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.ResponseWriter, req *http.Request) {
 	fromBody := &models.Confirmation{}
 	if err := json.NewDecoder(req.Body).Decode(fromBody); err != nil {
@@ -93,7 +92,18 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 	}
 }
 
-// send an informative email about patient account creation
+// @Summary Patient account creation informative email
+// @Description  Send an informative email to the patient to notify the account was successfully created
+// @ID hydrophone-api-sendSignUpInformation
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "userId was not provided, return:\"Required userid is missing\" "
+// @Failure 403 {object} status.Status "Operation forbiden for this account, return detailed error"
+// @Failure 422 {object} status.Status "Error when sending the email"
+// @Failure 500 {object} status.Status "Error finding the user, message returned:\"Error finding the user\" "
+// @Router /send/inform/{userid} [post]
 func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	var signerLanguage string
 	var newSignUp *models.Confirmation
@@ -149,17 +159,21 @@ func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, 
 
 }
 
-//Send a signup confirmation email to a userid.
-//
-//This post is sent by the signup logic. In this state, the user account has been created but has a flag that
-//forces the user to the confirmation-required page until the signup has been confirmed.
-//It sends an email that contains a random confirmation link.
-//
-// status: 201
-// status: 400 STATUS_SIGNUP_NO_ID
-// status: 401 STATUS_NO_TOKEN
-// status: 403 STATUS_EXISTING_SIGNUP
-// status: 500 STATUS_ERR_FINDING_USER
+// @Summary Send a signup confirmation email to a user
+// @Description  This post is sent by the signup logic. In this state, the user account has been created but has a flag that
+// @Description  forces the user to the confirmation-required page until the signup has been confirmed.
+// @Description  It sends an email that contains a random confirmation link
+// @ID hydrophone-api-sendSignUp
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "userId was not provided, return:\"Required userid is missing\" "
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Operation is forbiden, return detailed error"
+// @Failure 500 {object} status.Status "Internal error while processing the confirmation, detailled error returned in the body"
+// @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service)"
+// @Router /send/signup/{userid} [post]
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	var signerLanguage string
 	if token := a.token(res, req); token != nil {
@@ -290,11 +304,18 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 	}
 }
 
-//If a user didn't receive the confirmation email and logs in, they're directed to the confirmation-required page which can
-//offer to resend the confirmation email.
-//
-// status: 200
-// status: 404 STATUS_SIGNUP_EXPIRED
+// @Summary Resend a signup confirmation email to a user who have not confirmed yet
+// @Description  If a user didn't receive the confirmation email and logs in, they're directed to the confirmation-required page which can
+// @Description  offer to resend the confirmation email.
+// @ID hydrophone-api-resendSignUp
+// @Accept  json
+// @Produce  json
+// @Param useremail path string true "user email address"
+// @Success 200 {string} string "OK"
+// @Failure 404 {object} status.Status "Confirmation not found, return \"No matching signup confirmation was found\" "
+// @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service)"
+// @Failure 500 {object} status.Status "Internal error while regenerating the confirmation, detailled error returned in the body"
+// @Router /resend/signup/{useremail} [post]
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	var signerLanguage string
@@ -363,18 +384,22 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	}
 }
 
-//This would be PUT by the web page at the link in the signup email. No authentication is required.
-//When this call is made, the flag that prevents login on an account is removed, and the user is directed to the login page.
-//If the user has an active cookie for signup (created with a short lifetime) we can accept the presence of that cookie to allow the actual login to be skipped.
-//
-// status: 200
-// status: 400 STATUS_SIGNUP_NO_CONF
-// status: 400 STATUS_NO_PASSWORD
-// status: 400 STATUS_MISSING_PASSWORD
-// status: 400 STATUS_INVALID_PASSWORD
-// status: 400 STATUS_MISSING_BIRTHDAY
-// status: 400 STATUS_INVALID_BIRTHDAY
-// status: 400 STATUS_MISMATCH_BIRTHDAY
+// @Summary Confirms the account creation
+// @Description  This would be PUT by the web page at the link in the signup email. No authentication is required.
+// @Description  When this call is made, the flag that prevents login on an account is removed, and the user is directed to the login page.
+// @Description  If the user has an active cookie for signup (created with a short lifetime) we can accept the presence of that cookie to allow the actual login to be skipped.
+// @ID hydrophone-api-acceptSignUp
+// @Accept  json
+// @Produce  json
+// @Param confirmationid path string true "confirmation id"
+// @Param details body models.Acceptance false "new password (optional)"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "confirmationid was not provided, return:\"Required confirmation id is missing\" "
+// @Failure 404 {object} status.Status "Confirmation not found or expired"
+// @Failure 409 {object} status.Status "Payload is missing or invalid. Return the detailled error"
+// @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service)"
+// @Failure 500 {object} status.Status "Error (internal) while updating the user account, return detailed error"
+// @Router /accept/signup/{confirmationid} [put]
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	confirmationId := vars["confirmationid"]
@@ -454,15 +479,18 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	}
 }
 
-//In the event that someone uses the wrong email address, the receiver could explicitly dismiss a signup attempt with this link (useful for metrics and to identify phishing attempts).
-//This link would be some sort of parenthetical comment in the signup confirmation email, like "(I didn't try to sign up for Tidepool.)"
-//No authentication required.
-//
-// status: 200
-// status: 400 STATUS_SIGNUP_NO_ID
-// status: 400 STATUS_SIGNUP_NO_CONF
-// status: 400 STATUS_ERR_DECODING_CONFIRMATION
-// status: 404 STATUS_SIGNUP_NOT_FOUND
+// @Summary Dismiss an signup demand
+// @Description  In the event that someone uses the wrong email address, the receiver could explicitly dismiss a signup attempt with this link (useful for metrics and to identify phishing attempts).
+// @Description  This link would be some sort of parenthetical comment in the signup confirmation email, like "(I didn't try to sign up for YourLoops.)"
+// @ID hydrophone-api-dismissSignUp
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Param confirmation body models.Confirmation true "confirmation details"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "userid was not provided, or the payload is malformed (attributes missing or invalid). Return detailed error "
+// @Failure 404 {object} status.Status "Cannot find a signup confirmation based on the provided key, return \"No matching signup confirmation was found\" "
+// @Router /dismiss/signup/{userid} [put]
 func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	userId := vars["userid"]
@@ -477,11 +505,18 @@ func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map
 	return
 }
 
-//This call is provided for completeness -- we don't expect to need it in the actual user flow.
-//
-//Fetch any existing confirmation requests.
-// status: 200 with a single result in an array
-// status: 404
+// @Summary Get Signup Confirmation requests
+// @Description  Fetch pending confirmation requests for a given user.
+// @ID hydrophone-api-getSignUp
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {array} models.Confirmation
+// @Failure 400 {object} status.Status "userid was not provided"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Operation is forbiden, return detailed error"
+// @Failure 404 {object} status.Status "Cannot find a signup confirmation for this user, return \"No matching signup confirmation was found\" "
+// @Router /signup/{userid} [get]
 func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 
@@ -515,8 +550,16 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 	return
 }
 
-// status: 200
-// status: 400 STATUS_SIGNUP_NO_ID
+// @Summary Cancel Signup request
+// @Description Cancel a signup request for a given user
+// @ID hydrophone-api-cancelSignUp
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "userid was not provided, or the payload is malformed (attributes missing or invalid). Return detailed error "
+// @Failure 404 {object} status.Status "Cannot find a signup confirmation based on the provided key, return \"No matching signup confirmation was found\" "
+// @Router /signup/{userid} [put]
 func (a *Api) cancelSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	userId := vars["userid"]
 

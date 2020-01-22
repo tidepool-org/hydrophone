@@ -28,19 +28,22 @@ type (
 	}
 )
 
-//Create a lost password request
-//
-//If the request is correctly formed, always returns a 200, even if the email address was not found (this way it can't be used to validate email addresses).
-//
-//If the email address is found in the Tidepool system, this will:
-// - Create a confirm record and a random key
-// - Send an email with a link containing the key
-//
-// Visiting the URL in the email will fetch a page that offers the user the chance to accept or reject the lost password request.
-// If accepted, the user must then create a new password that will replace the old one.
-//
-// status: 200
-// status: 400 no email given
+// @Summary Create a lost password request
+// @Description  If the request is correctly formed, always returns a 200.
+// @Description  If the email address is found in the system, this will:
+// @Description     - Create a confirm record and a random key
+// @Description     - Send an email with a link containing the key
+// @Description  Visiting the URL in the email will fetch a page that offers the user the chance to accept or reject the lost password request.
+// @Description  If accepted, the user must then create a new password that will replace the old one.
+// @ID hydrophone-api-passwordReset
+// @Accept  json
+// @Produce  json
+// @Param useremail path string true "user email"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "useremail was not provided"
+// @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
+// @Failure 500 {object} status.Status "Error finding the user, message returned:\"Error finding the user\" "
+// @Router /send/forgot/{useremail} [post]
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	var resetCnf *models.Confirmation
 	var reseterLanguage string
@@ -57,7 +60,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		return
 	}
 
-	// if the reseter is already a Tidepool user, we can use his preferences
+	// if the reseter is already registered we can use his preferences
 	if resetUsr := a.findExistingUser(email, a.sl.TokenProvide()); resetUsr != nil {
 		if resetUsr.IsClinic() || a.Config.AllowPatientResetPassword {
 			resetCnf, _ = models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
@@ -142,20 +145,22 @@ func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.Response
 	return found
 }
 
-//Accept the password change
-//
-//This call will be invoked by the lost password screen with the key that was included in the URL of the lost password screen.
-//For additional safety, the user will be required to manually enter the email address on the account as part of the UI,
-// and also to enter a new password which will replace the password on the account.
-//
-// If this call is completed without error, the lost password request is marked as accepted.
-// Otherwise, the lost password request remains active until it expires.
-//
-// status: 200 STATUS_RESET_ACCEPTED
-// status: 401 STATUS_RESET_EXPIRED the reset confirmaion has expired
-// status: 400 STATUS_ERR_DECODING_CONFIRMATION issue decoding the accept body
-// status: 400 STATUS_RESET_ERROR when we can't update the users password
-// status: 404 STATUS_RESET_NOT_FOUND when no matching reset confirmation is found
+// @Summary Accept the password change
+// @Description  Likely to be invoked by the 'lost password' screen with the key that was included in the URL of the 'lost password' screen.
+// @Description  For additional safety, the user will be required to manually enter the email address on the account as part of the UI,
+// @Description  and also to enter a new password which will replace the password on the account.
+// @Description  If this call is completed without error, the lost password request is marked as accepted.
+// @Description  Otherwise, the lost password request remains active until it expires.
+// @ID hydrophone-api-acceptPassword
+// @Accept  json
+// @Produce  json
+// @Param payload body api.resetBody true "reset password details"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "Error while decoding the confirmation or while resetting password"
+// @Failure 401 {object} status.Status "Password reset confirmation has expired"
+// @Failure 404 {object} status.Status "No matching reset confirmation was found"
+// @Failure 500 {object} status.Status "Internal error while searching the confirmation"
+// @Router /accept/forgot [put]
 func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	defer req.Body.Close()

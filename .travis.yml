@@ -62,4 +62,5 @@ services:
 script:
   - ./test.sh
   - ./artifact.sh
+  - ./doc.sh
   - ./artifact-preview.sh

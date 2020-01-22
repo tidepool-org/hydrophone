@@ -12,10 +12,16 @@ const (
 	STATUS_VERIFY_USER_DOES_NOT_EXIST = "User does not exist"
 )
 
-// Send a test email to prove all configuration is in place for sending emails
-//
-// status: 200
-// status: 500 internal server error
+// @Summary Sanity check the service configuration
+// @Description  Send a test email to prove all configuration is in place for sending emails
+// @ID hydrophone-api-sanityCheck
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {string} string "OK"
+// @Failure 500 {object} status.Status "Error while generating/sending the email"
+// @Failure 400 {object} status.Status "userid was not provided or incorrect "
+// @Router /sanity_check/{userid} [post]
 func (a *Api) sendSanityCheckEmail(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	log.Printf("Sanity check email route")
