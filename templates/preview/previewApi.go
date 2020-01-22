@@ -70,18 +70,21 @@ func (a *Api) refreshLocal(res http.ResponseWriter, req *http.Request, vars map[
 		log.Printf("error while retriving locales from localizer service!")
 		s := status.NewApiStatus(http.StatusInternalServerError, "error")
 		a.sendModelAsResWithStatus(res, s, http.StatusInternalServerError)
+		return
 	}
 	localizer, err := localize.NewI18nLocalizer(path.Join(a.Config.I18nTemplatesPath, "locales/"))
 	if err != nil {
 		log.Printf("error while reloading locales files!")
 		s := status.NewApiStatus(http.StatusInternalServerError, "error")
 		a.sendModelAsResWithStatus(res, s, http.StatusInternalServerError)
+		return
 	}
 	emailTemplates, err := templates.New(a.Config.I18nTemplatesPath, localizer)
 	if err != nil {
 		log.Printf("error while reloading templates!")
 		s := status.NewApiStatus(http.StatusInternalServerError, "error")
 		a.sendModelAsResWithStatus(res, s, http.StatusInternalServerError)
+		return
 	}
 	a.templates = emailTemplates
 }
