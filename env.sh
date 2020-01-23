@@ -32,10 +32,18 @@ export TIDEPOOL_HYDROPHONE_SERVICE='{
         "webUrl": "http://localhost:3000",
         "assetUrl": "https://s3-us-west-2.amazonaws.com/tidepool-dev-asset"
     },
+    "notifierType": "ses",
     "sesEmail" : {
         "serverEndpoint":"https://email.us-west-2.amazonaws.com",
         "fromAddress" : "AWS_AUTHENTICATED_EMAIL",
         "accessKey": "AWS_KEY",
         "secretKey": "AWS_SECRET"
+    },
+    "smtpEmail": {
+        "fromAddress": "${SUPPORT_EMAIL_ADDR}",
+        "serverAdress": "smtp.ethereal.email",
+        "serverPort": "587",
+        "user": "",
+        "password": ""
     }
 }'

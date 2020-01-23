@@ -1,6 +1,54 @@
 Hydrophone Dev Docs
 ===
 
+## Configuration
+
+See [.vscode/launch.json.template](../.vscode/launch.json.template) or [env.sh](../env.sh) for examples.
+
+### TIDEPOOL_HYDROPHONE_ENV
+
+Contains configuration about the stack where Hydrophone is running.
+
+### TIDEPOOL_HYDROPHONE_SERVICE
+
+Contains configuration necessary to run Hydrophone as a microservice.
+
+#### mongo
+
+This configuration item is a JSON string that uses the following:
+- _connectionString_: the connection string to MongoDB, e.g. mongodb://<<user_personal>>:<<password_personal>>@localhost:27017/confirm?authSource=admin
+
+#### service
+
+#### hydrophone
+
+This configuration item is a JSON string that uses the following:
+- _serverSecret_: the secret to be used to connect to shoreline and get server token
+- _webUrl_: URL for the links to "Blip" in the emails
+- _supportUrl_: URL for the links to "Support" in the emails
+- _assetUrl_: where public artefacts needed by emails are present (like images)
+
+#### notifierType
+Hydrophone currently support 2 sending methods:
+* AWS SES (default)
+* SMTP
+
+The mail service is specified in the configuration variable `TIDEPOOL_HYDROPHONE_SERVICE.notifierType`. It accepts `ses` or `smtp` (`ses` by default).  
+
+#### smtpEmail
+This configuration item is a JSON string that uses the following:
+- _fromAddress_: the email address to be used as the email sender
+- _serverAdress_: the smtp server adress
+- _user_: (if present) this will be used to authenticate to the smtp server
+- _password_: (if present) this will be used to authenticate to the smtp server
+
+#### sesEmail
+This configuration item is a JSON string that uses the following:
+- _fromAddress_: the email address to be used as the email sender
+- _region_: the AWS region to be used for AWS SES service
+- _serverEndpoint_: (if present) this will be used to override the AWS SES default endpoint (can be used in conjunction with MockServer for example) 
+
+
 ## Email Template Generation
 
 ### Current Practice
