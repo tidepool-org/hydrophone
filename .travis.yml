@@ -32,6 +32,6 @@ services:
 script:
   - ./build.sh
   - ./test.sh
-  - 'if [ -n $SNYK_TOKEN ]; then snyk test --dev --org=tidepool; fi'
-  - 'if [ -n $SNYK_TOKEN ]; then snyk monitor --org=tidepool; fi'
+  - 'if [[ -n $SNYK_TOKEN ]]; then snyk test --dev --org=tidepool; fi'
+  - 'if [[ -n $SNYK_TOKEN ]]; then snyk monitor --org=tidepool; fi'
   - ./artifact.sh
