@@ -38,6 +38,9 @@ type (
 func main() {
 	var config Config
 
+	log.SetPrefix("api/hydrophone ")
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
 		log.Panic("Problem loading config ", err)
 	}
@@ -121,6 +124,9 @@ func main() {
 		 * hydrophone setup
 		 */
 	store := sc.NewMongoStoreClient(&config.Mongo)
+
+	defer store.Disconnect()
+	store.EnsureIndexes()
 
 	// Create a notifier based on configuration
 	var mail sc.Notifier
