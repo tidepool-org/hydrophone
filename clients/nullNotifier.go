@@ -1,11 +1,5 @@
 package clients
 
-import (
-	"log"
-	"net/smtp"
-	"strings"
-)
-
 type (
 	// NullNotifier
 	NullNotifier struct {
