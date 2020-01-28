@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"regexp"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -72,9 +71,7 @@ func (c *MongoStoreClient) EnsureIndexes() error {
 		},
 	}
 
-	opts := options.CreateIndexes().SetMaxTime(10 * time.Second)
-
-	if _, err := confirmationsCollection(c).Indexes().CreateMany(context.Background(), indexes, opts); err != nil {
+	if _, err := confirmationsCollection(c).Indexes().CreateMany(context.Background(), indexes); err != nil {
 		log.Fatal(err)
 		return err
 	}
