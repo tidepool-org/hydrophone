@@ -284,6 +284,9 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 
 			res.WriteHeader(http.StatusOK)
 		}
+	} else {
+		a.sendError(res, http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND, "resendSignUp: sign up not found")
+		return
 	}
 }
 
