@@ -293,12 +293,15 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 //
 // status: 200
 // status: 400 STATUS_SIGNUP_NO_CONF
-// status: 400 STATUS_NO_PASSWORD
-// status: 400 STATUS_MISSING_PASSWORD
-// status: 400 STATUS_INVALID_PASSWORD
-// status: 400 STATUS_MISSING_BIRTHDAY
-// status: 400 STATUS_INVALID_BIRTHDAY
-// status: 400 STATUS_MISMATCH_BIRTHDAY
+// status: 404 STATUS_SIGNUP_EXPIRED
+// status: 409 ERROR_NO_PASSWORD
+// status: 409 ERROR_MISSING_PASSWORD
+// status: 409 ERROR_INVALID_PASSWORD
+// status: 409 ERROR_MISSING_BIRTHDAY
+// status: 409 ERROR_INVALID_BIRTHDAY
+// status: 409 ERROR_MISMATCH_BIRTHDAY
+// status: 500 STATUS_ERR_FINDING_USR
+// status: 500 STATUS_ERR_UPDATING_USR
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	confirmationId := vars["confirmationid"]
 
