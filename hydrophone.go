@@ -124,6 +124,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	switch config.NotifierType {
+	case "ses":
+		mail, mailErr = sc.NewSesNotifier(&config.Ses)
+	case "smtp":
+		mail, mailErr = sc.NewSmtpNotifier(&config.Smtp)
+	case "null":
+	default:
+		mail, mailErr = sc.NewNullNotifier()
+		log.Fatalf("the mail system provided in the configuration (%s) is invalid", config.NotifierType)
+	}
+	if mailErr != nil {
+		log.Fatal(mailErr)
+	} else {
+		log.Printf("Mail client %s created", config.NotifierType)
+	}
 
 	emailTemplates, err := templates.New()
 	if err != nil {
