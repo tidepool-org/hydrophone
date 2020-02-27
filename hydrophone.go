@@ -8,13 +8,10 @@
 // @produce json
 // @schemes https
 
-// @securityDefinitions.basic BasicAuth
-// @in header
-// @name Authorization
-
 // @securityDefinitions.apikey TidepoolAuth
 // @in header
 // @name x-tidepool-session-token
+
 package main
 
 import (

@@ -22,6 +22,7 @@ const (
 // @Failure 500 {object} status.Status "Error while generating/sending the email"
 // @Failure 400 {object} status.Status "userid was not provided or incorrect "
 // @Router /sanity_check/{userid} [post]
+// @security TidepoolAuth
 func (a *Api) sendSanityCheckEmail(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	log.Printf("Sanity check email route")

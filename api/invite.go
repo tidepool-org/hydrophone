@@ -80,6 +80,7 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorID, token string, res
 // @Failure 404 {object} status.Status "no invitations found for this user"
 // @Failure 500 {object} status.Status "Error while extracting the data"
 // @Router /invitations/{userid} [get]
+// @security TidepoolAuth
 func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 		inviteeID := vars["userid"]
@@ -130,6 +131,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 // @Failure 404 {object} status.Status "no invitations found for this user"
 // @Failure 500 {object} status.Status "Error while extracting the data"
 // @Router /invite/{userid} [get]
+// @security TidepoolAuth
 func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 
@@ -179,6 +181,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 // @Failure 404 {object} status.Status "invitation not found"
 // @Failure 500 {object} status.Status "Error (internal) while processing the data"
 // @Router /accept/invite/{userid}/{invitedby} [put]
+// @security TidepoolAuth
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 
@@ -292,6 +295,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 // @Failure 404 {object} status.Status "invitation not found"
 // @Failure 500 {object} status.Status "Error (internal) while processing the data"
 // @Router /{userid}/invited/{invited_address} [put]
+// @security TidepoolAuth
 func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 
@@ -354,6 +358,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 // @Failure 404 {object} status.Status "invitation not found"
 // @Failure 500 {object} status.Status "Error (internal) while processing the data"
 // @Router /dismiss/invite/{userid}/{invitedby} [put]
+// @security TidepoolAuth
 func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 
@@ -421,6 +426,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
 // @Failure 500 {object} status.Status "Internal error while processing the invite, detailled error returned in the body"
 // @Router /send/invite/{userid} [post]
+// @security TidepoolAuth
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	// By default, the invitee language will be "en" for Englih (as we don't know which language suits him)
 	// In case the invitee is a known user, the language will be overriden in a later step

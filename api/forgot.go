@@ -44,6 +44,7 @@ type (
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
 // @Failure 500 {object} status.Status "Error finding the user, message returned:\"Error finding the user\" "
 // @Router /send/forgot/{useremail} [post]
+// @security TidepoolAuth
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	var resetCnf *models.Confirmation
 	var reseterLanguage string
@@ -161,6 +162,7 @@ func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.Response
 // @Failure 404 {object} status.Status "No matching reset confirmation was found"
 // @Failure 500 {object} status.Status "Internal error while searching the confirmation"
 // @Router /accept/forgot [put]
+// @security TidepoolAuth
 func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	defer req.Body.Close()
