@@ -5,7 +5,7 @@ mkdir dist
 
 # generate version number
 if [ -n "${TRAVIS_TAG:-}" ]; then
-    VERSION_BASE=${TRAVIS_TAG}  
+    VERSION_BASE=${TRAVIS_TAG}
 else 
     VERSION_BASE=$(git describe --abbrev=0 --tags 2> /dev/null || echo 'dblp.0.0.0')
 fi
@@ -26,4 +26,3 @@ cp start.sh dist/
 
 echo "Push email templates"
 rsync -av --progress templates dist/ --exclude '*.go' --exclude 'preview'
-
