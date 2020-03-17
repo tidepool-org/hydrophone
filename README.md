@@ -46,9 +46,19 @@ and then add the floowing hakken line in your local host:
 127.0.0.1   hakken
 ```
 
+You call also set the email client (`notifierType`) to the `null` value, to avoid having email sent. See the configuration.
+
 ## Config
 The configuration is provided to Hydrophone via 2 environment variables: `TIDEPOOL_HYDROPHONE_ENV` and `TIDEPOOL_HYDROPHONE_SERVICE`.  
 The script `env.sh` provided in this repo will set all the necessary variables with default values, allowing you to work on your development environment. However when deploying on another environment, or when using docker you will likely need to change these variables to match your setup.  
+
+## Email client configuration
+There is 3 possibles email providers to configure, using the JSON variable `notifierType` in `TIDEPOOL_HYDROPHONE_SERVICE`:
+- `ses`: Amazon cloud web API
+- `smtp`: Standard email protocol
+- `null`: Dummy email client
+
+The `null` email client do nothing, just log the action.
 
 ## Notes on email customization and internationalization
 More information on this in [docs/README.md](docs/README.md)

@@ -116,5 +116,6 @@ func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string
 			return http.StatusInternalServerError, err.Error()
 		}
 	}
+	log.Printf("SES email sent: %s\n", subject)
 	return http.StatusOK, result.String()
 }

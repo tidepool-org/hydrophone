@@ -284,7 +284,6 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
 		return false
 	}
-	log.Printf("Success: email sent")
 	return true
 }
 

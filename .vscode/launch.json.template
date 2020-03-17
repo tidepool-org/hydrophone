@@ -1,4 +1,4 @@
-{   
+{
    "version": "0.2.0",
    "configurations": [
        {
@@ -9,7 +9,7 @@
            "program": "${workspaceRoot}",
            "env": {
                "TIDEPOOL_HYDROPHONE_ENV":"{ \"hakken\": { \"host\": \"localhost:8000\" }, \"gatekeeper\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9123\"] } }, \"seagull\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9120\"] } }, \"highwater\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9191\"] }, \"name\": \"highwater\", \"metricsSource\" : \"hydrophone-local\", \"metricsVersion\" : \"v0.0.1\" }, \"shoreline\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9107\"] }, \"name\": \"hydrophone\", \"secret\": \"<<hydrophone_server_secret>>\", \"tokenRefreshInterval\": \"1h\" } }",
-               "TIDEPOOL_HYDROPHONE_SERVICE":"{ \"service\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"mongo\": { \"connectionString\": \"mongodb://<<user_personal>>:<<password_personal>>@localhost:27017/confirm?authSource=admin\" }, \"hydrophone\" : { \"serverSecret\": \"<<server_secret>>\", \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"D:\/git\/mdblp\/go\/src\/github.com\/tidepool-org\/hydrophone\/templates\", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://diabeloop.zendesk.com/hc/articles/360021365373\" }, \"sesEmail\" : { \"region\": \"eu-west-1\", \"fromAddress\" : \"<<support_email_from>>\", \"serverEndpoint\" : \"<<serverEndpointIfNeeded>>\" } }"
+               "TIDEPOOL_HYDROPHONE_SERVICE":"{ \"service\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"mongo\": { \"connectionString\": \"mongodb://<<user_personal>>:<<password_personal>>@localhost:27017/confirm?authSource=admin\" }, \"hydrophone\" : { \"serverSecret\": \"<<server_secret>>\", \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"D:\/git\/mdblp\/go\/src\/github.com\/tidepool-org\/hydrophone\/templates\", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://diabeloop.zendesk.com/hc/articles/360021365373\" }, \"notifierType\": \"null\" } }"
                // Use this below to override local AWS credentials. Otherwise local credentials will be used so the user/profile needs to have rights for sending emails
                // "AWS_PROFILE":"${NON_DEFAULT_PROFILE}" for using a .aws/credentials non default profile
                // OR

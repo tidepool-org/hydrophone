@@ -146,6 +146,8 @@ func main() {
 		mail, mailErr = sc.NewSesNotifier(&config.Ses)
 	case "smtp":
 		mail, mailErr = sc.NewSmtpNotifier(&config.Smtp)
+	case "null":
+		mail, mailErr = sc.NewNullNotifier()
 	default:
 		log.Fatalf("the mail system provided in the configuration (%s) is invalid", config.NotifierType)
 	}
