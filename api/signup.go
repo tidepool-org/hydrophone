@@ -233,7 +233,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	email := vars["useremail"]
 
-	toFind := &models.Confirmation{Email: email, Status: models.StatusPending}
+	toFind := &models.Confirmation{Email: email, Status: models.StatusPending, Type: models.TypeSignUp}
 
 	if found := a.findSignUp(toFind, res); found != nil {
 		if err := a.Store.RemoveConfirmation(found); err != nil {
