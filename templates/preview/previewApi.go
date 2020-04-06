@@ -43,6 +43,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	rtr.Handle("/preview/{template}", varsHandler(a.preview)).Methods("GET")
 	rtr.Handle("/refreshlocal", varsHandler(a.refreshLocal)).Methods("POST")
 	rtr.HandleFunc("/", a.serveStatic).Methods("GET")
+	rtr.HandleFunc("/mail_preview", a.serveStatic).Methods("GET")
+	rtr.HandleFunc("/live_preview", a.serveLiveStatic).Methods("GET")
 }
 
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
@@ -62,7 +64,19 @@ func (a *Api) serveStatic(res http.ResponseWriter, req *http.Request) {
 	return
 }
 
-// Refresh locales from the localization system (i.e. Loco)
+// Render crowdin live preview webpage
+func (a *Api) serveLiveStatic(res http.ResponseWriter, req *http.Request) {
+	data, err := ioutil.ReadFile("livecrowdin.html")
+	if err != nil {
+		log.Printf("templates - failure to read index.html")
+	}
+	res.Header().Set("content-type", "text/html")
+	res.WriteHeader(200)
+	res.Write(data)
+	return
+}
+
+// Refresh locales from the localization system (i.e. crowdin)
 func (a *Api) refreshLocal(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	log.Println("refresh locales files from remote system!")
 	success := a.localeManager.DownloadLocales(path.Join(a.Config.I18nTemplatesPath, "locales/"))
@@ -89,8 +103,13 @@ func (a *Api) refreshLocal(res http.ResponseWriter, req *http.Request, vars map[
 	a.templates = emailTemplates
 }
 
-// Compile a template with test content and return the html result
 func (a *Api) preview(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	a.buildPreview(res, req, vars)
+	return
+}
+
+// Compile a template with test content and return the html result
+func (a *Api) buildPreview(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	//Determine the email template:
 	var templateName models.TemplateName
 	lang := "en"
@@ -158,8 +177,9 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 	content["PatientPasswordResetURL"] = a.Config.PatientPasswordResetURL
 
 	// Retrieve the template from all the preloaded templates
-
-	template, ok := a.templates[templateName]
+	var template models.Template
+	var ok bool
+	template, ok = a.templates[templateName]
 	if !ok {
 		return "", fmt.Errorf("Unknown template type %s", templateName)
 	}

@@ -9,7 +9,7 @@ popd
 if [ -n "${TRAVIS_TAG:-}" ]; then
     ARTIFACT_DIR='deploy'
 
-    APP="hydropreview"
+    APP="hydromail"
     APP_DIR="${ARTIFACT_DIR}/${APP}"
     APP_TAG="${APP}-${TRAVIS_TAG}"
 

@@ -14,11 +14,11 @@ This will automatically get the dependencies and build the code.
 
 
 ## Executing
-To start the service simply load the configuration (environment variables available in config.sh) and start the program:
+To start the service you need to edit the configuration file (local-env.sh), source it and then start the program:
 
 ```
 $ cd templates/preview
-$ . ./config.sh
+$ . ./local-env.sh
 $ ./preview.exe
 ``` 
 

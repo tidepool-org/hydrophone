@@ -14,14 +14,14 @@ VERSION_FULL_COMMIT=$(git rev-parse HEAD)
 
 GO_COMMON_PATH="github.com/tidepool-org/go-common"
 	
-echo "Build hydrophone preview $VERSION_BASE+$VERSION_FULL_COMMIT"
+echo "Build hydromail $VERSION_BASE+$VERSION_FULL_COMMIT"
 go mod tidy
-go build -o dist/hydro-preview
+go build -o dist/hydromail
 
-cp env.sh dist/
 cp start.sh dist/
 
 cp index.html dist/index.html
+cp livecrowdin.html dist/livecrowdin.html
 echo "Push email templates"
 rsync -av --progress ../ dist/ --exclude '*.go' --exclude 'preview'
 

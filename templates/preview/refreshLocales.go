@@ -2,7 +2,7 @@ package main
 
 import "log"
 
-// Used to interact with a remote localization service such as LoCo or Lokalize
+// Used to interact with a remote localization service such as Crowdin
 type LocaleManager interface {
 	DownloadLocales(localePath string) bool
 }
