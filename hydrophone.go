@@ -31,7 +31,6 @@ import (
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/hakken"
-	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/hydrophone/api"
@@ -118,12 +117,6 @@ func main() {
 		WithTokenProvider(shoreline).
 		Build()
 
-	highwater := highwater.NewHighwaterClientBuilder().
-		WithHostGetter(config.HighwaterConfig.ToHostGetter(hakkenClient)).
-		WithHttpClient(httpClient).
-		WithConfig(&config.HighwaterConfig.HighwaterClientConfig).
-		Build()
-
 	seagull := clients.NewSeagullClientBuilder().
 		WithHostGetter(config.SeagullConfig.ToHostGetter(hakkenClient)).
 		WithHttpClient(httpClient).
@@ -171,7 +164,7 @@ func main() {
 	}
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, highwater, seagull, emailTemplates)
+	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, seagull, emailTemplates)
 	api.SetHandlers("", rtr)
 
 	/*

@@ -99,7 +99,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	}
 
 	if resetCnf != nil && a.addOrUpdateConfirmation(resetCnf, res) {
-		a.logMetricAsServer("reset confirmation created")
+		a.logAudit(req, "reset confirmation created")
 
 		emailContent := map[string]interface{}{
 			"Key":   resetCnf.Key,
@@ -107,9 +107,9 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		}
 
 		if a.createAndSendNotification(resetCnf, emailContent, reseterLanguage) {
-			a.logMetricAsServer("reset confirmation sent")
+			a.logAudit(req, "reset confirmation sent")
 		} else {
-			a.logMetricAsServer("reset confirmation failed to be sent")
+			a.logAudit(req, "reset confirmation failed to be sent")
 			log.Print("Something happened generating a passwordReset email")
 			res.WriteHeader(http.StatusUnprocessableEntity)
 			return
@@ -191,7 +191,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 			conf.UpdateStatus(models.StatusCompleted)
 			if a.addOrUpdateConfirmation(conf, res) {
 				//STATUS_RESET_ACCEPTED
-				a.logMetricAsServer("password reset")
+				a.logAudit(req, "password reset")
 				a.sendModelAsResWithStatus(
 					res,
 					status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},

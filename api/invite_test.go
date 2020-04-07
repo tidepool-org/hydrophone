@@ -21,7 +21,6 @@ func initTestingRouterNoPerms() *mux.Router {
 		mockNotifier,
 		mock_uid1Shoreline,
 		mock_NoPermsGatekeeper,
-		mockMetrics,
 		mockSeagull,
 		mockTemplates,
 	)
@@ -253,7 +252,6 @@ func TestInviteResponds(t *testing.T) {
 			mockNotifier,
 			mockShoreline,
 			mockGatekeeper,
-			mockMetrics,
 			mockSeagull,
 			mockTemplates,
 		)
@@ -266,7 +264,6 @@ func TestInviteResponds(t *testing.T) {
 				mockNotifier,
 				mockShoreline,
 				mockGatekeeper,
-				mockMetrics,
 				mockSeagull,
 				mockTemplates,
 			)

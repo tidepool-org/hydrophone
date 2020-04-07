@@ -81,7 +81,7 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 		found.UpdateStatus(newStatus)
 
 		if a.addOrUpdateConfirmation(found, res) {
-			a.logMetricAsServer(updatedStatus)
+			a.logAudit(req, updatedStatus)
 			res.WriteHeader(http.StatusOK)
 			return
 		}
@@ -147,11 +147,11 @@ func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, 
 
 			if a.createAndSendNotification(newSignUp, emailContent, signerLanguage) {
 				log.Printf("signup information sent for %s", userID)
-				a.logMetricAsServer("signup information sent")
+				a.logAudit(req, "signup information sent")
 				res.WriteHeader(http.StatusOK)
 				return
 			} else {
-				a.logMetric("signup confirmation failed to be sent", req)
+				a.logAudit(req, "signup confirmation failed to be sent")
 				log.Print("Something happened generating a signup email")
 				res.WriteHeader(http.StatusUnprocessableEntity)
 			}
@@ -259,7 +259,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 
 			if a.addOrUpdateConfirmation(newSignUp, res) {
-				a.logMetric("signup confirmation created", req)
+				a.logAudit(req, "signup confirmation created")
 
 				if err := a.addProfile(newSignUp); err != nil {
 					log.Printf("sendSignUp: error when adding profile [%s]", err.Error())
@@ -292,11 +292,11 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 					}
 
 					if a.createAndSendNotification(newSignUp, emailContent, signerLanguage) {
-						a.logMetricAsServer("signup confirmation sent")
+						a.logAudit(req, "signup confirmation sent")
 						res.WriteHeader(http.StatusOK)
 						return
 					} else {
-						a.logMetric("signup confirmation failed to be sent", req)
+						a.logAudit(req, "signup confirmation failed to be sent")
 						log.Print("Something happened generating a signup email")
 						res.WriteHeader(http.StatusUnprocessableEntity)
 					}
@@ -340,7 +340,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		if a.addOrUpdateConfirmation(found, res) {
-			a.logMetricAsServer("signup confirmation recreated")
+			a.logAudit(req, "signup confirmation recreated")
 
 			if err := a.addProfile(found); err != nil {
 				log.Printf("resendSignUp: error when adding profile [%s]", err.Error())
@@ -373,9 +373,9 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				}
 
 				if a.createAndSendNotification(found, emailContent, signerLanguage) {
-					a.logMetricAsServer("signup confirmation re-sent")
+					a.logAudit(req, "signup confirmation re-sent")
 				} else {
-					a.logMetricAsServer("signup confirmation failed to be sent")
+					a.logAudit(req, "signup confirmation failed to be sent")
 					log.Print("resendSignUp: Something happened trying to resend a signup email")
 					res.WriteHeader(http.StatusUnprocessableEntity)
 					return
@@ -478,7 +478,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 
 		found.UpdateStatus(models.StatusCompleted)
 		if a.addOrUpdateConfirmation(found, res) {
-			a.logMetricAsServer("accept signup")
+			a.logAudit(req, "accept signup")
 		}
 
 		res.WriteHeader(http.StatusOK)
@@ -486,7 +486,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 }
 
 // @Summary Dismiss an signup demand
-// @Description  In the event that someone uses the wrong email address, the receiver could explicitly dismiss a signup attempt with this link (useful for metrics and to identify phishing attempts).
+// @Description  In the event that someone uses the wrong email address, the receiver could explicitly dismiss a signup attempt with this link (useful for identifying phishing attempts).
 // @Description  This link would be some sort of parenthetical comment in the signup confirmation email, like "(I didn't try to sign up for YourLoops.)"
 // @ID hydrophone-api-dismissSignUp
 // @Accept  json
@@ -549,7 +549,7 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
 			return
 		} else {
-			a.logMetric("get signups", req)
+			a.logAudit(req, "get signups")
 			log.Printf("getSignUp found %d for user %s", len(signups), userId)
 			a.sendModelAsResWithStatus(res, signups, http.StatusOK)
 			return

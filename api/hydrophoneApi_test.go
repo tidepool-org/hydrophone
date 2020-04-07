@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 
 	commonClients "github.com/tidepool-org/go-common/clients"
-	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/go-common/clients/version"
@@ -49,7 +48,6 @@ var (
 	mockShoreline  = shoreline.NewMock(testing_token)
 	mockGatekeeper = commonClients.NewGatekeeperMock(nil, &status.StatusError{status.NewStatus(500, "Unable to parse response.")})
 
-	mockMetrics = highwater.NewMock()
 	mockSeagull = commonClients.NewSeagullMock()
 
 	mockTemplates = models.Templates{}
@@ -68,7 +66,7 @@ var (
 	mock_uid1Shoreline     = newtestingShorelingMock(testing_uid1)
 
 	responsableGatekeeper = NewResponsableMockGatekeeper()
-	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, responsableGatekeeper, mockMetrics, mockSeagull, mockTemplates)
+	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, responsableGatekeeper, mockSeagull, mockTemplates)
 
 	mockLocalizer, _ = localize.NewI18nLocalizer("../templates/locales")
 )
@@ -130,7 +128,7 @@ func TestGetStatus_StatusOk(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
-	hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
+	hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockSeagull, mockTemplates)
 	hydrophone.SetHandlers("", rtr)
 
 	hydrophone.GetStatus(response, request)
@@ -155,7 +153,7 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
-	hydrophoneFails := InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
+	hydrophoneFails := InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper, mockSeagull, mockTemplates)
 	hydrophoneFails.SetHandlers("", rtr)
 
 	hydrophoneFails.GetStatus(response, request)

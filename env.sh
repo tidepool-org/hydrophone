@@ -2,12 +2,6 @@ export TIDEPOOL_HYDROPHONE_ENV='{
     "hakken": { "host": "localhost:8000" },
     "gatekeeper": { "serviceSpec": { "type": "static", "hosts": ["http://localhost:9123"] } },
     "seagull": { "serviceSpec": { "type": "static", "hosts": ["http://localhost:9120"] } },
-    "highwater": {
-  	    "serviceSpec": { "type": "static", "hosts": ["http://localhost:9191"] },
-  	    "name": "highwater",
-        "metricsSource" : "hydrophone-local",
-        "metricsVersion" : "v0.0.1"
-    },
     "shoreline": {
         "serviceSpec": { "type": "static", "hosts": ["http://localhost:9107"] },
         "name": "hydrophone-local",
