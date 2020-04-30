@@ -1,3 +1,17 @@
+// @title Hydrophone API
+// @version 0.0.1
+// @description The purpose of this API is to send notifications to users: forgotten passwords, initial signup, invitations and more
+// @license.name BSD 2-Clause "Simplified" License
+// @host localhost
+// @BasePath /confirm
+// @accept json
+// @produce json
+// @schemes https
+
+// @securityDefinitions.apikey TidepoolAuth
+// @in header
+// @name x-tidepool-session-token
+
 package main
 
 import (
@@ -6,7 +20,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
+
+	"github.com/tidepool-org/go-common/clients/version"
 
 	"github.com/gorilla/mux"
 
@@ -14,11 +31,11 @@ import (
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/hakken"
-	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/hydrophone/api"
 	sc "github.com/tidepool-org/hydrophone/clients"
+	"github.com/tidepool-org/hydrophone/localize"
 	"github.com/tidepool-org/hydrophone/templates"
 )
 
@@ -26,27 +43,30 @@ type (
 	// Config is the configuration for the service
 	Config struct {
 		clients.Config
-		Service disc.ServiceListing  `json:"service"`
-		Mongo   mongo.Config         `json:"mongo"`
-		Api     api.Config           `json:"hydrophone"`
-		Mail    sc.SesNotifierConfig `json:"sesEmail"`
+		Service      disc.ServiceListing   `json:"service"`
+		Mongo        mongo.Config          `json:"mongo"`
+		Api          api.Config            `json:"hydrophone"`
+		Ses          sc.SesNotifierConfig  `json:"sesEmail"`
+		Smtp         sc.SmtpNotifierConfig `json:"smtpEmail"`
+		NotifierType string                `json:"notifierType"`
 	}
 )
 
 func main() {
 	var config Config
-
+	log.Printf("Starting Hydrophone version %s", version.GetVersion().String())
+	// Load configuration from environment variables
 	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
 		log.Panic("Problem loading config ", err)
 	}
 
 	region, found := os.LookupEnv("REGION")
 	if found {
-		config.Mail.Region = region
+		config.Ses.Region = region
 	}
 
-	if config.Mail.Region == "" {
-		config.Mail.Region = "us-west-2"
+	if config.Ses.Region == "" {
+		config.Ses.Region = "us-west-2"
 	}
 
 	config.Mongo.FromEnv()
@@ -98,16 +118,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Printf("Shoreline client started with server token %s", shoreline.TokenProvide())
+
 	gatekeeper := clients.NewGatekeeperClientBuilder().
 		WithHostGetter(config.GatekeeperConfig.ToHostGetter(hakkenClient)).
 		WithHttpClient(httpClient).
 		WithTokenProvider(shoreline).
-		Build()
-
-	highwater := highwater.NewHighwaterClientBuilder().
-		WithHostGetter(config.HighwaterConfig.ToHostGetter(hakkenClient)).
-		WithHttpClient(httpClient).
-		WithConfig(&config.HighwaterConfig.HighwaterClientConfig).
 		Build()
 
 	seagull := clients.NewSeagullClientBuilder().
@@ -115,23 +131,49 @@ func main() {
 		WithHttpClient(httpClient).
 		Build()
 
-	/*
-	 * hydrophone setup
-	 */
+		/*
+		 * hydrophone setup
+		 */
 	store := sc.NewMongoStoreClient(&config.Mongo)
-	mail, err := sc.NewSesNotifier(&config.Mail)
 
-	if err != nil {
-		log.Fatal(err)
+	// Create a notifier based on configuration
+	var mail sc.Notifier
+	var mailErr error
+	//defaults the mail exchange service to ses
+	if config.NotifierType == "" {
+		config.NotifierType = "ses"
+	}
+	switch config.NotifierType {
+	case "ses":
+		mail, mailErr = sc.NewSesNotifier(&config.Ses)
+	case "smtp":
+		mail, mailErr = sc.NewSmtpNotifier(&config.Smtp)
+	case "null":
+		mail, mailErr = sc.NewNullNotifier()
+	default:
+		log.Fatalf("the mail system provided in the configuration (%s) is invalid", config.NotifierType)
+	}
+	if mailErr != nil {
+		log.Fatal(mailErr)
+	} else {
+		log.Printf("Mail client %s created", config.NotifierType)
 	}
 
-	emailTemplates, err := templates.New()
+	//Create a localizer to be used by the templates
+	localizer, err := localize.NewI18nLocalizer(path.Join(config.Api.I18nTemplatesPath, "/locales"))
+	if err != nil {
+		log.Fatalf("Problem creating i18n localizer %s", err)
+	}
+	// Create collection of pre-compiled templates
+	// Templates are built based on HTML files which location is calculated from config
+	// Config is initalized with environment variables
+	emailTemplates, err := templates.New(config.Api.I18nTemplatesPath, localizer)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, highwater, seagull, emailTemplates)
+	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, seagull, emailTemplates)
 	api.SetHandlers("", rtr)
 
 	/*

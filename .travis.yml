@@ -1,3 +1,5 @@
+dist: trusty
+
 sudo: false
 
 language: go
@@ -6,29 +8,70 @@ go:
   - 1.12.7
 
 env:
-  - GO111MODULE=on
+  global: 
+    - GO111MODULE=on
+    - BUILD_OPENAPI_DOC=true
 
 go_import_path: github.com/tidepool-org/hydrophone
 
 before_install:
-  sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5;
-  echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.6 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list;
-  sudo apt-get update;
-  sudo apt-get install --allow-unauthenticated -y mongodb-org=3.6.12 mongodb-org-server=3.6.12 mongodb-org-shell=3.6.12 mongodb-org-mongos=3.6.12 mongodb-org-tools=3.6.12;
-  sudo service mongod start;
+  - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5;
+  - echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.6 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list;
+  - sudo apt-get update;
+  - sudo apt-get install --allow-unauthenticated -y mongodb-org=3.6.12 mongodb-org-server=3.6.12 mongodb-org-shell=3.6.12 mongodb-org-mongos=3.6.12 mongodb-org-tools=3.6.12;
+  - sudo service mongod start;
+  # fix travis working folder (see http://www.ruflin.com/2015/08/13/fix-for-travis-ci-failure-in-forked-golang-repositories/)
+  - mkdir -p $HOME/gopath/src/github.com/tidepool-org/hydrophone
+  - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/tidepool-org/hydrophone/
+  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/tidepool-org/hydrophone
+  - cd $HOME/gopath/src/github.com/tidepool-org/hydrophone
+  # Download the "dep" binary to bin folder in $GOPATH
+  - curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o $GOPATH/bin/dep
+  # Make the binary executable
+  - chmod +x $GOPATH/bin/dep
 
-addons:
-  artifacts:
-    s3_region: us-west-2
-    paths:
-      - $(git ls-files -o deploy/*/*-*.tar.gz | tr "\n" ":")
-    target_paths:
-      - /
+install:
+  - ./build.sh
+
+deploy:
+  # Control deployment by setting a value for `on`. Setting the `branch`
+  # option to `master` means Travis will only attempt a deployment on
+  # builds of your repo's master branch (e.g., after you merge a PR).
+  - provider: s3
+    on:
+      tags: true
+    # You can refer to environment variables from Travis repo settings!
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    region: $AWS_DEFAULT_REGION
+    # Name of the S3 bucket to which your site should be uploaded.
+    bucket: $AWS_BUCKET
+    # Prevent Travis from deleting your built site so it can be uploaded.
+    skip_cleanup: true
+    # Path of the source directory containing your built site.
+    local_dir: deploy
+    # Path to a directory containing your built site.
+    upload-dir: deploy
+    # Set the Cache-Control header.
+    cache_control: "max-age=21600"
+  # Deploy doc
+  - provider: s3
+    on:
+      tags: true
+      condition: $BUILD_OPENAPI_DOC=true
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    region: $AWS_DEFAULT_REGION
+    bucket: com.diabeloop.yourloops.doc
+    skip_cleanup: true
+    local-dir: docs/openapi
+    upload-dir: openapi/hydrophone
+    cache_control: "max-age=21600"
 
 services:
   - docker
 
 script:
-  - ./build.sh
   - ./test.sh
   - ./artifact.sh
+  - ./artifact-preview.sh

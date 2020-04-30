@@ -1,0 +1,31 @@
+{
+   "version": "0.2.0",
+   "configurations": [
+       {
+           "name": "Launch hydro",
+           "type": "go",
+           "request": "launch",
+           "mode": "debug",
+           "program": "${workspaceRoot}",
+           "env": {
+               "TIDEPOOL_HYDROPHONE_ENV":"{ \"hakken\": { \"host\": \"localhost:8000\" }, \"gatekeeper\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9123\"] } }, \"seagull\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9120\"] } }, \"shoreline\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9107\"] }, \"name\": \"hydrophone\", \"secret\": \"<<hydrophone_server_secret>>\", \"tokenRefreshInterval\": \"1h\" } }",
+               "TIDEPOOL_HYDROPHONE_SERVICE":"{ \"service\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"mongo\": { \"connectionString\": \"mongodb://<<user_personal>>:<<password_personal>>@localhost:27017/confirm?authSource=admin\" }, \"hydrophone\" : { \"serverSecret\": \"<<server_secret>>\", \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"D:\/git\/mdblp\/go\/src\/github.com\/tidepool-org\/hydrophone\/templates\", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://diabeloop.zendesk.com/hc/articles/360021365373\" }, \"notifierType\": \"null\" } }"
+               // Use this below to override local AWS credentials. Otherwise local credentials will be used so the user/profile needs to have rights for sending emails
+               // "AWS_PROFILE":"${NON_DEFAULT_PROFILE}" for using a .aws/credentials non default profile
+               // OR
+               // "AWS_ACCESS_KEY_ID":"",
+               // "AWS_SECRET_ACCESS_KEY":""
+           },
+           "args": []
+       },
+       {
+        "name": "Launch Mail preview",
+        "type": "go",
+        "request": "launch",
+        "mode": "debug",
+        "program": "${workspaceRoot}/templates/preview/mailPreview.go",
+        "env": {
+            "TIDEPOOL_HYDROPHONE_SERVICE":"{ \"httpaddr\": \"localhost:8088\", \"assetUrl\": \"https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets\", \"serverSecret\": \"secret\", \"webUrl\": \"https://preview.your-loops.dev\", \"patientPasswordResetUrl\": \"https://support.diabeloop.com/hc/articles/360025168234\", \"supportUrl\": \"mailto:yourloops@diabeloop.com\",\"i18nTemplatesPath\": \"../\" }"
+        }
+   ]
+}

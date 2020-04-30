@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"runtime"
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	commonClients "github.com/tidepool-org/go-common/clients"
-	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/clients"
@@ -21,20 +22,25 @@ import (
 
 type (
 	Api struct {
-		Store      clients.StoreClient
-		notifier   clients.Notifier
-		templates  models.Templates
-		sl         shoreline.Client
-		gatekeeper commonClients.Gatekeeper
-		seagull    commonClients.Seagull
-		metrics    highwater.Client
-		Config     Config
+		Store          clients.StoreClient
+		notifier       clients.Notifier
+		templates      models.Templates
+		sl             shoreline.Client
+		gatekeeper     commonClients.Gatekeeper
+		seagull        commonClients.Seagull
+		Config         Config
+		LanguageBundle *i18n.Bundle
+		logger         *log.Logger
 	}
 	Config struct {
-		ServerSecret string `json:"serverSecret"` //used for services
-		WebURL       string `json:"webUrl"`
-		AssetURL     string `json:"assetUrl"`
-		Protocol     string `json:"protocol"`
+		ServerSecret              string `json:"serverSecret"`              //used for services
+		WebURL                    string `json:"webUrl"`                    // used for link to blip
+		SupportURL                string `json:"supportUrl"`                // used for link to support
+		AssetURL                  string `json:"assetUrl"`                  // used for location of the images
+		I18nTemplatesPath         string `json:"i18nTemplatesPath"`         // where are the templates located?
+		AllowPatientResetPassword bool   `json:"allowPatientResetPassword"` // true means that patients can reset their password, false means that only clinicianc can reset their password
+		PatientPasswordResetURL   string `json:"patientPasswordResetUrl"`   // URL of the help web site that is used to give instructions to reset password for patients
+		Protocol                  string `json:"protocol"`
 	}
 
 	group struct {
@@ -45,16 +51,23 @@ type (
 )
 
 const (
+	//api logging prefix
+	CONFIRM_API_PREFIX = "api/confirm "
+
 	TP_SESSION_TOKEN = "x-tidepool-session-token"
+	// TP_TRACE_SESSION Session trace: uuid v4
+	TP_TRACE_SESSION = "x-tidepool-trace-session"
 
 	//returned error messages
 	STATUS_ERR_SENDING_EMAIL         = "Error sending email"
 	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
+	STATUS_ERR_CLINICAL_USR          = "Cannot send an information to clinical"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
+	STATUS_ERR_FINDING_VALIDATION    = "Error finding the account validation"
 
 	//returned status messages
 	STATUS_NOT_FOUND     = "Nothing found"
@@ -70,19 +83,20 @@ func InitApi(
 	ntf clients.Notifier,
 	sl shoreline.Client,
 	gatekeeper commonClients.Gatekeeper,
-	metrics highwater.Client,
 	seagull commonClients.Seagull,
 	templates models.Templates,
 ) *Api {
+	logger := log.New(os.Stdout, CONFIRM_API_PREFIX, log.LstdFlags)
 	return &Api{
-		Store:      store,
-		Config:     cfg,
-		notifier:   ntf,
-		sl:         sl,
-		gatekeeper: gatekeeper,
-		metrics:    metrics,
-		seagull:    seagull,
-		templates:  templates,
+		Store:          store,
+		Config:         cfg,
+		notifier:       ntf,
+		sl:             sl,
+		gatekeeper:     gatekeeper,
+		seagull:        seagull,
+		templates:      templates,
+		LanguageBundle: nil,
+		logger:         logger,
 	}
 }
 
@@ -98,6 +112,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	rtr.HandleFunc("/status", a.GetStatus).Methods("GET")
 
+	rtr.Handle("/sanity_check/{userid}", varsHandler(a.sendSanityCheckEmail)).Methods("POST")
+
 	// POST /confirm/send/signup/:userid
 	// POST /confirm/send/forgot/:useremail
 	// POST /confirm/send/invite/:userid
@@ -105,6 +121,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	send.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
 	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
+	// POST /confirm/send/inform/:userid
+	send.Handle("/inform/{userid}", varsHandler(a.sendSignUpInformation)).Methods("POST")
 
 	// POST /confirm/resend/signup/:useremail
 	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
@@ -144,15 +162,23 @@ func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	h(res, req, vars)
 }
 
+// @Summary Get the api status
+// @Description Get the api status
+// @ID hydrophone-api-getstatus
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} string "OK"
+// @Failure 500 {string} string "error description"
+// @Router /status [get]
 func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
+	var s status.ApiStatus
 	if err := a.Store.Ping(); err != nil {
 		log.Printf("Error getting status [%v]", err)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, err.Error())}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-		return
+		s = status.NewApiStatus(http.StatusInternalServerError, err.Error())
+	} else {
+		s = status.NewApiStatus(http.StatusOK, "OK")
 	}
-	res.WriteHeader(http.StatusOK)
-	res.Write([]byte(STATUS_OK))
+	a.sendModelAsResWithStatus(res, s, s.Status.Code)
 	return
 }
 
@@ -219,39 +245,54 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 }
 
 //Generate a notification from the given confirmation,write the error if it fails
-func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}) bool {
+func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}, lang string) bool {
+	log.Printf("trying notification with template '%s' to %s with language '%s'", conf.TemplateName, conf.Email, lang)
+
+	// Get the template name based on the requested communication type
 	templateName := conf.TemplateName
 	if templateName == models.TemplateNameUndefined {
 		switch conf.Type {
 		case models.TypePasswordReset:
 			templateName = models.TemplateNamePasswordReset
+		case models.TypePatientPasswordReset:
+			templateName = models.TemplateNamePatientPasswordReset
 		case models.TypeCareteamInvite:
 			templateName = models.TemplateNameCareteamInvite
 		case models.TypeSignUp:
 			templateName = models.TemplateNameSignup
 		case models.TypeNoAccount:
 			templateName = models.TemplateNameNoAccount
+		case models.TypeInformation:
+			templateName = models.TemplateNamePatientInformation
 		default:
 			log.Printf("Unknown confirmation type %s", conf.Type)
 			return false
 		}
 	}
 
+	// Content collection is here to replace placeholders in template body/content
 	content["WebURL"] = a.getWebURL(req)
+	content["SupportURL"] = a.Config.SupportURL
 	content["AssetURL"] = a.Config.AssetURL
+	content["PatientPasswordResetURL"] = a.Config.PatientPasswordResetURL
 
+	// Retrieve the template from all the preloaded templates
 	template, ok := a.templates[templateName]
 	if !ok {
 		log.Printf("Unknown template type %s", templateName)
 		return false
 	}
 
-	subject, body, err := template.Execute(content)
+	// Email information (subject and body) are retrieved from the "executed" email template
+	// "Execution" adds dynamic content using text/template lib
+	subject, body, err := template.Execute(content, lang)
+
 	if err != nil {
-		log.Printf("Error executing email template %s", err)
+		log.Printf("Error executing email template '%s'", err)
 		return false
 	}
 
+	// Finally send the email
 	if status, details := a.notifier.Send([]string{conf.Email}, subject, body); status != http.StatusOK {
 		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
 		return false
@@ -262,6 +303,7 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 //find and validate the token
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
+		log.Printf("Found token in request header %s", token)
 		td := a.sl.CheckToken(token)
 
 		if td == nil {
@@ -278,29 +320,40 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 	return nil
 }
 
-//send metric
-func (a *Api) logMetric(name string, req *http.Request) {
-	token := req.Header.Get(TP_SESSION_TOKEN)
-	emptyParams := make(map[string]string)
-	a.metrics.PostThisUser(name, token, emptyParams)
-	return
+// logAudit Variatic log for audit trails
+func (a *Api) logAudit(req *http.Request, format string, args ...interface{}) {
+	var prefix string
+	var isServer bool = false
+
+	// Get token from request
+	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
+		td := a.sl.CheckToken(token)
+		isServer = td != nil && td.IsServer
+	}
+
+	if req.RemoteAddr != "" {
+		prefix = fmt.Sprintf("remoteAddr{%s}, ", req.RemoteAddr)
+	}
+
+	traceSession := req.Header.Get(TP_TRACE_SESSION)
+	if traceSession != "" {
+		prefix += fmt.Sprintf("trace{%s}, ", traceSession)
+	}
+
+	prefix += fmt.Sprintf("isServer{%t}, ", isServer)
+
+	s := fmt.Sprintf(format, args...)
+	a.logger.Printf("%s%s", prefix, s)
 }
 
-//send metric
-func (a *Api) logMetricAsServer(name string) {
-	token := a.sl.TokenProvide()
-	emptyParams := make(map[string]string)
-	a.metrics.PostServer(name, token, emptyParams)
-	return
-}
-
-//Find existing user based on the given indentifier
-//The indentifier could be either an id or email address
-func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
-	if usr, err := a.sl.GetUser(indentifier, token); err != nil {
+//Find existing user based on the given identifier
+//The identifier could be either an id or email address
+func (a *Api) findExistingUser(identifier, token string) *shoreline.UserData {
+	if usr, err := a.sl.GetUser(identifier, token); err != nil {
 		log.Printf("Error [%s] trying to get existing users details", err.Error())
 		return nil
 	} else {
+		log.Printf("User found at shoreline using token %s", token)
 		return usr
 	}
 }
@@ -318,8 +371,8 @@ func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
 			confirmations[i].UserId = userId
 			a.Store.UpsertConfirmation(confirmations[i])
 		}
-		return
 	}
+	return
 }
 
 func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {

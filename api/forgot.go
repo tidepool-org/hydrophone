@@ -16,6 +16,7 @@ const (
 	STATUS_RESET_EXPIRED    = "Password reset confirmation has expired."
 	STATUS_RESET_ERROR      = "Error while resetting password; reset confirmation remains active until it expires."
 	STATUS_RESET_NO_ACCOUNT = "No matching account for the email was found."
+	STATUS_RESET_PATIENT    = "Patients are not allowed to reset their password."
 )
 
 type (
@@ -27,20 +28,32 @@ type (
 	}
 )
 
-//Create a lost password request
-//
-//If the request is correctly formed, always returns a 200, even if the email address was not found (this way it can't be used to validate email addresses).
-//
-//If the email address is found in the Tidepool system, this will:
-// - Create a confirm record and a random key
-// - Send an email with a link containing the key
-//
-// Visiting the URL in the email will fetch a page that offers the user the chance to accept or reject the lost password request.
-// If accepted, the user must then create a new password that will replace the old one.
-//
-// status: 200
-// status: 400 no email given
+// @Summary Create a lost password request
+// @Description  If the request is correctly formed, always returns a 200.
+// @Description  If the email address is found in the system, this will:
+// @Description     - Create a confirm record and a random key
+// @Description     - Send an email with a link containing the key
+// @Description  Visiting the URL in the email will fetch a page that offers the user the chance to accept or reject the lost password request.
+// @Description  If accepted, the user must then create a new password that will replace the old one.
+// @ID hydrophone-api-passwordReset
+// @Accept  json
+// @Produce  json
+// @Param useremail path string true "user email"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "useremail was not provided"
+// @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
+// @Failure 500 {object} status.Status "Error finding the user, message returned:\"Error finding the user\" "
+// @Router /send/forgot/{useremail} [post]
+// @security TidepoolAuth
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	var resetCnf *models.Confirmation
+	var reseterLanguage string
+
+	// By default, the reseter language will be his browser's or "en" for Englih
+	// In case the reseter is found a known user and has a language set, the language will be overriden in a later step
+	if reseterLanguage = GetBrowserPreferredLanguage(req); reseterLanguage == "" {
+		reseterLanguage = "en"
+	}
 
 	email := vars["useremail"]
 	if email == "" {
@@ -48,11 +61,34 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		return
 	}
 
-	resetCnf, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
-	resetCnf.Email = email
+	// if the reseter is already registered we can use his preferences
+	if resetUsr := a.findExistingUser(email, a.sl.TokenProvide()); resetUsr != nil {
+		if resetUsr.IsClinic() || a.Config.AllowPatientResetPassword {
+			resetCnf, _ = models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
+		} else {
+			log.Print(STATUS_RESET_PATIENT)
+			log.Printf("email used [%s]", email)
+			resetCnf, _ = models.NewConfirmation(models.TypePatientPasswordReset, models.TemplateNamePatientPasswordReset, "")
+			// a patient is not allowed to reset his password, close the request
+			resetCnf.UpdateStatus(models.StatusCompleted)
+		}
 
-	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
+		resetCnf.Email = email
 		resetCnf.UserId = resetUsr.UserID
+
+		// let's get the reseter user preferences
+		reseterPreferences := &models.Preferences{}
+		if err := a.seagull.GetCollection(resetCnf.UserId, "preferences", a.sl.TokenProvide(), reseterPreferences); err != nil {
+			a.sendError(res, http.StatusInternalServerError,
+				STATUS_ERR_FINDING_USR,
+				"forgot password: error getting reseter user preferences: ",
+				err.Error())
+			return
+		}
+		// if reseter has a profile and a language we override the previously set language (browser's or "en")
+		if reseterPreferences.DisplayLanguage != "" {
+			reseterLanguage = reseterPreferences.DisplayLanguage
+		}
 	} else {
 		log.Print(STATUS_RESET_NO_ACCOUNT)
 		log.Printf("email used [%s]", email)
@@ -62,19 +98,21 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.UpdateStatus(models.StatusCompleted)
 	}
 
-	if a.addOrUpdateConfirmation(resetCnf, res) {
-		a.logMetricAsServer("reset confirmation created")
+	if resetCnf != nil && a.addOrUpdateConfirmation(resetCnf, res) {
+		a.logAudit(req, "reset confirmation created")
 
 		emailContent := map[string]interface{}{
 			"Key":   resetCnf.Key,
 			"Email": resetCnf.Email,
 		}
 
-		if a.createAndSendNotification(req, resetCnf, emailContent) {
-			a.logMetricAsServer("reset confirmation sent")
+		if a.createAndSendNotification(req, resetCnf, emailContent, reseterLanguage) {
+			a.logAudit(req, "reset confirmation sent")
 		} else {
-			a.logMetricAsServer("reset confirmation failed to be sent")
+			a.logAudit(req, "reset confirmation failed to be sent")
 			log.Print("Something happened generating a passwordReset email")
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			return
 		}
 	}
 	//unless no email was given we say its all good
@@ -108,20 +146,23 @@ func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.Response
 	return found
 }
 
-//Accept the password change
-//
-//This call will be invoked by the lost password screen with the key that was included in the URL of the lost password screen.
-//For additional safety, the user will be required to manually enter the email address on the account as part of the UI,
-// and also to enter a new password which will replace the password on the account.
-//
-// If this call is completed without error, the lost password request is marked as accepted.
-// Otherwise, the lost password request remains active until it expires.
-//
-// status: 200 STATUS_RESET_ACCEPTED
-// status: 401 STATUS_RESET_EXPIRED the reset confirmaion has expired
-// status: 400 STATUS_ERR_DECODING_CONFIRMATION issue decoding the accept body
-// status: 400 STATUS_RESET_ERROR when we can't update the users password
-// status: 404 STATUS_RESET_NOT_FOUND when no matching reset confirmation is found
+// @Summary Accept the password change
+// @Description  Likely to be invoked by the 'lost password' screen with the key that was included in the URL of the 'lost password' screen.
+// @Description  For additional safety, the user will be required to manually enter the email address on the account as part of the UI,
+// @Description  and also to enter a new password which will replace the password on the account.
+// @Description  If this call is completed without error, the lost password request is marked as accepted.
+// @Description  Otherwise, the lost password request remains active until it expires.
+// @ID hydrophone-api-acceptPassword
+// @Accept  json
+// @Produce  json
+// @Param payload body api.resetBody true "reset password details"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "Error while decoding the confirmation or while resetting password"
+// @Failure 401 {object} status.Status "Password reset confirmation has expired"
+// @Failure 404 {object} status.Status "No matching reset confirmation was found"
+// @Failure 500 {object} status.Status "Internal error while searching the confirmation"
+// @Router /accept/forgot [put]
+// @security TidepoolAuth
 func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	defer req.Body.Close()
@@ -150,7 +191,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 			conf.UpdateStatus(models.StatusCompleted)
 			if a.addOrUpdateConfirmation(conf, res) {
 				//STATUS_RESET_ACCEPTED
-				a.logMetricAsServer("password reset")
+				a.logAudit(req, "password reset")
 				a.sendModelAsResWithStatus(
 					res,
 					status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},

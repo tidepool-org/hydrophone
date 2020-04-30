@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/tidepool-org/hydrophone/templates"
 )
 
 func initTestingRouterNoPerms() *mux.Router {
@@ -19,7 +21,6 @@ func initTestingRouterNoPerms() *mux.Router {
 		mockNotifier,
 		mock_uid1Shoreline,
 		mock_NoPermsGatekeeper,
-		mockMetrics,
 		mockSeagull,
 		mockTemplates,
 	)
@@ -231,6 +232,12 @@ func TestInviteResponds(t *testing.T) {
 		},
 	}
 
+	templatesPath, found := os.LookupEnv("TEMPLATE_PATH")
+	if found {
+		FAKE_CONFIG.I18nTemplatesPath = templatesPath
+	}
+	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath, mockLocalizer)
+
 	for idx, inviteTest := range inviteTests {
 		// don't run a test if it says to skip it
 		if inviteTest.skip {
@@ -245,7 +252,6 @@ func TestInviteResponds(t *testing.T) {
 			mockNotifier,
 			mockShoreline,
 			mockGatekeeper,
-			mockMetrics,
 			mockSeagull,
 			mockTemplates,
 		)
@@ -258,7 +264,6 @@ func TestInviteResponds(t *testing.T) {
 				mockNotifier,
 				mockShoreline,
 				mockGatekeeper,
-				mockMetrics,
 				mockSeagull,
 				mockTemplates,
 			)

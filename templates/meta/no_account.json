@@ -1,0 +1,16 @@
+{
+    "name": "no_account",
+    "description": "email for those that requested password reset but did not create their account before",
+    "templateFilename": "no_account.html",
+    "subject": "NoAccountSubject",
+    "contentParts":[
+        "NoAccountHello",
+        "NoAccountNoAccount",
+        "NoAccountClick",
+        "NoAccountSignUp",
+        "FooterGetSupport",
+        "FooterSincerely",
+        "FooterSignature"
+    ],
+    "escapeContentParts":[]
+}

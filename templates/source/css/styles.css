@@ -1,0 +1,168 @@
+/* Basics */
+
+body {
+  margin: 8px !important;
+  padding: 0;
+  background-color: #ffffff;
+  font-family: 'Roboto', sans-serif;
+  color: #575756;
+  min-width: 100%;
+}
+
+div[style*='margin: 16px 0'] {
+  margin: 0 !important;
+}
+
+.wrapper {
+  width: 100%;
+  table-layout: fixed;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+.webkit {
+  max-width: 560px;
+  margin: 0 auto;
+  background-color: #f7f7f7;
+}
+
+.outer {
+  border: 0;
+  margin: 0 auto;
+  background: #ffffff;
+  width: 80%;
+  align-self:center;
+  max-width: 560px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.inner {
+  padding: 10px;
+}
+
+/* One Column Layout */
+
+.one-column .centered {
+  text-align: center;
+}
+
+/* Social links */
+.social {
+  background-color: #006c71;
+}
+
+/* Paragraphs */
+
+p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  margin-bottom: 10px;
+}
+
+p.h1 {
+  font-weight: bold;
+}
+
+p.content-width {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 400px;
+}
+
+/* Links */
+
+a {
+  text-decoration: none;
+}
+
+a.btn {
+  display: inline-block;
+  font-family: 'Ubuntu', sans-serif;
+}
+
+a.btn.primary {
+  border-radius: 4px;
+  padding: 10px 20px;
+  background-color: #6fc3bb;
+  font-size: 16px;
+  font-weight:bold;
+  color: #ffffff;
+  margin-left: 5px;
+  margin-right: 5px;
+  margin-bottom: 10px;
+}
+
+a.btn.secondary {
+  border: 2px solid #006c71;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: normal;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left:20px;
+  padding-right:20px;
+  color:#006c71;
+}
+
+/* Images */
+
+img {
+  border: 0;
+  display:block;
+}
+
+img.logo {
+  display: inline-block;
+  margin-bottom: 25px;
+  max-width: 220px;
+  height: auto;
+}
+
+img.social {
+  width: 25px;
+  height: 25px;
+}
+
+/* Tables */
+
+table {
+  border-spacing: 0;
+}
+
+table.center {
+  margin: 0px auto;
+}
+
+td {
+  padding: 0;
+}
+
+table.links.primary td {
+  padding: 0 8px;
+
+}
+
+table.links.secondary td {
+  padding: 0 2px;
+}
+
+table.links.secondary td.no-right-padding,
+table.links.primary td.no-right-padding {
+  padding-right: 0;
+}
+
+table.links.secondary td.no-left-padding,
+table.links.primary td.no-left-padding {
+  padding-left: 0;
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 360px) {
+  p {
+    font-size: 10px;
+    padding: 0 0 0 4px;
+  }
+}

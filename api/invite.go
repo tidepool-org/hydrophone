@@ -67,11 +67,20 @@ func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorID, token string, res
 	return false, nil
 }
 
-//Get list of received invitations for logged in user.
-//These are invitations that have been sent to this user but not yet acted upon.
-
-// status: 200
-// status: 400
+// @Summary Get list of received invitations for logged-in user
+// @Description  Get list of received invitations that have been sent to this user but not yet acted upon.
+// @ID hydrophone-api-GetReceivedInvitations
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "usereid was not provided"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Authorization token is invalid"
+// @Failure 404 {object} status.Status "no invitations found for this user"
+// @Failure 500 {object} status.Status "Error while extracting the data"
+// @Router /invitations/{userid} [get]
+// @security TidepoolAuth
 func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 		inviteeID := vars["userid"]
@@ -94,13 +103,13 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 
 		//log.Printf("GetReceivedInvitations: found [%d] pending invite(s)", len(found))
 		if err != nil {
-			log.Printf("GetReceivedInvitations: error [%v] when finding peding invites ", err)
+			log.Printf("GetReceivedInvitations: error [%v] when finding pending invites ", err)
 		}
 
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(inviteeID, invites)
 			log.Printf("GetReceivedInvitations: found and have checked [%d] invites ", len(invites))
-			a.logMetric("get received invites", req)
+			a.logAudit(req, "get received invites")
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
 			return
 		}
@@ -108,12 +117,21 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 	return
 }
 
-//Get the still-pending invitations for a group you own or are an admin of.
-//These are the invitations you have sent that have not been accepted.
-//There is no way to tell if an invitation has been ignored.
-//
-// status: 200
-// status: 400
+// @Summary Get the still-pending invitations for a group you own or are an admin of
+// @Description  Get list of invitations you have sent that have not been accepted.
+// @Description  There is no way to tell if an invitation has been ignored.
+// @ID hydrophone-api-GetSentInvitations
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {array} models.Confirmation
+// @Failure 400 {object} status.Status "usereid was not provided"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Authorization token is invalid"
+// @Failure 404 {object} status.Status "no invitations found for this user"
+// @Failure 500 {object} status.Status "Error while extracting the data"
+// @Router /invite/{userid} [get]
+// @security TidepoolAuth
 func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 
@@ -135,7 +153,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 		//find all invites I have sent that are pending or declined
 		found, err := a.Store.FindConfirmations(&models.Confirmation{CreatorId: invitorID, Type: models.TypeCareteamInvite}, models.StatusPending, models.StatusDeclined)
 		if invitations := a.checkFoundConfirmations(res, found, err); invitations != nil {
-			a.logMetric("get sent invites", req)
+			a.logAudit(req, "get sent invites")
 			a.sendModelAsResWithStatus(res, invitations, http.StatusOK)
 			return
 		}
@@ -148,6 +166,22 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 // http.StatusOK when accepted
 // http.StatusBadRequest when the incoming data is incomplete or incorrect
 // http.StatusForbidden when mismatch of user ID's, type or status
+// @Summary Accept the given invite
+// @Description  This would be PUT by the web page at the link in the invite email. No authentication is required.
+// @ID hydrophone-api-acceptInvite
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "invitee id"
+// @Param invitedby path string true "invitor id"
+// @Param invitation body models.Confirmation true "invitation details"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "inviteeid, invitorid or/and the payload is missing or malformed"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Operation is forbiden. Either the authorization token is invalid or this invite cannot be accepted"
+// @Failure 404 {object} status.Status "invitation not found"
+// @Failure 500 {object} status.Status "Error (internal) while processing the data"
+// @Router /accept/invite/{userid}/{invitedby} [put]
+// @security TidepoolAuth
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 
@@ -240,18 +274,28 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 			return
 		}
-		a.logMetric("acceptinvite", req)
+		a.logAudit(req, "acceptinvite")
 		res.WriteHeader(http.StatusOK)
 		res.Write([]byte(STATUS_OK))
 		return
 	}
 }
 
-// Cancel an invite the has been sent to an email address
-//
-// status: 200 when cancled
-// status: 404 statusInviteNotFoundMessage
-// status: 400 when the incoming data is incomplete or incorrect
+// @Summary Cancel an invite
+// @Description Cancel an invite that has been sent to an email address
+// @ID hydrophone-api-cancelInvite
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "invitor id"
+// @Param invited_address path string true "invited email address"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "invited_address and/or invitorid is missing or incorrect"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Authorization token is invalid"
+// @Failure 404 {object} status.Status "invitation not found"
+// @Failure 500 {object} status.Status "Error (internal) while processing the data"
+// @Router /{userid}/invited/{invited_address} [put]
+// @security TidepoolAuth
 func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 
@@ -286,7 +330,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			conf.UpdateStatus(models.StatusCanceled)
 
 			if a.addOrUpdateConfirmation(conf, res) {
-				a.logMetric("canceled invite", req)
+				a.logAudit(req, "cancelled invite")
 				res.WriteHeader(http.StatusOK)
 				return
 			}
@@ -299,8 +343,22 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 	return
 }
 
-// status: 200
-// status: 400
+// @Summary Dismiss an invite
+// @Description Invitee can dismiss an invite
+// @ID hydrophone-api-dismissInvite
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "invitor id"
+// @Param invitedby path string true "invited id"
+// @Param invitation body models.Confirmation true "invitation details"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "inviteeid, invitorid or/and the payload is missing or malformed"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Authorization token is invalid"
+// @Failure 404 {object} status.Status "invitation not found"
+// @Failure 500 {object} status.Status "Error (internal) while processing the data"
+// @Router /dismiss/invite/{userid}/{invitedby} [put]
+// @security TidepoolAuth
 func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 
@@ -341,7 +399,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 			conf.UpdateStatus(models.StatusDeclined)
 
 			if a.addOrUpdateConfirmation(conf, res) {
-				a.logMetric("dismissinvite", req)
+				a.logAudit(req, "dismissinvite")
 				res.WriteHeader(http.StatusOK)
 				return
 			}
@@ -354,13 +412,25 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 	return
 }
 
-//Send a invite to join my team
-//
-// status: 200 models.Confirmation
-// status: 409 statusExistingInviteMessage - user already has a pending or declined invite
-// status: 409 statusExistingMemberMessage - user is already part of the team
-// status: 400
+// @Summary Send a invite to join a patient's team
+// @Description  Send a invite to new or existing users to join the patient's team
+// @ID hydrophone-api-SendInvite
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "invitor user id"
+// @Success 200 {object} models.Confirmation "invite details"
+// @Failure 400 {object} status.Status "userId was not provided or the payload is missing/malformed"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Authorization token is invalid"
+// @Failure 409 {object} status.Status "user already has a pending or declined invite OR user is already part of the team"
+// @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
+// @Failure 500 {object} status.Status "Internal error while processing the invite, detailled error returned in the body"
+// @Router /send/invite/{userid} [post]
+// @security TidepoolAuth
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	// By default, the invitee language will be "en" for Englih (as we don't know which language suits him)
+	// In case the invitee is a known user, the language will be overriden in a later step
+	var inviteeLanguage = "en"
 	if token := a.token(res, req); token != nil {
 
 		invitorID := vars["userid"]
@@ -399,13 +469,25 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			//None exist so lets create the invite
 			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
 
+			// if the invitee is already a Tidepool user, we can use his preferences
 			invite.Email = ib.Email
 			if invitedUsr != nil {
 				invite.UserId = invitedUsr.UserID
+
+				// let's get the invitee user preferences
+				inviteePreferences := &models.Preferences{}
+				if err := a.seagull.GetCollection(invite.UserId, "preferences", a.sl.TokenProvide(), inviteePreferences); err != nil {
+					a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "send invitation: error getting invitee user preferences: ", err.Error())
+					return
+				}
+				// does the invitee have a preferred language?
+				if inviteePreferences.DisplayLanguage != "" {
+					inviteeLanguage = inviteePreferences.DisplayLanguage
+				}
 			}
 
 			if a.addOrUpdateConfirmation(invite, res) {
-				a.logMetric("invite created", req)
+				a.logAudit(req, "invite created")
 
 				if err := a.addProfile(invite); err != nil {
 					log.Println("SendInvite: ", err.Error())
@@ -419,6 +501,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 					var webPath = "signup"
 
+					// if invitee is already a user (ie already has an account), he won't go to signup but login instead
 					if invite.UserId != "" {
 						webPath = "login"
 					}
@@ -429,8 +512,13 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						"WebPath":      webPath,
 					}
 
-					if a.createAndSendNotification(req, invite, emailContent) {
-						a.logMetric("invite sent", req)
+					if a.createAndSendNotification(req, invite, emailContent, inviteeLanguage) {
+						a.logAudit(req, "invite sent")
+					} else {
+						a.logAudit(req, "invite failed to be sent")
+						log.Print("Something happened generating an invite email")
+						res.WriteHeader(http.StatusUnprocessableEntity)
+						return
 					}
 				}
 

@@ -58,7 +58,6 @@ func (a *Api) findSignUp(conf *models.Confirmation, res http.ResponseWriter) *mo
 	return found
 }
 
-//update an existing signup confirmation
 func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.ResponseWriter, req *http.Request) {
 	fromBody := &models.Confirmation{}
 	if err := json.NewDecoder(req.Body).Decode(fromBody); err != nil {
@@ -82,7 +81,7 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 		found.UpdateStatus(newStatus)
 
 		if a.addOrUpdateConfirmation(found, res) {
-			a.logMetricAsServer(updatedStatus)
+			a.logAudit(req, updatedStatus)
 			res.WriteHeader(http.StatusOK)
 			return
 		}
@@ -93,18 +92,92 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 	}
 }
 
-//Send a signup confirmation email to a userid.
-//
-//This post is sent by the signup logic. In this state, the user account has been created but has a flag that
-//forces the user to the confirmation-required page until the signup has been confirmed.
-//It sends an email that contains a random confirmation link.
-//
-// status: 201
-// status: 400 STATUS_SIGNUP_NO_ID
-// status: 401 STATUS_NO_TOKEN
-// status: 403 STATUS_EXISTING_SIGNUP
-// status: 500 STATUS_ERR_FINDING_USER
+// @Summary Patient account creation informative email
+// @Description  Send an informative email to the patient to notify the account was successfully created
+// @ID hydrophone-api-sendSignUpInformation
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "userId was not provided, return:\"Required userid is missing\" "
+// @Failure 403 {object} status.Status "Operation forbiden for this account, return detailed error"
+// @Failure 422 {object} status.Status "Error when sending the email"
+// @Failure 500 {object} status.Status "Error finding the user, message returned:\"Error finding the user\" "
+// @Router /send/inform/{userid} [post]
+// @security TidepoolAuth
+func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	var signerLanguage string
+	var newSignUp *models.Confirmation
+
+	userID := vars["userid"]
+	if userID == "" {
+		log.Printf("sendSignUp %s", STATUS_SIGNUP_NO_ID)
+		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+		return
+	}
+	if usrDetails, err := a.sl.GetUser(userID, a.sl.TokenProvide()); err != nil {
+		log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
+		a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
+		return
+	} else {
+		if usrDetails.IsClinic() {
+			log.Printf("Clinician account [%s] cannot receive information message", usrDetails.UserID)
+			a.sendModelAsResWithStatus(res, STATUS_ERR_CLINICAL_USR, http.StatusForbidden)
+			return
+		}
+		if !usrDetails.EmailVerified {
+			log.Printf("User [%s] is not yet verified", usrDetails.UserID)
+			a.sendModelAsResWithStatus(res, STATUS_ERR_FINDING_VALIDATION, http.StatusForbidden)
+			return
+		} else {
+			// send information message to patient
+			var templateName = models.TemplateNamePatientInformation
+
+			emailContent := map[string]interface{}{
+				"Email": usrDetails.Emails[0],
+			}
+
+			newSignUp, _ = models.NewConfirmation(models.TypeInformation, templateName, usrDetails.UserID)
+			newSignUp.Email = usrDetails.Emails[0]
+
+			// this one may not work if the language is not set by the caller
+			if signerLanguage = GetBrowserPreferredLanguage(req); signerLanguage == "" {
+				signerLanguage = "en"
+			}
+
+			if a.createAndSendNotification(req, newSignUp, emailContent, signerLanguage) {
+				log.Printf("signup information sent for %s", userID)
+				a.logAudit(req, "signup information sent")
+				res.WriteHeader(http.StatusOK)
+				return
+			} else {
+				a.logAudit(req, "signup confirmation failed to be sent")
+				log.Print("Something happened generating a signup email")
+				res.WriteHeader(http.StatusUnprocessableEntity)
+			}
+		}
+	}
+
+}
+
+// @Summary Send a signup confirmation email to a user
+// @Description  This post is sent by the signup logic. In this state, the user account has been created but has a flag that
+// @Description  forces the user to the confirmation-required page until the signup has been confirmed.
+// @Description  It sends an email that contains a random confirmation link
+// @ID hydrophone-api-sendSignUp
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "userId was not provided, return:\"Required userid is missing\" "
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Operation is forbiden, return detailed error"
+// @Failure 500 {object} status.Status "Internal error while processing the confirmation, detailled error returned in the body"
+// @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service)"
+// @Router /send/signup/{userid} [post]
+// @security TidepoolAuth
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	var signerLanguage string
 	if token := a.token(res, req); token != nil {
 		userId := vars["userid"]
 		if userId == "" {
@@ -186,7 +259,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 
 			if a.addOrUpdateConfirmation(newSignUp, res) {
-				a.logMetric("signup confirmation created", req)
+				a.logAudit(req, "signup confirmation created")
 
 				if err := a.addProfile(newSignUp); err != nil {
 					log.Printf("sendSignUp: error when adding profile [%s]", err.Error())
@@ -211,13 +284,21 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 						emailContent["CreatorName"] = newSignUp.Creator.Profile.FullName
 					}
 
-					if a.createAndSendNotification(req, newSignUp, emailContent) {
-						a.logMetricAsServer("signup confirmation sent")
+					// although technically there exists a profile at the signup stage, the preferred language would always be empty here
+					// as it is set in the app and once the signup procedure is complete (after signup email has been confirmed)
+					// -> get browser's or "en" for English in case there is no browser's
+					if signerLanguage = GetBrowserPreferredLanguage(req); signerLanguage == "" {
+						signerLanguage = "en"
+					}
+
+					if a.createAndSendNotification(req, newSignUp, emailContent, signerLanguage) {
+						a.logAudit(req, "signup confirmation sent")
 						res.WriteHeader(http.StatusOK)
 						return
 					} else {
-						a.logMetric("signup confirmation failed to be sent", req)
+						a.logAudit(req, "signup confirmation failed to be sent")
 						log.Print("Something happened generating a signup email")
+						res.WriteHeader(http.StatusUnprocessableEntity)
 					}
 				}
 			}
@@ -225,12 +306,22 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 	}
 }
 
-//If a user didn't receive the confirmation email and logs in, they're directed to the confirmation-required page which can
-//offer to resend the confirmation email.
-//
-// status: 200
-// status: 404 STATUS_SIGNUP_EXPIRED
+// @Summary Resend a signup confirmation email to a user who have not confirmed yet
+// @Description  If a user didn't receive the confirmation email and logs in, they're directed to the confirmation-required page which can
+// @Description  offer to resend the confirmation email.
+// @ID hydrophone-api-resendSignUp
+// @Accept  json
+// @Produce  json
+// @Param useremail path string true "user email address"
+// @Success 200 {string} string "OK"
+// @Failure 404 {object} status.Status "Confirmation not found, return \"No matching signup confirmation was found\" "
+// @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service)"
+// @Failure 500 {object} status.Status "Internal error while regenerating the confirmation, detailled error returned in the body"
+// @Router /resend/signup/{useremail} [post]
+// @security TidepoolAuth
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+
+	var signerLanguage string
 	email := vars["useremail"]
 
 	toFind := &models.Confirmation{Email: email, Status: models.StatusPending, Type: models.TypeSignUp}
@@ -249,7 +340,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		if a.addOrUpdateConfirmation(found, res) {
-			a.logMetricAsServer("signup confirmation recreated")
+			a.logAudit(req, "signup confirmation recreated")
 
 			if err := a.addProfile(found); err != nil {
 				log.Printf("resendSignUp: error when adding profile [%s]", err.Error())
@@ -274,31 +365,47 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					emailContent["CreatorName"] = found.Creator.Profile.FullName
 				}
 
-				if a.createAndSendNotification(req, found, emailContent) {
-					a.logMetricAsServer("signup confirmation re-sent")
+				// although technically there exists a profile at the signup stage, the preferred language would always be empty here
+				// as it is set in the app and once the signup procedure is complete (after signup email has been confirmed)
+				// -> get browser's or "en" for English in case there is no browser's
+				if signerLanguage = GetBrowserPreferredLanguage(req); signerLanguage == "" {
+					signerLanguage = "en"
+				}
+
+				if a.createAndSendNotification(req, found, emailContent, signerLanguage) {
+					a.logAudit(req, "signup confirmation re-sent")
 				} else {
-					a.logMetricAsServer("signup confirmation failed to be sent")
+					a.logAudit(req, "signup confirmation failed to be sent")
 					log.Print("resendSignUp: Something happened trying to resend a signup email")
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					return
 				}
 			}
 
 			res.WriteHeader(http.StatusOK)
 		}
+	} else {
+		a.sendError(res, http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND, "resendSignUp: sign up not found")
 	}
 }
 
-//This would be PUT by the web page at the link in the signup email. No authentication is required.
-//When this call is made, the flag that prevents login on an account is removed, and the user is directed to the login page.
-//If the user has an active cookie for signup (created with a short lifetime) we can accept the presence of that cookie to allow the actual login to be skipped.
-//
-// status: 200
-// status: 400 STATUS_SIGNUP_NO_CONF
-// status: 400 STATUS_NO_PASSWORD
-// status: 400 STATUS_MISSING_PASSWORD
-// status: 400 STATUS_INVALID_PASSWORD
-// status: 400 STATUS_MISSING_BIRTHDAY
-// status: 400 STATUS_INVALID_BIRTHDAY
-// status: 400 STATUS_MISMATCH_BIRTHDAY
+// @Summary Confirms the account creation
+// @Description  This would be PUT by the web page at the link in the signup email. No authentication is required.
+// @Description  When this call is made, the flag that prevents login on an account is removed, and the user is directed to the login page.
+// @Description  If the user has an active cookie for signup (created with a short lifetime) we can accept the presence of that cookie to allow the actual login to be skipped.
+// @ID hydrophone-api-acceptSignUp
+// @Accept  json
+// @Produce  json
+// @Param confirmationid path string true "confirmation id"
+// @Param details body models.Acceptance false "new password (optional)"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "confirmationid was not provided, return:\"Required confirmation id is missing\" "
+// @Failure 404 {object} status.Status "Confirmation not found or expired"
+// @Failure 409 {object} status.Status "Payload is missing or invalid. Return the detailled error"
+// @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service)"
+// @Failure 500 {object} status.Status "Error (internal) while updating the user account, return detailed error"
+// @Router /accept/signup/{confirmationid} [put]
+// @security TidepoolAuth
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	confirmationId := vars["confirmationid"]
 
@@ -370,22 +477,26 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 
 		found.UpdateStatus(models.StatusCompleted)
 		if a.addOrUpdateConfirmation(found, res) {
-			a.logMetricAsServer("accept signup")
+			a.logAudit(req, "accept signup")
 		}
 
 		res.WriteHeader(http.StatusOK)
 	}
 }
 
-//In the event that someone uses the wrong email address, the receiver could explicitly dismiss a signup attempt with this link (useful for metrics and to identify phishing attempts).
-//This link would be some sort of parenthetical comment in the signup confirmation email, like "(I didn't try to sign up for Tidepool.)"
-//No authentication required.
-//
-// status: 200
-// status: 400 STATUS_SIGNUP_NO_ID
-// status: 400 STATUS_SIGNUP_NO_CONF
-// status: 400 STATUS_ERR_DECODING_CONFIRMATION
-// status: 404 STATUS_SIGNUP_NOT_FOUND
+// @Summary Dismiss an signup demand
+// @Description  In the event that someone uses the wrong email address, the receiver could explicitly dismiss a signup attempt with this link (useful for identifying phishing attempts).
+// @Description  This link would be some sort of parenthetical comment in the signup confirmation email, like "(I didn't try to sign up for YourLoops.)"
+// @ID hydrophone-api-dismissSignUp
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Param confirmation body models.Confirmation true "confirmation details"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "userid was not provided, or the payload is malformed (attributes missing or invalid). Return detailed error "
+// @Failure 404 {object} status.Status "Cannot find a signup confirmation based on the provided key, return \"No matching signup confirmation was found\" "
+// @Router /dismiss/signup/{userid} [put]
+// @security TidepoolAuth
 func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	userId := vars["userid"]
 
@@ -399,11 +510,19 @@ func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map
 	return
 }
 
-//This call is provided for completeness -- we don't expect to need it in the actual user flow.
-//
-//Fetch any existing confirmation requests.
-// status: 200 with a single result in an array
-// status: 404
+// @Summary Get Signup Confirmation requests
+// @Description  Fetch pending confirmation requests for a given user.
+// @ID hydrophone-api-getSignUp
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {array} models.Confirmation
+// @Failure 400 {object} status.Status "userid was not provided"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Operation is forbiden, return detailed error"
+// @Failure 404 {object} status.Status "Cannot find a signup confirmation for this user, return \"No matching signup confirmation was found\" "
+// @Router /signup/{userid} [get]
+// @security TidepoolAuth
 func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 
@@ -428,7 +547,7 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
 			return
 		} else {
-			a.logMetric("get signups", req)
+			a.logAudit(req, "get signups")
 			log.Printf("getSignUp found %d for user %s", len(signups), userId)
 			a.sendModelAsResWithStatus(res, signups, http.StatusOK)
 			return
@@ -437,8 +556,17 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 	return
 }
 
-// status: 200
-// status: 400 STATUS_SIGNUP_NO_ID
+// @Summary Cancel Signup request
+// @Description Cancel a signup request for a given user
+// @ID hydrophone-api-cancelSignUp
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "user id"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "userid was not provided, or the payload is malformed (attributes missing or invalid). Return detailed error "
+// @Failure 404 {object} status.Status "Cannot find a signup confirmation based on the provided key, return \"No matching signup confirmation was found\" "
+// @Router /signup/{userid} [put]
+// @security TidepoolAuth
 func (a *Api) cancelSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	userId := vars["userid"]
 

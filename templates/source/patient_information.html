@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <!--[if !mso]><!-->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <!--<![endif]-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+  <!--[if (gte mso 9)|(IE)]>
+  <style type="text/css">
+    table {border-collapse: collapse;}
+  </style>
+  <![endif]-->
+  <link href="https://fonts.googleapis.com/css?family=Roboto|Ubuntu" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="css/styles.css" />
+</head>
+<body style="margin:0;padding:0;min-width:100%;background-color:#ffffff;">
+  <center class="wrapper">
+    <div class="webkit">
+        <br/><br/><br/>
+      <!--[if (gte mso 9)|(IE)]>
+      <table bgcolor="#f7f7f7" width="560" cellpadding="0" cellspacing="0" border="0" align="center">
+      <tr>
+      <td>
+      <![endif]-->
+      <table class="outer">
+        <tr>
+          <td class="one-column">
+            <table width="100%">
+              <tr>
+                <td class="inner centered">
+                  <a href="{{ .WebURL }}"><img class="logo" src="https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets/img/logo.png" alt="YourLoops logo" /></a>
+                </td>
+              </tr>
+              <tr>
+                <td class="inner centered">
+                  <p class="h1 content-width">
+                      {{.SignupHello}}
+                  </p>
+                  <p class="content-width">
+                      {{.PatientInformation}}
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td class="inner centered">
+                  <!--[if (gte mso 9)|(IE)]>
+                  <table bgcolor="#627CFF">
+                  <tr>
+                  <td>
+                  <![endif]-->
+                  <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}">
+                    {{.PatientLogin}}
+                  </a>
+                  <!--[if (gte mso 9)|(IE)]>
+                  </td>
+                  </tr>
+                  </table>
+                  <![endif]-->
+                </td>
+              </tr>
+              <tr>
+                <td class="inner centered">
+                  <p>{{.FooterSincerely}}<br/>{{.FooterSignature}}</p>
+                </td>
+              </tr>
+              <tr>
+                <td class="inner centered social">
+                  <table class="links primary center">
+                    <tr>
+                      <td>
+                        <a href="https://www.facebook.com/diabeloop.fr">
+                          <img class="social" src="https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets/img/facebook.png" alt="Facebook logo" />
+                        </a>
+                      </td>
+                      <td>
+                        <a href="https://www.twitter.com/diabeloop">
+                          <img class="social" src="https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets/img/twitter.png" alt="Twitter logo" />
+                        </a>
+                      </td>
+                      <td>
+                        <a href="https://www.linkedin.com/company/diabeloop">
+                          <img class="social" src="https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets/img/linkedin.png" alt="Linkedin logo" />
+                        </a>
+                      </td>
+                      <td>
+                          <a href="https://www.instagram.com/diabeloop">
+                            <img class="social" src="https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets/img/instagram.png" alt="Instagram logo" />
+                          </a>
+                        </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+                <td class="inner centered">
+                  <table class="links secondary center">
+                    <tr>
+                      <td>
+                        <!--[if (gte mso 9)|(IE)]>
+                        <table bgcolor="#ffffff">
+                        <tr>
+                        <td>
+                        <![endif]-->
+                        <a class="btn secondary" href="{{ .SupportURL }}">
+                          {{.FooterGetSupport}}
+                        </a>
+                        <!--[if (gte mso 9)|(IE)]>
+                        </td>
+                        </tr>
+                        </table>
+                        <![endif]-->
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
+      <!--[if (gte mso 9)|(IE)]>
+      </td>
+      </tr>
+      </table>
+      <![endif]-->
+      <br/><br/><br/>
+    </div>
+  </center>
+</body>
+</html>

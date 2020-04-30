@@ -1,4 +1,10 @@
 deploy/
 dist/
+docs/docs.go
+docs/swagger.*
+.vscode/launch.json
+vendor/
+
 hydrophone
 artifact_go.sh
+*.exe

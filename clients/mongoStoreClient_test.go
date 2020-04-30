@@ -38,7 +38,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	//The basics
 	//+++++++++++++++++++++++++++
 	if err := mc.UpsertConfirmation(confirmation); err != nil {
-		t.Fatalf("we could not save the con %v", err)
+		t.Fatalf("we could not save the con - err [%v]", err)
 	}
 
 	if found, err := mc.FindConfirmation(confirmation); err == nil {
@@ -46,7 +46,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 			t.Fatalf("the confirmation was not found")
 		}
 		if found.Key == "" {
-			t.Fatalf("the confirmation string isn't included %v", found)
+			t.Fatalf("the confirmation string isn't included - err [%v]", found)
 		}
 	} else {
 		t.Fatalf("no confirmation was returned when it should have been - err[%v]", err)
@@ -69,11 +69,11 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	if found, err := mc.FindConfirmation(doesNotExist); err == nil && found != nil {
 		t.Fatalf("there should have been no confirmation found [%v]", found)
 	} else if err != nil {
-		t.Fatalf("and error was returned when it should not have been err[%v]", err)
+		t.Fatalf("and error was returned when it should not have been - err [%v]", err)
 	}
 
 	if err := mc.RemoveConfirmation(confirmation); err != nil {
-		t.Fatalf("we could not remove the confirmation %v", err)
+		t.Fatalf("we could not remove the confirmation - err [%v]", err)
 	}
 
 	if confirmation, err := mc.FindConfirmation(confirmation); err == nil {
