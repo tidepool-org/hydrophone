@@ -3,6 +3,10 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
+## Unreleased
+### Changed
+- PT-1278 Integrate Tidepool master for hydrophone
+
 ## 0.8.1 - 2020-04-07
 ### Engineering use
 - PT-1214 integrate Crowdin live preview in HydroMail (email template preview webapp)
