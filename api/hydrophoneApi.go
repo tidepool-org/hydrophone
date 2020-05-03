@@ -98,20 +98,33 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	rtr.HandleFunc("/status", a.GetStatus).Methods("GET")
 
+	c := rtr.PathPrefix("/confirm").Subrouter()
+
 	// POST /confirm/send/signup/:userid
 	// POST /confirm/send/forgot/:useremail
 	// POST /confirm/send/invite/:userid
+	csend := rtr.PathPrefix("/confirm/send").Subrouter()
+	csend.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
+	csend.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
+	csend.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
+
 	send := rtr.PathPrefix("/send").Subrouter()
 	send.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
 	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
 
 	// POST /confirm/resend/signup/:useremail
+	c.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
 	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
 
 	// PUT /confirm/accept/signup/:confirmationID
 	// PUT /confirm/accept/forgot/
 	// PUT /confirm/accept/invite/:userid/:invited_by
+	caccept := rtr.PathPrefix("/confirm/accept").Subrouter()
+	caccept.Handle("/signup/{confirmationid}", varsHandler(a.acceptSignUp)).Methods("PUT")
+	caccept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
+	caccept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
+
 	accept := rtr.PathPrefix("/accept").Subrouter()
 	accept.Handle("/signup/{confirmationid}", varsHandler(a.acceptSignUp)).Methods("PUT")
 	accept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
@@ -119,22 +132,32 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid
+	c.Handle("/signup/{userid}", varsHandler(a.getSignUp)).Methods("GET")
+	c.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
+
 	rtr.Handle("/signup/{userid}", varsHandler(a.getSignUp)).Methods("GET")
 	rtr.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
+	c.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
+
 	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
 
 	// PUT /confirm/dismiss/invite/:userid/:invited_by
 	// PUT /confirm/dismiss/signup/:userid
+	cdismiss := rtr.PathPrefix("/confirm/dismiss").Subrouter()
+	cdismiss.Handle("/invite/{userid}/{invitedby}", varsHandler(a.DismissInvite)).Methods("PUT")
+	cdismiss.Handle("/signup/{userid}", varsHandler(a.dismissSignUp)).Methods("PUT")
+
 	dismiss := rtr.PathPrefix("/dismiss").Subrouter()
-	dismiss.Handle("/invite/{userid}/{invitedby}",
-		varsHandler(a.DismissInvite)).Methods("PUT")
-	dismiss.Handle("/signup/{userid}",
-		varsHandler(a.dismissSignUp)).Methods("PUT")
+	dismiss.Handle("/invite/{userid}/{invitedby}", varsHandler(a.DismissInvite)).Methods("PUT")
+	dismiss.Handle("/signup/{userid}", varsHandler(a.dismissSignUp)).Methods("PUT")
 
 	// PUT /confirm/:userid/invited/:invited_address
 	// PUT /confirm/signup/:userid
+	c.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
+	c.Handle("/signup/{userid}", varsHandler(a.cancelSignUp)).Methods("PUT")
+
 	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
 	rtr.Handle("/signup/{userid}", varsHandler(a.cancelSignUp)).Methods("PUT")
 }
