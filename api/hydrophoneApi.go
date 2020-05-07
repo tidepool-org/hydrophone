@@ -96,9 +96,10 @@ func (a *Api) getWebURL(req *http.Request) string {
 
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
-	rtr.HandleFunc("/status", a.GetStatus).Methods("GET")
-
 	c := rtr.PathPrefix("/confirm").Subrouter()
+
+	c.HandleFunc("/status", a.GetStatus).Methods("GET")
+	rtr.HandleFunc("/status", a.GetStatus).Methods("GET")
 
 	// POST /confirm/send/signup/:userid
 	// POST /confirm/send/forgot/:useremail
