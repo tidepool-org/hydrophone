@@ -101,7 +101,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		//find all oustanding invites were this user is the invite//
 		found, err := a.Store.FindConfirmations(&models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
 
-		log.Printf("GetReceivedInvitations: found [%d] pending invite(s)", len(found))
+		//log.Printf("GetReceivedInvitations: found [%d] pending invite(s)", len(found))
 		if err != nil {
 			log.Printf("GetReceivedInvitations: error [%v] when finding pending invites ", err)
 		}
@@ -512,7 +512,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						"WebPath":      webPath,
 					}
 
-					if a.createAndSendNotification(invite, emailContent, inviteeLanguage) {
+					if a.createAndSendNotification(req, invite, emailContent, inviteeLanguage) {
 						a.logAudit(req, "invite sent")
 					} else {
 						a.logAudit(req, "invite failed to be sent")

@@ -1,6 +1,6 @@
-dist: trusty
+os: linux
 
-sudo: false
+dist: trusty
 
 language: go
 
@@ -64,13 +64,12 @@ deploy:
     region: $AWS_DEFAULT_REGION
     bucket: com.diabeloop.yourloops.doc
     skip_cleanup: true
-    local-dir: docs/openapi
+    local_dir: docs/openapi
     upload-dir: openapi/hydrophone
     cache_control: "max-age=21600"
 
 services:
   - docker
-  - mongodb
 
 script:
   - ./test.sh

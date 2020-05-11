@@ -40,6 +40,7 @@ type (
 		I18nTemplatesPath         string `json:"i18nTemplatesPath"`         // where are the templates located?
 		AllowPatientResetPassword bool   `json:"allowPatientResetPassword"` // true means that patients can reset their password, false means that only clinicianc can reset their password
 		PatientPasswordResetURL   string `json:"patientPasswordResetUrl"`   // URL of the help web site that is used to give instructions to reset password for patients
+		Protocol                  string `json:"protocol"`
 	}
 
 	group struct {
@@ -97,6 +98,14 @@ func InitApi(
 		LanguageBundle: nil,
 		logger:         logger,
 	}
+}
+
+func (a *Api) getWebURL(req *http.Request) string {
+	if a.Config.WebURL == "" {
+		host := req.Header.Get("Host")
+		return a.Config.Protocol + "://" + host
+	}
+	return a.Config.WebURL
 }
 
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
@@ -221,7 +230,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 		return nil
 	} else if results == nil || len(results) == 0 {
 		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
-		log.Println("No confirmations were found ", statusErr.Error())
+		//log.Println("No confirmations were found ", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	} else {
@@ -236,8 +245,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 }
 
 //Generate a notification from the given confirmation,write the error if it fails
-func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[string]interface{}, lang string) bool {
-
+func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}, lang string) bool {
 	log.Printf("trying notification with template '%s' to %s with language '%s'", conf.TemplateName, conf.Email, lang)
 
 	// Get the template name based on the requested communication type
@@ -263,7 +271,7 @@ func (a *Api) createAndSendNotification(conf *models.Confirmation, content map[s
 	}
 
 	// Content collection is here to replace placeholders in template body/content
-	content["WebURL"] = a.Config.WebURL
+	content["WebURL"] = a.getWebURL(req)
 	content["SupportURL"] = a.Config.SupportURL
 	content["AssetURL"] = a.Config.AssetURL
 	content["PatientPasswordResetURL"] = a.Config.PatientPasswordResetURL
@@ -300,7 +308,7 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 
 		if td == nil {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
-			log.Printf("token %s err[%v] ", STATUS_INVALID_TOKEN, statusErr)
+			log.Printf("token %v err[%v] ", token, statusErr)
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
 			return nil
 		}
@@ -308,7 +316,6 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 		return td
 	}
 	statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
-	log.Printf("token %s err[%v] ", STATUS_NO_TOKEN, statusErr)
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
 	return nil
 }

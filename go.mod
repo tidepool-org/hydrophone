@@ -1,6 +1,6 @@
 module github.com/tidepool-org/hydrophone
 
-go 1.11.2
+go 1.12.7
 
 replace github.com/tidepool-org/go-common => github.com/mdblp/go-common v0.3.0
 

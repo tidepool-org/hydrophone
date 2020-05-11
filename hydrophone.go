@@ -69,11 +69,20 @@ func main() {
 		config.Ses.Region = "us-west-2"
 	}
 
+	config.Mongo.FromEnv()
+
 	// server secret may be passed via a separate env variable to accomodate easy secrets injection via Kubernetes
 	serverSecret, found := os.LookupEnv("SERVER_SECRET")
 	if found {
 		config.ShorelineConfig.Secret = serverSecret
 		config.Api.ServerSecret = serverSecret
+	}
+
+	protocol, found := os.LookupEnv("PROTOCOL")
+	if found {
+		config.Api.Protocol = protocol
+	} else {
+		config.Api.Protocol = "https"
 	}
 	/*
 	 * Hakken setup

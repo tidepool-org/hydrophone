@@ -145,7 +145,7 @@ func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, 
 				signerLanguage = "en"
 			}
 
-			if a.createAndSendNotification(newSignUp, emailContent, signerLanguage) {
+			if a.createAndSendNotification(req, newSignUp, emailContent, signerLanguage) {
 				log.Printf("signup information sent for %s", userID)
 				a.logAudit(req, "signup information sent")
 				res.WriteHeader(http.StatusOK)
@@ -291,7 +291,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 						signerLanguage = "en"
 					}
 
-					if a.createAndSendNotification(newSignUp, emailContent, signerLanguage) {
+					if a.createAndSendNotification(req, newSignUp, emailContent, signerLanguage) {
 						a.logAudit(req, "signup confirmation sent")
 						res.WriteHeader(http.StatusOK)
 						return
@@ -324,7 +324,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	var signerLanguage string
 	email := vars["useremail"]
 
-	toFind := &models.Confirmation{Email: email, Status: models.StatusPending}
+	toFind := &models.Confirmation{Email: email, Status: models.StatusPending, Type: models.TypeSignUp}
 
 	if found := a.findSignUp(toFind, res); found != nil {
 		if err := a.Store.RemoveConfirmation(found); err != nil {
@@ -372,7 +372,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					signerLanguage = "en"
 				}
 
-				if a.createAndSendNotification(found, emailContent, signerLanguage) {
+				if a.createAndSendNotification(req, found, emailContent, signerLanguage) {
 					a.logAudit(req, "signup confirmation re-sent")
 				} else {
 					a.logAudit(req, "signup confirmation failed to be sent")
@@ -407,7 +407,6 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // @Router /accept/signup/{confirmationid} [put]
 // @security TidepoolAuth
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
 	confirmationId := vars["confirmationid"]
 
 	if confirmationId == "" {
@@ -499,7 +498,6 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // @Router /dismiss/signup/{userid} [put]
 // @security TidepoolAuth
 func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
 	userId := vars["userid"]
 
 	if userId == "" {

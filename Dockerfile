@@ -14,19 +14,16 @@ RUN  ./build.sh
 
 CMD ["./dist/hydrophone"]
 
-# Release
-FROM alpine:latest AS release
-
+# Production
+FROM alpine:latest AS production
+WORKDIR /home/tidepool
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
     apk add --no-cache ca-certificates && \
 	apk add --no-cache libsasl	&& \
     adduser -D tidepool
-
-WORKDIR /home/tidepool
-
 USER tidepool
-
+ENV GO111MODULE=on
 COPY --from=development --chown=tidepool /go/src/github.com/tidepool-org/hydrophone/dist/hydrophone .
 COPY --chown=tidepool templates/html ./templates/html/
 COPY --chown=tidepool templates/locales ./templates/locales/
