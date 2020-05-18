@@ -1,3 +1,3 @@
 files:
-  - source: /templates/locales/strings.yaml
+  - source: /templates/locales/en.yaml
     translation: /templates/locales/%two_letters_code%.yaml
