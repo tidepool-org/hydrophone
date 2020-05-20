@@ -499,7 +499,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						fullName = invite.Creator.Profile.Patient.FullName
 					}
 
-					var webPath = "signup"
+					var webPath = "signup/clinician"
 
 					// if invitee is already a user (ie already has an account), he won't go to signup but login instead
 					if invite.UserId != "" {
