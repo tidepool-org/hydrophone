@@ -23,6 +23,8 @@ import (
 	"path"
 	"syscall"
 
+	"github.com/tidepool-org/go-common/clients/portal"
+
 	"github.com/tidepool-org/go-common/clients/version"
 
 	"github.com/gorilla/mux"
@@ -131,6 +133,11 @@ func main() {
 		WithHttpClient(httpClient).
 		Build()
 
+	portal := portal.NewPortalClientBuilder().
+		WithHostGetter(config.PortalConfig.ToHostGetter(hakkenClient)).
+		WithHTTPClient(httpClient).
+		Build()
+
 		/*
 		 * hydrophone setup
 		 */
@@ -173,7 +180,7 @@ func main() {
 	}
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, seagull, emailTemplates)
+	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, seagull, portal, emailTemplates)
 	api.SetHandlers("", rtr)
 
 	/*

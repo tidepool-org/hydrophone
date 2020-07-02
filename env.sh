@@ -1,4 +1,5 @@
 export TIDEPOOL_HYDROPHONE_ENV='{
+    "portal": { "serviceSpec": { "type": "static", "hosts": ["http://localhost:9507"] } },
     "hakken": { "host": "localhost:8000" },
     "gatekeeper": { "serviceSpec": { "type": "static", "hosts": ["http://localhost:9123"] } },
     "seagull": { "serviceSpec": { "type": "static", "hosts": ["http://localhost:9120"] } },

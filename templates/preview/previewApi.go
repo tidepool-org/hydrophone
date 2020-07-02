@@ -124,6 +124,8 @@ func (a *Api) buildPreview(res http.ResponseWriter, req *http.Request, vars map[
 		templateName = models.TemplateNamePatientPasswordReset
 	case "patient_information":
 		templateName = models.TemplateNamePatientInformation
+	case "patient_pin_reset":
+		templateName = models.TemplateNamePatientPinReset
 	case "signup_confirmation":
 		templateName = models.TemplateNameSignup
 	case "signup_clinic_confirmation":
@@ -169,6 +171,7 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 		"CareteamName": "John Doe",
 		"WebPath":      "login",
 		"ShortKey":     "12345678",
+		"OTP":          "165236984",
 	}
 	// Content collection is here to replace placeholders in template body/content
 	content["CreatorName"] = "John Doe"

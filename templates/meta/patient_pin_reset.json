@@ -1,0 +1,20 @@
+{
+    "name": "patient_pin_reset",
+    "description": "email to send Pin Reset OTP to patient",
+    "templateFilename": "patient_pin_reset.html",
+    "subject": "PatientPinResetSubject",
+    "contentParts":[
+        "PatientPinResetSubject",
+        "PatientPinResetRequest",
+        "PatientPinResetTempCode",
+        "PatientPinResetExpireSoon",
+        "PatientPinResetExpired",
+        "PatientPinResetWrongReach",
+        "FooterGetSupport",
+        "FooterSincerely",
+        "FooterSignature"
+    ],
+    "escapeContentParts":[
+        "SupportEmail"
+    ]
+}

@@ -22,6 +22,7 @@ func initTestingRouterNoPerms() *mux.Router {
 		mock_uid1Shoreline,
 		mock_NoPermsGatekeeper,
 		mockSeagull,
+		mockPortal,
 		mockTemplates,
 	)
 	hydrophone.SetHandlers("", testRtr)
@@ -253,6 +254,7 @@ func TestInviteResponds(t *testing.T) {
 			mockShoreline,
 			mockGatekeeper,
 			mockSeagull,
+			mockPortal,
 			mockTemplates,
 		)
 
@@ -265,6 +267,7 @@ func TestInviteResponds(t *testing.T) {
 				mockShoreline,
 				mockGatekeeper,
 				mockSeagull,
+				mockPortal,
 				mockTemplates,
 			)
 		}

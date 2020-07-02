@@ -80,6 +80,12 @@ func New(templatesPath string, localizer localize.Localizer) (models.Templates, 
 		templates[template.Name()] = template
 	}
 
+	if template, err := newTemplate(templatesPath, models.TemplateNamePatientPinReset, localizer); err != nil {
+		return nil, fmt.Errorf("templates: failure to create patient Pin Reset template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
 	return templates, nil
 }
 

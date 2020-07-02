@@ -14,6 +14,7 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	commonClients "github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/portal"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/clients"
@@ -28,6 +29,7 @@ type (
 		sl             shoreline.Client
 		gatekeeper     commonClients.Gatekeeper
 		seagull        commonClients.Seagull
+		portal         portal.Client
 		Config         Config
 		LanguageBundle *i18n.Bundle
 		logger         *log.Logger
@@ -84,6 +86,7 @@ func InitApi(
 	sl shoreline.Client,
 	gatekeeper commonClients.Gatekeeper,
 	seagull commonClients.Seagull,
+	portal portal.Client,
 	templates models.Templates,
 ) *Api {
 	logger := log.New(os.Stdout, CONFIRM_API_PREFIX, log.LstdFlags)
@@ -94,6 +97,7 @@ func InitApi(
 		sl:             sl,
 		gatekeeper:     gatekeeper,
 		seagull:        seagull,
+		portal:         portal,
 		templates:      templates,
 		LanguageBundle: nil,
 		logger:         logger,
@@ -123,6 +127,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
 	// POST /confirm/send/inform/:userid
 	send.Handle("/inform/{userid}", varsHandler(a.sendSignUpInformation)).Methods("POST")
+	send.Handle("/pin-reset/{userid}", varsHandler(a.SendPinReset)).Methods("POST")
 
 	// POST /confirm/resend/signup/:useremail
 	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
