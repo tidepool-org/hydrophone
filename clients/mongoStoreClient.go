@@ -89,6 +89,9 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 	if confirmation.UserId != "" {
 		query["userId"] = confirmation.UserId
 	}
+	if confirmation.ShortKey != "" {
+		query["shortKey"] = confirmation.ShortKey
+	}
 
 	cpy := d.session.Copy()
 	defer cpy.Close()
@@ -120,9 +123,11 @@ func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 	if confirmation.UserId != "" {
 		query["userId"] = confirmation.UserId
 	}
-
 	if len(statuses) > 0 {
 		query["status"] = bson.M{"$in": statuses}
+	}
+	if confirmation.ShortKey != "" {
+		query["shortKey"] = confirmation.ShortKey
 	}
 
 	cpy := d.session.Copy()

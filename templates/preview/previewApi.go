@@ -163,11 +163,12 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 	log.Printf("trying preview with template '%s' with language '%s'", templateName, lang)
 
 	content := map[string]interface{}{
-		"Key":          "123456789",
+		"Key":          "123456789123456789123456789123456789",
 		"Email":        "john@diabeloop.com",
 		"FullName":     "John Doe",
 		"CareteamName": "John Doe",
 		"WebPath":      "login",
+		"ShortKey":     "12345678",
 	}
 	// Content collection is here to replace placeholders in template body/content
 	content["CreatorName"] = "John Doe"

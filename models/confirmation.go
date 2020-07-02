@@ -23,6 +23,7 @@ type (
 		UserId       string       `json:"-" bson:"userId"`
 		Status       Status       `json:"-" bson:"status"`
 		Modified     time.Time    `json:"-" bson:"modified"`
+		ShortKey     string       `json:"shortKey" bson:"shortKey"`
 	}
 
 	//basic details for the creator of the confirmation
@@ -69,19 +70,29 @@ const (
 	TypeSignUp               Type = "signup_confirmation"
 	TypeNoAccount            Type = "no_account"
 	TypeInformation          Type = "patient_information"
+	shortKeyLength                = 8
+	letterBytes                   = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 var (
 	Timeouts TypeDurations = TypeDurations{
-		TypeCareteamInvite: 7 * 24 * time.Hour,
-		TypePasswordReset:  7 * 24 * time.Hour,
-		TypeSignUp:         31 * 24 * time.Hour,
+		TypeCareteamInvite:       7 * 24 * time.Hour,
+		TypePasswordReset:        7 * 24 * time.Hour,
+		TypeSignUp:               31 * 24 * time.Hour,
+		TypePatientPasswordReset: 1 * time.Hour,
 	}
 )
 
 //New confirmation with just the basics
 func NewConfirmation(theType Type, templateName TemplateName, creatorId string) (*Confirmation, error) {
 
+	shortKey := ""
+	var err error = nil
+	if theType == TypePatientPasswordReset {
+		if shortKey, err = generateShortKey(shortKeyLength); err != nil {
+			return nil, err
+		}
+	}
 	if key, err := generateKey(); err != nil {
 		return nil, err
 	} else {
@@ -94,6 +105,7 @@ func NewConfirmation(theType Type, templateName TemplateName, creatorId string) 
 			Creator:      Creator{}, //set before sending back to client
 			Status:       StatusPending,
 			Created:      time.Now(),
+			ShortKey:     shortKey,
 		}
 
 		return conf, nil
@@ -190,24 +202,43 @@ func (c *Confirmation) ResetKey() error {
 	if err != nil {
 		return err
 	}
+	shortKey, err := generateShortKey(shortKeyLength)
+	if err != nil {
+		return err
+	}
 
 	c.Key = key
 	c.Status = StatusPending
 	c.Created = time.Now()
 	c.Modified = time.Time{}
+	c.ShortKey = shortKey
 
 	return nil
 }
 
-func generateKey() (string, error) {
-
-	length := 24 // change the length of the generated random string here
-
+func GenerateRandomBytes(length int) ([]byte, error) {
 	rb := make([]byte, length)
 	if _, err := rand.Read(rb); err != nil {
 		log.Println(err)
-		return "", err
+		return nil, err
 	} else {
-		return base64.URLEncoding.EncodeToString(rb), nil
+		return rb, nil
 	}
+}
+
+func generateKey() (string, error) {
+	length := 24 // change the length of the generated random string here
+	rb, err := GenerateRandomBytes(length)
+	return base64.URLEncoding.EncodeToString(rb), err
+}
+
+func generateShortKey(length int) (string, error) {
+	bytes, err := GenerateRandomBytes(length)
+	if err != nil {
+		return "", err
+	}
+	for i, b := range bytes {
+		bytes[i] = letterBytes[b%byte(len(letterBytes))]
+	}
+	return string(bytes), nil
 }

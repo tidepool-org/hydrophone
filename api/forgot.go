@@ -16,7 +16,7 @@ const (
 	STATUS_RESET_EXPIRED    = "Password reset confirmation has expired."
 	STATUS_RESET_ERROR      = "Error while resetting password; reset confirmation remains active until it expires."
 	STATUS_RESET_NO_ACCOUNT = "No matching account for the email was found."
-	STATUS_RESET_PATIENT    = "Patients are not allowed to reset their password."
+	STATUS_RESET_PATIENT    = "Patient reseting his password."
 )
 
 type (
@@ -25,6 +25,7 @@ type (
 		Key      string `json:"key"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
+		ShortKey string `json:"shortKey"`
 	}
 )
 
@@ -69,8 +70,6 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 			log.Print(STATUS_RESET_PATIENT)
 			log.Printf("email used [%s]", email)
 			resetCnf, _ = models.NewConfirmation(models.TypePatientPasswordReset, models.TemplateNamePatientPasswordReset, "")
-			// a patient is not allowed to reset his password, close the request
-			resetCnf.UpdateStatus(models.StatusCompleted)
 		}
 
 		resetCnf.Email = email
@@ -102,8 +101,9 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		a.logAudit(req, "reset confirmation created")
 
 		emailContent := map[string]interface{}{
-			"Key":   resetCnf.Key,
-			"Email": resetCnf.Email,
+			"Key":      resetCnf.Key,
+			"Email":    resetCnf.Email,
+			"ShortKey": resetCnf.ShortKey,
 		}
 
 		if a.createAndSendNotification(req, resetCnf, emailContent, reseterLanguage) {
@@ -167,6 +167,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 
 	defer req.Body.Close()
 	var rb = &resetBody{}
+	resetCnf := &models.Confirmation{}
 	if err := json.NewDecoder(req.Body).Decode(rb); err != nil {
 		log.Printf("acceptPassword: error decoding reset details %v\n", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
@@ -174,7 +175,12 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		return
 	}
 
-	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
+	if rb.ShortKey != "" {
+		// patient reset
+		resetCnf = &models.Confirmation{Email: rb.Email, Type: models.TypePatientPasswordReset, ShortKey: rb.ShortKey, Status: models.StatusPending}
+	} else {
+		resetCnf = &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
+	}
 
 	if conf := a.findResetConfirmation(resetCnf, res); conf != nil {
 

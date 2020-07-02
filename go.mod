@@ -2,7 +2,7 @@ module github.com/tidepool-org/hydrophone
 
 go 1.12.7
 
-replace github.com/tidepool-org/go-common => github.com/mdblp/go-common v0.3.0
+replace github.com/tidepool-org/go-common => github.com/mdblp/go-common v0.3.1-0.20200702072337-7449972e8063
 
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
