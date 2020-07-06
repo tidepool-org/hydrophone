@@ -1,11 +1,9 @@
 package api
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"regexp"
-	"strings"
 
 	otp "github.com/tidepool-org/hydrophone/utils/otp"
 
@@ -123,13 +121,9 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 
 	var templateName = models.TemplateNamePatientPinReset
 
-	// Support address configuration contains the mailto we want to strip out
-	suppAddr := fmt.Sprintf("<a href=%s>%s</a>", a.Config.SupportURL, strings.Replace(a.Config.SupportURL, "mailto:", "", 1))
-
 	emailContent := map[string]interface{}{
-		"Email":        usrDetails.Emails[0],
-		"OTP":          re.ReplaceAllString(totp.OTP, `$1-$2-$3`),
-		"SupportEmail": suppAddr,
+		"Email": usrDetails.Emails[0],
+		"OTP":   re.ReplaceAllString(totp.OTP, `$1-$2-$3`),
 	}
 
 	// Create new confirmation with context data = totp

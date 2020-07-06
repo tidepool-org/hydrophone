@@ -275,11 +275,15 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 		}
 	}
 
+	// Support address configuration contains the mailto we want to strip out
+	supportEmail := fmt.Sprintf("<a href=%s>%s</a>", a.Config.SupportURL, strings.Replace(a.Config.SupportURL, "mailto:", "", 1))
+
 	// Content collection is here to replace placeholders in template body/content
 	content["WebURL"] = a.getWebURL(req)
 	content["SupportURL"] = a.Config.SupportURL
 	content["AssetURL"] = a.Config.AssetURL
 	content["PatientPasswordResetURL"] = a.Config.PatientPasswordResetURL
+	content["SupportEmail"] = supportEmail
 
 	// Retrieve the template from all the preloaded templates
 	template, ok := a.templates[templateName]
