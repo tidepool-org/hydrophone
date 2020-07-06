@@ -46,12 +46,12 @@ func TestPinResetResponds(t *testing.T) {
 			},
 		},
 		{
-			// need a token or get 403 (unauthorized)
+			// need a token or get 401 (unauthorized)
 			test: toTest{
 				returnNone: true,
 				method:     "POST",
 				url:        "/send/pin-reset/" + testing_uid1,
-				respCode:   403,
+				respCode:   401,
 			},
 		},
 		{

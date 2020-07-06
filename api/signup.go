@@ -104,7 +104,6 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 // @Failure 422 {object} status.Status "Error when sending the email"
 // @Failure 500 {object} status.Status "Error finding the user, message returned:\"Error finding the user\" "
 // @Router /send/inform/{userid} [post]
-// @security TidepoolAuth
 func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	var signerLanguage string
 	var newSignUp *models.Confirmation
@@ -318,7 +317,6 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service)"
 // @Failure 500 {object} status.Status "Internal error while regenerating the confirmation, detailled error returned in the body"
 // @Router /resend/signup/{useremail} [post]
-// @security TidepoolAuth
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	var signerLanguage string
@@ -405,7 +403,6 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service)"
 // @Failure 500 {object} status.Status "Error (internal) while updating the user account, return detailed error"
 // @Router /accept/signup/{confirmationid} [put]
-// @security TidepoolAuth
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	confirmationId := vars["confirmationid"]
 
@@ -496,7 +493,6 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // @Failure 400 {object} status.Status "userid was not provided, or the payload is malformed (attributes missing or invalid). Return detailed error "
 // @Failure 404 {object} status.Status "Cannot find a signup confirmation based on the provided key, return \"No matching signup confirmation was found\" "
 // @Router /dismiss/signup/{userid} [put]
-// @security TidepoolAuth
 func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	userId := vars["userid"]
 
@@ -566,7 +562,6 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 // @Failure 400 {object} status.Status "userid was not provided, or the payload is malformed (attributes missing or invalid). Return detailed error "
 // @Failure 404 {object} status.Status "Cannot find a signup confirmation based on the provided key, return \"No matching signup confirmation was found\" "
 // @Router /signup/{userid} [put]
-// @security TidepoolAuth
 func (a *Api) cancelSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	userId := vars["userid"]
 

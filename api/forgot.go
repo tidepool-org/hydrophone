@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	STATUS_RESET_NOT_FOUND  = "No matching reset confirmation was found."
-	STATUS_RESET_ACCEPTED   = "Password has been reset."
-	STATUS_RESET_EXPIRED    = "Password reset confirmation has expired."
-	STATUS_RESET_ERROR      = "Error while resetting password; reset confirmation remains active until it expires."
-	STATUS_RESET_NO_ACCOUNT = "No matching account for the email was found."
-	STATUS_RESET_PATIENT    = "Patient reseting his password."
+	statusResetNotFound  = "No matching reset confirmation was found."
+	statusResetAccepted  = "Password has been resetted."
+	statusResetExpired   = "Password reset confirmation has expired."
+	statusResetError     = "Error while resetting password; reset confirmation remains active until it expires."
+	statusResetNoAccount = "No matching account for the email was found."
+	statusResetPatient   = "Patient resetting his password."
 )
 
 type (
@@ -45,7 +45,6 @@ type (
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
 // @Failure 500 {object} status.Status "Error finding the user, message returned:\"Error finding the user\" "
 // @Router /send/forgot/{useremail} [post]
-// @security TidepoolAuth
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	var resetCnf *models.Confirmation
 	var reseterLanguage string
@@ -67,7 +66,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		if resetUsr.IsClinic() || a.Config.AllowPatientResetPassword {
 			resetCnf, _ = models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
 		} else {
-			log.Print(STATUS_RESET_PATIENT)
+			log.Print(statusResetPatient)
 			log.Printf("email used [%s]", email)
 			resetCnf, _ = models.NewConfirmation(models.TypePatientPasswordReset, models.TemplateNamePatientPasswordReset, "")
 		}
@@ -89,7 +88,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 			reseterLanguage = reseterPreferences.DisplayLanguage
 		}
 	} else {
-		log.Print(STATUS_RESET_NO_ACCOUNT)
+		log.Print(statusResetNoAccount)
 		log.Printf("email used [%s]", email)
 		resetCnf, _ = models.NewConfirmation(models.TypeNoAccount, models.TemplateNameNoAccount, "")
 		resetCnf.Email = email
@@ -131,13 +130,13 @@ func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.Response
 		return nil
 	}
 	if found == nil {
-		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusResetNotFound)}
 		log.Printf("findResetConfirmation: not found [%s]\n", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	}
 	if found.IsExpired() {
-		statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, statusResetExpired)}
 		log.Printf("findResetConfirmation: expired [%s]\n", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
@@ -162,7 +161,6 @@ func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.Response
 // @Failure 404 {object} status.Status "No matching reset confirmation was found"
 // @Failure 500 {object} status.Status "Internal error while searching the confirmation"
 // @Router /accept/forgot [put]
-// @security TidepoolAuth
 func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	defer req.Body.Close()
@@ -170,7 +168,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 	resetCnf := &models.Confirmation{}
 	if err := json.NewDecoder(req.Body).Decode(rb); err != nil {
 		log.Printf("acceptPassword: error decoding reset details %v\n", err)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 		return
 	}
@@ -190,17 +188,16 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 
 			if err := a.sl.UpdateUser(usr.UserID, shoreline.UserUpdate{Password: &rb.Password}, token); err != nil {
 				log.Printf("acceptPassword: error updating password as part of password reset [%v]", err)
-				status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
+				status := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, statusResetError)}
 				a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
 				return
 			}
 			conf.UpdateStatus(models.StatusCompleted)
 			if a.addOrUpdateConfirmation(conf, res) {
-				//STATUS_RESET_ACCEPTED
 				a.logAudit(req, "password reset")
 				a.sendModelAsResWithStatus(
 					res,
-					status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
+					status.StatusError{Status: status.NewStatus(http.StatusOK, statusResetAccepted)},
 					http.StatusOK,
 				)
 				return
