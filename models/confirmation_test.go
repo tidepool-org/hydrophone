@@ -222,6 +222,59 @@ func Test_NewPatientPinResetConfirmation(t *testing.T) {
 
 }
 
+func Test_NewPatientPasswordInfoConfirmation(t *testing.T) {
+
+	confirmation, _ := NewConfirmation(TypePatientPasswordInfo, TemplateNamePatientPasswordInfo, USERID)
+
+	if confirmation.Status != StatusCompleted {
+		t.Fatalf("Status should be [%s] but is [%s]", StatusCompleted, confirmation.Status)
+	}
+
+	if confirmation.Key == "" {
+		t.Fatal("There should be a generated key")
+	}
+
+	if confirmation.ShortKey != "" {
+		t.Fatal("There should not be a generated short key")
+	}
+
+	if confirmation.Created.IsZero() {
+		t.Fatal("The created time should be set")
+	}
+
+	if confirmation.Modified.IsZero() == false {
+		t.Fatal("The modified time should NOT be set")
+	}
+
+	if confirmation.Type != TypePatientPasswordInfo {
+		t.Fatalf("The type should be [%s] but is [%s]", TypePatientPasswordInfo, confirmation.Type)
+	}
+
+	if confirmation.TemplateName != TemplateNamePatientPasswordInfo {
+		t.Fatalf("The template type should be [%s] but is [%s]", TemplateNamePatientPasswordInfo, confirmation.TemplateName)
+	}
+
+	if confirmation.UserId != "" {
+		t.Logf("expected '' actual [%s]", confirmation.UserId)
+		t.Fail()
+	}
+
+	if confirmation.CreatorId != USERID {
+		t.Logf("expected [%s] actual [%s]", USERID, confirmation.CreatorId)
+		t.Fail()
+	}
+
+	if confirmation.Creator.Profile != nil {
+		t.Logf("expected `nil` actual [%v]", confirmation.Creator.Profile)
+		t.Fail()
+	}
+
+	if confirmation.Creator.UserId != "" {
+		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
+		t.Fail()
+	}
+}
+
 func Test_NewConfirmationWithContext(t *testing.T) {
 
 	confirmation, _ := NewConfirmationWithContext(TypePasswordReset, TemplateNamePasswordReset, USERID, contextData)

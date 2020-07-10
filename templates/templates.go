@@ -50,6 +50,12 @@ func New(templatesPath string, localizer localize.Localizer) (models.Templates, 
 		templates[template.Name()] = template
 	}
 
+	if template, err := newTemplate(templatesPath, models.TemplateNamePatientPasswordInfo, localizer); err != nil {
+		return nil, fmt.Errorf("templates: failure to create patient password info template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
 	if template, err := newTemplate(templatesPath, models.TemplateNameSignup, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create signup template: %s", err)
 	} else {

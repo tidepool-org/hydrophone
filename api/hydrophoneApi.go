@@ -261,6 +261,8 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 			templateName = models.TemplateNamePasswordReset
 		case models.TypePatientPasswordReset:
 			templateName = models.TemplateNamePatientPasswordReset
+		case models.TypePatientPasswordInfo:
+			templateName = models.TemplateNamePatientPasswordInfo
 		case models.TypeCareteamInvite:
 			templateName = models.TemplateNameCareteamInvite
 		case models.TypeSignUp:

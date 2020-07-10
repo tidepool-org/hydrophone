@@ -60,15 +60,26 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	info, ok := req.URL.Query()["info"]
+
+	if !ok || len(info[0]) < 1 {
+		info = nil
+	}
 
 	// if the reseter is already registered we can use his preferences
 	if resetUsr := a.findExistingUser(email, a.sl.TokenProvide()); resetUsr != nil {
 		if resetUsr.IsClinic() || a.Config.AllowPatientResetPassword {
 			resetCnf, _ = models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
+			info = nil
 		} else {
+			// patient
 			log.Print(statusResetPatient)
 			log.Printf("email used [%s]", email)
-			resetCnf, _ = models.NewConfirmation(models.TypePatientPasswordReset, models.TemplateNamePatientPasswordReset, "")
+			if info != nil {
+				resetCnf, _ = models.NewConfirmation(models.TypePatientPasswordInfo, models.TemplateNamePatientPasswordInfo, "")
+			} else {
+				resetCnf, _ = models.NewConfirmation(models.TypePatientPasswordReset, models.TemplateNamePatientPasswordReset, "")
+			}
 		}
 
 		resetCnf.Email = email
@@ -96,9 +107,8 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.UpdateStatus(models.StatusCompleted)
 	}
 
-	if resetCnf != nil && a.addOrUpdateConfirmation(resetCnf, res) {
+	if resetCnf != nil && (info != nil || a.addOrUpdateConfirmation(resetCnf, res)) {
 		a.logAudit(req, "reset confirmation created")
-
 		emailContent := map[string]interface{}{
 			"Key":      resetCnf.Key,
 			"Email":    resetCnf.Email,

@@ -30,9 +30,23 @@ func TestForgotResponds(t *testing.T) {
 		},
 		{
 			// always returns a 200 for patient
+			// with info
+			method:   "POST",
+			url:      "/send/forgot/patient@myemail.com?info=ok",
+			respCode: 200,
+		},
+		{
+			// always returns a 200 for clinician
 			// without shortKey
 			method:   "POST",
 			url:      "/send/forgot/clinic@myemail.com",
+			respCode: 200,
+		},
+		{
+			// always returns a 200 for clinician
+			// without shortKey
+			method:   "POST",
+			url:      "/send/forgot/clinic@myemail.com?info=ok",
 			respCode: 200,
 		},
 		{
