@@ -2,14 +2,14 @@
     "name": "patient_information",
     "description": "email to send information to patient",
     "templateFilename": "patient_information.html",
-    "subject": "InformationSubject",
+    "subject": "PatientInfoSubject",
     "contentParts":[
-        "SignupHello",
-        "PatientInformation",
-        "PatientLogin",
-        "FooterGetSupport",
-        "FooterSincerely",
-        "FooterSignature"
+        "PatientInfoHeadline",
+        "PatientInfoBody",
+        "PatientInfoBody2",
+        "PatientInfoBody3",
+        "PatientInfoLogin",
+        "FooterGetSupport"
     ],
     "escapeContentParts":[]
 }

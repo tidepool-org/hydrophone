@@ -45,14 +45,11 @@
                   <tr>
                     <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
                       <p class="h1 content-width" style="font-size:14px;line-height:1.5;margin:0;margin-bottom:10px;font-weight:bold;margin-left:auto;margin-right:auto;max-width:400px;">
-                        {{.SignupHello}}
-                  </p>
+                        {{.SignupHeadline}}
+                      </p>
                       <p class="content-width" style="font-size:14px;line-height:1.5;margin:0;margin-bottom:10px;margin-left:auto;margin-right:auto;max-width:400px;">
-                        {{.SignupCongrats}}
-                  </p>
-                  <p class="content-width" style="font-size:14px;line-height:1.5;margin:0;margin-bottom:10px;margin-left:auto;margin-right:auto;max-width:400px;">
-                      {{.SignupAction}}
-                </p>
+                          {{.SignupBody}}
+                      </p>
                     </td>
                   </tr>
                   <tr>
@@ -64,17 +61,14 @@
                       <![endif]-->
                       <a class="btn primary" href="{{.WebURL}}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}" style="text-decoration:none;display:inline-block;font-family:'Ubuntu', sans-serif;border-radius:4px;padding:10px 20px;background-color:#6fc3bb;font-size:16px;font-weight:bold;color:#ffffff;margin-left:5px;margin-right:5px;margin-bottom:10px;">
                         {{.SignupVerify}}
-                  </a>
+                      </a>
                       <!--[if (gte mso 9)|(IE)]>
                       </td>
                     </tr>
                   </table>
                       <![endif]-->
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                      <p style="font-size:14px;line-height:1.5;margin:0;margin-bottom:10px;">{{.FooterSincerely}}<br/>{{.FooterSignature}}</p>
+                      <br/>
+                      <br/>
                     </td>
                   </tr>
                   <tr>

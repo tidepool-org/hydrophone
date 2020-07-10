@@ -4,13 +4,10 @@
     "templateFilename": "signup_confirmation.html",
     "subject": "SignupConfirmationSubject",
     "contentParts":[
-        "SignupHello",
-        "SignupCongrats",
-        "SignupAction",
+        "SignupHeadline",
+        "SignupBody",
         "SignupVerify",
-        "FooterGetSupport",
-        "FooterSincerely",
-        "FooterSignature"
+        "FooterGetSupport"
     ],
     "escapeContentParts":[]
 }

@@ -4,13 +4,10 @@
     "templateFilename": "careteam_invitation.html",
     "subject": "CareTeamInvitationSubject",
     "contentParts":[
-        "CareTeamInviteHello",
-        "CareTeamInviteInvitation",
-        "CareTeamInviteClick",
+        "CareTeamInviteHeadline",
+        "CareTeamInviteBody",
         "CareTeamInviteJoin",
-        "FooterGetSupport",
-        "FooterSincerely",
-        "FooterSignature"
+        "FooterGetSupport"
     ],
     "escapeContentParts":[
         "CareteamName"

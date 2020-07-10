@@ -5,16 +5,12 @@
     "subject": "PatientPinResetSubject",
     "contentParts":[
         "PatientPinResetSubject",
-        "PatientPinResetRequest",
-        "PatientPinResetTempCode",
-        "PatientPinResetExpireSoon",
-        "PatientPinResetExpired",
-        "PatientPinResetWrongReach",
-        "FooterGetSupport",
-        "FooterSincerely",
-        "FooterSignature"
+        "PatientPinResetHeadline",
+        "PatientPinResetBody",
+        "PatientPinResetBody2",
+        "PatientPinResetBody3",
+        "FooterGetSupport"
     ],
     "escapeContentParts":[
-        "SupportEmail"
     ]
 }

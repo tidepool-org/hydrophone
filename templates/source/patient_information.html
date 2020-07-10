@@ -38,10 +38,16 @@
               <tr>
                 <td class="inner centered">
                   <p class="h1 content-width">
-                      {{.SignupHello}}
+                      {{.PatientInfoHeadline}}
                   </p>
                   <p class="content-width">
-                      {{.PatientInformation}}
+                    {{.PatientInfoBody}}
+                    <br/>
+                    <br/>
+                    {{.PatientInfoBody2}}
+                    <br/>
+                    <br/>
+                    {{.PatientInfoBody3}}
                   </p>
                 </td>
               </tr>
@@ -53,18 +59,15 @@
                   <td>
                   <![endif]-->
                   <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}">
-                    {{.PatientLogin}}
+                    {{.PatientInfoLogin}}
                   </a>
                   <!--[if (gte mso 9)|(IE)]>
                   </td>
                   </tr>
                   </table>
                   <![endif]-->
-                </td>
-              </tr>
-              <tr>
-                <td class="inner centered">
-                  <p>{{.FooterSincerely}}<br/>{{.FooterSignature}}</p>
+                  <br />
+                  <br />
                 </td>
               </tr>
               <tr>

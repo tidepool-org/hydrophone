@@ -4,13 +4,10 @@
     "templateFilename": "signup_clinic_confirmation.html",
     "subject": "SignupClinicConfirmationSubject",
     "contentParts":[
-        "SignupClinicHello",
-        "SignupClinicCongrats",
-        "SignupClinicAction",
+        "SignupClinicHeadline",
+        "SignupClinicBody",
         "SignupClinicVerify",
-        "FooterGetSupport",
-        "FooterSincerely",
-        "FooterSignature"
+        "FooterGetSupport"
     ],
     "escapeContentParts":[]
 }

@@ -4,13 +4,10 @@
     "templateFilename": "no_account.html",
     "subject": "NoAccountSubject",
     "contentParts":[
-        "NoAccountHello",
-        "NoAccountNoAccount",
-        "NoAccountClick",
+        "NoAccountHeadline",
+        "NoAccountBody",
         "NoAccountSignUp",
-        "FooterGetSupport",
-        "FooterSincerely",
-        "FooterSignature"
+        "FooterGetSupport"
     ],
     "escapeContentParts":[]
 }

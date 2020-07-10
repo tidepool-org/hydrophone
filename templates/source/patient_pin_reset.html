@@ -37,21 +37,20 @@
               </tr>
               <tr>
                 <td class="inner centered">
+                  <p class="h1 content-width">
+                    {{.PatientPinResetHeadline}}
+                  </p>
+                  <p class="content-width"></p>
+                    {{.PatientPinResetBody}}
+                  </p>
+                  <p class="content-width"> 
+                    <h1 style="font-weight: bold">{{.OTP}}</h1>
+                  </p>
                   <p class="content-width">
-                    {{.PatientPinResetRequest}} {{.PatientPinResetTempCode}}
+                    {{.PatientPinResetBody2}} 
+                    <br />
+                    {{.PatientPinResetBody3}}
                   </p>
-                  <p class="content-width"><h1>{{.OTP}}</h1></p>
-                  <p class="content-width"></p>
-                    {{.PatientPinResetExpireSoon}} {{.PatientPinResetExpired}}
-                  </p>
-                  <p class="content-width"></p>
-                    {{.PatientPinResetWrongReach}}
-                  </p>
-                </td>
-              </tr>
-              <tr>
-                <td class="inner centered">
-                  <p>{{.FooterSincerely}}<br/>{{.FooterSignature}}</p>
                 </td>
               </tr>
               <tr>
