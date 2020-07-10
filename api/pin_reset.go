@@ -40,7 +40,7 @@ const (
 // @security TidepoolAuth
 func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
-	// by default, language is EN. It will be overriden if prefered language is found later
+	// by default, language is EN. It will be overriden if preferred language is found later
 	var userLanguage = "en"
 	var newOTP *models.Confirmation
 	var usrDetails *shoreline.UserData
@@ -129,7 +129,7 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 	}
 
 	// Create new confirmation with context data = totp
-	newOTP, _ = models.NewConfirmationWithContext(models.TypePinReset, templateName, usrDetails.UserID, totp)
+	newOTP, _ = models.NewConfirmationWithContext(models.TypePatientPinReset, templateName, usrDetails.UserID, totp)
 	newOTP.Email = usrDetails.Emails[0]
 
 	// Save confirmation in DB
