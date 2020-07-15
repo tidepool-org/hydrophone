@@ -1,67 +1,78 @@
 ---
 #Footer
 #(for all emails)
-FooterGetSupport: "crwdns34080:0crwdne34080:0"
-FooterSincerely: "crwdns34082:0crwdne34082:0"
-FooterSignature: "crwdns34084:0crwdne34084:0"
+FooterGetSupport: "crwdns40218:0crwdne40218:0"
+#FooterSincerely: "Sincerely,"
+#FooterSignature: "The Diabeloop Team"
 #No account
 #(email for those that requested password reset but did not create their account before)
-NoAccountSubject: "crwdns34086:0crwdne34086:0"
-NoAccountHello: "crwdns34088:0crwdne34088:0"
-NoAccountNoAccount: "crwdns34090:0crwdne34090:0"
-NoAccountClick: "crwdns34092:0crwdne34092:0"
-NoAccountSignUp: "crwdns34094:0crwdne34094:0"
+NoAccountSubject: "crwdns40224:0crwdne40224:0"
+NoAccountHeadline: "crwdns40344:0crwdne40344:0"
+NoAccountBody: "crwdns40346:0crwdne40346:0"
+NoAccountSignUp: "crwdns40232:0crwdne40232:0"
 #Password Reset
 #(email for those that requested password reset)
-PasswordResetSubject: "crwdns34096:0crwdne34096:0"
-PasswordResetHello: "crwdns34098:0crwdne34098:0"
-PasswordResetRequest: "crwdns34100:0crwdne34100:0"
-PasswordResetDidNotRequest: "crwdns34102:0crwdne34102:0"
-PasswordResetOtherwise: "crwdns34104:0crwdne34104:0"
-PasswordResetClick: "crwdns34106:0crwdne34106:0"
+PasswordResetSubject: "crwdns40234:0crwdne40234:0"
+PasswordResetHeadline: "crwdns40348:0crwdne40348:0"
+PasswordResetBody: "crwdns40350:0crwdne40350:0"
+PasswordResetReset: "crwdns40352:0crwdne40352:0"
 #Patient Password Reset
 #(email for patients that requested password reset)
-PatientPasswordResetSubject: "crwdns34108:0crwdne34108:0"
-PatientPasswordResetHello: "crwdns34110:0crwdne34110:0"
-PatientPasswordResetRequest: "crwdns34112:0crwdne34112:0"
-PatientPasswordResetDidNotRequest: "crwdns34114:0crwdne34114:0"
-PatientPasswordResetByDevice: "crwdns34116:0crwdne34116:0"
-PatientPasswordResetClick: "crwdns34118:0crwdne34118:0"
+PatientPasswordResetSubject: "crwdns40246:0crwdne40246:0"
+PatientPasswordResetHeadline: "crwdns40354:0crwdne40354:0"
+PatientPasswordResetBody: "crwdns40356:0crwdne40356:0"
+PatientPasswordResetBody2: "crwdns40358:0crwdne40358:0"
+#Patient Password Reset request from web app
+#(email for patients that requested password reset)
+PatientPasswordInfoSubject: "crwdns40334:0crwdne40334:0"
+PatientPasswordInfoHeadline: "crwdns40336:0crwdne40336:0"
+PatientPasswordInfoBody: "crwdns40338:0crwdne40338:0"
+PatientPasswordInfoBody2: "crwdns40340:0{{ .SupportEmail }}crwdne40340:0"
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
-CareTeamInvitationSubject: "crwdns34120:0crwdne34120:0"
-CareTeamInviteHello: "crwdns34122:0crwdne34122:0"
-CareTeamInviteInvitation: "crwdns34124:0{{ .CareteamName }}crwdne34124:0"
-CareTeamInviteClick: "crwdns34126:0{{ .CareteamName }}crwdne34126:0"
-CareTeamInviteJoin: "crwdns34128:0{{ .CareteamName }}crwdne34128:0"
+CareTeamInvitationSubject: "crwdns40260:0crwdne40260:0"
+#CareTeamInviteHello: "Hello,"
+CareTeamInviteHeadline: "crwdns40360:0{{ .CareteamName }}crwdne40360:0"
+CareTeamInviteBody: "crwdns40362:0{{ .CareteamName }}crwdne40362:0"
+CareTeamInviteJoin: "crwdns40268:0{{ .CareteamName }}crwdne40268:0"
 #Signup
 #(email to ask patient for verification of email)
-SignupConfirmationSubject: "crwdns34130:0crwdne34130:0"
-SignupHello: "crwdns34132:0crwdne34132:0"
-SignupCongrats: "crwdns34134:0crwdne34134:0"
-SignupAction: "crwdns34136:0crwdne34136:0"
-SignupVerify: "crwdns34138:0crwdne34138:0"
+SignupConfirmationSubject: "crwdns40270:0crwdne40270:0"
+#SignupHello: "Hello,"
+SignupHeadline: "crwdns40364:0crwdne40364:0"
+SignupBody: "crwdns40366:0crwdne40366:0"
+SignupVerify: "crwdns40278:0crwdne40278:0"
 #Signup Clinic
 #(email to ask clinician for verification of email)
-SignupClinicConfirmationSubject: "crwdns34140:0crwdne34140:0"
-SignupClinicHello: "crwdns34142:0crwdne34142:0"
-SignupClinicCongrats: "crwdns34144:0crwdne34144:0"
-SignupClinicAction: "crwdns34146:0crwdne34146:0"
-SignupClinicVerify: "crwdns34148:0crwdne34148:0"
+SignupClinicConfirmationSubject: "crwdns40280:0crwdne40280:0"
+#SignupClinicHello: "Hello,"
+SignupClinicHeadline: "crwdns40368:0crwdne40368:0"
+SignupClinicBody: "crwdns40370:0crwdne40370:0"
+SignupClinicVerify: "crwdns40288:0crwdne40288:0"
 #Signup Custodial => SUPPRIMER
 #(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialConfirmationSubject: "crwdns34150:0crwdne34150:0"
-SignupCustodialHello: "crwdns34152:0crwdne34152:0"
-SignupCustodialCongrats: "crwdns34154:0crwdne34154:0"
-SignupCustodialVerify: "crwdns34156:0crwdne34156:0"
+SignupCustodialConfirmationSubject: "crwdns40290:0crwdne40290:0"
+#SignupCustodialHello: "Hello,"
+SignupCustodialHeadline: "crwdns40372:0crwdne40372:0"
+SignupCustodialVerify: "crwdns40296:0crwdne40296:0"
 #Signup Custodial Clinic => SUPPRIMER
 #(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialClinicConfirmationSubject: "crwdns34158:0crwdne34158:0"
-SignupCustodialClinicHello: "crwdns34160:0{{ .FullName }}crwdne34160:0"
-SignupCustodialClinicAccount: "crwdns34162:0{{ .CreatorName }}crwdne34162:0"
-SignupCustodialClinicOwnership: "crwdns34164:0crwdne34164:0"
-SignupCustodialClinicClaim: "crwdns34166:0crwdne34166:0"
+SignupCustodialClinicConfirmationSubject: "crwdns40298:0crwdne40298:0"
+SignupCustodialClinicHello: "crwdns40300:0{{ .FullName }}crwdne40300:0"
+SignupCustodialClinicAccount: "crwdns40302:0{{ .CreatorName }}crwdne40302:0"
+SignupCustodialClinicOwnership: "crwdns40304:0crwdne40304:0"
+SignupCustodialClinicClaim: "crwdns40306:0crwdne40306:0"
 #Patient Information
-InformationSubject: "crwdns34168:0crwdne34168:0"
-PatientInformation: "crwdns34170:0crwdne34170:0"
-PatientLogin: "crwdns34172:0crwdne34172:0"
+PatientInfoSubject: "crwdns40374:0crwdne40374:0"
+PatientInfoHeadline: "crwdns40376:0crwdne40376:0"
+PatientInfoBody: "crwdns40378:0crwdne40378:0"
+PatientInfoBody2: "crwdns40380:0crwdne40380:0"
+PatientInfoBody3: "crwdns40382:0crwdne40382:0"
+PatientInfoLogin: "crwdns40384:0crwdne40384:0"
+#Pin Reset Request
+#(email for those that requested a one-time password for PIN Reset)
+PatientPinResetSubject: "crwdns40314:0crwdne40314:0"
+PatientPinResetHeadline: "crwdns40386:0crwdne40386:0"
+PatientPinResetBody: "crwdns40388:0crwdne40388:0"
+PatientPinResetBody2: "crwdns40390:0crwdne40390:0"
+PatientPinResetBody3: "crwdns40392:0crwdne40392:0"

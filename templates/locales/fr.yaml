@@ -1,58 +1,59 @@
 ---
 #Footer
 #(for all emails)
-FooterGetSupport: "SUPPORT"
-FooterSincerely: "Cordialement,"
-FooterSignature: "L’équipe Diabeloop"
+FooterGetSupport: "ASSISTANCE"
+#FooterSincerely: "Sincerely,"
+#FooterSignature: "The Diabeloop Team"
 #No account
 #(email for those that requested password reset but did not create their account before)
-NoAccountSubject: "Réinitialisation de votre mot de passe YourLoops bla bla"
-NoAccountHello: "Bonjour,"
-NoAccountNoAccount: "Vous avez demandé la réinitialisation de votre mot de passe YourLoops. Or, il n'existe pas de compte lié à cette adresse email."
-NoAccountClick: "Veuillez cliquer sur le lien ci-dessous pour créer un compte."
+NoAccountSubject: "Réinitialisation de votre mot de passe YourLoops"
+NoAccountHeadline: "You asked to change your YourLoops password but no account has been created yet with this email address. :("
+NoAccountBody: "Please click on the link below if you would like to create an account."
 NoAccountSignUp: "S'INSCRIRE"
 #Password Reset
 #(email for those that requested password reset)
 PasswordResetSubject: "Réinitialisation de votre mot de passe YourLoops"
-PasswordResetHello: "Bonjour,"
-PasswordResetRequest: "Vous avez demandé la réinitialisation de votre mot de passe YourLoops."
-PasswordResetDidNotRequest: "Si vous n'êtes pas à l'origine de cette demande, merci d'ignorer cet email."
-PasswordResetOtherwise: "Sinon, veuillez cliquer sur le lien ci-dessous."
-PasswordResetClick: "Réinitialiser le mot de passe"
+PasswordResetHeadline: "You requested a password reset."
+PasswordResetBody: "Click the link below."
+PasswordResetReset: "Reset Password"
 #Patient Password Reset
 #(email for patients that requested password reset)
-PatientPasswordResetSubject: "Réinitialisation de votre mot de passe YourLoops"
-PatientPasswordResetHello: "Bonjour,"
-PatientPasswordResetRequest: "Vous avez demandé une réinitialisation de votre mot de passe YourLoops."
-PatientPasswordResetDidNotRequest: "Si vous n'êtes pas à l'origine de cette demande, merci d'ignorer cet email."
-PatientPasswordResetByDevice: "La réinitialisation de votre mot de passe s'effectue via votre terminal Diabeloop."
-PatientPasswordResetClick: "Cliquez ici pour voir la procédure détaillée"
+PatientPasswordResetSubject: "Réinitialisation du mot de passe"
+PatientPasswordResetHeadline: "You requested to reset your YourLoops account password."
+PatientPasswordResetBody: "Please follow the instructions on your Diabeloop handset and enter this key:"
+PatientPasswordResetBody2: "The key is valid for 1h. If it has expired, please request a new one on your handset."
+#Patient Password Reset request from web app
+#(email for patients that requested password reset)
+PatientPasswordInfoSubject: "Password reset"
+PatientPasswordInfoHeadline: "You requested to reset your YourLoops password from YourLoops. However, for safety reasons, you have to request the change from your Diabeloop handset."
+PatientPasswordInfoBody: "Go to Settings > YourLoops and follow the instructions on your handset."
+PatientPasswordInfoBody2: "Si vous n'êtes pas à l'origine de cette demande, merci de contacter notre équipe d'assistance {{ .SupportEmail }}."
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Invitation à rejoindre une équipe de suivi"
-CareTeamInviteHello: "Bonjour,"
-CareTeamInviteInvitation: "{{ .CareteamName }} vous a invité à rejoindre son équipe de suivi sur YourLoops."
-CareTeamInviteClick: "Veuillez cliquer sur le lien ci-dessous pour accepter et voir les données de {{ .CareteamName }}."
+#CareTeamInviteHello: "Hello,"
+CareTeamInviteHeadline: "{{ .CareteamName }} invited you to be on his/her care team."
+CareTeamInviteBody: "Please click the link below to accept and see {{ .CareteamName }}'s data."
 CareTeamInviteJoin: "Rejoindre l'équipe"
 #Signup
 #(email to ask patient for verification of email)
 SignupConfirmationSubject: "Vérification de votre compte YourLoops"
-SignupHello: "Bonjour,"
-SignupCongrats: "Félicitations pour la création de votre compte YourLoops !"
-SignupAction: "Nous avons simplement besoin d'une dernière action de votre part (promis) :"
+#SignupHello: "Hello,"
+SignupHeadline: "Congrats on creating your YourLoops account!"
+SignupBody: "We just need one last thing from you (promised):"
 SignupVerify: "Vérifier votre compte"
 #Signup Clinic
 #(email to ask clinician for verification of email)
 SignupClinicConfirmationSubject: "Vérification de votre compte YourLoops"
-SignupClinicHello: "Bonjour,"
-SignupClinicCongrats: "Félicitations pour la création de votre compte YourLoops !"
-SignupClinicAction: "Nous avons simplement besoin d'une dernière action de votre part (promis) :"
+#SignupClinicHello: "Hello,"
+SignupClinicHeadline: "Congrats on creating your YourLoops account!"
+SignupClinicBody: "We just need one last thing from you (promised):"
 SignupClinicVerify: "Vérifier votre compte"
 #Signup Custodial => SUPPRIMER
 #(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
 SignupCustodialConfirmationSubject: "Vérification de votre compte Tidepool"
-SignupCustodialHello: "Bonjour,"
-SignupCustodialCongrats: "Félicitations pour la création de votre compte YourLoops !"
+#SignupCustodialHello: "Hello,"
+SignupCustodialHeadline: "Congrats on creating your YourLoops account!"
 SignupCustodialVerify: "Vérifier mon compte"
 #Signup Custodial Clinic => SUPPRIMER
 #(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
@@ -62,6 +63,16 @@ SignupCustodialClinicAccount: "{{ .CreatorName }} a créé pour vous un compte Y
 SignupCustodialClinicOwnership: "Vous pouvez réclamer votre compte gratuit pour voir et charger vos données depuis la maison."
 SignupCustodialClinicClaim: "Réclamer mon compte"
 #Patient Information
-InformationSubject: "Information YourLoops"
-PatientInformation: "L'équipe Diabeloop vous félicite pour l'activation de votre dispositif médical et la création de votre compte YourLoops."
-PatientLogin: "Se Connecter à YourLoops"
+PatientInfoSubject: "YourLoops Information"
+PatientInfoHeadline: "Congrats from Diabeloop team on activating your medical device and creating your YourLoops account."
+PatientInfoBody: "YourLoops is a visualization platform for diabetes management."
+PatientInfoBody2: "You’ll find all the data captured by your Diabeloop handset (glucose trends, insulin usage, recorded carbs..) displayed into charts and graphs."
+PatientInfoBody3: "Use the email and password you entered when setting up your handset when you click on the link below to login."
+PatientInfoLogin: "Login to YourLoops"
+#Pin Reset Request
+#(email for those that requested a one-time password for PIN Reset)
+PatientPinResetSubject: "Réinitialisation du code PIN"
+PatientPinResetHeadline: "You requested to reset your Diabeloop handset PIN."
+PatientPinResetBody: "Here is your temporary code:"
+PatientPinResetBody2: "The code will expire in 30 minutes or as soon as you change your PIN."
+PatientPinResetBody3: "If the code has expired, please request a new one on your handset."
