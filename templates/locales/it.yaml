@@ -6,19 +6,19 @@ FooterGetSupport: "crwdns40218:0crwdne40218:0"
 #FooterSignature: "The Diabeloop Team"
 #No account
 #(email for those that requested password reset but did not create their account before)
-NoAccountSubject: "crwdns40224:0crwdne40224:0"
-NoAccountHeadline: "crwdns40344:0crwdne40344:0"
-NoAccountBody: "crwdns40346:0crwdne40346:0"
-NoAccountSignUp: "crwdns40232:0crwdne40232:0"
+NoAccountSubject: "crwdns40394:0crwdne40394:0"
+NoAccountHeadline: "crwdns40396:0crwdne40396:0"
+NoAccountBody: "crwdns40398:0crwdne40398:0"
+NoAccountSignUp: "crwdns40400:0crwdne40400:0"
 #Password Reset
 #(email for those that requested password reset)
-PasswordResetSubject: "crwdns40234:0crwdne40234:0"
-PasswordResetHeadline: "crwdns40348:0crwdne40348:0"
-PasswordResetBody: "crwdns40350:0crwdne40350:0"
-PasswordResetReset: "crwdns40352:0crwdne40352:0"
+PasswordResetSubject: "crwdns40402:0crwdne40402:0"
+PasswordResetHeadline: "crwdns40404:0crwdne40404:0"
+PasswordResetBody: "crwdns40406:0crwdne40406:0"
+PasswordResetReset: "crwdns40408:0crwdne40408:0"
 #Patient Password Reset
 #(email for patients that requested password reset)
-PatientPasswordResetSubject: "crwdns40246:0crwdne40246:0"
+PatientPasswordResetSubject: "crwdns40410:0crwdne40410:0"
 PatientPasswordResetHeadline: "crwdns40354:0crwdne40354:0"
 PatientPasswordResetBody: "crwdns40356:0crwdne40356:0"
 PatientPasswordResetBody2: "crwdns40358:0crwdne40358:0"
@@ -30,25 +30,25 @@ PatientPasswordInfoBody: "crwdns40338:0crwdne40338:0"
 PatientPasswordInfoBody2: "crwdns40340:0{{ .SupportEmail }}crwdne40340:0"
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
-CareTeamInvitationSubject: "crwdns40260:0crwdne40260:0"
+CareTeamInvitationSubject: "crwdns40412:0crwdne40412:0"
 #CareTeamInviteHello: "Hello,"
-CareTeamInviteHeadline: "crwdns40360:0{{ .CareteamName }}crwdne40360:0"
-CareTeamInviteBody: "crwdns40362:0{{ .CareteamName }}crwdne40362:0"
-CareTeamInviteJoin: "crwdns40268:0{{ .CareteamName }}crwdne40268:0"
+CareTeamInviteHeadline: "crwdns40414:0{{ .CareteamName }}crwdne40414:0"
+CareTeamInviteBody: "crwdns40416:0{{ .CareteamName }}crwdne40416:0"
+CareTeamInviteJoin: "crwdns40418:0crwdne40418:0"
 #Signup
 #(email to ask patient for verification of email)
-SignupConfirmationSubject: "crwdns40270:0crwdne40270:0"
+SignupConfirmationSubject: "crwdns40420:0crwdne40420:0"
 #SignupHello: "Hello,"
 SignupHeadline: "crwdns40364:0crwdne40364:0"
 SignupBody: "crwdns40366:0crwdne40366:0"
-SignupVerify: "crwdns40278:0crwdne40278:0"
+SignupVerify: "crwdns40422:0crwdne40422:0"
 #Signup Clinic
 #(email to ask clinician for verification of email)
-SignupClinicConfirmationSubject: "crwdns40280:0crwdne40280:0"
+SignupClinicConfirmationSubject: "crwdns40424:0crwdne40424:0"
 #SignupClinicHello: "Hello,"
-SignupClinicHeadline: "crwdns40368:0crwdne40368:0"
-SignupClinicBody: "crwdns40370:0crwdne40370:0"
-SignupClinicVerify: "crwdns40288:0crwdne40288:0"
+SignupClinicHeadline: "crwdns40426:0crwdne40426:0"
+SignupClinicBody: "crwdns40428:0crwdne40428:0"
+SignupClinicVerify: "crwdns40430:0crwdne40430:0"
 #Signup Custodial => SUPPRIMER
 #(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
 SignupCustodialConfirmationSubject: "crwdns40290:0crwdne40290:0"
@@ -63,12 +63,12 @@ SignupCustodialClinicAccount: "crwdns40302:0{{ .CreatorName }}crwdne40302:0"
 SignupCustodialClinicOwnership: "crwdns40304:0crwdne40304:0"
 SignupCustodialClinicClaim: "crwdns40306:0crwdne40306:0"
 #Patient Information
-PatientInfoSubject: "crwdns40374:0crwdne40374:0"
-PatientInfoHeadline: "crwdns40376:0crwdne40376:0"
+PatientInfoSubject: "crwdns40432:0crwdne40432:0"
+PatientInfoHeadline: "crwdns40434:0crwdne40434:0"
 PatientInfoBody: "crwdns40378:0crwdne40378:0"
 PatientInfoBody2: "crwdns40380:0crwdne40380:0"
 PatientInfoBody3: "crwdns40382:0crwdne40382:0"
-PatientInfoLogin: "crwdns40384:0crwdne40384:0"
+PatientInfoLogin: "crwdns40436:0crwdne40436:0"
 #Pin Reset Request
 #(email for those that requested a one-time password for PIN Reset)
 PatientPinResetSubject: "crwdns40314:0crwdne40314:0"
