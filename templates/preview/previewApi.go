@@ -145,7 +145,7 @@ func (a *Api) buildPreview(res http.ResponseWriter, req *http.Request, vars map[
 	}
 
 	langs, ok := req.URL.Query()["lang"]
-	if ok && len(langs[0]) == 2 {
+	if ok && len(langs[0]) >= 2 {
 		lang = langs[0]
 	}
 	email, err := a.generateEmail(templateName, lang)

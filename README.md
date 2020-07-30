@@ -1,4 +1,4 @@
-hydrophone
+# hydrophone
 ==========
 
 [![Build Status](https://travis-ci.com/tidepool-org/hydrophone.png)](https://travis-ci.com/tidepool-org/hydrophone)
@@ -80,3 +80,7 @@ export TIDEPOOL_HYDROPHONE_SERVICE='{
 ...
 }'
 ```
+
+# Hydromail
+Hydromail is the preview service for hydrophone templates.  
+See Hydromail specific readme: [templates/preview/README.md](templates/preview/README.md)
