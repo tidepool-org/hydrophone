@@ -11,6 +11,7 @@ env:
   global: 
     - GO111MODULE=on
     - BUILD_OPENAPI_DOC=true
+    - BUILD_SOUP=true
 
 go_import_path: github.com/tidepool-org/hydrophone
 
@@ -66,6 +67,19 @@ deploy:
     skip_cleanup: true
     local_dir: docs/openapi
     upload-dir: openapi/hydrophone
+    cache_control: "max-age=21600"
+  # Deploy SOUP
+  - provider: s3
+    on:
+      tags: true
+      condition: $BUILD_SOUP = true
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    region: $AWS_DEFAULT_REGION
+    bucket: com.diabeloop.yourloops.doc
+    skip_cleanup: true
+    local_dir: ./docs/soup
+    upload-dir: soup
     cache_control: "max-age=21600"
 
 services:

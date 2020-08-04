@@ -1,7 +1,6 @@
 deploy/
 dist/
-docs/docs.go
-docs/swagger.*
+docs/
 .vscode/launch.json
 vendor/
 
