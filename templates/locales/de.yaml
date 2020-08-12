@@ -37,16 +37,16 @@ CareTeamInviteBody: "YourLoops ist eine Visualisierungsplattform für Diabetes-M
 CareTeamInviteJoin: "Daten anzeigen"
 #Signup
 #(email to ask patient for verification of email)
-SignupConfirmationSubject: "Überprüfen Sie Ihre E-Mail-Adresse"
+SignupConfirmationSubject: "Bestätigen Sie Ihre E-Mail-Adresse"
 #SignupHello: "Hello,"
-SignupHeadline: "Herzlichen Glückwunsch zur Erstellung Ihres YourLoops-Kontos!"
-SignupBody: "Wir brauchen nur noch eine letzte Sache von Ihnen (versprochen):"
+SignupHeadline: "Bestätigen Sie Ihre E-Mail-Adresse, um Ihr YourLoops-Konto zu aktivieren."
+SignupBody: "Sie haben ein Konto bei YourLoops erstellt. Um Ihre Identität zu bestätigen und Ihr Profil zu vervollständigen, klicken Sie bitte auf den unten stehenden Link."
 SignupVerify: "Aktiviere mein Konto"
 #Signup Clinic
 #(email to ask clinician for verification of email)
-SignupClinicConfirmationSubject: "Überprüfen Sie Ihre E-Mail-Adresse"
+SignupClinicConfirmationSubject: "Bestätigen Sie Ihre E-Mail-Adresse"
 #SignupClinicHello: "Hello,"
-SignupClinicHeadline: "Überprüfen Sie Ihre E-Mail-Adresse, um Ihr YourLoops-Konto zu aktivieren."
+SignupClinicHeadline: "Bestätigen Sie Ihre E-Mail-Adresse, um Ihr YourLoops-Konto zu aktivieren."
 SignupClinicBody: "Sie haben ein Konto für Ärzte bei YourLoops erstellt. Um Ihre Identität zu bestätigen und Ihr Profil zu vervollständigen, klicken Sie bitte auf den unten stehenden Link."
 SignupClinicVerify: "Aktiviere mein Konto"
 #Signup Custodial => SUPPRIMER

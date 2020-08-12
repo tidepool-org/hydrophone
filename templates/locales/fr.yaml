@@ -39,8 +39,8 @@ CareTeamInviteJoin: "Voir les données"
 #(email to ask patient for verification of email)
 SignupConfirmationSubject: "Vérification de votre adresse email"
 #SignupHello: "Hello,"
-SignupHeadline: "Congrats on creating your YourLoops account!"
-SignupBody: "We just need one last thing from you (promised):"
+SignupHeadline: "Vérifiez votre adresse email pour activer votre compte YourLoops."
+SignupBody: "Vous souhaitez créer un compte sur YourLoops. Pour confirmer qu’il s’agit bien de votre adresse email et finaliser votre inscription, veuillez cliquer sur le bouton ci-dessous."
 SignupVerify: "Activer mon compte"
 #Signup Clinic
 #(email to ask clinician for verification of email)

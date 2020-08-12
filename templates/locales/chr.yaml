@@ -39,8 +39,8 @@ CareTeamInviteJoin: "crwdns40418:0crwdne40418:0"
 #(email to ask patient for verification of email)
 SignupConfirmationSubject: "crwdns40420:0crwdne40420:0"
 #SignupHello: "Hello,"
-SignupHeadline: "crwdns40364:0crwdne40364:0"
-SignupBody: "crwdns40366:0crwdne40366:0"
+SignupHeadline: "crwdns40572:0crwdne40572:0"
+SignupBody: "crwdns40574:0crwdne40574:0"
 SignupVerify: "crwdns40422:0crwdne40422:0"
 #Signup Clinic
 #(email to ask clinician for verification of email)
