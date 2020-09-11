@@ -1,175 +1,172 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
-	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/fx"
 
+	"github.com/kelseyhightower/envconfig"
 	common "github.com/tidepool-org/go-common"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
-	"github.com/tidepool-org/go-common/clients/hakken"
 	"github.com/tidepool-org/go-common/clients/highwater"
-	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/hydrophone/api"
 	sc "github.com/tidepool-org/hydrophone/clients"
+	"github.com/tidepool-org/hydrophone/models"
 	"github.com/tidepool-org/hydrophone/templates"
 )
 
 type (
-	// Config is the configuration for the service
-	Config struct {
-		clients.Config
-		Service disc.ServiceListing  `json:"service"`
-		Mongo   mongo.Config         `json:"mongo"`
-		Api     api.Config           `json:"hydrophone"`
-		Mail    sc.SesNotifierConfig `json:"sesEmail"`
+	// OutboundConfig contains how to communicate with the dependent services
+	OutboundConfig struct {
+		Protocol                string `default:"https"`
+		ServerSecret            string `split_words:"true" required:"true"`
+		AuthClientAddress       string `split_words:"true" required:"true"`
+		PermissionClientAddress string `split_words:"true" required:"true"`
+		MetricsClientAddress    string `split_words:"true" required:"true"`
+		SeagullClientAddress    string `split_words:"true" required:"true"`
+	}
+
+	//InboundConfig describes how to receive inbound communication
+	InboundConfig struct {
+		Protocol      string `default:"http"`
+		SslKeyFile    string `split_words:"true" default:""`
+		SslCertFile   string `split_words:"true" default:""`
+		ListenAddress string `split_words:"true" required:"true"`
 	}
 )
 
-func main() {
-	var config Config
-
-	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
-		log.Panic("Problem loading config ", err)
-	}
-
-	region, found := os.LookupEnv("REGION")
-	if found {
-		config.Mail.Region = region
-	}
-
-	if config.Mail.Region == "" {
-		config.Mail.Region = "us-west-2"
-	}
-
-	config.Mongo.FromEnv()
-
-	// server secret may be passed via a separate env variable to accomodate easy secrets injection via Kubernetes
-	serverSecret, found := os.LookupEnv("SERVER_SECRET")
-	if found {
-		config.ShorelineConfig.Secret = serverSecret
-		config.Api.ServerSecret = serverSecret
-	}
-
-	protocol, found := os.LookupEnv("PROTOCOL")
-	if found {
-		config.Api.Protocol = protocol
-	} else {
-		config.Api.Protocol = "https"
-	}
-	/*
-	 * Hakken setup
-	 */
-	hakkenClient := hakken.NewHakkenBuilder().
-		WithConfig(&config.HakkenConfig).
+func shorelineProvider(config OutboundConfig, httpClient *http.Client) shoreline.Client {
+	return shoreline.NewShorelineClientBuilder().
+		WithHostGetter(disc.NewStaticHostGetterFromString(config.AuthClientAddress)).
+		WithHttpClient(httpClient).
+		WithName("shoreline").
+		WithSecret(config.ServerSecret).
+		WithTokenRefreshInterval(time.Hour).
 		Build()
+}
 
-	if !config.HakkenConfig.SkipHakken {
-		if err := hakkenClient.Start(); err != nil {
-			log.Fatal(err)
-		}
-		defer hakkenClient.Close()
+func gatekeeperProvider(config OutboundConfig, shoreline shoreline.Client, httpClient *http.Client) clients.Gatekeeper {
+	return clients.NewGatekeeperClientBuilder().
+		WithHostGetter(disc.NewStaticHostGetterFromString(config.PermissionClientAddress)).
+		WithHttpClient(httpClient).
+		WithTokenProvider(shoreline).
+		Build()
+}
+
+func highwaterProvider(config OutboundConfig, httpClient *http.Client) highwater.Client {
+	return highwater.NewHighwaterClientBuilder().
+		WithHostGetter(disc.NewStaticHostGetterFromString(config.MetricsClientAddress)).
+		WithHttpClient(httpClient).
+		WithName("highwater").
+		WithSource("hydrophone").
+		WithVersion("v0.0.1").
+		Build()
+}
+
+func seagullProvider(config OutboundConfig, httpClient *http.Client) clients.Seagull {
+	return clients.NewSeagullClientBuilder().
+		WithHostGetter(disc.NewStaticHostGetterFromString(config.SeagullClientAddress)).
+		WithHttpClient(httpClient).
+		Build()
+}
+
+func configProvider() (OutboundConfig, error) {
+	var config OutboundConfig
+	err := envconfig.Process("tidepool", &config)
+	if err != nil {
+		return OutboundConfig{}, err
 	}
+	return config, nil
+}
 
-	/*
-	 * Clients
-	 */
+func serviceConfigProvider() (InboundConfig, error) {
+	var config InboundConfig
+	err := envconfig.Process("service", &config)
+	if err != nil {
+		return InboundConfig{}, err
+	}
+	return config, nil
+}
 
+func httpClientProvider() *http.Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
-	httpClient := &http.Client{Transport: tr}
+	return &http.Client{Transport: tr}
+}
 
-	shoreline := shoreline.NewShorelineClientBuilder().
-		WithHostGetter(config.ShorelineConfig.ToHostGetter(hakkenClient)).
-		WithHttpClient(httpClient).
-		WithConfig(&config.ShorelineConfig.ShorelineClientConfig).
-		Build()
-
-	if err := shoreline.Start(); err != nil {
-		log.Fatal(err)
-	}
-
-	gatekeeper := clients.NewGatekeeperClientBuilder().
-		WithHostGetter(config.GatekeeperConfig.ToHostGetter(hakkenClient)).
-		WithHttpClient(httpClient).
-		WithTokenProvider(shoreline).
-		Build()
-
-	highwater := highwater.NewHighwaterClientBuilder().
-		WithHostGetter(config.HighwaterConfig.ToHostGetter(hakkenClient)).
-		WithHttpClient(httpClient).
-		WithConfig(&config.HighwaterConfig.HighwaterClientConfig).
-		Build()
-
-	seagull := clients.NewSeagullClientBuilder().
-		WithHostGetter(config.SeagullConfig.ToHostGetter(hakkenClient)).
-		WithHttpClient(httpClient).
-		Build()
-
-	/*
-	 * hydrophone setup
-	 */
-	store := sc.NewMongoStoreClient(&config.Mongo)
-	mail, err := sc.NewSesNotifier(&config.Mail)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func emailTemplateProvider() (models.Templates, error) {
 	emailTemplates, err := templates.New()
-	if err != nil {
-		log.Fatal(err)
-	}
+	return emailTemplates, err
+}
 
-	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, highwater, seagull, emailTemplates)
-	api.SetHandlers("", rtr)
-
-	/*
-	 * Serve it up and publish
-	 */
-	done := make(chan bool)
-	server := common.NewServer(&http.Server{
-		Addr:    config.Service.GetPort(),
+func serverProvider(config InboundConfig, rtr *mux.Router) *common.Server {
+	return common.NewServer(&http.Server{
+		Addr:    config.ListenAddress,
 		Handler: rtr,
 	})
+}
 
-	var start func() error
-	if config.Service.Scheme == "https" {
-		sslSpec := config.Service.GetSSLSpec()
-		start = func() error { return server.ListenAndServeTLS(sslSpec.CertFile, sslSpec.KeyFile) }
-	} else {
-		start = func() error { return server.ListenAndServe() }
-	}
-	if err := start(); err != nil {
-		log.Fatal(err)
-	}
+//InvocationParams are the parameters need to kick off a service
+type InvocationParams struct {
+	fx.In
+	Lifecycle fx.Lifecycle
+	Shoreline shoreline.Client
+	Config    InboundConfig
+	Server    *common.Server
+}
 
-	hakkenClient.Publish(&config.Service)
+func invokeHooks(p InvocationParams) {
+	p.Lifecycle.Append(
+		fx.Hook{
+			OnStart: func(ctx context.Context) error {
 
-	signals := make(chan os.Signal, 40)
-	signal.Notify(signals)
-	go func() {
-		for {
-			sig := <-signals
-			log.Printf("Got signal [%s]", sig)
+				if err := p.Shoreline.Start(); err != nil {
+					return err
+				}
 
-			if sig == syscall.SIGINT || sig == syscall.SIGTERM {
-				server.Close()
-				done <- true
-			}
-		}
-	}()
+				var start func() error
+				if p.Config.Protocol == "https" {
+					start = func() error { return p.Server.ListenAndServeTLS(p.Config.SslCertFile, p.Config.SslKeyFile) }
+				} else {
+					start = func() error { return p.Server.ListenAndServe() }
+				}
+				if err := start(); err != nil {
+					return err
+				}
+				return nil
+			},
+			OnStop: func(ctx context.Context) error {
+				return p.Server.Close()
+			},
+		},
+	)
+}
 
-	<-done
-
+func main() {
+	fx.New(
+		sc.SesModule,
+		sc.MongoModule,
+		api.RouterModule,
+		fx.Provide(
+			seagullProvider,
+			highwaterProvider,
+			gatekeeperProvider,
+			shorelineProvider,
+			configProvider,
+			serviceConfigProvider,
+			httpClientProvider,
+			emailTemplateProvider,
+			serverProvider,
+			api.NewApi,
+		),
+		fx.Invoke(invokeHooks),
+	).Run()
 }

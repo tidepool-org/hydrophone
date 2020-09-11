@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/tidepool-org/hydrophone/models"
+	"go.uber.org/fx"
 )
 
 type MockStoreClient struct {
@@ -13,9 +14,18 @@ type MockStoreClient struct {
 	now        time.Time
 }
 
-func NewMockStoreClient(returnNone, doBad bool) *MockStoreClient {
+func NewMockStoreClient(returnNone, doBad bool) StoreClient {
 	return &MockStoreClient{doBad: doBad, returnNone: returnNone, now: time.Now()}
 }
+
+//MockStoreModule is a mock store
+var MockStoreModule = fx.Options(fx.Provide(func() StoreClient { return NewMockStoreClient(false, false) }))
+
+//MockStoreEmptyModule return nothing
+var MockStoreEmptyModule = fx.Options(fx.Provide(func() StoreClient { return NewMockStoreClient(true, false) }))
+
+//MockStoreFailsModule always fails
+var MockStoreFailsModule = fx.Options(fx.Provide(func() StoreClient { return NewMockStoreClient(false, true) }))
 
 func (d *MockStoreClient) Close() {}
 

@@ -13,7 +13,7 @@ import (
 
 func initTestingRouterNoPerms() *mux.Router {
 	testRtr := mux.NewRouter()
-	hydrophone := InitApi(
+	hydrophone := NewApi(
 		FAKE_CONFIG,
 		mockStore,
 		mockNotifier,
@@ -239,7 +239,7 @@ func TestInviteResponds(t *testing.T) {
 		var testRtr = mux.NewRouter()
 
 		//default flow, fully authorized
-		hydrophone := InitApi(
+		hydrophone := NewApi(
 			FAKE_CONFIG,
 			mockStore,
 			mockNotifier,
@@ -252,7 +252,7 @@ func TestInviteResponds(t *testing.T) {
 
 		//testing when there is nothing to return from the store
 		if inviteTest.returnNone {
-			hydrophone = InitApi(
+			hydrophone = NewApi(
 				FAKE_CONFIG,
 				mockStoreEmpty,
 				mockNotifier,
