@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/tidepool-org/hydrophone/models"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type MockStoreClient struct {
@@ -17,7 +18,9 @@ func NewMockStoreClient(returnNone, doBad bool) *MockStoreClient {
 	return &MockStoreClient{doBad: doBad, returnNone: returnNone, now: time.Now()}
 }
 
-func (d *MockStoreClient) Close() {}
+func (d *MockStoreClient) Close() error {
+	return nil
+}
 
 func (d *MockStoreClient) Ping() error {
 	if d.doBad {
@@ -25,7 +28,14 @@ func (d *MockStoreClient) Ping() error {
 	}
 	return nil
 }
-
+func (d *MockStoreClient) PingOK() bool {
+	return !d.doBad
+}
+func (d *MockStoreClient) Collection(collectionName string, databaseName ...string) *mongo.Collection {
+	return nil
+}
+func (d *MockStoreClient) WaitUntilStarted() {}
+func (d *MockStoreClient) Start()            {}
 func (d *MockStoreClient) UpsertConfirmation(notification *models.Confirmation) error {
 	if d.doBad {
 		return errors.New("UpsertConfirmation failure")
