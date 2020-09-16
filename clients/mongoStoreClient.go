@@ -5,74 +5,52 @@ import (
 	"log"
 	"regexp"
 
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
-
-	"github.com/tidepool-org/go-common/clients/mongo"
+	goComMgo "github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
-	CONFIRMATIONS_COLLECTION = "confirmations"
+	confirmationsCollection = "confirmations"
 )
 
-type MongoStoreClient struct {
-	session        *mgo.Session
-	confirmationsC *mgo.Collection
+// Client struct
+type Client struct {
+	*goComMgo.StoreClient
 }
 
-func NewMongoStoreClient(config *mongo.Config) *MongoStoreClient {
-
-	mongoSession, err := mongo.Connect(config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return &MongoStoreClient{
-		session:        mongoSession,
-		confirmationsC: mongoSession.DB("").C(CONFIRMATIONS_COLLECTION),
-	}
+// NewStore creates a new Client
+func NewStore(config *goComMgo.Config, logger *log.Logger) (*Client, error) {
+	client := Client{}
+	store, err := goComMgo.NewStoreClient(config, logger)
+	client.StoreClient = store
+	return &client, err
 }
 
 //warpper function for consistent access to the collection
-func mgoConfirmationsCollection(cpy *mgo.Session) *mgo.Collection {
-	return cpy.DB("").C(CONFIRMATIONS_COLLECTION)
+func mgoConfirmationsCollection(c *Client) *mongo.Collection {
+	return c.Collection(confirmationsCollection)
 }
 
-func (d MongoStoreClient) Close() {
-	log.Println("Close the session")
-	d.session.Close()
-	return
+// UpsertConfirmation creates or updates a confirmation
+func (c *Client) UpsertConfirmation(confirmation *models.Confirmation) error {
+	options := options.Update().SetUpsert(true)
+	update := bson.D{{"$set", confirmation}}
+	_, err := mgoConfirmationsCollection(c).UpdateOne(c.Context, bson.M{"_id": confirmation.Key}, update, options)
+	return err
 }
 
-func (d MongoStoreClient) Ping() error {
-	cpy := d.session.Copy()
-	defer cpy.Close()
-	// do we have a store session
-	if err := cpy.Ping(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d MongoStoreClient) UpsertConfirmation(confirmation *models.Confirmation) error {
-
-	cpy := d.session.Copy()
-	defer cpy.Close()
-
-	// if the user already exists we update otherwise we add
-	if _, err := mgoConfirmationsCollection(cpy).Upsert(bson.M{"_id": confirmation.Key}, confirmation); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (result *models.Confirmation, err error) {
+// FindConfirmation returns latest created confirmation matching filter passed as parameter
+func (c *Client) FindConfirmation(confirmation *models.Confirmation) (result *models.Confirmation, err error) {
 
 	var query bson.M = bson.M{}
 
 	if confirmation.Email != "" {
-		query["email"] = bson.M{"$regex": bson.RegEx{fmt.Sprintf("^%s$", regexp.QuoteMeta(confirmation.Email)), "i"}}
+		regexFilter := primitive.Regex{Pattern: fmt.Sprintf("^%s$", regexp.QuoteMeta(confirmation.Email)), Options: "i"}
+		query["email"] = bson.M{"$regex": regexFilter}
 	}
 	if confirmation.Key != "" {
 		query["_id"] = confirmation.Key
@@ -92,11 +70,9 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 	if confirmation.ShortKey != "" {
 		query["shortKey"] = confirmation.ShortKey
 	}
-
-	cpy := d.session.Copy()
-	defer cpy.Close()
-
-	if err = mgoConfirmationsCollection(cpy).Find(query).Sort("-created").One(&result); err != nil && err != mgo.ErrNotFound {
+	opts := options.FindOne()
+	opts.SetSort(bson.D{primitive.E{Key: "created", Value: -1}})
+	if err = mgoConfirmationsCollection(c).FindOne(c.Context, query, opts).Decode(&result); err != nil && err != mongo.ErrNoDocuments {
 		log.Printf("FindConfirmation: something bad happened [%v]", err)
 		return result, err
 	}
@@ -104,12 +80,14 @@ func (d MongoStoreClient) FindConfirmation(confirmation *models.Confirmation) (r
 	return result, nil
 }
 
-func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
+// FindConfirmations returns all created confirmations matching filter passed as parameter
+func (c *Client) FindConfirmations(confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
 
 	var query bson.M = bson.M{}
 
 	if confirmation.Email != "" {
-		query["email"] = bson.M{"$regex": bson.RegEx{fmt.Sprintf("^%s$", regexp.QuoteMeta(confirmation.Email)), "i"}}
+		regexFilter := primitive.Regex{Pattern: fmt.Sprintf("^%s$", regexp.QuoteMeta(confirmation.Email)), Options: "i"}
+		query["email"] = bson.M{"$regex": regexFilter}
 	}
 	if confirmation.Key != "" {
 		query["_id"] = confirmation.Key
@@ -130,22 +108,22 @@ func (d MongoStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 		query["shortKey"] = confirmation.ShortKey
 	}
 
-	cpy := d.session.Copy()
-	defer cpy.Close()
-
-	if err = mgoConfirmationsCollection(cpy).Find(query).Sort("-created").All(&results); err != nil && err != mgo.ErrNotFound {
-		log.Printf("FindConfirmations: something bad happened [%v]", err)
+	opts := options.Find()
+	opts.SetSort(bson.D{primitive.E{Key: "created", Value: -1}})
+	cursor, err := mgoConfirmationsCollection(c).Find(c.Context, query, opts)
+	defer cursor.Close(c.Context)
+	if err != nil {
+		log.Printf("FindConfirmation: something bad happened [%v]", err)
 		return results, err
 	}
-	return results, nil
+	err = cursor.All(c.Context, &results)
+	return results, err
 }
 
-func (d MongoStoreClient) RemoveConfirmation(confirmation *models.Confirmation) error {
+// RemoveConfirmation deletes confirmation based on key (_id)
+func (c *Client) RemoveConfirmation(confirmation *models.Confirmation) error {
 
-	cpy := d.session.Copy()
-	defer cpy.Close()
-
-	if err := mgoConfirmationsCollection(cpy).Remove(bson.M{"_id": confirmation.Key}); err != nil {
+	if _, err := mgoConfirmationsCollection(c).DeleteOne(c.Context, bson.M{"_id": confirmation.Key}); err != nil {
 		return err
 	}
 	return nil
