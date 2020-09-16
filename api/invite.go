@@ -492,13 +492,6 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 				if err := a.addProfile(invite); err != nil {
 					log.Println("SendInvite: ", err.Error())
 				} else {
-
-					fullName := invite.Creator.Profile.FullName
-
-					if invite.Creator.Profile.Patient.IsOtherPerson {
-						fullName = invite.Creator.Profile.Patient.FullName
-					}
-
 					var webPath = "signup/clinician"
 
 					// if invitee is already a user (ie already has an account), he won't go to signup but login instead
@@ -507,7 +500,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 					}
 
 					emailContent := map[string]interface{}{
-						"CareteamName": fullName,
+						"CareteamName": invite.Creator.Profile.GetName(),
 						"Email":        invite.Email,
 						"WebPath":      webPath,
 					}

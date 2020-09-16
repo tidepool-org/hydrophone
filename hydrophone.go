@@ -56,10 +56,12 @@ type (
 
 func main() {
 	var config Config
-	log.Printf("Starting Hydrophone version %s", version.GetVersion().String())
+	logger := log.New(os.Stdout, api.CONFIRM_API_PREFIX, log.LstdFlags|log.Lshortfile)
+
+	logger.Printf("Starting Hydrophone version %s", version.GetVersion().String())
 	// Load configuration from environment variables
 	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
-		log.Panic("Problem loading config ", err)
+		logger.Panic("Problem loading config ", err)
 	}
 
 	region, found := os.LookupEnv("REGION")
@@ -95,7 +97,7 @@ func main() {
 
 	if !config.HakkenConfig.SkipHakken {
 		if err := hakkenClient.Start(); err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 		defer hakkenClient.Close()
 	}
@@ -117,10 +119,10 @@ func main() {
 		Build()
 
 	if err := shoreline.Start(); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
-	log.Printf("Shoreline client started with server token %s", shoreline.TokenProvide())
+	logger.Print("Shoreline client started")
 
 	gatekeeper := clients.NewGatekeeperClientBuilder().
 		WithHostGetter(config.GatekeeperConfig.ToHostGetter(hakkenClient)).
@@ -141,8 +143,12 @@ func main() {
 		/*
 		 * hydrophone setup
 		 */
-	store := sc.NewMongoStoreClient(&config.Mongo)
-
+	storage, err := sc.NewStore(&config.Mongo, logger)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	defer storage.Close()
+	storage.Start()
 	// Create a notifier based on configuration
 	var mail sc.Notifier
 	var mailErr error
@@ -158,29 +164,29 @@ func main() {
 	case "null":
 		mail, mailErr = sc.NewNullNotifier()
 	default:
-		log.Fatalf("the mail system provided in the configuration (%s) is invalid", config.NotifierType)
+		logger.Fatalf("the mail system provided in the configuration (%s) is invalid", config.NotifierType)
 	}
 	if mailErr != nil {
-		log.Fatal(mailErr)
+		logger.Fatal(mailErr)
 	} else {
-		log.Printf("Mail client %s created", config.NotifierType)
+		logger.Printf("Mail client %s created", config.NotifierType)
 	}
 
 	//Create a localizer to be used by the templates
 	localizer, err := localize.NewI18nLocalizer(path.Join(config.Api.I18nTemplatesPath, "/locales"))
 	if err != nil {
-		log.Fatalf("Problem creating i18n localizer %s", err)
+		logger.Fatalf("Problem creating i18n localizer %s", err)
 	}
 	// Create collection of pre-compiled templates
 	// Templates are built based on HTML files which location is calculated from config
 	// Config is initalized with environment variables
 	emailTemplates, err := templates.New(config.Api.I18nTemplatesPath, localizer)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, seagull, portal, emailTemplates)
+	api := api.InitApi(config.Api, storage, mail, shoreline, gatekeeper, seagull, portal, emailTemplates)
 	api.SetHandlers("", rtr)
 
 	/*
@@ -200,7 +206,7 @@ func main() {
 		start = func() error { return server.ListenAndServe() }
 	}
 	if err := start(); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	hakkenClient.Publish(&config.Service)
@@ -210,9 +216,10 @@ func main() {
 	go func() {
 		for {
 			sig := <-signals
-			log.Printf("Got signal [%s]", sig)
+			logger.Printf("Got signal [%s]", sig)
 
 			if sig == syscall.SIGINT || sig == syscall.SIGTERM {
+				storage.Close()
 				server.Close()
 				done <- true
 			}

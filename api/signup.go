@@ -276,11 +276,11 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 					emailContent := map[string]interface{}{
 						"Key":      newSignUp.Key,
 						"Email":    newSignUp.Email,
-						"FullName": profile.FullName,
+						"FullName": profile.GetName(),
 					}
 
 					if newSignUp.Creator.Profile != nil {
-						emailContent["CreatorName"] = newSignUp.Creator.Profile.FullName
+						emailContent["CreatorName"] = newSignUp.Creator.Profile.GetName()
 					}
 
 					// although technically there exists a profile at the signup stage, the preferred language would always be empty here
@@ -356,11 +356,11 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				emailContent := map[string]interface{}{
 					"Key":      found.Key,
 					"Email":    found.Email,
-					"FullName": profile.FullName,
+					"FullName": profile.GetName(),
 				}
 
 				if found.Creator.Profile != nil {
-					emailContent["CreatorName"] = found.Creator.Profile.FullName
+					emailContent["CreatorName"] = found.Creator.Profile.GetName()
 				}
 
 				// although technically there exists a profile at the signup stage, the preferred language would always be empty here
