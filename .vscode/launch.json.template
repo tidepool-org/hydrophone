@@ -8,8 +8,18 @@
            "mode": "debug",
            "program": "${workspaceRoot}",
            "env": {
-               "TIDEPOOL_HYDROPHONE_ENV":"{ \"portal\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9507\"] } }, \"hakken\": { \"host\": \"localhost:8000\" }, \"gatekeeper\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9123\"] } }, \"seagull\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9120\"] } }, \"shoreline\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9107\"] }, \"name\": \"hydrophone\", \"secret\": \"<<hydrophone_server_secret>>\", \"tokenRefreshInterval\": \"1h\" } }",
-               "TIDEPOOL_HYDROPHONE_SERVICE":"{ \"service\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"mongo\": { \"connectionString\": \"mongodb://<<user_personal>>:<<password_personal>>@localhost:27017/confirm?authSource=admin\" }, \"hydrophone\" : { \"serverSecret\": \"<<server_secret>>\", \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"D:\/git\/mdblp\/go\/src\/github.com\/tidepool-org\/hydrophone\/templates\", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://diabeloop.zendesk.com/hc/articles/360021365373\" }, \"notifierType\": \"null\" } }"
+                "TIDEPOOL_HYDROPHONE_ENV":"{ \"portal\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9507\"] } }, \"hakken\": { \"host\": \"fake-hakken\", \"skipHakken\":true }, \"gatekeeper\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9123\"] } }, \"seagull\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9120\"] } }, \"shoreline\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9107\"] }, \"name\": \"hydrophone\", \"tokenRefreshInterval\": \"1h\" } }",
+                "TIDEPOOL_HYDROPHONE_SERVICE":"{ \"servce\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"hydrophone\" : { \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"D:\/git\/mdblp\/go\/src\/github.com\/tidepool-org\/hydrophone\/templates\", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://diabeloop.zendesk.com/hc/articles/360021365373\" }, \"notifierType\": \"null\" } }",
+                "SERVER_SECRET": "shoreline shared server secret",
+                "TIDEPOOL_STORE_DATABASE":"confirm",
+                "TIDEPOOL_STORE_USERNAME":"${PERSONAL_ACCOUNT}",
+                "TIDEPOOL_STORE_PASSWORD":"${PERSONAL_PWD}",
+                "TIDEPOOL_STORE_ADDRESSES":"localhost",
+                "TIDEPOOL_STORE_OPT_PARAMS":"authSource=admin",
+                "TIDEPOOL_STORE_DEFAULT_TIMEOUT":"2",
+                "TIDEPOOL_STORE_WAIT_CONNECTION_INTERVAL":"5",
+                "TIDEPOOL_STORE_MAX_CONNECTION_ATTEMPTS":"0",
+                "REGION": "eu-west-1"
                // Use this below to override local AWS credentials. Otherwise local credentials will be used so the user/profile needs to have rights for sending emails
                // "AWS_PROFILE":"${NON_DEFAULT_PROFILE}" for using a .aws/credentials non default profile
                // OR

@@ -1,14 +1,24 @@
 package clients
 
 import (
+	"context"
+	"log"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/globalsign/mgo"
-
-	"github.com/tidepool-org/go-common/clients/mongo"
+	goComMgo "github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
 )
+
+var logger = log.New(os.Stdout, "mongo-test ", log.LstdFlags|log.LUTC|log.Lshortfile)
+
+var testingConfig = &goComMgo.Config{
+	Database:               "confirm_test",
+	Timeout:                2 * time.Second,
+	WaitConnectionInterval: 5 * time.Second,
+	MaxConnectionAttempts:  0,
+}
 
 func TestMongoStoreConfirmationOperations(t *testing.T) {
 
@@ -17,23 +27,14 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 
 	doesNotExist, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
 
-	testingConfig := &mongo.Config{ConnectionString: "mongodb://127.0.0.1/confirm_test"}
-
-	mc := NewMongoStoreClient(testingConfig)
-
+	mc, _ := NewStore(testingConfig, logger)
+	mc.Start()
+	mc.WaitUntilStarted()
 	/*
 	 * INIT THE TEST - we use a clean copy of the collection before we start
 	 */
 
-	//drop it like its hot
-	cpy := mc.session.Copy()
-	defer cpy.Close()
-
-	mgoConfirmationsCollection(cpy).DropCollection()
-
-	if err := mgoConfirmationsCollection(cpy).Create(&mgo.CollectionInfo{}); err != nil {
-		t.Fatalf("We couldn't created the users collection for these tests %v", err)
-	}
+	mgoConfirmationsCollection(mc).Drop(context.TODO())
 
 	//The basics
 	//+++++++++++++++++++++++++++
