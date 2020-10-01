@@ -7,6 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
+	"github.com/kelseyhightower/envconfig"
+	"go.uber.org/fx"
 )
 
 const (
@@ -27,9 +29,29 @@ type (
 	// SesNotifierConfig contains the static configuration for the Amazon SES service
 	// Credentials come from the environment and are not passed in via configuration variables.
 	SesNotifierConfig struct {
-		From   string `json:"fromAddress"`
-		Region string `json:"region"`
+		FromAddress string `split_words:"true" default:"Tidepool <noreply@tidepool.org>"`
+		Region      string `default:"us-west-2"`
 	}
+)
+
+func notifierConfigProvider() (SesNotifierConfig, error) {
+	var config SesNotifierConfig
+	err := envconfig.Process("ses", &config)
+	if err != nil {
+		return SesNotifierConfig{}, err
+	}
+	return config, nil
+}
+
+func sesNotifierProvider(config SesNotifierConfig) (Notifier, error) {
+	mail, err := NewSesNotifier(&config)
+	return mail, err
+}
+
+//SesModule is a fx module for this component
+var SesModule = fx.Options(
+	fx.Provide(sesNotifierProvider),
+	fx.Provide(notifierConfigProvider),
 )
 
 //NewSesNotifier creates a new Amazon SES notifier
@@ -76,7 +98,7 @@ func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string
 				Data:    aws.String(subject),
 			},
 		},
-		Source: aws.String(c.Config.From),
+		Source: aws.String(c.Config.FromAddress),
 	}
 
 	// Attempt to send the email.

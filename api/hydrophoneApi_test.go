@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/fx"
 
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
@@ -19,129 +20,90 @@ import (
 	"github.com/tidepool-org/hydrophone/models"
 )
 
-const (
-	make_store_fail           = true
-	make_store_return_nothing = true
-
-	testing_token = "a.fake.token.to.use.in.tests"
-
-	testing_token_uid1 = "a.fake.token.for.uid.1"
-	testing_uid1       = "UID123"
-
-	testing_token_uid2 = "a.fake.token.for.uid.2"
-	testing_uid2       = "UID999"
-)
-
 var (
-	NO_PARAMS = map[string]string{}
 
-	FAKE_CONFIG = Config{
+	// MockConfigModule
+	MockConfigModule = fx.Options(fx.Supply(Config{
 		ServerSecret: "shhh! don't tell",
-	}
-	/*
-	 * basics setup
-	 */
-	rtr            = mux.NewRouter()
-	mockNotifier   = clients.NewMockNotifier()
-	mockShoreline  = shoreline.NewMock(testing_token)
-	mockGatekeeper = commonClients.NewGatekeeperMock(nil, &status.StatusError{status.NewStatus(500, "Unable to parse response.")})
+	}))
 
-	mockMetrics = highwater.NewMock()
-	mockSeagull = commonClients.NewSeagullMock()
+	MockShorelineModule = fx.Options(fx.Provide(func() shoreline.Client { return shoreline.NewMock(testing_token) }))
 
-	mockTemplates = models.Templates{}
+	MockGatekeeperModule = fx.Options(fx.Provide(func() commonClients.Gatekeeper {
+		return commonClients.NewGatekeeperMock(nil, &status.StatusError{Status: status.NewStatus(500, "Unable to parse response.")})
+	}))
 
-	/*
-	 * stores
-	 */
-	mockStore      = clients.NewMockStoreClient(false, false)
-	mockStoreEmpty = clients.NewMockStoreClient(make_store_return_nothing, false)
-	mockStoreFails = clients.NewMockStoreClient(false, make_store_fail)
+	MockMetricsModule = fx.Options(fx.Provide(func() highwater.Client {
+		return highwater.NewMock()
+	}))
 
-	/*
-	 * users permissons scenarios
-	 */
-	mock_NoPermsGatekeeper = commonClients.NewGatekeeperMock(commonClients.Permissions{"upload": commonClients.Permission{"userid": "other-id"}}, nil)
-	mock_uid1Shoreline     = newtestingShorelingMock(testing_uid1)
+	MockSeagullModule = fx.Options(fx.Provide(func() commonClients.Seagull {
+		return commonClients.NewSeagullMock()
+	}))
 
-	responsableGatekeeper = NewResponsableMockGatekeeper()
-	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, responsableGatekeeper, mockMetrics, mockSeagull, mockTemplates)
-)
+	// MockTemplates
+	MockTemplatesModule = fx.Options(fx.Supply(models.Templates{}))
 
-// In an effort to mock shoreline so that we can return the token we wish
-type testingShorelingMock struct{ userid string }
+	//MockNoPermsGatekeeperModule mocks gatekeeper
+	MockNoPermsGatekeeperModule = fx.Options(fx.Provide(func() commonClients.Gatekeeper {
+		return commonClients.NewGatekeeperMock(commonClients.Permissions{"upload": commonClients.Permission{"userid": "other-id"}}, nil)
+	}))
 
-func newtestingShorelingMock(userid string) *testingShorelingMock {
-	return &testingShorelingMock{userid: userid}
-}
+	ResponsableGatekeeperModule = fx.Options(fx.Provide(func() commonClients.Gatekeeper {
+		return NewResponsableMockGatekeeper()
+	}))
 
-func (m *testingShorelingMock) Start() error { return nil }
-func (m *testingShorelingMock) Close()       { return }
-func (m *testingShorelingMock) Login(username, password string) (*shoreline.UserData, string, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, "", nil
-}
-func (m *testingShorelingMock) Signup(username, password, email string) (*shoreline.UserData, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
-}
-func (m *testingShorelingMock) TokenProvide() string { return testing_token }
-func (m *testingShorelingMock) GetUser(userID, token string) (*shoreline.UserData, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
-}
-func (m *testingShorelingMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate, token string) error {
-	return nil
-}
-func (m *testingShorelingMock) CheckToken(token string) *shoreline.TokenData {
-	return &shoreline.TokenData{UserID: m.userid, IsServer: false}
-}
+	BaseModule = fx.Options(
+		clients.MockNotifierModule,
+		MockShorelineModule,
+		MockMetricsModule,
+		MockSeagullModule,
+		MockTemplatesModule,
+		MockConfigModule,
+		fx.Provide(NewApi),
+		fx.Provide(mux.NewRouter),
+	)
 
-type (
-	//common test structure
-	toTest struct {
-		desc       string
-		skip       bool
-		returnNone bool
-		method     string
-		url        string
-		body       testJSONObject
-		token      string
-		respCode   int
-		response   testJSONObject
-	}
-	// These two types make it easier to define blobs of json inline.
-	// We don't use the types defined by the API because we want to
-	// be able to test with partial data structures.
-	// testJSONObject is a generic json object
-	testJSONObject map[string]interface{}
-
-	// and ja is a generic json array
-	ja []interface{}
+	ResponableModule = fx.Options(
+		clients.MockStoreFailsModule,
+		ResponsableGatekeeperModule,
+		BaseModule,
+	)
 )
 
 func TestGetStatus_StatusOk(t *testing.T) {
 
+	var api Api
+	_ = fx.New(
+		clients.MockStoreModule,
+		MockGatekeeperModule,
+		BaseModule,
+		fx.Populate(&api),
+	)
+
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
-
-	hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
-	hydrophone.SetHandlers("", rtr)
-
-	hydrophone.GetStatus(response, request)
+	api.IsAlive(response, request)
 
 	if response.Code != http.StatusOK {
 		t.Fatalf("Resp given [%d] expected [%d] ", response.Code, http.StatusOK)
 	}
-
 }
 
 func TestGetStatus_StatusInternalServerError(t *testing.T) {
 
+	var api *Api
+	_ = fx.New(
+		clients.MockStoreFailsModule,
+		MockGatekeeperModule,
+		BaseModule,
+		fx.Populate(&api),
+	)
+
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
-	hydrophoneFails := InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
-	hydrophoneFails.SetHandlers("", rtr)
-
-	hydrophoneFails.GetStatus(response, request)
+	api.IsReady(response, request)
 
 	if response.Code != http.StatusInternalServerError {
 		t.Fatalf("Resp given [%d] expected [%d] ", response.Code, http.StatusInternalServerError)
@@ -166,6 +128,13 @@ func (i *testJSONObject) deepCompare(j *testJSONObject) string {
 ////////////////////////////////////////////////////////////////////////////////
 
 func T_ExpectResponsablesEmpty(t *testing.T) {
+
+	var gk commonClients.Gatekeeper
+	_ = fx.New(ResponsableGatekeeperModule,
+		fx.Populate(&gk),
+	)
+	responsableGatekeeper := gk.(*ResponsableMockGatekeeper)
+
 	if responsableGatekeeper.HasResponses() {
 		if len(responsableGatekeeper.UserInGroupResponses) > 0 {
 			t.Logf("UserInGroupResponses still available")
@@ -182,6 +151,13 @@ func T_ExpectResponsablesEmpty(t *testing.T) {
 }
 
 func Test_TokenUserHasRequestedPermissions_Server(t *testing.T) {
+
+	var responsableHydrophone *Api
+	fx.New(
+		ResponableModule,
+		fx.Populate(&responsableHydrophone),
+	)
+
 	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: true}
 	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
 	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
@@ -194,6 +170,12 @@ func Test_TokenUserHasRequestedPermissions_Server(t *testing.T) {
 }
 
 func Test_TokenUserHasRequestedPermissions_Owner(t *testing.T) {
+	var responsableHydrophone *Api
+	fx.New(
+		ResponableModule,
+		fx.Populate(&responsableHydrophone),
+	)
+
 	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
 	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
 	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "abcdef1234", requestedPermissions)
@@ -206,6 +188,15 @@ func Test_TokenUserHasRequestedPermissions_Owner(t *testing.T) {
 }
 
 func Test_TokenUserHasRequestedPermissions_GatekeeperError(t *testing.T) {
+	var responsableHydrophone *Api
+	var gk commonClients.Gatekeeper
+	fx.New(
+		ResponableModule,
+		fx.Populate(&responsableHydrophone),
+		fx.Populate(&gk),
+	)
+	responsableGatekeeper := gk.(*ResponsableMockGatekeeper)
+
 	responsableGatekeeper.UserInGroupResponses = []PermissionsResponse{{commonClients.Permissions{}, errors.New("ERROR")}}
 	defer T_ExpectResponsablesEmpty(t)
 
@@ -224,6 +215,15 @@ func Test_TokenUserHasRequestedPermissions_GatekeeperError(t *testing.T) {
 }
 
 func Test_TokenUserHasRequestedPermissions_CompleteMismatch(t *testing.T) {
+	var responsableHydrophone *Api
+	var gk commonClients.Gatekeeper
+	fx.New(
+		ResponableModule,
+		fx.Populate(&responsableHydrophone),
+		fx.Populate(&gk),
+	)
+	responsableGatekeeper := gk.(*ResponsableMockGatekeeper)
+
 	responsableGatekeeper.UserInGroupResponses = []PermissionsResponse{{commonClients.Permissions{"y": commonClients.Allowed, "z": commonClients.Allowed}, nil}}
 	defer T_ExpectResponsablesEmpty(t)
 
@@ -239,6 +239,15 @@ func Test_TokenUserHasRequestedPermissions_CompleteMismatch(t *testing.T) {
 }
 
 func Test_TokenUserHasRequestedPermissions_PartialMismatch(t *testing.T) {
+	var responsableHydrophone *Api
+	var gk commonClients.Gatekeeper
+	fx.New(
+		ResponableModule,
+		fx.Populate(&responsableHydrophone),
+		fx.Populate(&gk),
+	)
+	responsableGatekeeper := gk.(*ResponsableMockGatekeeper)
+
 	responsableGatekeeper.UserInGroupResponses = []PermissionsResponse{{commonClients.Permissions{"a": commonClients.Allowed, "z": commonClients.Allowed}, nil}}
 	defer T_ExpectResponsablesEmpty(t)
 
@@ -254,6 +263,14 @@ func Test_TokenUserHasRequestedPermissions_PartialMismatch(t *testing.T) {
 }
 
 func Test_TokenUserHasRequestedPermissions_FullMatch(t *testing.T) {
+	var responsableHydrophone *Api
+	var gk commonClients.Gatekeeper
+	fx.New(
+		ResponableModule,
+		fx.Populate(&responsableHydrophone),
+		fx.Populate(&gk),
+	)
+	responsableGatekeeper := gk.(*ResponsableMockGatekeeper)
 	responsableGatekeeper.UserInGroupResponses = []PermissionsResponse{{commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}, nil}}
 	defer T_ExpectResponsablesEmpty(t)
 

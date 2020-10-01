@@ -7,6 +7,8 @@ import (
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/kelseyhightower/envconfig"
+	"go.uber.org/fx"
 
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
@@ -33,6 +35,22 @@ func NewMongoStoreClient(config *mongo.Config) *MongoStoreClient {
 		confirmationsC: mongoSession.DB("").C(CONFIRMATIONS_COLLECTION),
 	}
 }
+
+func mongoConfigProvider() (mongo.Config, error) {
+	var config mongo.Config
+	err := envconfig.Process("", &config)
+	if err != nil {
+		return mongo.Config{}, err
+	}
+	return config, nil
+}
+
+func mongoStoreProvider(config mongo.Config) StoreClient {
+	return NewMongoStoreClient(&config)
+}
+
+//MongoModule for dependency injection
+var MongoModule = fx.Options(fx.Provide(mongoConfigProvider, mongoStoreProvider))
 
 //warpper function for consistent access to the collection
 func mgoConfirmationsCollection(cpy *mgo.Session) *mgo.Collection {

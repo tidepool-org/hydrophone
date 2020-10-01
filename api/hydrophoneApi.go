@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/kelseyhightower/envconfig"
 
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
@@ -17,6 +18,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/models"
+	"go.uber.org/fx"
 )
 
 type (
@@ -31,10 +33,10 @@ type (
 		Config     Config
 	}
 	Config struct {
-		ServerSecret string `json:"serverSecret"` //used for services
-		WebURL       string `json:"webUrl"`
-		AssetURL     string `json:"assetUrl"`
-		Protocol     string `json:"protocol"`
+		ServerSecret string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
+		WebUrl       string `split_words:"true" required:"true"`
+		AssetUrl     string `split_words:"true" required:"true"`
+		Protocol     string `default:"http"`
 	}
 
 	group struct {
@@ -64,7 +66,7 @@ const (
 	STATUS_OK            = "OK"
 )
 
-func InitApi(
+func NewApi(
 	cfg Config,
 	store clients.StoreClient,
 	ntf clients.Notifier,
@@ -87,19 +89,43 @@ func InitApi(
 }
 
 func (a *Api) getWebURL(req *http.Request) string {
-	if a.Config.WebURL == "" {
+	if a.Config.WebUrl == "" {
 		host := req.Header.Get("Host")
 		return a.Config.Protocol + "://" + host
 	}
-	return a.Config.WebURL
+	return a.Config.WebUrl
 }
+
+func apiConfigProvider() (Config, error) {
+	var config Config
+	err := envconfig.Process("hydrophone", &config)
+	if err != nil {
+		return Config{}, err
+	}
+	return config, nil
+}
+
+func routerProvider(api *Api) *mux.Router {
+	rtr := mux.NewRouter()
+	api.SetHandlers("", rtr)
+	return rtr
+}
+
+//RouterModule build a router
+var RouterModule = fx.Options(fx.Provide(routerProvider, apiConfigProvider))
 
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	c := rtr.PathPrefix("/confirm").Subrouter()
 
-	c.HandleFunc("/status", a.GetStatus).Methods("GET")
-	rtr.HandleFunc("/status", a.GetStatus).Methods("GET")
+	c.HandleFunc("/status", a.IsReady).Methods("GET")
+	rtr.HandleFunc("/status", a.IsReady).Methods("GET")
+
+	c.HandleFunc("/ready", a.IsReady).Methods("GET")
+	rtr.HandleFunc("/ready", a.IsReady).Methods("GET")
+
+	c.HandleFunc("/live", a.IsAlive).Methods("GET")
+	rtr.HandleFunc("/live", a.IsAlive).Methods("GET")
 
 	// POST /confirm/send/signup/:userid
 	// POST /confirm/send/forgot/:useremail
@@ -168,13 +194,19 @@ func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	h(res, req, vars)
 }
 
-func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
+func (a *Api) IsReady(res http.ResponseWriter, req *http.Request) {
 	if err := a.Store.Ping(); err != nil {
 		log.Printf("Error getting status [%v]", err)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, err.Error())}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, err.Error())}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return
 	}
+	res.WriteHeader(http.StatusOK)
+	res.Write([]byte(STATUS_OK))
+	return
+}
+
+func (a *Api) IsAlive(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 	res.Write([]byte(STATUS_OK))
 	return
@@ -185,7 +217,7 @@ func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
 func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.ResponseWriter) bool {
 	if err := a.Store.UpsertConfirmation(conf); err != nil {
 		log.Printf("Error saving the confirmation [%v]", err)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return false
 	}
@@ -197,7 +229,7 @@ func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.Respon
 func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
 	if found, err := a.Store.FindConfirmation(conf); err != nil {
 		log.Printf("findExistingConfirmation: [%v]", err)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
 		return nil, statusErr
 	} else {
 		return found, nil
@@ -223,11 +255,11 @@ func (a *Api) addProfile(conf *models.Confirmation) error {
 func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
 	if err != nil {
 		log.Println("Error finding confirmations ", err)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return nil
 	} else if results == nil || len(results) == 0 {
-		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
 		//log.Println("No confirmations were found ", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
@@ -262,7 +294,7 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 	}
 
 	content["WebURL"] = a.getWebURL(req)
-	content["AssetURL"] = a.Config.AssetURL
+	content["AssetURL"] = a.Config.AssetUrl
 
 	template, ok := a.templates[templateName]
 	if !ok {
@@ -405,7 +437,7 @@ func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, g
 		return commonClients.Permissions{}, err
 	} else {
 		finalPermissions := make(commonClients.Permissions, 0)
-		for permission, _ := range requestedPermissions {
+		for permission := range requestedPermissions {
 			if reflect.DeepEqual(requestedPermissions[permission], actualPermissions[permission]) {
 				finalPermissions[permission] = requestedPermissions[permission]
 			}
