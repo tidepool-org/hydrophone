@@ -3,7 +3,7 @@ sudo: false
 language: go
 
 go:
-  - 1.14.9
+  - 1.15.2
 
 env:
   - GO111MODULE=on
@@ -16,6 +16,7 @@ before_install:
   sudo apt-get update;
   sudo apt-get install --allow-unauthenticated -y mongodb-org=3.6.12 mongodb-org-server=3.6.12 mongodb-org-shell=3.6.12 mongodb-org-mongos=3.6.12 mongodb-org-tools=3.6.12;
   sudo service mongod start;
+  npm install -g snyk
 
 services:
   - docker
@@ -23,4 +24,6 @@ services:
 script:
   - ./build.sh
   - ./test.sh
+  - 'if [[ -n $SNYK_TOKEN ]]; then snyk test --dev --org=tidepool; fi'
+  - 'if [[ -n $SNYK_TOKEN ]]; then snyk monitor --org=tidepool; fi'
   - ./artifact.sh
