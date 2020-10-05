@@ -83,3 +83,10 @@ func (d *MockStoreClient) RemoveConfirmation(notification *models.Confirmation) 
 	}
 	return nil
 }
+
+func (d *MockStoreClient) RemoveConfirmationsForUser(userId string) error {
+	if d.doBad {
+		return errors.New("RemoveConfirmationsForUser failure")
+	}
+	return nil
+}

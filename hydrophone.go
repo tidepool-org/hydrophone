@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	ev "github.com/tidepool-org/go-common/events"
+	"github.com/tidepool-org/hydrophone/events"
+	"log"
 	"net/http"
 	"time"
 
@@ -114,16 +117,57 @@ func serverProvider(config InboundConfig, rtr *mux.Router) *common.Server {
 	})
 }
 
+func cloudEventsConfigProvider() (*ev.CloudEventsConfig, error) {
+	cfg := ev.NewConfig()
+	if err := cfg.LoadFromEnv(); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
+func cloudEventsConsumerProvider(config *ev.CloudEventsConfig, handler ev.EventHandler) (ev.EventConsumer, error) {
+	consumer, err := ev.NewSaramaCloudEventsConsumer(config)
+	if err != nil {
+		return nil, err
+	}
+	consumer.RegisterHandler(handler)
+	return consumer, nil
+}
+
 //InvocationParams are the parameters need to kick off a service
 type InvocationParams struct {
 	fx.In
-	Lifecycle fx.Lifecycle
-	Shoreline shoreline.Client
-	Config    InboundConfig
-	Server    *common.Server
+	Lifecycle      fx.Lifecycle
+	Shoreline      shoreline.Client
+	Config         InboundConfig
+	Server         *common.Server
+	EventsConsumer ev.EventConsumer
 }
 
-func invokeHooks(p InvocationParams) {
+func startEventConsumer(consumer ev.EventConsumer, lifecycle fx.Lifecycle) {
+	consumerCtx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{}, 1)
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			go func(){
+				// blocks until context is terminated
+				err := consumer.Start(consumerCtx)
+				if err != nil {
+					log.Printf("Unable to start cloud events consumer: %v", err)
+				}
+				done <- struct{}{}
+			}()
+			return nil
+		},
+		OnStop:  func(ctx context.Context) error {
+			cancel()
+			<-done
+			return nil
+		},
+	})
+}
+
+func startService(p InvocationParams) {
 	p.Lifecycle.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
@@ -141,6 +185,7 @@ func invokeHooks(p InvocationParams) {
 				if err := start(); err != nil {
 					return err
 				}
+
 				return nil
 			},
 			OnStop: func(ctx context.Context) error {
@@ -156,6 +201,11 @@ func main() {
 		sc.MongoModule,
 		api.RouterModule,
 		fx.Provide(
+			cloudEventsConfigProvider,
+			cloudEventsConsumerProvider,
+			events.NewHandler,
+		),
+		fx.Provide(
 			seagullProvider,
 			highwaterProvider,
 			gatekeeperProvider,
@@ -167,6 +217,7 @@ func main() {
 			serverProvider,
 			api.NewApi,
 		),
-		fx.Invoke(invokeHooks),
+		fx.Invoke(startEventConsumer),
+		fx.Invoke(startService),
 	).Run()
 }

@@ -161,3 +161,14 @@ func (d MongoStoreClient) RemoveConfirmation(confirmation *models.Confirmation) 
 	}
 	return nil
 }
+
+func (d MongoStoreClient) RemoveConfirmationsForUser(userId string) error {
+
+	cpy := d.session.Copy()
+	defer cpy.Close()
+
+	if _, err := mgoConfirmationsCollection(cpy).RemoveAll(bson.M{"userId": userId}); err != nil {
+		return err
+	}
+	return nil
+}
