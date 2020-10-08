@@ -1,8 +1,6 @@
 package api
 
 import (
-	"github.com/gorilla/mux"
-
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -12,7 +10,6 @@ import (
 )
 
 const (
-	make_store_fail           = true
 	make_store_return_nothing = true
 
 	testing_token = "a.fake.token.to.use.in.tests"
@@ -20,8 +17,7 @@ const (
 	testing_token_uid1 = "a.fake.token.for.uid.1"
 	testing_uid1       = "UID123"
 
-	testing_token_uid2 = "a.fake.token.for.uid.2"
-	testing_uid2       = "UID999"
+	testing_uid2 = "UID999"
 )
 
 var (
@@ -34,7 +30,6 @@ var (
 	/*
 	 * basics setup
 	 */
-	rtr            = mux.NewRouter()
 	mockNotifier   = clients.NewMockNotifier()
 	mockShoreline  = shoreline.NewMock(testing_token)
 	mockGatekeeper = commonClients.NewGatekeeperMock(nil, &status.StatusError{Status: status.NewStatus(500, "Unable to parse response.")})
@@ -47,7 +42,6 @@ var (
 	 */
 	mockStore      = clients.NewMockStoreClient(false, false)
 	mockStoreEmpty = clients.NewMockStoreClient(make_store_return_nothing, false)
-	mockStoreFails = clients.NewMockStoreClient(false, make_store_fail)
 
 	/*
 	 * users permissons scenarios
@@ -55,8 +49,6 @@ var (
 	mock_NoPermsGatekeeper = commonClients.NewGatekeeperMock(commonClients.Permissions{"upload": commonClients.Permission{"userid": "other-id"}}, nil)
 
 	mock_uid1Shoreline = newtestingShorelingMock(testing_uid1)
-
-	responsableGatekeeper = NewResponsableMockGatekeeper()
 )
 
 // In an effort to mock shoreline so that we can return the token we wish
@@ -67,7 +59,7 @@ func newtestingShorelingMock(userid string) *testingShorelingMock {
 }
 
 func (m *testingShorelingMock) Start() error { return nil }
-func (m *testingShorelingMock) Close()       { return }
+func (m *testingShorelingMock) Close()       {}
 func (m *testingShorelingMock) Login(username, password string) (*shoreline.UserData, string, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, "", nil
 }
@@ -103,7 +95,4 @@ type (
 	// be able to test with partial data structures.
 	// testJSONObject is a generic json object
 	testJSONObject map[string]interface{}
-
-	// and ja is a generic json array
-	ja []interface{}
 )
