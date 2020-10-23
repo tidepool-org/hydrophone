@@ -110,7 +110,6 @@ func (c *Confirmation) AddContext(data interface{}) {
 
 	jsonData, _ := json.Marshal(data)
 	c.Context = jsonData
-	return
 }
 
 //Decode the context data into the provided type

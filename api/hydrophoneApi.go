@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -39,9 +40,6 @@ type (
 		Protocol     string `default:"http"`
 	}
 
-	group struct {
-		Members []string
-	}
 	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
 )
@@ -195,7 +193,7 @@ func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (a *Api) IsReady(res http.ResponseWriter, req *http.Request) {
-	if err := a.Store.Ping(); err != nil {
+	if err := a.Store.Ping(req.Context()); err != nil {
 		log.Printf("Error getting status [%v]", err)
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, err.Error())}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
@@ -203,19 +201,17 @@ func (a *Api) IsReady(res http.ResponseWriter, req *http.Request) {
 	}
 	res.WriteHeader(http.StatusOK)
 	res.Write([]byte(STATUS_OK))
-	return
 }
 
 func (a *Api) IsAlive(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 	res.Write([]byte(STATUS_OK))
-	return
 }
 
 //Save this confirmation or
 //write an error if it all goes wrong
-func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.ResponseWriter) bool {
-	if err := a.Store.UpsertConfirmation(conf); err != nil {
+func (a *Api) addOrUpdateConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) bool {
+	if err := a.Store.UpsertConfirmation(ctx, conf); err != nil {
 		log.Printf("Error saving the confirmation [%v]", err)
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
@@ -226,8 +222,8 @@ func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.Respon
 
 //Find this confirmation
 //write error if it fails
-func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
-	if found, err := a.Store.FindConfirmation(conf); err != nil {
+func (a *Api) findExistingConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
+	if found, err := a.Store.FindConfirmation(ctx, conf); err != nil {
 		log.Printf("findExistingConfirmation: [%v]", err)
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
 		return nil, statusErr
@@ -258,7 +254,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return nil
-	} else if results == nil || len(results) == 0 {
+	} else if len(results) == 0 {
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
 		//log.Println("No confirmations were found ", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
@@ -339,7 +335,6 @@ func (a *Api) logMetric(name string, req *http.Request) {
 	token := req.Header.Get(TP_SESSION_TOKEN)
 	emptyParams := make(map[string]string)
 	a.metrics.PostThisUser(name, token, emptyParams)
-	return
 }
 
 //send metric
@@ -347,7 +342,6 @@ func (a *Api) logMetricAsServer(name string) {
 	token := a.sl.TokenProvide()
 	emptyParams := make(map[string]string)
 	a.metrics.PostServer(name, token, emptyParams)
-	return
 }
 
 //Find existing user based on the given indentifier
@@ -362,7 +356,7 @@ func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
 }
 
 //Makesure we have set the userId on these confirmations
-func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
+func (a *Api) ensureIdSet(ctx context.Context, userId string, confirmations []*models.Confirmation) {
 
 	if len(confirmations) < 1 {
 		return
@@ -372,9 +366,8 @@ func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
 		if confirmations[i].UserId == "" {
 			log.Println("UserId wasn't set for invite so setting it")
 			confirmations[i].UserId = userId
-			a.Store.UpsertConfirmation(confirmations[i])
+			a.Store.UpsertConfirmation(ctx, confirmations[i])
 		}
-		return
 	}
 }
 
@@ -387,7 +380,6 @@ func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{
 		res.WriteHeader(statusCode)
 		res.Write(jsonDetails)
 	}
-	return
 }
 
 func (a *Api) sendError(res http.ResponseWriter, statusCode int, reason string, extras ...interface{}) {
@@ -436,7 +428,7 @@ func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, g
 	} else if actualPermissions, err := a.gatekeeper.UserInGroup(tokenData.UserID, groupId); err != nil {
 		return commonClients.Permissions{}, err
 	} else {
-		finalPermissions := make(commonClients.Permissions, 0)
+		finalPermissions := make(commonClients.Permissions)
 		for permission := range requestedPermissions {
 			if reflect.DeepEqual(requestedPermissions[permission], actualPermissions[permission]) {
 				finalPermissions[permission] = requestedPermissions[permission]

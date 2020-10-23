@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -62,7 +63,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.UpdateStatus(models.StatusCompleted)
 	}
 
-	if a.addOrUpdateConfirmation(resetCnf, res) {
+	if a.addOrUpdateConfirmation(req.Context(), resetCnf, res) {
 		a.logMetricAsServer("reset confirmation created")
 
 		emailContent := map[string]interface{}{
@@ -79,27 +80,26 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	}
 	//unless no email was given we say its all good
 	res.WriteHeader(http.StatusOK)
-	return
 }
 
 //find the reset confirmation if it exists and hasn't expired
-func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
+func (a *Api) findResetConfirmation(conf *models.Confirmation, ctx context.Context, res http.ResponseWriter) *models.Confirmation {
 
 	log.Printf("findResetConfirmation: finding [%v]", conf)
-	found, err := a.findExistingConfirmation(conf, res)
+	found, err := a.findExistingConfirmation(ctx, conf, res)
 	if err != nil {
 		log.Printf("findResetConfirmation: error [%s]\n", err.Error())
 		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 		return nil
 	}
 	if found == nil {
-		statusErr := &status.StatusError{status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND)}
 		log.Printf("findResetConfirmation: not found [%s]\n", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
 	}
 	if found.IsExpired() {
-		statusErr := &status.StatusError{status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
 		log.Printf("findResetConfirmation: expired [%s]\n", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 		return nil
@@ -128,14 +128,14 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 	var rb = &resetBody{}
 	if err := json.NewDecoder(req.Body).Decode(rb); err != nil {
 		log.Printf("acceptPassword: error decoding reset details %v\n", err)
-		statusErr := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 		return
 	}
 
 	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
 
-	if conf := a.findResetConfirmation(resetCnf, res); conf != nil {
+	if conf := a.findResetConfirmation(resetCnf, req.Context(), res); conf != nil {
 
 		token := a.sl.TokenProvide()
 
@@ -143,22 +143,21 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 
 			if err := a.sl.UpdateUser(usr.UserID, shoreline.UserUpdate{Password: &rb.Password}, token); err != nil {
 				log.Printf("acceptPassword: error updating password as part of password reset [%v]", err)
-				status := &status.StatusError{status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
+				status := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
 				a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
 				return
 			}
 			conf.UpdateStatus(models.StatusCompleted)
-			if a.addOrUpdateConfirmation(conf, res) {
+			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
 				//STATUS_RESET_ACCEPTED
 				a.logMetricAsServer("password reset")
 				a.sendModelAsResWithStatus(
 					res,
-					status.StatusError{status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
+					status.StatusError{Status: status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
 					http.StatusOK,
 				)
 				return
 			}
 		}
 	}
-	return
 }

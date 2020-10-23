@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -29,21 +30,21 @@ var MockStoreFailsModule = fx.Options(fx.Provide(func() StoreClient { return New
 
 func (d *MockStoreClient) Close() {}
 
-func (d *MockStoreClient) Ping() error {
+func (d *MockStoreClient) Ping(ctx context.Context) error {
 	if d.doBad {
 		return errors.New("Session failure")
 	}
 	return nil
 }
 
-func (d *MockStoreClient) UpsertConfirmation(notification *models.Confirmation) error {
+func (d *MockStoreClient) UpsertConfirmation(ctx context.Context, notification *models.Confirmation) error {
 	if d.doBad {
 		return errors.New("UpsertConfirmation failure")
 	}
 	return nil
 }
 
-func (d *MockStoreClient) FindConfirmation(notification *models.Confirmation) (result *models.Confirmation, err error) {
+func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *models.Confirmation) (result *models.Confirmation, err error) {
 	if d.doBad {
 		return nil, errors.New("FindConfirmation failure")
 	}
@@ -62,7 +63,7 @@ func (d *MockStoreClient) FindConfirmation(notification *models.Confirmation) (r
 	return notification, nil
 }
 
-func (d *MockStoreClient) FindConfirmations(confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
+func (d *MockStoreClient) FindConfirmations(ctx context.Context, confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
 	if d.doBad {
 		return nil, errors.New("FindConfirmation failure")
 	}
@@ -77,14 +78,14 @@ func (d *MockStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 	return []*models.Confirmation{confirmation}, nil
 }
 
-func (d *MockStoreClient) RemoveConfirmation(notification *models.Confirmation) error {
+func (d *MockStoreClient) RemoveConfirmation(ctx context.Context, notification *models.Confirmation) error {
 	if d.doBad {
 		return errors.New("RemoveConfirmation failure")
 	}
 	return nil
 }
 
-func (d *MockStoreClient) RemoveConfirmationsForUser(userId string) error {
+func (d *MockStoreClient) RemoveConfirmationsForUser(ctx context.Context, userId string) error {
 	if d.doBad {
 		return errors.New("RemoveConfirmationsForUser failure")
 	}

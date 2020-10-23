@@ -1,10 +1,9 @@
 package clients
 
 import (
+	"context"
 	"testing"
 	"time"
-
-	"github.com/globalsign/mgo"
 
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
@@ -17,31 +16,27 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 
 	doesNotExist, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
 
-	testingConfig := &mongo.Config{ConnectionString: "mongodb://127.0.0.1/confirm_test"}
+	testingConfig := &mongo.Config{ConnectionString: "mongodb://127.0.0.1/confirm_test", Database: "confirm_test"}
 
-	mc := NewMongoStoreClient(testingConfig)
+	mc, err := NewMongoStoreClient(testingConfig)
+	if err != nil {
+		t.Fatalf("we could not create the store: %v", err)
+	}
 
 	/*
 	 * INIT THE TEST - we use a clean copy of the collection before we start
 	 */
 
 	//drop it like its hot
-	cpy := mc.session.Copy()
-	defer cpy.Close()
-
-	mgoConfirmationsCollection(cpy).DropCollection()
-
-	if err := mgoConfirmationsCollection(cpy).Create(&mgo.CollectionInfo{}); err != nil {
-		t.Fatalf("We couldn't created the users collection for these tests %v", err)
-	}
+	confirmationsCollection(mc).Drop(context.Background())
 
 	//The basics
 	//+++++++++++++++++++++++++++
-	if err := mc.UpsertConfirmation(confirmation); err != nil {
+	if err := mc.UpsertConfirmation(context.Background(), confirmation); err != nil {
 		t.Fatalf("we could not save the con %v", err)
 	}
 
-	if found, err := mc.FindConfirmation(confirmation); err == nil {
+	if found, err := mc.FindConfirmation(context.Background(), confirmation); err == nil {
 		if found == nil {
 			t.Fatalf("the confirmation was not found")
 		}
@@ -54,7 +49,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 
 	// Uppercase the email and try again (detect case sensitivity)
 	confirmation.Email = "TEST@TEST.COM"
-	if found, err := mc.FindConfirmation(confirmation); err == nil {
+	if found, err := mc.FindConfirmation(context.Background(), confirmation); err == nil {
 		if found == nil {
 			t.Fatalf("the uppercase confirmation was not found")
 		}
@@ -66,17 +61,17 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	}
 
 	//when the conf doesn't exist
-	if found, err := mc.FindConfirmation(doesNotExist); err == nil && found != nil {
+	if found, err := mc.FindConfirmation(context.Background(), doesNotExist); err == nil && found != nil {
 		t.Fatalf("there should have been no confirmation found [%v]", found)
 	} else if err != nil {
 		t.Fatalf("and error was returned when it should not have been err[%v]", err)
 	}
 
-	if err := mc.RemoveConfirmation(confirmation); err != nil {
+	if err := mc.RemoveConfirmation(context.Background(), confirmation); err != nil {
 		t.Fatalf("we could not remove the confirmation %v", err)
 	}
 
-	if confirmation, err := mc.FindConfirmation(confirmation); err == nil {
+	if confirmation, err := mc.FindConfirmation(context.Background(), confirmation); err == nil {
 		if confirmation != nil {
 			t.Fatalf("the confirmation has been removed so we shouldn't find it %v", confirmation)
 		}
@@ -88,7 +83,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	c1.UserId = toUser
 	c1.Email = toEmail
 	c1.UpdateStatus(models.StatusDeclined)
-	mc.UpsertConfirmation(c1)
+	mc.UpsertConfirmation(context.Background(), c1)
 
 	// Sleep some so the second confirmation created time is after the first confirmation created time
 	time.Sleep(time.Second)
@@ -96,11 +91,11 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	c2, _ := models.NewConfirmation(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, fromUser)
 	c2.Email = toOtherEmail
 	c2.UpdateStatus(models.StatusCompleted)
-	mc.UpsertConfirmation(c2)
+	mc.UpsertConfirmation(context.Background(), c2)
 
 	searchForm := &models.Confirmation{CreatorId: fromUser}
 
-	if confirmations, err := mc.FindConfirmations(searchForm, models.StatusDeclined, models.StatusCompleted); err == nil {
+	if confirmations, err := mc.FindConfirmations(context.Background(), searchForm, models.StatusDeclined, models.StatusCompleted); err == nil {
 		if len(confirmations) != 2 {
 			t.Fatalf("we should have found 2 confirmations %v", confirmations)
 		}
@@ -109,7 +104,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 		t2 := confirmations[1].Created
 
 		if !t1.After(t2) {
-			t.Fatalf("the newest confirmtion should be first %v", confirmations)
+			t.Fatalf("the newest confirmation should be first %v", confirmations)
 		}
 
 		if confirmations[0].Email != toOtherEmail {
@@ -127,7 +122,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	}
 	searchToOtherEmail := &models.Confirmation{CreatorId: fromUser, Email: toOtherEmail}
 	//only email address
-	if confirmations, err := mc.FindConfirmations(searchToOtherEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
+	if confirmations, err := mc.FindConfirmations(context.Background(), searchToOtherEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
 		if len(confirmations) != 1 {
 			t.Fatalf("we should have found 1 confirmations %v", confirmations)
 		}
@@ -140,7 +135,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	}
 	searchToEmail := &models.Confirmation{CreatorId: fromUser, Email: toEmail}
 	//with both userid and email address
-	if confirmations, err := mc.FindConfirmations(searchToEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
+	if confirmations, err := mc.FindConfirmations(context.Background(), searchToEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
 		if len(confirmations) != 1 {
 			t.Fatalf("we should have found 1 confirmations %v", confirmations)
 		}
