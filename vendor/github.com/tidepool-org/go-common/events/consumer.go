@@ -11,6 +11,7 @@ import (
 )
 
 type SaramaConsumer struct {
+	config             *CloudEventsConfig
 	consumerGroup      sarama.ConsumerGroup
 	ready              chan bool
 	topic              string
@@ -23,31 +24,12 @@ func NewSaramaCloudEventsConsumer(config *CloudEventsConfig) (EventConsumer, err
 		return nil, err
 	}
 
-	cg, err := sarama.NewConsumerGroup(config.KafkaBrokers, config.KafkaConsumerGroup, config.SaramaConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	var deadLetterProducer *KafkaCloudEventsProducer
-	if config.IsDeadLettersEnabled() {
-		deadLetterProducer, err = NewKafkaCloudEventsProducerForDeadLetters(config)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return &SaramaConsumer{
-		consumerGroup:      cg,
-		ready:              make(chan bool),
-		topic:              config.GetPrefixedTopic(),
-		handlers:           make([]EventHandler, 0),
-		deadLetterProducer: deadLetterProducer,
+		config:   config,
+		ready:    make(chan bool),
+		topic:    config.GetPrefixedTopic(),
+		handlers: make([]EventHandler, 0),
 	}, nil
-}
-
-func newDeadLetterProducerConfig(config CloudEventsConfig) CloudEventsConfig {
-	config.KafkaTopic = config.KafkaTopic + DeadLetterSuffix
-	return config
 }
 
 func (s *SaramaConsumer) Setup(session sarama.ConsumerGroupSession) error {
@@ -99,6 +81,10 @@ func (s *SaramaConsumer) RegisterHandler(handler EventHandler) {
 }
 
 func (s *SaramaConsumer) Start(ctx context.Context) error {
+	if err := s.initialize(); err != nil {
+		return err
+	}
+
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
@@ -109,7 +95,8 @@ func (s *SaramaConsumer) Start(ctx context.Context) error {
 			// server-side rebalance happens, the consumer session will need to be
 			// recreated to get the new claims
 			if err := s.consumerGroup.Consume(ctx, []string{s.topic}, s); err != nil {
-				log.Panicf("Error from consumer: %v", err)
+				log.Printf("Error from consumer: %v", err)
+				return
 			}
 			// check if context was cancelled, signaling that the consumer should stop
 			if ctx.Err() != nil {
@@ -121,4 +108,25 @@ func (s *SaramaConsumer) Start(ctx context.Context) error {
 
 	wg.Wait()
 	return s.consumerGroup.Close()
+}
+
+func (s *SaramaConsumer) initialize() error {
+	cg, err := sarama.NewConsumerGroup(
+		s.config.KafkaBrokers,
+		s.config.KafkaConsumerGroup,
+		s.config.SaramaConfig,
+	)
+	if err != nil {
+		return err
+	}
+
+	if s.config.IsDeadLettersEnabled() {
+		s.deadLetterProducer, err = NewKafkaCloudEventsProducerForDeadLetters(s.config)
+		if err != nil {
+			return err
+		}
+	}
+
+	s.consumerGroup = cg
+	return nil
 }

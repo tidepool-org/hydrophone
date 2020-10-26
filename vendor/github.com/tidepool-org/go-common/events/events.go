@@ -21,6 +21,7 @@ var _ Event = DeleteUserEvent{}
 
 type DeleteUserEvent struct {
 	shoreline.UserData `json:",inline"`
+	ProfileFullName    string `json:"fullName"`
 }
 
 func (d DeleteUserEvent) GetEventType() string {
@@ -71,6 +72,7 @@ func NewUserEventsHandler(delegate UserEventsHandler) EventHandler {
 }
 
 var _ EventHandler = &delegatingUserEventsHandler{}
+
 type delegatingUserEventsHandler struct {
 	delegate UserEventsHandler
 }
@@ -108,7 +110,8 @@ func (d *delegatingUserEventsHandler) Handle(ce cloudevents.Event) error {
 	return nil
 }
 
-type DebugEventHandler struct {}
+type DebugEventHandler struct{}
+
 var _ EventHandler = &DebugEventHandler{}
 
 func (d *DebugEventHandler) CanHandle(ce cloudevents.Event) bool {
@@ -121,6 +124,7 @@ func (d *DebugEventHandler) Handle(ce cloudevents.Event) error {
 }
 
 type NoopUserEventsHandler struct{}
+
 var _ UserEventsHandler = &NoopUserEventsHandler{}
 
 func (d *NoopUserEventsHandler) HandleUpdateUserEvent(payload UpdateUserEvent) error {
