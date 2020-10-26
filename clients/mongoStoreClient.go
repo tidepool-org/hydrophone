@@ -199,7 +199,7 @@ func (c *MongoStoreClient) RemoveConfirmation(ctx context.Context, confirmation 
 }
 
 func (c *MongoStoreClient) RemoveConfirmationsForUser(ctx context.Context, userId string) error {
-	if _, err := confirmationsCollection(c).RemoveAll(ctx, bson.M{"userId": userId}); err != nil {
+	if _, err := confirmationsCollection(c).DeleteMany(ctx, bson.M{"userId": userId}); err != nil {
 		return err
 	}
 	return nil
