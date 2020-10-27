@@ -1,3 +1,4 @@
 files:
   - source: /templates/locales/en.yaml
     translation: /templates/locales/%two_letters_code%.yaml
+    update_option: update_as_unapproved
