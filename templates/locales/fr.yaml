@@ -8,7 +8,7 @@ FooterGetSupport: "ASSISTANCE"
 #(email for those that requested password reset but did not create their account before)
 NoAccountSubject: "Adresse email inconnue"
 NoAccountHeadline: "Vous avez demandé la réinitialisation de votre mot de passe YourLoops or aucun compte n’est lié à cette adresse email."
-NoAccountBody: "Si vous utilisez déjà un dispositif Diabeloop, connectez-vous avec l’adresse email (identifiant) et le mot de passe saisis lors de l’initialisation de votre terminal.\nSi vous êtes un·e professionnel·le de santé, veuillez cliquer sur le lien ci-dessous pour créer votre compte.\n"
+NoAccountBody: "Si vous utilisez déjà un dispositif Diabeloop, connectez-vous avec l’adresse email (identifiant) et le mot de passe saisis lors de l’initialisation de votre DBL.\nSi vous êtes un·e professionnel·le de santé, veuillez cliquer sur le lien ci-dessous pour créer votre compte.\n"
 NoAccountSignUp: "Créer un compte professionnel"
 #Password Reset
 #(email for those that requested password reset)
@@ -20,20 +20,20 @@ PasswordResetReset: "Réinitialiser mon mot de passe"
 #(email for patients that requested password reset)
 PatientPasswordResetSubject: "Réinitialisation du mot de passe"
 PatientPasswordResetHeadline: "Vous avez demandé la réinitialisation de votre mot de passe YourLoops."
-PatientPasswordResetBody: "Veuillez suivre les instructions sur votre terminal Diabeloop et entrer la clé suivante :"
-PatientPasswordResetBody2: "Cette clé est valable une heure. En cas d’expiration, veuillez renouveler la demande sur votre terminal."
+PatientPasswordResetBody: "Veuillez suivre les instructions sur votre DBL et entrer la clé suivante :"
+PatientPasswordResetBody2: "Cette clé est valable une heure. En cas d'expiration, veuillez renouveler la demande sur votre DBL."
 #Patient Password Reset request from web app
 #(email for patients that requested password reset)
 PatientPasswordInfoSubject: "Réinitialisation du mot de passe"
-PatientPasswordInfoHeadline: "Vous avez demandé la réinitialisation de votre mot de passe depuis l’application YourLoops. Pour des raisons de sécurité, vous devez réaliser cette demande depuis votre terminal Diabeloop."
-PatientPasswordInfoBody: "Allez à Paramètres > YourLoops et suivez les instructions de votre terminal."
+PatientPasswordInfoHeadline: "Vous avez demandé la réinitialisation de votre mot de passe depuis l’application YourLoops. Pour des raisons de sécurité, vous devez réaliser cette demande depuis votre DBL."
+PatientPasswordInfoBody: "Allez à Paramètres > YourLoops et suivez les instructions de votre DBL."
 PatientPasswordInfoBody2: "Si vous n’êtes pas à l’origine de cette demande, merci de contacter notre support à {{ .SupportEmail }}."
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Invitation patient"
 #CareTeamInviteHello: "Hello,"
 CareTeamInviteHeadline: "{{ .CareteamName }} souhaite partager ses données avec vous sur YourLoops."
-CareTeamInviteBody: "YourLoops est une plateforme web qui permet de visualiser les données collectées par un terminal Diabeloop sous forme de graphiques et de statistiques.\nVotre patient {{ .CareteamName }} a choisi de vous donner accès à ses données. Pour y accéder, créez votre compte ou connectez-vous en cliquant sur le bouton ci-dessous."
+CareTeamInviteBody: "YourLoops est une plateforme web qui permet de visualiser les données collectées par un DBL sous forme de graphiques et de statistiques.\nVotre patient {{ .CareteamName }} a choisi de vous donner accès à ses données. Pour y accéder, créez votre compte ou connectez-vous en cliquant sur le bouton ci-dessous."
 CareTeamInviteJoin: "Voir les données"
 #Signup
 #(email to ask patient for verification of email)
@@ -64,15 +64,15 @@ SignupCustodialClinicOwnership: "Vous pouvez réclamer votre compte gratuit pour
 SignupCustodialClinicClaim: "Réclamer mon compte"
 #Patient Information
 PatientInfoSubject: "Bienvenue sur YourLoops !"
-PatientInfoHeadline: "Connectez-vous pour consulter les données de votre terminal Diabeloop."
+PatientInfoHeadline: "Connectez-vous pour afficher vos données de votre DBL."
 PatientInfoBody: "YourLoops est une plateforme web dédiée à la gestion de votre diabète."
-PatientInfoBody2: "Vous y trouverez toutes les données collectées par votre terminal Diabeloop (glycémie, insuline, glucides…) sous forme de graphiques et de statistiques."
-PatientInfoBody3: "Pour vous connecter, munissez-vous de l’identifiant et du mot de passe saisis lors de l’initialisation de votre terminal et cliquez sur le bouton ci-dessous."
+PatientInfoBody2: "Vous y trouverez toutes les données collectées par votre DBL (glycémie, insuline, glucides…) sous forme de graphiques et de statistiques."
+PatientInfoBody3: "Pour vous connecter, munissez-vous de l’identifiant et du mot de passe saisis lors de l’initialisation de votre DBL et cliquez sur le bouton ci-dessous."
 PatientInfoLogin: "Voir mes données"
 #Pin Reset Request
 #(email for those that requested a one-time password for PIN Reset)
 PatientPinResetSubject: "Réinitialisation du code PIN"
-PatientPinResetHeadline: "Vous avez demandé la réinitialisation du code PIN de votre terminal Diabeloop."
+PatientPinResetHeadline: "Vous avez demandé à réinitialiser le code PIN de votre DBL."
 PatientPinResetBody: "Voici le code temporaire à entrer sur votre terminal :"
 PatientPinResetBody2: "Ce code est valable 30 minutes."
-PatientPinResetBody3: "Si le code est expiré, veuillez renouveler la demande sur votre terminal."
+PatientPinResetBody3: "Si le code a expiré, veuillez renouveler la demande sur votre DBL."
