@@ -84,3 +84,10 @@ func (d *MockStoreClient) RemoveConfirmation(ctx context.Context, notification *
 	}
 	return nil
 }
+
+func (d *MockStoreClient) RemoveConfirmationsForUser(ctx context.Context, userId string) error {
+	if d.doBad {
+		return errors.New("RemoveConfirmationsForUser failure")
+	}
+	return nil
+}
