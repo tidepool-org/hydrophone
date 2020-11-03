@@ -1,8 +1,8 @@
 // @title Hydrophone API
-// @version 0.0.1
+// @version 1.2.2
 // @description The purpose of this API is to send notifications to users: forgotten passwords, initial signup, invitations and more
 // @license.name BSD 2-Clause "Simplified" License
-// @host localhost
+// @host api.android-qa.your-loops.dev
 // @BasePath /confirm
 // @accept json
 // @produce json
@@ -140,12 +140,12 @@ func main() {
 		WithHTTPClient(httpClient).
 		Build()
 
-		/*
-		 * hydrophone setup
-		 */
+	/*
+	* hydrophone setup
+	 */
 	store, err := sc.NewStore(&config.Mongo, logger)
-      /* Check that database configuration is valid. It does not check database availability */
-   if err != nil {
+	/* Check that database configuration is valid. It does not check database availability */
+	if err != nil {
 		logger.Fatal(err)
 	}
 	defer store.Close()
@@ -153,7 +153,7 @@ func main() {
 	// Create a notifier based on configuration
 	var mail sc.Notifier
 	var mailErr error
-	//defaults the mail exchange service to ses
+	// defaults the mail exchange service to ses
 	if config.NotifierType == "" {
 		config.NotifierType = "ses"
 	}
@@ -173,7 +173,7 @@ func main() {
 		logger.Printf("Mail client %s created", config.NotifierType)
 	}
 
-	//Create a localizer to be used by the templates
+	// Create a localizer to be used by the templates
 	localizer, err := localize.NewI18nLocalizer(path.Join(config.Api.I18nTemplatesPath, "/locales"))
 	if err != nil {
 		logger.Fatalf("Problem creating i18n localizer %s", err)
@@ -212,18 +212,15 @@ func main() {
 
 	hakkenClient.Publish(&config.Service)
 
-	signals := make(chan os.Signal, 40)
-	signal.Notify(signals)
+	// Wait for SIGINT (Ctrl+C) or SIGTERM to stop the service
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		for {
-			sig := <-signals
-			logger.Printf("Got signal [%s]", sig)
-
-			if sig == syscall.SIGINT || sig == syscall.SIGTERM {
-				store.Close()
-				server.Close()
-				done <- true
-			}
+			<-sigc
+			store.Close()
+			server.Close()
+			done <- true
 		}
 	}()
 

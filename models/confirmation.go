@@ -16,7 +16,7 @@ type (
 		Email     string          `json:"email" bson:"email"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
 		Creator   Creator         `json:"creator" bson:"creator"`
-		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
+		Context   json.RawMessage `json:"context" bson:"context,omitempty" swaggertype:"string" format:"base64"`
 		Created   time.Time       `json:"created" bson:"created"`
 
 		TemplateName TemplateName `json:"-" bson:"templateName"`
