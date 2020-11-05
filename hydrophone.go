@@ -1,5 +1,5 @@
 // @title Hydrophone API
-// @version 1.2.2
+// @version 1.3.0
 // @description The purpose of this API is to send notifications to users: forgotten passwords, initial signup, invitations and more
 // @license.name BSD 2-Clause "Simplified" License
 // @host api.android-qa.your-loops.dev

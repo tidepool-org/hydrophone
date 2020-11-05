@@ -102,15 +102,17 @@ func (m *testingShorelingMock) CheckToken(token string) *shoreline.TokenData {
 type (
 	//common test structure
 	toTest struct {
-		desc       string
-		skip       bool
-		returnNone bool
-		method     string
-		url        string
-		body       testJSONObject
-		token      string
-		respCode   int
-		response   testJSONObject
+		desc          string
+		skip          bool
+		returnNone    bool
+		method        string
+		url           string
+		body          testJSONObject
+		token         string
+		respCode      int
+		response      testJSONObject
+		emailSubject  string
+		customHeaders map[string]string
 	}
 	// These two types make it easier to define blobs of json inline.
 	// We don't use the types defined by the API because we want to

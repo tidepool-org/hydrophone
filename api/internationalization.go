@@ -13,7 +13,17 @@ type LangQ struct {
 
 const (
 	HEADER_LANGUAGE = "Accept-Language"
+	USER_LANGUAGE   = "x-tidepool-language"
 )
+
+//GetUserChosenLanguage returns the chosen language passed as a custom header
+func GetUserChosenLanguage(req *http.Request) string {
+	if userlng := req.Header.Get(USER_LANGUAGE); userlng == "" {
+		return ""
+	} else {
+		return userlng
+	}
+}
 
 //GetBrowserPreferredLanguage returns the preferred language extracted from the request browser
 func GetBrowserPreferredLanguage(req *http.Request) string {

@@ -40,6 +40,8 @@ type (
 // @Accept  json
 // @Produce  json
 // @Param useremail path string true "user email"
+// @Param x-tidepool-language header string false "User chosen language on 2 characters"
+// @Param Accept-Language header string false "Browser defined languages as array of languages such as fr-FR"
 // @Success 200 {string} string "OK"
 // @Failure 400 {object} status.Status "useremail was not provided"
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
@@ -47,12 +49,18 @@ type (
 // @Router /send/forgot/{useremail} [post]
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	var resetCnf *models.Confirmation
-	var reseterLanguage string
+	var resetterLanguage string
 
-	// By default, the reseter language will be his browser's or "en" for Englih
-	// In case the reseter is found a known user and has a language set, the language will be overriden in a later step
-	if reseterLanguage = GetBrowserPreferredLanguage(req); reseterLanguage == "" {
-		reseterLanguage = "en"
+	// on the "forgot password" page in Blip, the preferred language is now selected by listbox
+	// even if not selected there is one by default so we should normally always end up with
+	// a value in GetUserChosenLanguage()
+	// however, just to play it safe, we can continue taking the browser preferred language
+	// or ENglish as default values
+	// In case the resetter is found a known user and has a language set, the language will be overridden in a later step
+	if resetterLanguage = GetUserChosenLanguage(req); resetterLanguage == "" {
+		if resetterLanguage = GetBrowserPreferredLanguage(req); resetterLanguage == "" {
+			resetterLanguage = "en"
+		}
 	}
 
 	email := vars["useremail"]
@@ -66,7 +74,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		info = nil
 	}
 
-	// if the reseter is already registered we can use his preferences
+	// if the resetter is already registered we can use his preferences
 	if resetUsr := a.findExistingUser(email, a.sl.TokenProvide()); resetUsr != nil {
 		if resetUsr.IsClinic() || a.Config.AllowPatientResetPassword {
 			resetCnf, _ = models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
@@ -85,18 +93,18 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.Email = email
 		resetCnf.UserId = resetUsr.UserID
 
-		// let's get the reseter user preferences
-		reseterPreferences := &models.Preferences{}
-		if err := a.seagull.GetCollection(resetCnf.UserId, "preferences", a.sl.TokenProvide(), reseterPreferences); err != nil {
+		// let's get the resetter user preferences
+		resetterPreferences := &models.Preferences{}
+		if err := a.seagull.GetCollection(resetCnf.UserId, "preferences", a.sl.TokenProvide(), resetterPreferences); err != nil {
 			a.sendError(res, http.StatusInternalServerError,
 				STATUS_ERR_FINDING_USR,
-				"forgot password: error getting reseter user preferences: ",
+				"forgot password: error getting resetter user preferences: ",
 				err.Error())
 			return
 		}
-		// if reseter has a profile and a language we override the previously set language (browser's or "en")
-		if reseterPreferences.DisplayLanguage != "" {
-			reseterLanguage = reseterPreferences.DisplayLanguage
+		// if resetter has a profile and a language we override the previously set language (browser's or "en")
+		if resetterPreferences.DisplayLanguage != "" {
+			resetterLanguage = resetterPreferences.DisplayLanguage
 		}
 	} else {
 		log.Print(statusResetNoAccount)
@@ -115,7 +123,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 			"ShortKey": resetCnf.ShortKey,
 		}
 
-		if a.createAndSendNotification(req, resetCnf, emailContent, reseterLanguage) {
+		if a.createAndSendNotification(req, resetCnf, emailContent, resetterLanguage) {
 			a.logAudit(req, "reset confirmation sent")
 		} else {
 			a.logAudit(req, "reset confirmation failed to be sent")
