@@ -285,17 +285,3 @@ func Test_TokenUserHasRequestedPermissions_FullMatch(t *testing.T) {
 		t.Fatalf("Unexpected permissions returned: %#v", permissions)
 	}
 }
-
-//send metric
-func (a *Api) logMetric(ctx context.Context, name string, req *http.Request) {
-	token := req.Header.Get(TP_SESSION_TOKEN)
-	emptyParams := make(map[string]string)
-	a.metrics.PostThisUser(ctx, name, token, emptyParams)
-}
-
-//send metric
-func (a *Api) logMetricAsServer(ctx context.Context, name string) {
-	token := a.sl.TokenProvide()
-	emptyParams := make(map[string]string)
-	a.metrics.PostServer(ctx, name, token, emptyParams)
-}
