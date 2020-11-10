@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -160,7 +161,7 @@ func Test_TokenUserHasRequestedPermissions_Server(t *testing.T) {
 
 	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: true}
 	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
-	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(context.Background(), tokenData, "1234567890", requestedPermissions)
 	if err != nil {
 		t.Fatalf("Unexpected error: %#v", err)
 	}
@@ -178,7 +179,7 @@ func Test_TokenUserHasRequestedPermissions_Owner(t *testing.T) {
 
 	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
 	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
-	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "abcdef1234", requestedPermissions)
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(context.Background(), tokenData, "abcdef1234", requestedPermissions)
 	if err != nil {
 		t.Fatalf("Unexpected error: %#v", err)
 	}
@@ -202,7 +203,7 @@ func Test_TokenUserHasRequestedPermissions_GatekeeperError(t *testing.T) {
 
 	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
 	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
-	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(context.Background(), tokenData, "1234567890", requestedPermissions)
 	if err == nil {
 		t.Fatalf("Unexpected success")
 	}
@@ -229,7 +230,7 @@ func Test_TokenUserHasRequestedPermissions_CompleteMismatch(t *testing.T) {
 
 	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
 	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
-	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(context.Background(), tokenData, "1234567890", requestedPermissions)
 	if err != nil {
 		t.Fatalf("Unexpected error: %#v", err)
 	}
@@ -253,7 +254,7 @@ func Test_TokenUserHasRequestedPermissions_PartialMismatch(t *testing.T) {
 
 	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
 	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
-	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(context.Background(), tokenData, "1234567890", requestedPermissions)
 	if err != nil {
 		t.Fatalf("Unexpected error: %#v", err)
 	}
@@ -276,11 +277,25 @@ func Test_TokenUserHasRequestedPermissions_FullMatch(t *testing.T) {
 
 	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
 	requestedPermissions := commonClients.Permissions{"a": commonClients.Allowed, "b": commonClients.Allowed}
-	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(tokenData, "1234567890", requestedPermissions)
+	permissions, err := responsableHydrophone.tokenUserHasRequestedPermissions(context.Background(), tokenData, "1234567890", requestedPermissions)
 	if err != nil {
 		t.Fatalf("Unexpected error: %#v", err)
 	}
 	if !reflect.DeepEqual(permissions, requestedPermissions) {
 		t.Fatalf("Unexpected permissions returned: %#v", permissions)
 	}
+}
+
+//send metric
+func (a *Api) logMetric(ctx context.Context, name string, req *http.Request) {
+	token := req.Header.Get(TP_SESSION_TOKEN)
+	emptyParams := make(map[string]string)
+	a.metrics.PostThisUser(ctx, name, token, emptyParams)
+}
+
+//send metric
+func (a *Api) logMetricAsServer(ctx context.Context, name string) {
+	token := a.sl.TokenProvide()
+	emptyParams := make(map[string]string)
+	a.metrics.PostServer(ctx, name, token, emptyParams)
 }

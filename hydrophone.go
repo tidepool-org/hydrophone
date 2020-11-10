@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	ev "github.com/tidepool-org/go-common/events"
-	"github.com/tidepool-org/hydrophone/events"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
+
+	ev "github.com/tidepool-org/go-common/events"
+	"github.com/tidepool-org/hydrophone/events"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
@@ -45,8 +47,9 @@ type (
 )
 
 func shorelineProvider(config OutboundConfig, httpClient *http.Client) shoreline.Client {
+	host, _ := url.Parse(config.AuthClientAddress)
 	return shoreline.NewShorelineClientBuilder().
-		WithHostGetter(disc.NewStaticHostGetterFromString(config.AuthClientAddress)).
+		WithHost(host).
 		WithHttpClient(httpClient).
 		WithName("shoreline").
 		WithSecret(config.ServerSecret).
@@ -149,7 +152,7 @@ func startEventConsumer(consumer ev.EventConsumer, lifecycle fx.Lifecycle) {
 	done := make(chan struct{}, 1)
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			go func(){
+			go func() {
 				// blocks until context is terminated
 				err := consumer.Start(consumerCtx)
 				if err != nil {
@@ -159,7 +162,7 @@ func startEventConsumer(consumer ev.EventConsumer, lifecycle fx.Lifecycle) {
 			}()
 			return nil
 		},
-		OnStop:  func(ctx context.Context) error {
+		OnStop: func(ctx context.Context) error {
 			cancel()
 			<-done
 			return nil
@@ -172,7 +175,7 @@ func startService(p InvocationParams) {
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
 
-				if err := p.Shoreline.Start(); err != nil {
+				if err := p.Shoreline.Start(ctx); err != nil {
 					return err
 				}
 

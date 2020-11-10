@@ -83,7 +83,7 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 		found.UpdateStatus(newStatus)
 
 		if a.addOrUpdateConfirmation(req.Context(), found, res) {
-			a.logMetricAsServer(updatedStatus)
+			a.logMetricAsServer(req.Context(), updatedStatus)
 			res.WriteHeader(http.StatusOK)
 			return
 		}
@@ -114,7 +114,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+		if permissions, err := a.tokenUserHasRequestedPermissions(req.Context(), token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
@@ -122,7 +122,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if usrDetails, err := a.sl.GetUser(userId, a.sl.TokenProvide()); err != nil {
+		if usrDetails, err := a.sl.GetUser(req.Context(), userId, a.sl.TokenProvide(req.Context())); err != nil {
 			log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
 			return
@@ -144,7 +144,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 					if token.IsServer {
 						templateName = models.TemplateNameSignupCustodial
 					} else {
-						tokenUserDetails, err := a.sl.GetUser(token.UserID, a.sl.TokenProvide())
+						tokenUserDetails, err := a.sl.GetUser(req.Context(), token.UserID, a.sl.TokenProvide(req.Context()))
 						if err != nil {
 							log.Printf("sendSignUp: error when getting token user [%s]", err.Error())
 							a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
@@ -187,15 +187,15 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 
 			if a.addOrUpdateConfirmation(req.Context(), newSignUp, res) {
-				a.logMetric("signup confirmation created", req)
+				a.logMetric(req.Context(), "signup confirmation created", req)
 
-				if err := a.addProfile(newSignUp); err != nil {
+				if err := a.addProfile(req.Context(), newSignUp); err != nil {
 					log.Printf("sendSignUp: error when adding profile [%s]", err.Error())
 					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 					return
 				} else {
 					profile := &models.Profile{}
-					if err := a.seagull.GetCollection(newSignUp.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
+					if err := a.seagull.GetCollection(req.Context(), newSignUp.UserId, "profile", a.sl.TokenProvide(req.Context()), profile); err != nil {
 						a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "sendSignUp: error getting user profile: ", err.Error())
 						return
 					}
@@ -213,11 +213,11 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 					}
 
 					if a.createAndSendNotification(req, newSignUp, emailContent) {
-						a.logMetricAsServer("signup confirmation sent")
+						a.logMetricAsServer(req.Context(), "signup confirmation sent")
 						res.WriteHeader(http.StatusOK)
 						return
 					} else {
-						a.logMetric("signup confirmation failed to be sent", req)
+						a.logMetric(req.Context(), "signup confirmation failed to be sent", req)
 						log.Print("Something happened generating a signup email")
 					}
 				}
@@ -250,15 +250,15 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		if a.addOrUpdateConfirmation(req.Context(), found, res) {
-			a.logMetricAsServer("signup confirmation recreated")
+			a.logMetricAsServer(req.Context(), "signup confirmation recreated")
 
-			if err := a.addProfile(found); err != nil {
+			if err := a.addProfile(req.Context(), found); err != nil {
 				log.Printf("resendSignUp: error when adding profile [%s]", err.Error())
 				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 				return
 			} else {
 				profile := &models.Profile{}
-				if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
+				if err := a.seagull.GetCollection(req.Context(), found.UserId, "profile", a.sl.TokenProvide(req.Context()), profile); err != nil {
 					a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "resendSignUp: error getting user profile: ", err.Error())
 					return
 				}
@@ -276,9 +276,9 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				}
 
 				if a.createAndSendNotification(req, found, emailContent) {
-					a.logMetricAsServer("signup confirmation re-sent")
+					a.logMetricAsServer(req.Context(), "signup confirmation re-sent")
 				} else {
-					a.logMetricAsServer("signup confirmation failed to be sent")
+					a.logMetricAsServer(req.Context(), "signup confirmation failed to be sent")
 					log.Print("resendSignUp: Something happened trying to resend a signup email")
 				}
 			}
@@ -320,7 +320,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		emailVerified := true
 		updates := shoreline.UserUpdate{EmailVerified: &emailVerified}
 
-		if user, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide()); err != nil {
+		if user, err := a.sl.GetUser(req.Context(), found.UserId, a.sl.TokenProvide(req.Context())); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error trying to get user to check email verified: ", err.Error())
 			return
 
@@ -351,7 +351,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			}
 
 			profile := &models.Profile{}
-			if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
+			if err := a.seagull.GetCollection(req.Context(), found.UserId, "profile", a.sl.TokenProvide(req.Context()), profile); err != nil {
 				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error getting the users profile: ", err.Error())
 				return
 			}
@@ -364,14 +364,14 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			updates.Password = &acceptance.Password
 		}
 
-		if err := a.sl.UpdateUser(found.UserId, updates, a.sl.TokenProvide()); err != nil {
+		if err := a.sl.UpdateUser(req.Context(), found.UserId, updates, a.sl.TokenProvide(req.Context())); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_UPDATING_USR, "acceptSignUp error trying to update user to be email verified: ", err.Error())
 			return
 		}
 
 		found.UpdateStatus(models.StatusCompleted)
 		if a.addOrUpdateConfirmation(req.Context(), found, res) {
-			a.logMetricAsServer("accept signup")
+			a.logMetricAsServer(req.Context(), "accept signup")
 		}
 
 		res.WriteHeader(http.StatusOK)
@@ -415,7 +415,7 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 			return
 		}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+		if permissions, err := a.tokenUserHasRequestedPermissions(req.Context(), token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
@@ -428,7 +428,7 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
 			return
 		} else {
-			a.logMetric("get signups", req)
+			a.logMetric(req.Context(), "get signups", req)
 			log.Printf("getSignUp found %d for user %s", len(signups), userId)
 			a.sendModelAsResWithStatus(res, signups, http.StatusOK)
 			return

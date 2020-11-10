@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -58,22 +60,22 @@ func newtestingShorelingMock(userid string) *testingShorelingMock {
 	return &testingShorelingMock{userid: userid}
 }
 
-func (m *testingShorelingMock) Start() error { return nil }
-func (m *testingShorelingMock) Close()       {}
-func (m *testingShorelingMock) Login(username, password string) (*shoreline.UserData, string, error) {
+func (m *testingShorelingMock) Start(ctx context.Context) error { return nil }
+func (m *testingShorelingMock) Close(ctx context.Context)       {}
+func (m *testingShorelingMock) Login(ctx context.Context, username, password string) (*shoreline.UserData, string, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, "", nil
 }
-func (m *testingShorelingMock) Signup(username, password, email string) (*shoreline.UserData, error) {
+func (m *testingShorelingMock) Signup(ctx context.Context, username, password, email string) (*shoreline.UserData, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
-func (m *testingShorelingMock) TokenProvide() string { return testing_token }
-func (m *testingShorelingMock) GetUser(userID, token string) (*shoreline.UserData, error) {
+func (m *testingShorelingMock) TokenProvide(ctx context.Context) string { return testing_token }
+func (m *testingShorelingMock) GetUser(ctx context.Context, userID, token string) (*shoreline.UserData, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
-func (m *testingShorelingMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate, token string) error {
+func (m *testingShorelingMock) UpdateUser(ctx context.Context, userID string, userUpdate shoreline.UserUpdate, token string) error {
 	return nil
 }
-func (m *testingShorelingMock) CheckToken(token string) *shoreline.TokenData {
+func (m *testingShorelingMock) CheckToken(ctx context.Context, token string) *shoreline.TokenData {
 	return &shoreline.TokenData{UserID: m.userid, IsServer: false}
 }
 

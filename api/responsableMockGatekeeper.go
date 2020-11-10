@@ -1,6 +1,10 @@
 package api
 
-import "github.com/tidepool-org/go-common/clients"
+import (
+	"context"
+
+	"github.com/tidepool-org/go-common/clients"
+)
 
 type PermissionsResponse struct {
 	Permissions clients.Permissions
@@ -34,7 +38,7 @@ func (c *ResponsableMockGatekeeper) Reset() {
 	c.SetPermissionsResponses = nil
 }
 
-func (c *ResponsableMockGatekeeper) UserInGroup(userID, groupID string) (clients.Permissions, error) {
+func (c *ResponsableMockGatekeeper) UserInGroup(ctx context.Context, userID, groupID string) (clients.Permissions, error) {
 	if len(c.UserInGroupResponses) > 0 {
 		var response PermissionsResponse
 		response, c.UserInGroupResponses = c.UserInGroupResponses[0], c.UserInGroupResponses[1:]
@@ -43,7 +47,7 @@ func (c *ResponsableMockGatekeeper) UserInGroup(userID, groupID string) (clients
 	panic("UserInGroupResponses unavailable")
 }
 
-func (c *ResponsableMockGatekeeper) UsersInGroup(groupID string) (clients.UsersPermissions, error) {
+func (c *ResponsableMockGatekeeper) UsersInGroup(ctx context.Context, groupID string) (clients.UsersPermissions, error) {
 	if len(c.UsersInGroupResponses) > 0 {
 		var response UsersPermissionsResponse
 		response, c.UsersInGroupResponses = c.UsersInGroupResponses[0], c.UsersInGroupResponses[1:]
@@ -52,7 +56,7 @@ func (c *ResponsableMockGatekeeper) UsersInGroup(groupID string) (clients.UsersP
 	panic("UsersInGroupResponses unavailable")
 }
 
-func (c *ResponsableMockGatekeeper) SetPermissions(userID, groupID string, permissions clients.Permissions) (clients.Permissions, error) {
+func (c *ResponsableMockGatekeeper) SetPermissions(ctx context.Context, userID, groupID string, permissions clients.Permissions) (clients.Permissions, error) {
 	if len(c.SetPermissionsResponses) > 0 {
 		var response PermissionsResponse
 		response, c.SetPermissionsResponses = c.SetPermissionsResponses[0], c.SetPermissionsResponses[1:]

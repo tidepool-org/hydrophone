@@ -53,10 +53,10 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 	}
 
 	//already in the group?
-	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
+	invitedUsr := a.findExistingUser(ctx, inviteeEmail, a.sl.TokenProvide(ctx))
 
 	if invitedUsr != nil && invitedUsr.UserID != "" {
-		if perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorID); err != nil {
+		if perms, err := a.gatekeeper.UserInGroup(ctx, invitedUsr.UserID, invitorID); err != nil {
 			log.Printf("error checking if user is in group [%v]", err)
 		} else if perms != nil {
 			log.Println(statusExistingMemberMessage)
@@ -89,7 +89,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			return
 		}
 
-		invitedUsr := a.findExistingUser(inviteeID, req.Header.Get(TP_SESSION_TOKEN))
+		invitedUsr := a.findExistingUser(req.Context(), inviteeID, req.Header.Get(TP_SESSION_TOKEN))
 
 		//find all oustanding invites were this user is the invite//
 		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
@@ -99,10 +99,10 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			log.Printf("GetReceivedInvitations: error [%v] when finding peding invites ", err)
 		}
 
-		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
+		if invites := a.checkFoundConfirmations(req.Context(), res, found, err); invites != nil {
 			a.ensureIdSet(req.Context(), inviteeID, invites)
 			log.Printf("GetReceivedInvitations: found and have checked [%d] invites ", len(invites))
-			a.logMetric("get received invites", req)
+			a.logMetric(req.Context(), "get received invites", req)
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
 			return
 		}
@@ -125,7 +125,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+		if permissions, err := a.tokenUserHasRequestedPermissions(req.Context(), token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
@@ -135,8 +135,8 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 
 		//find all invites I have sent that are pending or declined
 		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{CreatorId: invitorID, Type: models.TypeCareteamInvite}, models.StatusPending, models.StatusDeclined)
-		if invitations := a.checkFoundConfirmations(res, found, err); invitations != nil {
-			a.logMetric("get sent invites", req)
+		if invitations := a.checkFoundConfirmations(req.Context(), res, found, err); invitations != nil {
+			a.logMetric(req.Context(), "get sent invites", req)
 			a.sendModelAsResWithStatus(res, invitations, http.StatusOK)
 			return
 		}
@@ -222,7 +222,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 
 		var permissions commonClients.Permissions
 		conf.DecodeContext(&permissions)
-		setPerms, err := a.gatekeeper.SetPermissions(inviteeID, invitorID, permissions)
+		setPerms, err := a.gatekeeper.SetPermissions(req.Context(), inviteeID, invitorID, permissions)
 		if err != nil {
 			log.Printf("AcceptInvite error setting permissions [%v]\n", err)
 			a.sendModelAsResWithStatus(
@@ -240,7 +240,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 			return
 		}
-		a.logMetric("acceptinvite", req)
+		a.logMetric(req.Context(), "acceptinvite", req)
 		res.WriteHeader(http.StatusOK)
 		res.Write([]byte(STATUS_OK))
 		return
@@ -263,7 +263,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+		if permissions, err := a.tokenUserHasRequestedPermissions(req.Context(), token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
@@ -286,7 +286,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			conf.UpdateStatus(models.StatusCanceled)
 
 			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
-				a.logMetric("canceled invite", req)
+				a.logMetric(req.Context(), "canceled invite", req)
 				res.WriteHeader(http.StatusOK)
 				return
 			}
@@ -340,7 +340,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 			conf.UpdateStatus(models.StatusDeclined)
 
 			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
-				a.logMetric("dismissinvite", req)
+				a.logMetric(req.Context(), "dismissinvite", req)
 				res.WriteHeader(http.StatusOK)
 				return
 			}
@@ -368,7 +368,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+		if permissions, err := a.tokenUserHasRequestedPermissions(req.Context(), token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
@@ -403,9 +403,9 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 
 			if a.addOrUpdateConfirmation(req.Context(), invite, res) {
-				a.logMetric("invite created", req)
+				a.logMetric(req.Context(), "invite created", req)
 
-				if err := a.addProfile(invite); err != nil {
+				if err := a.addProfile(req.Context(), invite); err != nil {
 					log.Println("SendInvite: ", err.Error())
 				} else {
 
@@ -428,7 +428,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 					}
 
 					if a.createAndSendNotification(req, invite, emailContent) {
-						a.logMetric("invite sent", req)
+						a.logMetric(req.Context(), "invite sent", req)
 					}
 				}
 

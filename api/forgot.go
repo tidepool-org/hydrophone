@@ -52,7 +52,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	resetCnf, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
 	resetCnf.Email = email
 
-	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
+	if resetUsr := a.findExistingUser(req.Context(), resetCnf.Email, a.sl.TokenProvide(req.Context())); resetUsr != nil {
 		resetCnf.UserId = resetUsr.UserID
 	} else {
 		log.Print(STATUS_RESET_NO_ACCOUNT)
@@ -64,7 +64,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	}
 
 	if a.addOrUpdateConfirmation(req.Context(), resetCnf, res) {
-		a.logMetricAsServer("reset confirmation created")
+		a.logMetricAsServer(req.Context(), "reset confirmation created")
 
 		emailContent := map[string]interface{}{
 			"Key":   resetCnf.Key,
@@ -72,9 +72,9 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		}
 
 		if a.createAndSendNotification(req, resetCnf, emailContent) {
-			a.logMetricAsServer("reset confirmation sent")
+			a.logMetricAsServer(req.Context(), "reset confirmation sent")
 		} else {
-			a.logMetricAsServer("reset confirmation failed to be sent")
+			a.logMetricAsServer(req.Context(), "reset confirmation failed to be sent")
 			log.Print("Something happened generating a passwordReset email")
 		}
 	}
@@ -137,11 +137,11 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 
 	if conf := a.findResetConfirmation(resetCnf, req.Context(), res); conf != nil {
 
-		token := a.sl.TokenProvide()
+		token := a.sl.TokenProvide(req.Context())
 
-		if usr := a.findExistingUser(rb.Email, token); usr != nil {
+		if usr := a.findExistingUser(req.Context(), rb.Email, token); usr != nil {
 
-			if err := a.sl.UpdateUser(usr.UserID, shoreline.UserUpdate{Password: &rb.Password}, token); err != nil {
+			if err := a.sl.UpdateUser(req.Context(), usr.UserID, shoreline.UserUpdate{Password: &rb.Password}, token); err != nil {
 				log.Printf("acceptPassword: error updating password as part of password reset [%v]", err)
 				status := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
 				a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
@@ -150,7 +150,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 			conf.UpdateStatus(models.StatusCompleted)
 			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
 				//STATUS_RESET_ACCEPTED
-				a.logMetricAsServer("password reset")
+				a.logMetricAsServer(req.Context(), "password reset")
 				a.sendModelAsResWithStatus(
 					res,
 					status.StatusError{Status: status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},

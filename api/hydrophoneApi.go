@@ -234,9 +234,9 @@ func (a *Api) findExistingConfirmation(ctx context.Context, conf *models.Confirm
 
 //Find this confirmation
 //write error if it fails
-func (a *Api) addProfile(conf *models.Confirmation) error {
+func (a *Api) addProfile(ctx context.Context, conf *models.Confirmation) error {
 	if conf.CreatorId != "" {
-		if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &conf.Creator.Profile); err != nil {
+		if err := a.seagull.GetCollection(ctx, conf.CreatorId, "profile", a.sl.TokenProvide(ctx), &conf.Creator.Profile); err != nil {
 			log.Printf("error getting the creators profile [%v] ", err)
 			return err
 		}
@@ -248,7 +248,7 @@ func (a *Api) addProfile(conf *models.Confirmation) error {
 
 //Find these confirmations
 //write error if fails or write no-content if it doesn't exist
-func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
+func (a *Api) checkFoundConfirmations(ctx context.Context, res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
 	if err != nil {
 		log.Println("Error finding confirmations ", err)
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
@@ -261,7 +261,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 		return nil
 	} else {
 		for i := range results {
-			if err = a.addProfile(results[i]); err != nil {
+			if err = a.addProfile(ctx, results[i]); err != nil {
 				//report and move on
 				log.Println("Error getting profile", err.Error())
 			}
@@ -314,7 +314,7 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 //find and validate the token
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
-		td := a.sl.CheckToken(token)
+		td := a.sl.CheckToken(req.Context(), token)
 
 		if td == nil {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
@@ -331,23 +331,23 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 }
 
 //send metric
-func (a *Api) logMetric(name string, req *http.Request) {
+func (a *Api) logMetric(ctx context.Context, name string, req *http.Request) {
 	token := req.Header.Get(TP_SESSION_TOKEN)
 	emptyParams := make(map[string]string)
-	a.metrics.PostThisUser(name, token, emptyParams)
+	a.metrics.PostThisUser(ctx, name, token, emptyParams)
 }
 
 //send metric
-func (a *Api) logMetricAsServer(name string) {
-	token := a.sl.TokenProvide()
+func (a *Api) logMetricAsServer(ctx context.Context, name string) {
+	token := a.sl.TokenProvide(ctx)
 	emptyParams := make(map[string]string)
-	a.metrics.PostServer(name, token, emptyParams)
+	a.metrics.PostServer(ctx, name, token, emptyParams)
 }
 
 //Find existing user based on the given indentifier
 //The indentifier could be either an id or email address
-func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
-	if usr, err := a.sl.GetUser(indentifier, token); err != nil {
+func (a *Api) findExistingUser(ctx context.Context, indentifier, token string) *shoreline.UserData {
+	if usr, err := a.sl.GetUser(ctx, indentifier, token); err != nil {
 		log.Printf("Error [%s] trying to get existing users details", err.Error())
 		return nil
 	} else {
@@ -420,12 +420,12 @@ func (a *Api) sendErrorWithCode(res http.ResponseWriter, statusCode int, errorCo
 	a.sendModelAsResWithStatus(res, status.NewStatusWithError(statusCode, errorCode, reason), statusCode)
 }
 
-func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, groupId string, requestedPermissions commonClients.Permissions) (commonClients.Permissions, error) {
+func (a *Api) tokenUserHasRequestedPermissions(ctx context.Context, tokenData *shoreline.TokenData, groupId string, requestedPermissions commonClients.Permissions) (commonClients.Permissions, error) {
 	if tokenData.IsServer {
 		return requestedPermissions, nil
 	} else if tokenData.UserID == groupId {
 		return requestedPermissions, nil
-	} else if actualPermissions, err := a.gatekeeper.UserInGroup(tokenData.UserID, groupId); err != nil {
+	} else if actualPermissions, err := a.gatekeeper.UserInGroup(ctx, tokenData.UserID, groupId); err != nil {
 		return commonClients.Permissions{}, err
 	} else {
 		finalPermissions := make(commonClients.Permissions)
