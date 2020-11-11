@@ -9,7 +9,9 @@ import (
 	"time"
 
 	ev "github.com/tidepool-org/go-common/events"
+	"github.com/tidepool-org/go-common/tracing"
 	"github.com/tidepool-org/hydrophone/events"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
@@ -17,7 +19,6 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	common "github.com/tidepool-org/go-common"
 	"github.com/tidepool-org/go-common/clients"
-	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/hydrophone/api"
@@ -58,16 +59,18 @@ func shorelineProvider(config OutboundConfig, httpClient *http.Client) shoreline
 }
 
 func gatekeeperProvider(config OutboundConfig, shoreline shoreline.Client, httpClient *http.Client) clients.Gatekeeper {
+	host, _ := url.Parse(config.PermissionClientAddress)
 	return clients.NewGatekeeperClientBuilder().
-		WithHostGetter(disc.NewStaticHostGetterFromString(config.PermissionClientAddress)).
+		WithHost(host).
 		WithHttpClient(httpClient).
 		WithTokenProvider(shoreline).
 		Build()
 }
 
 func highwaterProvider(config OutboundConfig, httpClient *http.Client) highwater.Client {
+	host, _ := url.Parse(config.MetricsClientAddress)
 	return highwater.NewHighwaterClientBuilder().
-		WithHostGetter(disc.NewStaticHostGetterFromString(config.MetricsClientAddress)).
+		WithHost(host).
 		WithHttpClient(httpClient).
 		WithName("highwater").
 		WithSource("hydrophone").
@@ -76,8 +79,9 @@ func highwaterProvider(config OutboundConfig, httpClient *http.Client) highwater
 }
 
 func seagullProvider(config OutboundConfig, httpClient *http.Client) clients.Seagull {
+	host, _ := url.Parse(config.SeagullClientAddress)
 	return clients.NewSeagullClientBuilder().
-		WithHostGetter(disc.NewStaticHostGetterFromString(config.SeagullClientAddress)).
+		WithHost(host).
 		WithHttpClient(httpClient).
 		Build()
 }
@@ -105,7 +109,7 @@ func httpClientProvider() *http.Client {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
-	return &http.Client{Transport: tr}
+	return &http.Client{Transport: otelhttp.NewTransport(tr)}
 }
 
 func emailTemplateProvider() (models.Templates, error) {
@@ -203,6 +207,7 @@ func main() {
 		sc.SesModule,
 		sc.MongoModule,
 		api.RouterModule,
+		tracing.TracingModule,
 		fx.Provide(
 			cloudEventsConfigProvider,
 			cloudEventsConsumerProvider,
@@ -220,6 +225,7 @@ func main() {
 			serverProvider,
 			api.NewApi,
 		),
+		fx.Invoke(tracing.StartTracer),
 		fx.Invoke(startEventConsumer),
 		fx.Invoke(startService),
 	).Run()
