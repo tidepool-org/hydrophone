@@ -225,8 +225,6 @@ func main() {
 			serverProvider,
 			api.NewApi,
 		),
-		fx.Invoke(tracing.StartTracer),
-		fx.Invoke(startEventConsumer),
-		fx.Invoke(startService),
+		fx.Invoke(tracing.StartTracer, startEventConsumer, startService),
 	).Run()
 }
