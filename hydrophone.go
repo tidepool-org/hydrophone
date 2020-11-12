@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"github.com/tidepool-org/go-common/clients"
@@ -44,29 +43,6 @@ type InvocationParams struct {
 	Config         configuration.InboundConfig
 	Server         *common.Server
 	EventsConsumer ev.EventConsumer
-}
-
-func startEventConsumer(consumer ev.EventConsumer, lifecycle fx.Lifecycle) {
-	consumerCtx, cancel := context.WithCancel(context.Background())
-	done := make(chan struct{}, 1)
-	lifecycle.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			go func() {
-				// blocks until context is terminated
-				err := consumer.Start(consumerCtx)
-				if err != nil {
-					log.Printf("Unable to start cloud events consumer: %v", err)
-				}
-				done <- struct{}{}
-			}()
-			return nil
-		},
-		OnStop: func(ctx context.Context) error {
-			cancel()
-			<-done
-			return nil
-		},
-	})
 }
 
 func startService(p InvocationParams) {
@@ -118,6 +94,6 @@ func main() {
 			serverProvider,
 			api.NewApi,
 		),
-		fx.Invoke(tracing.StartTracer, startEventConsumer, startService),
+		fx.Invoke(tracing.StartTracer, cloudevents.StartEventConsumer, startService),
 	).Run()
 }
