@@ -17,6 +17,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/configuration"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
+	cloudevents "github.com/tidepool-org/go-common/events"
 	"github.com/tidepool-org/hydrophone/api"
 	sc "github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/models"
@@ -33,23 +34,6 @@ func serverProvider(config configuration.InboundConfig, rtr *mux.Router) *common
 		Addr:    config.ListenAddress,
 		Handler: rtr,
 	})
-}
-
-func cloudEventsConfigProvider() (*ev.CloudEventsConfig, error) {
-	cfg := ev.NewConfig()
-	if err := cfg.LoadFromEnv(); err != nil {
-		return nil, err
-	}
-	return cfg, nil
-}
-
-func cloudEventsConsumerProvider(config *ev.CloudEventsConfig, handler ev.EventHandler) (ev.EventConsumer, error) {
-	consumer, err := ev.NewSaramaCloudEventsConsumer(config)
-	if err != nil {
-		return nil, err
-	}
-	consumer.RegisterHandler(handler)
-	return consumer, nil
 }
 
 //InvocationParams are the parameters need to kick off a service
@@ -120,8 +104,8 @@ func main() {
 		api.RouterModule,
 		tracing.TracingModule,
 		fx.Provide(
-			cloudEventsConfigProvider,
-			cloudEventsConsumerProvider,
+			cloudevents.CloudEventsConfigProvider,
+			cloudevents.CloudEventsConsumerProvider,
 			events.NewHandler,
 		),
 		clients.SeagullModule,
