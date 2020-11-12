@@ -207,7 +207,7 @@ func main() {
 		sc.SesModule,
 		sc.MongoModule,
 		api.RouterModule,
-		tracing.TracingModule,
+		tracing.StdoutTracingModule,
 		fx.Provide(
 			cloudEventsConfigProvider,
 			cloudEventsConsumerProvider,
