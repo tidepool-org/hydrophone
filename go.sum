@@ -192,8 +192,8 @@ github.com/stretchr/testify v1.6.0 h1:jlIyCplCJFULU/01vCkhKuTyc3OorI3bJFuw6obfgh
 github.com/stretchr/testify v1.6.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.6.1 h1:hDPOHmpOpP40lSULcqw7IrRb/u7w6RpDC9399XyoNd0=
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/tidepool-org/go-common v0.7.2-0.20201112004731-8f0edbeef707 h1:JTvgZlH8keQb3yShArCqI/ODDe8qhUQh52KYT0HaOnU=
-github.com/tidepool-org/go-common v0.7.2-0.20201112004731-8f0edbeef707/go.mod h1:c206Lm9TdtBPn9DExPuu7O/mHp8U0hmY04h0hCWzNJY=
+github.com/tidepool-org/go-common v0.7.2-0.20201112040031-21e765d9f784 h1:i0oflSo/B+Nznp6ofwI9nlUf2TbW6bYnLQEnVVuo7wg=
+github.com/tidepool-org/go-common v0.7.2-0.20201112040031-21e765d9f784/go.mod h1:m6u/uQi+55UqAInk5gkaa6J+mPlSjImsI5SPPTVzngU=
 github.com/tidwall/pretty v1.0.0 h1:HsD+QiTn7sK6flMKIvNmpqz1qrpP3Ps6jOKIKMooyg4=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=

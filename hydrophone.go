@@ -2,23 +2,19 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"log"
 	"net/http"
-	"net/url"
-	"time"
 
+	"github.com/tidepool-org/go-common/clients"
 	ev "github.com/tidepool-org/go-common/events"
 	"github.com/tidepool-org/go-common/tracing"
 	"github.com/tidepool-org/hydrophone/events"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
 
-	"github.com/kelseyhightower/envconfig"
 	common "github.com/tidepool-org/go-common"
-	"github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/configuration"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/hydrophone/api"
@@ -27,97 +23,12 @@ import (
 	"github.com/tidepool-org/hydrophone/templates"
 )
 
-type (
-	// OutboundConfig contains how to communicate with the dependent services
-	OutboundConfig struct {
-		Protocol                string `default:"https"`
-		ServerSecret            string `split_words:"true" required:"true"`
-		AuthClientAddress       string `split_words:"true" required:"true"`
-		PermissionClientAddress string `split_words:"true" required:"true"`
-		MetricsClientAddress    string `split_words:"true" required:"true"`
-		SeagullClientAddress    string `split_words:"true" required:"true"`
-	}
-
-	//InboundConfig describes how to receive inbound communication
-	InboundConfig struct {
-		Protocol      string `default:"http"`
-		SslKeyFile    string `split_words:"true" default:""`
-		SslCertFile   string `split_words:"true" default:""`
-		ListenAddress string `split_words:"true" required:"true"`
-	}
-)
-
-func shorelineProvider(config OutboundConfig, httpClient *http.Client) shoreline.Client {
-	host, _ := url.Parse(config.AuthClientAddress)
-	return shoreline.NewShorelineClientBuilder().
-		WithHost(host).
-		WithHttpClient(httpClient).
-		WithName("shoreline").
-		WithSecret(config.ServerSecret).
-		WithTokenRefreshInterval(time.Hour).
-		Build()
-}
-
-func gatekeeperProvider(config OutboundConfig, shoreline shoreline.Client, httpClient *http.Client) clients.Gatekeeper {
-	host, _ := url.Parse(config.PermissionClientAddress)
-	return clients.NewGatekeeperClientBuilder().
-		WithHost(host).
-		WithHttpClient(httpClient).
-		WithTokenProvider(shoreline).
-		Build()
-}
-
-func highwaterProvider(config OutboundConfig, httpClient *http.Client) highwater.Client {
-	host, _ := url.Parse(config.MetricsClientAddress)
-	return highwater.NewHighwaterClientBuilder().
-		WithHost(host).
-		WithHttpClient(httpClient).
-		WithName("highwater").
-		WithSource("hydrophone").
-		WithVersion("v0.0.1").
-		Build()
-}
-
-func seagullProvider(config OutboundConfig, httpClient *http.Client) clients.Seagull {
-	host, _ := url.Parse(config.SeagullClientAddress)
-	return clients.NewSeagullClientBuilder().
-		WithHost(host).
-		WithHttpClient(httpClient).
-		Build()
-}
-
-func configProvider() (OutboundConfig, error) {
-	var config OutboundConfig
-	err := envconfig.Process("tidepool", &config)
-	if err != nil {
-		return OutboundConfig{}, err
-	}
-	return config, nil
-}
-
-func serviceConfigProvider() (InboundConfig, error) {
-	var config InboundConfig
-	err := envconfig.Process("service", &config)
-	if err != nil {
-		return InboundConfig{}, err
-	}
-	return config, nil
-}
-
-func httpClientProvider() *http.Client {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	return &http.Client{Transport: otelhttp.NewTransport(tr)}
-}
-
 func emailTemplateProvider() (models.Templates, error) {
 	emailTemplates, err := templates.New()
 	return emailTemplates, err
 }
 
-func serverProvider(config InboundConfig, rtr *mux.Router) *common.Server {
+func serverProvider(config configuration.InboundConfig, rtr *mux.Router) *common.Server {
 	return common.NewServer(&http.Server{
 		Addr:    config.ListenAddress,
 		Handler: rtr,
@@ -146,7 +57,7 @@ type InvocationParams struct {
 	fx.In
 	Lifecycle      fx.Lifecycle
 	Shoreline      shoreline.Client
-	Config         InboundConfig
+	Config         configuration.InboundConfig
 	Server         *common.Server
 	EventsConsumer ev.EventConsumer
 }
@@ -213,14 +124,12 @@ func main() {
 			cloudEventsConsumerProvider,
 			events.NewHandler,
 		),
+		clients.SeagullModule,
+		clients.GatekeeperModule,
+		shoreline.ShorelineModule,
+		highwater.HighwaterModule,
+		configuration.Module,
 		fx.Provide(
-			seagullProvider,
-			highwaterProvider,
-			gatekeeperProvider,
-			shorelineProvider,
-			configProvider,
-			serviceConfigProvider,
-			httpClientProvider,
 			emailTemplateProvider,
 			serverProvider,
 			api.NewApi,
