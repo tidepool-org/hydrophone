@@ -7,7 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/go-common v0.7.2-0.20201112051647-af779f9fb5b8
+	github.com/tidepool-org/go-common v0.7.2-0.20201112061205-12377f8c59cb
 	go.mongodb.org/mongo-driver v1.4.1
 	go.uber.org/fx v1.13.1
 )

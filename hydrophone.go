@@ -18,14 +18,8 @@ import (
 	cloudevents "github.com/tidepool-org/go-common/events"
 	"github.com/tidepool-org/hydrophone/api"
 	sc "github.com/tidepool-org/hydrophone/clients"
-	"github.com/tidepool-org/hydrophone/models"
 	"github.com/tidepool-org/hydrophone/templates"
 )
-
-func emailTemplateProvider() (models.Templates, error) {
-	emailTemplates, err := templates.New()
-	return emailTemplates, err
-}
 
 func serverProvider(config configuration.InboundConfig, rtr *mux.Router) *common.Server {
 	return common.NewServer(&http.Server{
@@ -52,6 +46,7 @@ func startShoreline(shoreline shoreline.Client, lifecycle fx.Lifecycle) {
 }
 
 func startService(server *common.Server, config configuration.InboundConfig, lifecycle fx.Lifecycle) {
+
 	lifecycle.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
@@ -91,7 +86,7 @@ func main() {
 		highwater.HighwaterModule,
 		configuration.Module,
 		fx.Provide(
-			emailTemplateProvider,
+			templates.New,
 			serverProvider,
 			api.NewApi,
 		),
