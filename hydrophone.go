@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/tidepool-org/go-common/clients"
-	ev "github.com/tidepool-org/go-common/events"
 	"github.com/tidepool-org/go-common/tracing"
 	"github.com/tidepool-org/hydrophone/events"
 
@@ -35,30 +34,32 @@ func serverProvider(config configuration.InboundConfig, rtr *mux.Router) *common
 	})
 }
 
-//InvocationParams are the parameters need to kick off a service
-type InvocationParams struct {
-	fx.In
-	Lifecycle      fx.Lifecycle
-	Shoreline      shoreline.Client
-	Config         configuration.InboundConfig
-	Server         *common.Server
-	EventsConsumer ev.EventConsumer
-}
-
-func startService(p InvocationParams) {
-	p.Lifecycle.Append(
+func startShoreline(shoreline shoreline.Client, lifecycle fx.Lifecycle) {
+	lifecycle.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
-
-				if err := p.Shoreline.Start(ctx); err != nil {
+				if err := shoreline.Start(ctx); err != nil {
 					return err
 				}
+				return nil
+			},
+			OnStop: func(ctx context.Context) error {
+				shoreline.Close(ctx)
+				return nil
+			},
+		},
+	)
+}
 
+func startService(server *common.Server, config configuration.InboundConfig, lifecycle fx.Lifecycle) {
+	lifecycle.Append(
+		fx.Hook{
+			OnStart: func(ctx context.Context) error {
 				var start func() error
-				if p.Config.Protocol == "https" {
-					start = func() error { return p.Server.ListenAndServeTLS(p.Config.SslCertFile, p.Config.SslKeyFile) }
+				if config.Protocol == "https" {
+					start = func() error { return server.ListenAndServeTLS(config.SslCertFile, config.SslKeyFile) }
 				} else {
-					start = func() error { return p.Server.ListenAndServe() }
+					start = func() error { return server.ListenAndServe() }
 				}
 				if err := start(); err != nil {
 					return err
@@ -67,7 +68,7 @@ func startService(p InvocationParams) {
 				return nil
 			},
 			OnStop: func(ctx context.Context) error {
-				return p.Server.Close()
+				return server.Close()
 			},
 		},
 	)
@@ -94,6 +95,6 @@ func main() {
 			serverProvider,
 			api.NewApi,
 		),
-		fx.Invoke(tracing.StartTracer, cloudevents.StartEventConsumer, startService),
+		fx.Invoke(tracing.StartTracer, cloudevents.StartEventConsumer, startShoreline, startService),
 	).Run()
 }
