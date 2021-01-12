@@ -35,14 +35,14 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	 */
 
 	mgoConfirmationsCollection(mc).Drop(context.TODO())
-
+	ctx := context.Background()
 	//The basics
 	//+++++++++++++++++++++++++++
-	if err := mc.UpsertConfirmation(confirmation); err != nil {
+	if err := mc.UpsertConfirmation(ctx, confirmation); err != nil {
 		t.Fatalf("we could not save the con - err [%v]", err)
 	}
 
-	if found, err := mc.FindConfirmation(confirmation); err == nil {
+	if found, err := mc.FindConfirmation(ctx, confirmation); err == nil {
 		if found == nil {
 			t.Fatalf("the confirmation was not found")
 		}
@@ -55,7 +55,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 
 	// Uppercase the email and try again (detect case sensitivity)
 	confirmation.Email = "TEST@TEST.COM"
-	if found, err := mc.FindConfirmation(confirmation); err == nil {
+	if found, err := mc.FindConfirmation(ctx, confirmation); err == nil {
 		if found == nil {
 			t.Fatalf("the uppercase confirmation was not found")
 		}
@@ -67,17 +67,17 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	}
 
 	//when the conf doesn't exist
-	if found, err := mc.FindConfirmation(doesNotExist); err == nil && found != nil {
+	if found, err := mc.FindConfirmation(ctx, doesNotExist); err == nil && found != nil {
 		t.Fatalf("there should have been no confirmation found [%v]", found)
 	} else if err != nil {
 		t.Fatalf("and error was returned when it should not have been - err [%v]", err)
 	}
 
-	if err := mc.RemoveConfirmation(confirmation); err != nil {
+	if err := mc.RemoveConfirmation(ctx, confirmation); err != nil {
 		t.Fatalf("we could not remove the confirmation - err [%v]", err)
 	}
 
-	if confirmation, err := mc.FindConfirmation(confirmation); err == nil {
+	if confirmation, err := mc.FindConfirmation(ctx, confirmation); err == nil {
 		if confirmation != nil {
 			t.Fatalf("the confirmation has been removed so we shouldn't find it %v", confirmation)
 		}
@@ -89,7 +89,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	c1.UserId = toUser
 	c1.Email = toEmail
 	c1.UpdateStatus(models.StatusDeclined)
-	mc.UpsertConfirmation(c1)
+	mc.UpsertConfirmation(ctx, c1)
 
 	// Sleep some so the second confirmation created time is after the first confirmation created time
 	time.Sleep(time.Second)
@@ -97,11 +97,11 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	c2, _ := models.NewConfirmation(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, fromUser)
 	c2.Email = toOtherEmail
 	c2.UpdateStatus(models.StatusCompleted)
-	mc.UpsertConfirmation(c2)
+	mc.UpsertConfirmation(ctx, c2)
 
 	searchForm := &models.Confirmation{CreatorId: fromUser}
 
-	if confirmations, err := mc.FindConfirmations(searchForm, models.StatusDeclined, models.StatusCompleted); err == nil {
+	if confirmations, err := mc.FindConfirmations(ctx, searchForm, models.StatusDeclined, models.StatusCompleted); err == nil {
 		if len(confirmations) != 2 {
 			t.Fatalf("we should have found 2 confirmations %v", confirmations)
 		}
@@ -128,7 +128,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	}
 	searchToOtherEmail := &models.Confirmation{CreatorId: fromUser, Email: toOtherEmail}
 	//only email address
-	if confirmations, err := mc.FindConfirmations(searchToOtherEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
+	if confirmations, err := mc.FindConfirmations(ctx, searchToOtherEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
 		if len(confirmations) != 1 {
 			t.Fatalf("we should have found 1 confirmations %v", confirmations)
 		}
@@ -141,7 +141,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	}
 	searchToEmail := &models.Confirmation{CreatorId: fromUser, Email: toEmail}
 	//with both userid and email address
-	if confirmations, err := mc.FindConfirmations(searchToEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
+	if confirmations, err := mc.FindConfirmations(ctx, searchToEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
 		if len(confirmations) != 1 {
 			t.Fatalf("we should have found 1 confirmations %v", confirmations)
 		}

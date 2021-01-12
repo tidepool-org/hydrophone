@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
@@ -36,15 +37,15 @@ func mgoConfirmationsCollection(c *Client) *mongo.Collection {
 }
 
 // UpsertConfirmation creates or updates a confirmation
-func (c *Client) UpsertConfirmation(confirmation *models.Confirmation) error {
+func (c *Client) UpsertConfirmation(ctx context.Context, confirmation *models.Confirmation) error {
 	options := options.Update().SetUpsert(true)
 	update := bson.D{{"$set", confirmation}}
-	_, err := mgoConfirmationsCollection(c).UpdateOne(c.Context, bson.M{"_id": confirmation.Key}, update, options)
+	_, err := mgoConfirmationsCollection(c).UpdateOne(ctx, bson.M{"_id": confirmation.Key}, update, options)
 	return err
 }
 
 // FindConfirmation returns latest created confirmation matching filter passed as parameter
-func (c *Client) FindConfirmation(confirmation *models.Confirmation) (result *models.Confirmation, err error) {
+func (c *Client) FindConfirmation(ctx context.Context, confirmation *models.Confirmation) (result *models.Confirmation, err error) {
 
 	var query bson.M = bson.M{}
 
@@ -72,7 +73,7 @@ func (c *Client) FindConfirmation(confirmation *models.Confirmation) (result *mo
 	}
 	opts := options.FindOne()
 	opts.SetSort(bson.D{primitive.E{Key: "created", Value: -1}})
-	if err = mgoConfirmationsCollection(c).FindOne(c.Context, query, opts).Decode(&result); err != nil && err != mongo.ErrNoDocuments {
+	if err = mgoConfirmationsCollection(c).FindOne(ctx, query, opts).Decode(&result); err != nil && err != mongo.ErrNoDocuments {
 		log.Printf("FindConfirmation: something bad happened [%v]", err)
 		return result, err
 	}
@@ -81,7 +82,7 @@ func (c *Client) FindConfirmation(confirmation *models.Confirmation) (result *mo
 }
 
 // FindConfirmations returns all created confirmations matching filter passed as parameter
-func (c *Client) FindConfirmations(confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
+func (c *Client) FindConfirmations(ctx context.Context, confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
 
 	var query bson.M = bson.M{}
 
@@ -110,20 +111,20 @@ func (c *Client) FindConfirmations(confirmation *models.Confirmation, statuses .
 
 	opts := options.Find()
 	opts.SetSort(bson.D{primitive.E{Key: "created", Value: -1}})
-	cursor, err := mgoConfirmationsCollection(c).Find(c.Context, query, opts)
-	defer cursor.Close(c.Context)
+	cursor, err := mgoConfirmationsCollection(c).Find(ctx, query, opts)
+	defer cursor.Close(ctx)
 	if err != nil {
 		log.Printf("FindConfirmation: something bad happened [%v]", err)
 		return results, err
 	}
-	err = cursor.All(c.Context, &results)
+	err = cursor.All(ctx, &results)
 	return results, err
 }
 
 // RemoveConfirmation deletes confirmation based on key (_id)
-func (c *Client) RemoveConfirmation(confirmation *models.Confirmation) error {
+func (c *Client) RemoveConfirmation(ctx context.Context, confirmation *models.Confirmation) error {
 
-	if _, err := mgoConfirmationsCollection(c).DeleteOne(c.Context, bson.M{"_id": confirmation.Key}); err != nil {
+	if _, err := mgoConfirmationsCollection(c).DeleteOne(ctx, bson.M{"_id": confirmation.Key}); err != nil {
 		return err
 	}
 	return nil

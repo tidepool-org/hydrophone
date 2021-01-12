@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -36,7 +37,7 @@ func (d *MockStoreClient) Collection(collectionName string, databaseName ...stri
 }
 func (d *MockStoreClient) WaitUntilStarted() {}
 func (d *MockStoreClient) Start()            {}
-func (d *MockStoreClient) UpsertConfirmation(notification *models.Confirmation) error {
+func (d *MockStoreClient) UpsertConfirmation(ctx context.Context, notification *models.Confirmation) error {
 	if d.doBad {
 		return errors.New("UpsertConfirmation failure")
 	}
@@ -55,7 +56,7 @@ func (d *MockStoreClient) UpsertConfirmation(notification *models.Confirmation) 
 	return nil
 }
 
-func (d *MockStoreClient) FindConfirmation(notification *models.Confirmation) (result *models.Confirmation, err error) {
+func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *models.Confirmation) (result *models.Confirmation, err error) {
 	if d.doBad {
 		return nil, errors.New("FindConfirmation failure")
 	}
@@ -84,7 +85,7 @@ func (d *MockStoreClient) FindConfirmation(notification *models.Confirmation) (r
 	return notification, nil
 }
 
-func (d *MockStoreClient) FindConfirmations(confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
+func (d *MockStoreClient) FindConfirmations(ctx context.Context, confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
 	if d.doBad {
 		return nil, errors.New("FindConfirmation failure")
 	}
@@ -99,7 +100,7 @@ func (d *MockStoreClient) FindConfirmations(confirmation *models.Confirmation, s
 	return []*models.Confirmation{confirmation}, nil
 }
 
-func (d *MockStoreClient) RemoveConfirmation(notification *models.Confirmation) error {
+func (d *MockStoreClient) RemoveConfirmation(ctx context.Context, notification *models.Confirmation) error {
 	if d.doBad {
 		return errors.New("RemoveConfirmation failure")
 	}

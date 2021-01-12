@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -30,10 +31,11 @@ type (
 
 //Checks do they have an existing invite or are they already a team member
 //Or are they an existing user and already in the group?
-func (a *Api) checkForDuplicateInvite(inviteeEmail, invitorID, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
+func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
 
 	//already has invite from this user?
 	invites, _ := a.Store.FindConfirmations(
+		ctx,
 		&models.Confirmation{CreatorId: invitorID, Email: inviteeEmail, Type: models.TypeCareteamInvite},
 		models.StatusPending,
 	)
@@ -99,7 +101,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		invitedUsr := a.findExistingUser(inviteeID, req.Header.Get(TP_SESSION_TOKEN))
 
 		//find all oustanding invites were this user is the invite//
-		found, err := a.Store.FindConfirmations(&models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
+		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
 
 		//log.Printf("GetReceivedInvitations: found [%d] pending invite(s)", len(found))
 		if err != nil {
@@ -107,7 +109,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		}
 
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
-			a.ensureIdSet(inviteeID, invites)
+			a.ensureIdSet(req.Context(), inviteeID, invites)
 			log.Printf("GetReceivedInvitations: found and have checked [%d] invites ", len(invites))
 			a.logAudit(req, "get received invites")
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
@@ -151,7 +153,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 		}
 
 		//find all invites I have sent that are pending or declined
-		found, err := a.Store.FindConfirmations(&models.Confirmation{CreatorId: invitorID, Type: models.TypeCareteamInvite}, models.StatusPending, models.StatusDeclined)
+		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{CreatorId: invitorID, Type: models.TypeCareteamInvite}, models.StatusPending, models.StatusDeclined)
 		if invitations := a.checkFoundConfirmations(res, found, err); invitations != nil {
 			a.logAudit(req, "get sent invites")
 			a.sendModelAsResWithStatus(res, invitations, http.StatusOK)
@@ -222,7 +224,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		conf, err := a.findExistingConfirmation(accept, res)
+		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
 		if err != nil {
 			log.Printf("AcceptInvite error while finding confirmation [%s]\n", err.Error())
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
@@ -268,7 +270,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 		}
 		log.Printf("AcceptInvite: permissions were set as [%v] after an invite was accepted", setPerms)
 		conf.UpdateStatus(models.StatusCompleted)
-		if !a.addOrUpdateConfirmation(conf, res) {
+		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 			log.Println("AcceptInvite ", statusErr.Error())
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
@@ -322,14 +324,14 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			Type:      models.TypeCareteamInvite,
 		}
 
-		if conf, err := a.findExistingConfirmation(invite, res); err != nil {
+		if conf, err := a.findExistingConfirmation(req.Context(), invite, res); err != nil {
 			log.Printf("CancelInvite: finding [%s]", err.Error())
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 		} else if conf != nil {
 			//cancel the invite
 			conf.UpdateStatus(models.StatusCanceled)
 
-			if a.addOrUpdateConfirmation(conf, res) {
+			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
 				a.logAudit(req, "cancelled invite")
 				res.WriteHeader(http.StatusOK)
 				return
@@ -390,7 +392,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 			return
 		}
 
-		if conf, err := a.findExistingConfirmation(dismiss, res); err != nil {
+		if conf, err := a.findExistingConfirmation(req.Context(), dismiss, res); err != nil {
 			log.Printf("DismissInvite: finding [%s]", err.Error())
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
@@ -398,7 +400,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 
 			conf.UpdateStatus(models.StatusDeclined)
 
-			if a.addOrUpdateConfirmation(conf, res) {
+			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
 				a.logAudit(req, "dismissinvite")
 				res.WriteHeader(http.StatusOK)
 				return
@@ -462,7 +464,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if existingInvite, invitedUsr := a.checkForDuplicateInvite(ib.Email, invitorID, req.Header.Get(TP_SESSION_TOKEN), res); existingInvite == true {
+		if existingInvite, invitedUsr := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, req.Header.Get(TP_SESSION_TOKEN), res); existingInvite == true {
 			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
 			return
 		} else {
@@ -486,7 +488,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 				}
 			}
 
-			if a.addOrUpdateConfirmation(invite, res) {
+			if a.addOrUpdateConfirmation(req.Context(), invite, res) {
 				a.logAudit(req, "invite created")
 
 				if err := a.addProfile(invite); err != nil {

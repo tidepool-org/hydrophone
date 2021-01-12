@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -115,7 +116,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.UpdateStatus(models.StatusCompleted)
 	}
 
-	if resetCnf != nil && (info != nil || a.addOrUpdateConfirmation(resetCnf, res)) {
+	if resetCnf != nil && (info != nil || a.addOrUpdateConfirmation(req.Context(), resetCnf, res)) {
 		a.logAudit(req, "reset confirmation created")
 		emailContent := map[string]interface{}{
 			"Key":      resetCnf.Key,
@@ -138,10 +139,10 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 }
 
 //find the reset confirmation if it exists and hasn't expired
-func (a *Api) findResetConfirmation(conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
+func (a *Api) findResetConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
 
 	log.Printf("findResetConfirmation: finding [%v]", conf)
-	found, err := a.findExistingConfirmation(conf, res)
+	found, err := a.findExistingConfirmation(ctx, conf, res)
 	if err != nil {
 		log.Printf("findResetConfirmation: error [%s]\n", err.Error())
 		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
@@ -198,7 +199,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		resetCnf = &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
 	}
 
-	if conf := a.findResetConfirmation(resetCnf, res); conf != nil {
+	if conf := a.findResetConfirmation(req.Context(), resetCnf, res); conf != nil {
 
 		token := a.sl.TokenProvide()
 
@@ -211,7 +212,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 				return
 			}
 			conf.UpdateStatus(models.StatusCompleted)
-			if a.addOrUpdateConfirmation(conf, res) {
+			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
 				a.logAudit(req, "password reset")
 				a.sendModelAsResWithStatus(
 					res,

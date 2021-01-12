@@ -133,7 +133,7 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 	newOTP.Email = usrDetails.Emails[0]
 
 	// Save confirmation in DB
-	if a.addOrUpdateConfirmation(newOTP, res) {
+	if a.addOrUpdateConfirmation(req.Context(), newOTP, res) {
 
 		if a.createAndSendNotification(req, newOTP, emailContent, userLanguage) {
 			log.Printf("sendPinReset - OTP sent for %s", userID)

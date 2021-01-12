@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -189,8 +190,8 @@ func (a *Api) GetStatus(res http.ResponseWriter, req *http.Request) {
 
 //Save this confirmation or
 //write an error if it all goes wrong
-func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.ResponseWriter) bool {
-	if err := a.Store.UpsertConfirmation(conf); err != nil {
+func (a *Api) addOrUpdateConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) bool {
+	if err := a.Store.UpsertConfirmation(ctx, conf); err != nil {
 		log.Printf("Error saving the confirmation [%v]", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
@@ -201,8 +202,8 @@ func (a *Api) addOrUpdateConfirmation(conf *models.Confirmation, res http.Respon
 
 //Find this confirmation
 //write error if it fails
-func (a *Api) findExistingConfirmation(conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
-	if found, err := a.Store.FindConfirmation(conf); err != nil {
+func (a *Api) findExistingConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
+	if found, err := a.Store.FindConfirmation(ctx, conf); err != nil {
 		log.Printf("findExistingConfirmation: [%v]", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
 		return nil, statusErr
@@ -370,7 +371,7 @@ func (a *Api) findExistingUser(identifier, token string) *shoreline.UserData {
 }
 
 //Makesure we have set the userId on these confirmations
-func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
+func (a *Api) ensureIdSet(ctx context.Context, userId string, confirmations []*models.Confirmation) {
 
 	if len(confirmations) < 1 {
 		return
@@ -380,7 +381,7 @@ func (a *Api) ensureIdSet(userId string, confirmations []*models.Confirmation) {
 		if confirmations[i].UserId == "" {
 			log.Println("UserId wasn't set for invite so setting it")
 			confirmations[i].UserId = userId
-			a.Store.UpsertConfirmation(confirmations[i])
+			a.Store.UpsertConfirmation(ctx, confirmations[i])
 		}
 	}
 	return
