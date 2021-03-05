@@ -7,13 +7,13 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"reflect"
 	"runtime"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 
+	crewClient "github.com/mdblp/crew/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/portal"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -28,7 +28,7 @@ type (
 		notifier       clients.Notifier
 		templates      models.Templates
 		sl             shoreline.Client
-		gatekeeper     commonClients.Gatekeeper
+		perms          crewClient.Crew
 		seagull        commonClients.Seagull
 		portal         portal.Client
 		Config         Config
@@ -85,7 +85,7 @@ func InitApi(
 	store clients.StoreClient,
 	ntf clients.Notifier,
 	sl shoreline.Client,
-	gatekeeper commonClients.Gatekeeper,
+	perms crewClient.Crew,
 	seagull commonClients.Seagull,
 	portal portal.Client,
 	templates models.Templates,
@@ -96,7 +96,7 @@ func InitApi(
 		Config:         cfg,
 		notifier:       ntf,
 		sl:             sl,
-		gatekeeper:     gatekeeper,
+		perms:          perms,
 		seagull:        seagull,
 		portal:         portal,
 		templates:      templates,

@@ -56,13 +56,19 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
 
 	if invitedUsr != nil && invitedUsr.UserID != "" {
-		if perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorID); err != nil {
+		if shares, err := a.perms.GetDirectShares(token); err != nil {
 			log.Printf("error checking if user is in group [%v]", err)
-		} else if perms != nil {
-			log.Println(statusExistingMemberMessage)
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingMemberMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-			return true, invitedUsr
+		} else if len(shares) > 0 {
+			for _, share := range shares {
+				if share.ViewerId == invitedUsr.UserID {
+					//already sharing data with this user:
+					log.Println(statusExistingMemberMessage)
+					statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingMemberMessage)}
+					a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
+					return true, invitedUsr
+				}
+			}
+
 		}
 		return false, invitedUsr
 	}
@@ -253,10 +259,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		var permissions commonClients.Permissions
-		conf.DecodeContext(&permissions)
-		setPerms, err := a.gatekeeper.SetPermissions(inviteeID, invitorID, permissions)
-		if err != nil {
+		if err := a.perms.SetPermissions(a.sl.TokenProvide(), invitorID, inviteeID); err != nil {
 			log.Printf("AcceptInvite error setting permissions [%v]\n", err)
 			a.sendModelAsResWithStatus(
 				res,
@@ -265,7 +268,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			)
 			return
 		}
-		log.Printf("AcceptInvite: permissions were set as [%v] after an invite was accepted", setPerms)
+		log.Printf("AcceptInvite: permissions were set for [%v -> %v] after an invite was accepted", invitorID, inviteeID)
 		conf.UpdateStatus(models.StatusCompleted)
 		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}

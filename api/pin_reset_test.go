@@ -142,10 +142,10 @@ func TestPinResetResponds(t *testing.T) {
 
 		//testing when there is nothing to return from the store
 		if pinResetTest.test.returnNone {
-			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockSeagull, mockPortal, mockTemplates)
+			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
-			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockSeagull, mockPortal, mockTemplates)
+			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
 			hydrophone.SetHandlers("", testRtr)
 		}
 
