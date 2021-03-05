@@ -144,10 +144,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			return
 		}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
-			return
-		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+		if !a.isAuthorizedUser(token, invitorID) {
 			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
@@ -309,10 +306,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
-			return
-		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+		if !a.isAuthorizedUser(token, invitorID) {
 			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
@@ -442,10 +436,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
-			return
-		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+		if !a.isAuthorizedUser(token, invitorID) {
 			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}

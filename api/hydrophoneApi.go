@@ -437,20 +437,12 @@ func (a *Api) sendErrorWithCode(res http.ResponseWriter, statusCode int, errorCo
 	a.sendModelAsResWithStatus(res, status.NewStatusWithError(statusCode, errorCode, reason), statusCode)
 }
 
-func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, groupId string, requestedPermissions commonClients.Permissions) (commonClients.Permissions, error) {
+func (a *Api) isAuthorizedUser(tokenData *shoreline.TokenData, userId string) bool {
 	if tokenData.IsServer {
-		return requestedPermissions, nil
-	} else if tokenData.UserID == groupId {
-		return requestedPermissions, nil
-	} else if actualPermissions, err := a.gatekeeper.UserInGroup(tokenData.UserID, groupId); err != nil {
-		return commonClients.Permissions{}, err
+		return true
+	} else if tokenData.UserID == userId {
+		return true
 	} else {
-		finalPermissions := make(commonClients.Permissions, 0)
-		for permission, _ := range requestedPermissions {
-			if reflect.DeepEqual(requestedPermissions[permission], actualPermissions[permission]) {
-				finalPermissions[permission] = requestedPermissions[permission]
-			}
-		}
-		return finalPermissions, nil
+		return false
 	}
 }
