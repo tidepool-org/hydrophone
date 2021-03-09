@@ -3,12 +3,15 @@ FROM golang:1.15-alpine AS development
 ENV GO111MODULE=on
 
 WORKDIR /go/src/github.com/tidepool-org/hydrophone
+ARG GITHUB_TOKEN
 
 COPY . .
 
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
     apk add git rsync
+    
+RUN git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 
 RUN  ./build.sh
 

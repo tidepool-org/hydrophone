@@ -29,6 +29,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	crewClient "github.com/mdblp/crew/client"
 	common "github.com/tidepool-org/go-common"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
@@ -124,12 +125,7 @@ func main() {
 
 	logger.Print("Shoreline client started")
 
-	gatekeeper := clients.NewGatekeeperClientBuilder().
-		WithHostGetter(config.GatekeeperConfig.ToHostGetter(hakkenClient)).
-		WithHttpClient(httpClient).
-		WithTokenProvider(shoreline).
-		Build()
-
+	permsClient := crewClient.NewCrewApiClientFromEnv(httpClient)
 	seagull := clients.NewSeagullClientBuilder().
 		WithHostGetter(config.SeagullConfig.ToHostGetter(hakkenClient)).
 		WithHttpClient(httpClient).
@@ -187,7 +183,7 @@ func main() {
 	}
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, gatekeeper, seagull, portal, emailTemplates)
+	api := api.InitApi(config.Api, store, mail, shoreline, permsClient, seagull, portal, emailTemplates)
 	api.SetHandlers("", rtr)
 
 	/*

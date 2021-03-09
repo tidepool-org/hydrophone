@@ -21,12 +21,15 @@ var testingConfig = &goComMgo.Config{
 }
 
 func TestMongoStoreConfirmationOperations(t *testing.T) {
+	if _, exist := os.LookupEnv("TIDEPOOL_STORE_ADDRESSES"); exist {
+		// if mongo connexion information is provided via env var
+		testingConfig.FromEnv()
+	}
 
 	confirmation, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
 	confirmation.Email = "test@test.com"
 
 	doesNotExist, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
-
 	mc, _ := NewStore(testingConfig, logger)
 	mc.Start()
 	mc.WaitUntilStarted()

@@ -13,7 +13,8 @@ VERSION_SHORT_COMMIT=$(git rev-parse --short HEAD)
 VERSION_FULL_COMMIT=$(git rev-parse HEAD)
 
 GO_COMMON_PATH="github.com/tidepool-org/go-common"
-	
+export GOPRIVATE=github.com/mdblp/crew
+
 echo "Build hydrophone $VERSION_BASE+$VERSION_FULL_COMMIT"
 go mod tidy
 go build -ldflags "-X $GO_COMMON_PATH/clients/version.ReleaseNumber=$VERSION_BASE \
