@@ -31,9 +31,9 @@ PatientPasswordResetClick: "Please click here to see the detailed instructions"
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Diabetes care team invitation"
 CareTeamInviteHello: "Hello,"
-CareTeamInviteInvitation: "{{ .CareteamName }} invited you to be on his/her care team."
-CareTeamInviteClick: "Please click the link below to accept and see {{ .CareteamName }}'s data."
-CareTeamInviteJoin: "Join {{ .CareteamName }}'s Care Team"
+CareTeamInviteInvitation: "{{ .PatientName }} invited you to be on his/her care team."
+CareTeamInviteClick: "Please click the link below to accept and see {{ .PatientName }}'s data."
+CareTeamInviteJoin: "Respond to invitation"
 #Signup
 #(email to ask patient for verification of email)
 SignupConfirmationSubject: "Verify your YourLoops account"

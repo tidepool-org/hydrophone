@@ -32,8 +32,8 @@ PatientPasswordInfoBody2: "crwdns40340:0{{ .SupportEmail }}crwdne40340:0"
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "crwdns40412:0crwdne40412:0"
 #CareTeamInviteHello: "Hello,"
-CareTeamInviteHeadline: "crwdns40414:0{{ .CareteamName }}crwdne40414:0"
-CareTeamInviteBody: "crwdns43476:0{{ .CareteamName }}crwdne43476:0"
+CareTeamInviteHeadline: "crwdns40414:0{{ .PatientName }}crwdne40414:0"
+CareTeamInviteBody: "crwdns43476:0{{ .PatientName }}crwdne43476:0"
 CareTeamInviteJoin: "crwdns40418:0crwdne40418:0"
 #Signup
 #(email to ask patient for verification of email)

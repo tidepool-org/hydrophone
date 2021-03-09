@@ -6,10 +6,11 @@
     "contentParts":[
         "CareTeamInviteHeadline",
         "CareTeamInviteBody",
+        "CareTeamInviteBody2",
         "CareTeamInviteJoin",
         "FooterGetSupport"
     ],
     "escapeContentParts":[
-        "CareteamName"
+        "PatientName"
     ]
 }

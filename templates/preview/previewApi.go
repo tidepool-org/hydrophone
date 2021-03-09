@@ -173,7 +173,7 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 		"Key":          "123456789123456789123456789123456789",
 		"Email":        "john@diabeloop.com",
 		"FullName":     "John Doe",
-		"CareteamName": "John Doe",
+		"PatientName":  "John Doe",
 		"WebPath":      "login",
 		"ShortKey":     "12345678",
 		"OTP":          "165236984",

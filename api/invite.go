@@ -503,9 +503,9 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 					}
 
 					emailContent := map[string]interface{}{
-						"CareteamName": fullName,
-						"Email":        invite.Email,
-						"WebPath":      webPath,
+						"PatientName": fullName,
+						"Email":       invite.Email,
+						"WebPath":     webPath,
 					}
 
 					if a.createAndSendNotification(req, invite, emailContent, inviteeLanguage) {
