@@ -1,0 +1,11 @@
+module: hydrophone
+type: golang
+runTests: false
+testCommand: go test -race -v
+docker: true
+publishNpm: false
+publishS3: false
+publishOpenapiBucket: com.diabeloop.blp.docs
+publishSoup: true
+publishSoupBucket: com.diabeloop.blp.docs
+securityScan: true
