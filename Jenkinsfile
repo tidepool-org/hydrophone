@@ -12,6 +12,13 @@ pipeline {
                         env.GIT_COMMIT = "f".multiply(40)
                     }
                     builderImage = docker.build('go-build-image','-f ./Dockerfile.build .')
+                    env.RUN_ID = UUID.randomUUID().toString()
+                    docker.image('docker.ci.diabeloop.eu/ci-toolbox').inside() {
+                        env.version = sh (
+                            script: 'release-helper get-version',
+                            returnStdout: true
+                        ).trim().toUpperCase()
+                    }
                 }
             }
         }
@@ -31,12 +38,12 @@ pipeline {
         stage('Test ') {
             steps {
                 echo 'start mongo to serve as a testing db'
-                sh 'docker network create hydrotest${BUILD_NUMBER} && docker run --rm -d --net=hydrotest${BUILD_NUMBER} --name=mongo4hydrotest${BUILD_NUMBER} mongo:4.2'
+                sh 'docker network create hydrotest${RUN_ID} && docker run --rm -d --net=hydrotest${RUN_ID} --name=mongo4hydrotest${RUN_ID} mongo:4.2'
                 script {
-                    builderImage.inside("--net=hydrotest${BUILD_NUMBER}") {
+                    builderImage.inside("--net=hydrotest${RUN_ID}") {
                         withCredentials ([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                             sh 'git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"'
-                            sh "TIDEPOOL_STORE_ADDRESSES=mongo4hydrotest${BUILD_NUMBER}:27017 TIDEPOOL_STORE_DATABASE=confirm_test $WORKSPACE/test.sh"
+                            sh "TIDEPOOL_STORE_ADDRESSES=mongo4hydrotest${RUN_ID}:27017 TIDEPOOL_STORE_DATABASE=confirm_test $WORKSPACE/test.sh"
                             sh 'git config --global --unset url."https://${GITHUB_TOKEN}@github.com/".insteadOf'
                         }
                     }
@@ -44,28 +51,36 @@ pipeline {
             }
             post {
                 always {
-                    sh 'docker stop mongo4hydrotest${BUILD_NUMBER} && docker network rm hydrotest${BUILD_NUMBER}'
+                    sh 'docker stop mongo4hydrotest${RUN_ID} && docker network rm hydrotest${RUN_ID}'
                 }
             }
         }
         stage('Package') {
             steps {
                 withCredentials ([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
-                    sh "docker build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} -t docker.ci.diabeloop.eu/hydrophone:${GIT_COMMIT} ."
+                    pack()
                 }
             }
         }
-        /*
         stage('Documentation') {
             steps {
                 script {
-                    builderImage.inside("") {
-                        sh "./qa/buildDoc.sh"
+                   builderImage.inside("") {
+                       withCredentials ([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                            sh 'git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"'
+                            sh """
+                                export TRAVIS_TAG=${version}
+                                ./buildDoc.sh
+                                ./buildSoup.sh
+                            """
+                            sh 'git config --global --unset url."https://${GITHUB_TOKEN}@github.com/".insteadOf'
+                            stash name: "doc", includes: "docs/*"
+                       }
                     }
                 }
                 
             }
-        }*/
+        }
         stage('Publish') {
             when { branch "dblp" }
             steps {

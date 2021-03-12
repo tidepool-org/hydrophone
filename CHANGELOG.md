@@ -3,6 +3,10 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
+## 1.5.1 - 2021-03-12
+### Engineering Use
+- Switch CI build to Jenkins (instead of Travis)
+
 ## 1.5.0 - 2021-03-09
 ### Changed
 - YLP-472 Switch permission client from gatekeeper to crew

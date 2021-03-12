@@ -1,9 +1,8 @@
-#!/bin/bash -eu
+#!/bin/sh -eu
 # Generate Soups
 
 DEPLOY_DOC=${DEPLOY_DOC:-docs/soup}
-TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:-owner/repo}
-APP="${TRAVIS_REPO_SLUG#*/}"
+APP="hydrophone"
 GO111MODULE=on
 
 if [ -z "${TRAVIS_TAG+x}" ]; then

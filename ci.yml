@@ -3,9 +3,11 @@ type: golang
 runTests: false
 testCommand: go test -race -v
 docker: true
+dockerBuildCommand: docker build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+dockerPushToProduction : true
 publishNpm: false
 publishS3: false
-publishOpenapiBucket: com.diabeloop.blp.docs
+publishOpenapiBucket: com.diabeloop.backloops.docs
 publishSoup: true
-publishSoupBucket: com.diabeloop.blp.docs
+publishSoupBucket: com.diabeloop.backloops.docs
 securityScan: true
