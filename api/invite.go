@@ -16,6 +16,7 @@ const (
 	//Status message we return from the service
 	statusExistingInviteMessage = "There is already an existing invite"
 	statusExistingMemberMessage = "The user is already an existing member"
+	statusExistingPatientMessage = "The user is already a patient of the clinic"
 	statusInviteNotFoundMessage = "No matching invite was found"
 	statusInviteCanceledMessage = "Invite has been canceled"
 	statusForbiddenMessage      = "Forbidden to perform requested operation"
@@ -31,7 +32,7 @@ type (
 
 //Checks do they have an existing invite or are they already a team member
 //Or are they an existing user and already in the group?
-func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
+func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID string, res http.ResponseWriter) bool {
 
 	//already has invite from this user?
 	invites, _ := a.Store.FindConfirmations(
@@ -48,10 +49,18 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 			log.Println("last invite not yet expired")
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-			return true, nil
+			return true
 		}
 	}
 
+	return false
+}
+
+func (a *Api) checkExistingPatientOfClinic(ctx context.Context, clinicId, patientId string) (bool, error) {
+	return false, nil
+}
+
+func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, res http.ResponseWriter) (bool, *shoreline.UserData){
 	//already in the group?
 	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
 
@@ -66,6 +75,7 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 		}
 		return false, invitedUsr
 	}
+
 	return false, nil
 }
 
@@ -357,10 +367,11 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 // status: 200 models.Confirmation
 // status: 409 statusExistingInviteMessage - user already has a pending or declined invite
 // status: 409 statusExistingMemberMessage - user is already part of the team
+// status: 409 statusExistingPatientMessage - user is already patient of the clinic
 // status: 400
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-
+		ctx := req.Context()
 		invitorID := vars["userid"]
 
 		if invitorID == "" {
@@ -390,52 +401,76 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if existingInvite, invitedUsr := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, req.Header.Get(TP_SESSION_TOKEN), res); existingInvite {
+		if existingInvite := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, res); existingInvite {
 			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
+			return
+		}
+
+		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
+		invite.Email = ib.Email
+
+		clinic, err := a.findExistingClinic(req.Context(), ib.Email)
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			return
+		}
+
+		if clinic != nil {
+			clinicId := string(clinic.Id)
+			patientExists, err := a.checkExistingPatientOfClinic(ctx, invitorID, clinicId)
+			if err != nil {
+				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+				return
+			}
+			if patientExists {
+				log.Println(statusExistingMemberMessage)
+				statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingPatientMessage)}
+				a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
+				return
+			}
+			invite.ClinicId = clinicId
+		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email, res); alreadyMember {
+			log.Printf("SendInvite: invited [%s] user is already a member of the care team", ib.Email)
 			return
 		} else {
 			//None exist so lets create the invite
-			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
-
-			invite.Email = ib.Email
 			if invitedUsr != nil {
 				invite.UserId = invitedUsr.UserID
 			}
-
-			if a.addOrUpdateConfirmation(req.Context(), invite, res) {
-				a.logMetric("invite created", req)
-
-				if err := a.addProfile(invite); err != nil {
-					log.Println("SendInvite: ", err.Error())
-				} else {
-
-					fullName := invite.Creator.Profile.FullName
-
-					if invite.Creator.Profile.Patient.IsOtherPerson {
-						fullName = invite.Creator.Profile.Patient.FullName
-					}
-
-					var webPath = "signup"
-
-					if invite.UserId != "" {
-						webPath = "login"
-					}
-
-					emailContent := map[string]interface{}{
-						"CareteamName": fullName,
-						"Email":        invite.Email,
-						"WebPath":      webPath,
-					}
-
-					if a.createAndSendNotification(req, invite, emailContent) {
-						a.logMetric("invite sent", req)
-					}
-				}
-
-				a.sendModelAsResWithStatus(res, invite, http.StatusOK)
-				return
-			}
 		}
 
+		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
+			a.logMetric("invite created", req)
+
+			if err := a.addProfile(invite); err != nil {
+				log.Println("SendInvite: ", err.Error())
+			} else {
+
+				fullName := invite.Creator.Profile.FullName
+
+				if invite.Creator.Profile.Patient.IsOtherPerson {
+					fullName = invite.Creator.Profile.Patient.FullName
+				}
+
+				var webPath = "signup"
+
+				if invite.UserId != "" {
+					webPath = "login"
+				}
+
+				emailContent := map[string]interface{}{
+					"CareteamName": fullName,
+					"Email":        invite.Email,
+					"WebPath":      webPath,
+				}
+
+				if a.createAndSendNotification(req, invite, emailContent) {
+					a.logMetric("invite sent", req)
+				}
+			}
+
+			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+			return
+		}
 	}
 }

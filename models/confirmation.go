@@ -21,6 +21,7 @@ type (
 
 		TemplateName TemplateName `json:"-" bson:"templateName"`
 		UserId       string       `json:"-" bson:"userId"`
+		ClinicId     string       `json:"-" bson:"userId"`
 		Status       Status       `json:"-" bson:"status"`
 		Modified     time.Time    `json:"-" bson:"modified"`
 	}

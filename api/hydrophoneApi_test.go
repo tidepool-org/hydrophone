@@ -3,6 +3,8 @@ package api
 import (
 	"errors"
 	"fmt"
+	"github.com/golang/mock/gomock"
+	clinicsClient "github.com/tidepool-org/clinic/client"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -39,6 +41,14 @@ var (
 
 	MockSeagullModule = fx.Options(fx.Provide(func() commonClients.Seagull {
 		return commonClients.NewSeagullMock()
+	}))
+
+	MockControllerModule = fx.Options(fx.Provide(func(t *testing.T) *gomock.Controller {
+		return gomock.NewController(t)
+	}))
+
+	MockClinicsModule = fx.Options(fx.Provide(func(ctrl *gomock.Controller) clinicsClient.ClientWithResponsesInterface {
+		return clinicsClient.NewMockClientWithResponsesInterface(ctrl)
 	}))
 
 	// MockTemplates
@@ -78,6 +88,9 @@ func TestGetStatus_StatusOk(t *testing.T) {
 		clients.MockStoreModule,
 		MockGatekeeperModule,
 		BaseModule,
+		MockControllerModule,
+		MockClinicsModule,
+		fx.Supply(t),
 		fx.Populate(&api),
 	)
 

@@ -61,6 +61,10 @@ github.com/cloudevents/sdk-go/v2/protocol/http
 github.com/cloudevents/sdk-go/v2/types
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
+# github.com/deepmap/oapi-codegen v1.5.1
+## explicit
+github.com/deepmap/oapi-codegen/pkg/runtime
+github.com/deepmap/oapi-codegen/pkg/types
 # github.com/eapache/go-resiliency v1.2.0
 github.com/eapache/go-resiliency/breaker
 # github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21
@@ -75,6 +79,8 @@ github.com/globalsign/mgo/internal/sasl
 github.com/globalsign/mgo/internal/scram
 # github.com/go-stack/stack v1.8.0
 github.com/go-stack/stack
+# github.com/golang/mock v1.5.0
+github.com/golang/mock/gomock
 # github.com/golang/snappy v0.0.1
 github.com/golang/snappy
 # github.com/google/uuid v1.1.1
@@ -111,6 +117,9 @@ github.com/pierrec/lz4/internal/xxh32
 github.com/pkg/errors
 # github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 github.com/rcrowley/go-metrics
+# github.com/tidepool-org/clinic/client v0.0.0-20210315173936-687792496baa
+## explicit
+github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/go-common v0.7.1
 ## explicit
 github.com/tidepool-org/go-common
@@ -203,23 +212,23 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
+# golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 golang.org/x/crypto/md4
 golang.org/x/crypto/ocsp
 golang.org/x/crypto/pbkdf2
 # golang.org/x/lint v0.0.0-20190930215403-16217165b5de
 golang.org/x/lint
 golang.org/x/lint/golint
-# golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
+# golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
 # golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/text v0.3.3
+# golang.org/x/text v0.3.5
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.0.0-20191114200427-caa0b0f7d508
+# golang.org/x/tools v0.0.0-20191125144606-a911d9008d1f
 golang.org/x/tools/go/analysis
 golang.org/x/tools/go/analysis/passes/inspect
 golang.org/x/tools/go/ast/astutil

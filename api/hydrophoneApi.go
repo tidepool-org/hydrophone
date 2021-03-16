@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	clinicsClient "github.com/tidepool-org/clinic/client"
 	"log"
 	"net/http"
 	"reflect"
@@ -25,6 +26,7 @@ import (
 type (
 	Api struct {
 		Store      clients.StoreClient
+		clinics    clinicsClient.ClientWithResponsesInterface
 		notifier   clients.Notifier
 		templates  models.Templates
 		sl         shoreline.Client
@@ -66,6 +68,7 @@ const (
 
 func NewApi(
 	cfg Config,
+	clinics clinicsClient.ClientWithResponsesInterface,
 	store clients.StoreClient,
 	ntf clients.Notifier,
 	sl shoreline.Client,
@@ -77,6 +80,7 @@ func NewApi(
 	return &Api{
 		Store:      store,
 		Config:     cfg,
+		clinics:    clinics,
 		notifier:   ntf,
 		sl:         sl,
 		gatekeeper: gatekeeper,
@@ -353,6 +357,22 @@ func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
 	} else {
 		return usr
 	}
+}
+
+func (a *Api) findExistingClinic(ctx context.Context, email string) (*clinicsClient.Clinic, error) {
+	response, err := a.clinics.ListClinicsWithResponse(ctx, &clinicsClient.ListClinicsParams{
+		Email: &email,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if response.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code '%v' while listing clinics", response.StatusCode())
+	}
+	if len(*response.JSON200) == 0 {
+		return nil, nil
+	}
+	return &(*response.JSON200)[0], nil
 }
 
 //Makesure we have set the userId on these confirmations

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	clinicsClient "github.com/tidepool-org/clinic/client"
 	ev "github.com/tidepool-org/go-common/events"
 	"github.com/tidepool-org/hydrophone/events"
 	"log"
@@ -33,6 +34,7 @@ type (
 		PermissionClientAddress string `split_words:"true" required:"true"`
 		MetricsClientAddress    string `split_words:"true" required:"true"`
 		SeagullClientAddress    string `split_words:"true" required:"true"`
+		ClinicClientAddress     string `split_words:"true" required:"true"`
 	}
 
 	//InboundConfig describes how to receive inbound communication
@@ -77,6 +79,10 @@ func seagullProvider(config OutboundConfig, httpClient *http.Client) clients.Sea
 		WithHostGetter(disc.NewStaticHostGetterFromString(config.SeagullClientAddress)).
 		WithHttpClient(httpClient).
 		Build()
+}
+
+func clinicProvider(config OutboundConfig, httpClient *http.Client) (clinicsClient.ClientWithResponsesInterface, error) {
+	return clinicsClient.NewClientWithResponses(config.ClinicClientAddress)
 }
 
 func configProvider() (OutboundConfig, error) {
@@ -149,7 +155,7 @@ func startEventConsumer(consumer ev.EventConsumer, lifecycle fx.Lifecycle) {
 	done := make(chan struct{}, 1)
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			go func(){
+			go func() {
 				// blocks until context is terminated
 				err := consumer.Start(consumerCtx)
 				if err != nil {
@@ -159,7 +165,7 @@ func startEventConsumer(consumer ev.EventConsumer, lifecycle fx.Lifecycle) {
 			}()
 			return nil
 		},
-		OnStop:  func(ctx context.Context) error {
+		OnStop: func(ctx context.Context) error {
 			cancel()
 			<-done
 			return nil
@@ -215,6 +221,7 @@ func main() {
 			httpClientProvider,
 			emailTemplateProvider,
 			serverProvider,
+			clinicProvider,
 			api.NewApi,
 		),
 		fx.Invoke(startEventConsumer),
