@@ -137,6 +137,9 @@ func (c *MongoStoreClient) FindConfirmation(ctx context.Context, confirmation *m
 	if confirmation.UserId != "" {
 		query["userId"] = confirmation.UserId
 	}
+	if confirmation.UserId != "" {
+		query["clinicId"] = confirmation.ClinicId
+	}
 
 	opts := options.FindOne().SetSort(bson.D{{Key: "created", Value: -1}})
 
@@ -170,6 +173,9 @@ func (c *MongoStoreClient) FindConfirmations(ctx context.Context, confirmation *
 	}
 	if confirmation.UserId != "" {
 		query["userId"] = confirmation.UserId
+	}
+	if confirmation.UserId != "" {
+		query["clinicId"] = confirmation.ClinicId
 	}
 
 	if len(statuses) > 0 {

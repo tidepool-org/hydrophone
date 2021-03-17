@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	api "github.com/tidepool-org/clinic/client"
 	"log"
 	"net/http"
 
@@ -14,12 +16,12 @@ import (
 
 const (
 	//Status message we return from the service
-	statusExistingInviteMessage = "There is already an existing invite"
-	statusExistingMemberMessage = "The user is already an existing member"
+	statusExistingInviteMessage  = "There is already an existing invite"
+	statusExistingMemberMessage  = "The user is already an existing member"
 	statusExistingPatientMessage = "The user is already a patient of the clinic"
-	statusInviteNotFoundMessage = "No matching invite was found"
-	statusInviteCanceledMessage = "Invite has been canceled"
-	statusForbiddenMessage      = "Forbidden to perform requested operation"
+	statusInviteNotFoundMessage  = "No matching invite was found"
+	statusInviteCanceledMessage  = "Invite has been canceled"
+	statusForbiddenMessage       = "Forbidden to perform requested operation"
 )
 
 type (
@@ -60,7 +62,7 @@ func (a *Api) checkExistingPatientOfClinic(ctx context.Context, clinicId, patien
 	return false, nil
 }
 
-func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, res http.ResponseWriter) (bool, *shoreline.UserData){
+func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, res http.ResponseWriter) (bool, *shoreline.UserData) {
 	//already in the group?
 	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
 
@@ -86,6 +88,7 @@ func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, 
 // status: 400
 func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
+		ctx := req.Context()
 		inviteeID := vars["userid"]
 
 		if inviteeID == "" {
@@ -99,7 +102,15 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			return
 		}
 
+		// Return an empty list if there is a clinic with the same email address
 		invitedUsr := a.findExistingUser(inviteeID, req.Header.Get(TP_SESSION_TOKEN))
+		if clinic, err := a.findExistingClinic(ctx, invitedUsr.Emails[0]); err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			return
+		} else if clinic != nil {
+			a.sendModelAsResWithStatus(res, []*models.Confirmation{}, http.StatusOK)
+			return
+		}
 
 		//find all oustanding invites were this user is the invite//
 		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
@@ -117,6 +128,165 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			return
 		}
 	}
+}
+
+func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if token := a.token(res, req); token != nil {
+		ctx := req.Context()
+		clinicId := vars["clinicId"]
+
+		if clinicId == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		//find all oustanding invites that are associated to this clinic
+		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{ClinicId: clinicId, Type: models.TypeCareteamInvite}, models.StatusPending)
+		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
+			log.Printf("GetPatientInvitations: found and have checked [%d] invites ", len(invites))
+			a.logMetric("get_patient_invites", req)
+			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
+			return
+		}
+	}
+}
+
+// Accept patient invite for a given clinic
+func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if token := a.token(res, req); token != nil {
+		ctx := req.Context()
+		clinicId := vars["clinicId"]
+		inviteId := vars["inviteId"]
+
+		if clinicId == "" || inviteId == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		accept := &models.Confirmation{
+			ClinicId: clinicId,
+			Key:      inviteId,
+		}
+
+		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
+		if err != nil {
+			log.Printf("AcceptPatientInvite error while finding confirmation [%s]\n", err.Error())
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+		if conf == nil {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
+			log.Println("AcceptPatientInvite ", statusErr.Error())
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+			return
+		}
+
+		validationErrors := make([]error, 0)
+		conf.ValidateStatus(models.StatusPending, &validationErrors).
+			ValidateType(models.TypeCareteamInvite, &validationErrors).
+			ValidateClinicID(clinicId, &validationErrors)
+
+		if len(validationErrors) > 0 {
+			for _, validationError := range validationErrors {
+				log.Println("AcceptPatientInvite forbidden as there was a expectation mismatch", validationError)
+			}
+			a.sendModelAsResWithStatus(
+				res,
+				&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		patient, err := a.createClinicPatient(ctx, *conf)
+		if err != nil {
+			log.Printf("AcceptPatientInvite error creating patient [%v]\n", err)
+			a.sendModelAsResWithStatus(
+				res,
+				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT)},
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		log.Printf("AcceptPatientInvite: permissions were set as [%v] after an invite was accepted", patient.Permissions)
+		conf.UpdateStatus(models.StatusCompleted)
+		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+			log.Println("AcceptInvite ", statusErr.Error())
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+			return
+		}
+
+		a.logMetric("accept_patient_invite", req)
+		a.sendModelAsResWithStatus(res, patient, http.StatusOK)
+		return
+	}
+}
+
+func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confirmation) (*api.Patient, error) {
+	var permissions commonClients.Permissions
+	if err := confirmation.DecodeContext(&permissions); err != nil {
+		return nil, err
+	}
+
+	body := api.CreatePatientFromUserJSONRequestBody{
+		Permissions: &api.PatientPermissions{
+			View: getPermission(permissions, "view"),
+			Upload: getPermission(permissions, "upload"),
+			Note: getPermission(permissions, "note"),
+		},
+	}
+
+	response, err := a.clinics.CreatePatientFromUserWithResponse(ctx, confirmation.ClinicId, confirmation.CreatorId, body)
+	if err != nil {
+		return nil, err
+	} else if response.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %v when creating patient from existing user", response.StatusCode())
+	}
+
+	return response.JSON200, nil
+}
+
+func getPermission(permissions commonClients.Permissions, permission string) *map[string]interface{} {
+	if _, ok := permissions[permission]; ok {
+		perm := make(map[string]interface{}, 0)
+		return &perm
+	}
+	return nil
+}
+
+func (a *Api) assertClinicAdmin(ctx context.Context, clinicId string, token *shoreline.TokenData, res http.ResponseWriter) error {
+	// Non-server tokens only legit when for same userid
+	if !token.IsServer {
+		if result, err := a.clinics.GetClinicianWithResponse(ctx, clinicId, token.UserID); err != nil || result.StatusCode() == http.StatusInternalServerError {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			return err
+		} else if result.StatusCode() != http.StatusOK {
+			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+			return fmt.Errorf("unexpected status code %v when fetching clinician %v from clinic %v", result.StatusCode(), clinicId, token.UserID)
+		} else {
+			clinician := result.JSON200
+			for _, role := range clinician.Roles {
+				if role == "CLINIC_ADMIN" {
+					return nil
+				}
+			}
+			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+			return fmt.Errorf("the clinician doesn't have the required permissions %v", clinician.Roles)
+		}
+	}
+	return nil
 }
 
 //Get the still-pending invitations for a group you own or are an admin of.
@@ -409,15 +579,15 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
 		invite.Email = ib.Email
 
-		clinic, err := a.findExistingClinic(req.Context(), ib.Email)
+		clinic, err := a.findExistingClinic(ctx, ib.Email)
 		if err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 			return
 		}
 
 		if clinic != nil {
-			clinicId := string(clinic.Id)
-			patientExists, err := a.checkExistingPatientOfClinic(ctx, invitorID, clinicId)
+			invite.ClinicId = string(clinic.Id)
+			patientExists, err := a.checkExistingPatientOfClinic(ctx, invitorID, invite.ClinicId)
 			if err != nil {
 				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 				return
@@ -428,12 +598,10 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 				a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 				return
 			}
-			invite.ClinicId = clinicId
 		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email, res); alreadyMember {
 			log.Printf("SendInvite: invited [%s] user is already a member of the care team", ib.Email)
 			return
 		} else {
-			//None exist so lets create the invite
 			if invitedUsr != nil {
 				invite.UserId = invitedUsr.UserID
 			}

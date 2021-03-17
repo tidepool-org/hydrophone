@@ -21,7 +21,7 @@ type (
 
 		TemplateName TemplateName `json:"-" bson:"templateName"`
 		UserId       string       `json:"-" bson:"userId"`
-		ClinicId     string       `json:"-" bson:"userId"`
+		ClinicId     string       `json:"-" bson:"clinicId"`
 		Status       Status       `json:"-" bson:"status"`
 		Modified     time.Time    `json:"-" bson:"modified"`
 	}
@@ -146,6 +146,16 @@ func (c *Confirmation) ValidateUserID(expectedUserID string, validationErrors *[
 		*validationErrors = append(
 			*validationErrors,
 			fmt.Errorf("Confirmation expected UserID of `%s` but had `%s`", expectedUserID, c.UserId),
+		)
+	}
+	return c
+}
+
+func (c *Confirmation) ValidateClinicID(expectedClinicID string, validationErrors *[]error) *Confirmation {
+	if expectedClinicID != c.ClinicId {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("confirmation expected ClinicId of `%s` but had `%s`", expectedClinicID, c.UserId),
 		)
 	}
 	return c

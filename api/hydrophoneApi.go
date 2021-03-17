@@ -55,7 +55,9 @@ const (
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
+	STATUS_ERR_FINDING_CLINIC        = "Error finding the clinic"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
+	STATUS_ERR_CREATING_PATIENT      = "Error creating patient"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
 
 	//returned status messages
@@ -366,6 +368,7 @@ func (a *Api) findExistingClinic(ctx context.Context, email string) (*clinicsCli
 	if err != nil {
 		return nil, err
 	}
+
 	if response.StatusCode() != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code '%v' while listing clinics", response.StatusCode())
 	}
