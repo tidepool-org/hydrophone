@@ -191,6 +191,14 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
 	rtr.Handle("/signup/{userid}", varsHandler(a.cancelSignUp)).Methods("PUT")
+
+	// GET /v1/clinics/:clinicId/invites/patients
+	// GET /v1/clinics/:clinicId/invites/patients/:inviteId
+	c.Handle("/v1/clinics/{clinicId}/invites/patients", varsHandler(a.GetPatientInvites)).Methods("GET")
+	c.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.AcceptPatientInvite)).Methods("PUT")
+
+	rtr.Handle("/v1/clinics/{clinicId}/invites/patients", varsHandler(a.GetPatientInvites)).Methods("GET")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.AcceptPatientInvite)).Methods("PUT")
 }
 
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
