@@ -59,7 +59,16 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 }
 
 func (a *Api) checkExistingPatientOfClinic(ctx context.Context, clinicId, patientId string) (bool, error) {
-	return false, nil
+	response, err := a.clinics.GetPatientWithResponse(ctx, clinicId, patientId)
+	if err != nil {
+		return false, err
+	} else if response.StatusCode() == http.StatusNotFound {
+		return false, nil
+	} else if response.StatusCode() == http.StatusOK {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("unexpected status code %v when checking if user is existing patient", response.StatusCode())
 }
 
 func (a *Api) 	checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, res http.ResponseWriter) (bool, *shoreline.UserData) {
@@ -102,14 +111,17 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			return
 		}
 
-		// Return an empty list if there is a clinic with the same email address
 		invitedUsr := a.findExistingUser(inviteeID, req.Header.Get(TP_SESSION_TOKEN))
-		if clinic, err := a.findExistingClinic(ctx, invitedUsr.Emails[0]); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
-			return
-		} else if clinic != nil {
-			a.sendModelAsResWithStatus(res, []*models.Confirmation{}, http.StatusOK)
-			return
+
+		// Return an empty list if there is a clinic with the same email address
+		if a.Config.ClinicServiceEnabled {
+			if clinic, err := a.findExistingClinic(ctx, invitedUsr.Emails[0]); err != nil {
+				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+				return
+			} else if clinic != nil {
+				a.sendModelAsResWithStatus(res, []*models.Confirmation{}, http.StatusOK)
+				return
+			}
 		}
 
 		//find all oustanding invites were this user is the invite//
@@ -132,6 +144,11 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 
 func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
+		if !a.Config.ClinicServiceEnabled {
+			a.sendModelAsResWithStatus(res, []*models.Confirmation{}, http.StatusOK)
+			return
+		}
+
 		ctx := req.Context()
 		clinicId := vars["clinicId"]
 
@@ -159,6 +176,11 @@ func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars
 // Accept patient invite for a given clinic
 func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
+		if !a.Config.ClinicServiceEnabled {
+			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
+			return
+		}
+
 		ctx := req.Context()
 		clinicId := vars["clinicId"]
 		inviteId := vars["inviteId"]
@@ -219,7 +241,6 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 			return
 		}
 
-		log.Printf("AcceptPatientInvite: permissions were set as [%v] after an invite was accepted", patient.Permissions)
 		conf.UpdateStatus(models.StatusCompleted)
 		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
@@ -255,6 +276,7 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 		return nil, fmt.Errorf("unexpected status code %v when creating patient from existing user", response.StatusCode())
 	}
 
+	log.Printf("AcceptPatientInvite: permissions were set as [%v] after an invite was accepted", permissions)
 	return response.JSON200, nil
 }
 
@@ -579,7 +601,12 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
 		invite.Email = ib.Email
 
-		clinic, err := a.findExistingClinic(ctx, ib.Email)
+		var clinic *api.Clinic
+		var err error
+		if a.Config.ClinicServiceEnabled {
+			clinic, err = a.findExistingClinic(ctx, ib.Email)
+		}
+
 		if err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 			return

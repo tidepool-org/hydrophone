@@ -36,10 +36,11 @@ type (
 		Config     Config
 	}
 	Config struct {
-		ServerSecret string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
-		WebUrl       string `split_words:"true" required:"true"`
-		AssetUrl     string `split_words:"true" required:"true"`
-		Protocol     string `default:"http"`
+		ServerSecret         string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
+		ClinicServiceEnabled bool   `envconfig:"TIDEPOOL_CLINIC_SERVICE_ENABLED" default:"false"`
+		WebUrl               string `split_words:"true" required:"true"`
+		AssetUrl             string `split_words:"true" required:"true"`
+		Protocol             string `default:"http"`
 	}
 
 	// this just makes it easier to bind a handler for the Handle function

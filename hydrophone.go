@@ -81,8 +81,12 @@ func seagullProvider(config OutboundConfig, httpClient *http.Client) clients.Sea
 		Build()
 }
 
-func clinicProvider(config OutboundConfig, httpClient *http.Client) (clinicsClient.ClientWithResponsesInterface, error) {
-	return clinicsClient.NewClientWithResponses(config.ClinicClientAddress)
+func clinicProvider(config OutboundConfig, shoreline shoreline.Client) (clinicsClient.ClientWithResponsesInterface, error) {
+	opts := clinicsClient.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
+		req.Header.Add(api.TP_SESSION_TOKEN, shoreline.TokenProvide())
+		return nil
+	})
+	return clinicsClient.NewClientWithResponses(config.ClinicClientAddress, opts)
 }
 
 func configProvider() (OutboundConfig, error) {
