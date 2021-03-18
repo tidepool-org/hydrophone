@@ -137,7 +137,7 @@ func (c *MongoStoreClient) FindConfirmation(ctx context.Context, confirmation *m
 	if confirmation.UserId != "" {
 		query["userId"] = confirmation.UserId
 	}
-	if confirmation.UserId != "" {
+	if confirmation.ClinicId != "" {
 		query["clinicId"] = confirmation.ClinicId
 	}
 
@@ -174,7 +174,7 @@ func (c *MongoStoreClient) FindConfirmations(ctx context.Context, confirmation *
 	if confirmation.UserId != "" {
 		query["userId"] = confirmation.UserId
 	}
-	if confirmation.UserId != "" {
+	if confirmation.ClinicId != "" {
 		query["clinicId"] = confirmation.ClinicId
 	}
 
