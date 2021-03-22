@@ -28,8 +28,9 @@ type (
 
 	//basic details for the creator of the confirmation
 	Creator struct {
-		*Profile `json:"profile" bson:"-"`
-		UserId   string `json:"userid" bson:"-"` //for compatability with blip
+		*Profile   `json:"profile" bson:"-"`
+		UserId     string `json:"userid" bson:"-"` //for compatability with blip
+		ClinicName string `json:"clinicName,omitempty"`
 	}
 	Patient struct {
 		Birthday      string `json:"birthday"`
@@ -61,10 +62,11 @@ const (
 	StatusCanceled  Status = "canceled"
 	StatusDeclined  Status = "declined"
 	//Available Type's
-	TypePasswordReset  Type = "password_reset"
-	TypeCareteamInvite Type = "careteam_invitation"
-	TypeSignUp         Type = "signup_confirmation"
-	TypeNoAccount      Type = "no_account"
+	TypePasswordReset   Type = "password_reset"
+	TypeCareteamInvite  Type = "careteam_invitation"
+	TypeClinicianInvite Type = "clinician_invitation"
+	TypeSignUp          Type = "signup_confirmation"
+	TypeNoAccount       Type = "no_account"
 )
 
 var (

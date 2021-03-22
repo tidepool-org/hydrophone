@@ -11,6 +11,11 @@ const (
 	SessionTokenScopes = "sessionToken.Scopes"
 )
 
+// AssociateClinicianToUser defines model for AssociateClinicianToUser.
+type AssociateClinicianToUser struct {
+	UserId string `json:"userId"`
+}
+
 // Clinic defines model for Clinic.
 type Clinic struct {
 	Address    *string             `json:"address,omitempty"`
@@ -34,8 +39,8 @@ type Clinician struct {
 	// The email of the clinician
 	Email openapi_types.Email `json:"email"`
 
-	// String representation of a resource id
-	Id *Id `json:"id,omitempty"`
+	// String representation of a Tidepool User ID
+	Id *UserId `json:"id,omitempty"`
 
 	// The id of the invite if it hasn't been accepted
 	InviteId *string `json:"inviteId,omitempty"`
@@ -43,9 +48,6 @@ type Clinician struct {
 	// The name of the clinician
 	Name  *string        `json:"name,omitempty"`
 	Roles ClinicianRoles `json:"roles"`
-
-	// The user id of the clinician
-	UserId *string `json:"userId,omitempty"`
 }
 
 // ClinicianRoles defines model for ClinicianRoles.
@@ -144,6 +146,7 @@ type ListCliniciansParams struct {
 	Search *string `json:"search,omitempty"`
 	Offset *int    `json:"offset,omitempty"`
 	Limit  *int    `json:"limit,omitempty"`
+	Email  *string `json:"email,omitempty"`
 }
 
 // CreateClinicianJSONBody defines parameters for CreateClinician.
@@ -151,6 +154,9 @@ type CreateClinicianJSONBody Clinician
 
 // UpdateClinicianJSONBody defines parameters for UpdateClinician.
 type UpdateClinicianJSONBody Clinician
+
+// AssociateClinicianToUserJSONBody defines parameters for AssociateClinicianToUser.
+type AssociateClinicianToUserJSONBody AssociateClinicianToUser
 
 // ListPatientsParams defines parameters for ListPatients.
 type ListPatientsParams struct {
@@ -190,6 +196,9 @@ type CreateClinicianJSONRequestBody CreateClinicianJSONBody
 
 // UpdateClinicianJSONRequestBody defines body for UpdateClinician for application/json ContentType.
 type UpdateClinicianJSONRequestBody UpdateClinicianJSONBody
+
+// AssociateClinicianToUserJSONRequestBody defines body for AssociateClinicianToUser for application/json ContentType.
+type AssociateClinicianToUserJSONRequestBody AssociateClinicianToUserJSONBody
 
 // CreatePatientAccountJSONRequestBody defines body for CreatePatientAccount for application/json ContentType.
 type CreatePatientAccountJSONRequestBody CreatePatientAccountJSONBody

@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	api "github.com/tidepool-org/clinic/client"
+	clinics "github.com/tidepool-org/clinic/client"
 	"log"
 	"net/http"
 
+	oapiTypes "github.com/deepmap/oapi-codegen/pkg/types"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
@@ -71,7 +72,7 @@ func (a *Api) checkExistingPatientOfClinic(ctx context.Context, clinicId, patien
 	return false, fmt.Errorf("unexpected status code %v when checking if user is existing patient", response.StatusCode())
 }
 
-func (a *Api) 	checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, res http.ResponseWriter) (bool, *shoreline.UserData) {
+func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, res http.ResponseWriter) (bool, *shoreline.UserData) {
 	//already in the group?
 	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
 
@@ -255,17 +256,17 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 	}
 }
 
-func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confirmation) (*api.Patient, error) {
+func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confirmation) (*clinics.Patient, error) {
 	var permissions commonClients.Permissions
 	if err := confirmation.DecodeContext(&permissions); err != nil {
 		return nil, err
 	}
 
-	body := api.CreatePatientFromUserJSONRequestBody{
-		Permissions: &api.PatientPermissions{
-			View: getPermission(permissions, "view"),
+	body := clinics.CreatePatientFromUserJSONRequestBody{
+		Permissions: &clinics.PatientPermissions{
+			View:   getPermission(permissions, "view"),
 			Upload: getPermission(permissions, "upload"),
-			Note: getPermission(permissions, "note"),
+			Note:   getPermission(permissions, "note"),
 		},
 	}
 
@@ -601,7 +602,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
 		invite.Email = ib.Email
 
-		var clinic *api.Clinic
+		var clinic *clinics.Clinic
 		var err error
 		if a.Config.ClinicServiceEnabled {
 			clinic, err = a.findExistingClinic(ctx, ib.Email)
@@ -665,6 +666,96 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 
 			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+			return
+		}
+	}
+}
+
+type ClinicianInvite struct {
+	Email string   `json:"email"`
+	Roles []string `json:"roles"`
+}
+
+//Send an invite to become a clinic member
+func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if token := a.token(res, req); token != nil {
+		ctx := req.Context()
+		clinicId := vars["clinicId"]
+
+		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
+			return
+		}
+
+		clinic, err := a.clinics.GetClinicWithResponse(ctx, clinicId)
+		if err != nil || clinic == nil || clinic.JSON200 == nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			return
+		}
+
+		defer req.Body.Close()
+		var body = &ClinicianInvite{}
+		if err := json.NewDecoder(req.Body).Decode(body); err != nil {
+			log.Printf("SendClinicianInvite: error decoding invite to %v\n", err)
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+			return
+		}
+
+		confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
+
+		invitedUsr := a.findExistingUser(body.Email, a.sl.TokenProvide())
+		if invitedUsr != nil && invitedUsr.UserID != "" {
+			confirmation.UserId = invitedUsr.UserID
+		}
+
+		response, err := a.clinics.CreateClinicianWithResponse(ctx, clinicId, clinics.CreateClinicianJSONRequestBody{
+			InviteId: &confirmation.Key,
+			Email:    oapiTypes.Email(body.Email),
+			Roles:    body.Roles,
+		})
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			return
+		}
+		if response.StatusCode() != http.StatusOK {
+			res.Header().Set("content-type", "application/json")
+			res.WriteHeader(response.StatusCode())
+			res.Write(response.Body)
+			return
+		}
+
+		if a.addOrUpdateConfirmation(req.Context(), confirmation, res) {
+			a.logMetric("clinician_invite_created", req)
+
+			if err := a.addProfile(confirmation); err != nil {
+				log.Println("SendClinicianInvite: ", err.Error())
+			} else {
+				fullName := confirmation.Creator.Profile.FullName
+				if confirmation.Creator.Profile.Patient.IsOtherPerson {
+					fullName = confirmation.Creator.Profile.Patient.FullName
+				}
+
+				var webPath = "signup"
+				if confirmation.UserId != "" {
+					webPath = "login"
+				}
+
+				clinicName := clinic.JSON200.Name
+				confirmation.Creator.ClinicName = clinicName
+
+				emailContent := map[string]interface{}{
+					"ClinicName":  clinicName,
+					"CreatorName": fullName,
+					"Email":       body.Email,
+					"WebPath":     webPath,
+				}
+
+				if a.createAndSendNotification(req, confirmation, emailContent) {
+					a.logMetric("clinician_invite_sent", req)
+				}
+			}
+
+			a.sendModelAsResWithStatus(res, confirmation, http.StatusOK)
 			return
 		}
 	}
