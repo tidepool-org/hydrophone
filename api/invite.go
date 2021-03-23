@@ -702,6 +702,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 		}
 
 		confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
+		confirmation.Email = body.Email
 
 		invitedUsr := a.findExistingUser(body.Email, a.sl.TokenProvide())
 		if invitedUsr != nil && invitedUsr.UserID != "" {
@@ -731,9 +732,6 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 				log.Println("SendClinicianInvite: ", err.Error())
 			} else {
 				fullName := confirmation.Creator.Profile.FullName
-				if confirmation.Creator.Profile.Patient.IsOtherPerson {
-					fullName = confirmation.Creator.Profile.Patient.FullName
-				}
 
 				var webPath = "signup"
 				if confirmation.UserId != "" {
