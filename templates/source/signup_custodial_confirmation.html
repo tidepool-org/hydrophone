@@ -49,7 +49,7 @@
                   <tr>
                   <td>
                   <![endif]-->
-                  <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}">
+                  <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .EncodedEmail }}&signupKey={{ .Key }}">
                     {{.SignupCustodialVerify}}
                   </a>
                   <!--[if (gte mso 9)|(IE)]>
