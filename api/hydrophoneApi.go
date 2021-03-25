@@ -202,9 +202,16 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	rtr.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.AcceptPatientInvite)).Methods("PUT")
 
 	// POST /v1/clinics/:clinicId/invites/clinicians
+	// PATCH /v1/clinics/:clinicId/invites/clinicians/:inviteId
 	c.Handle("/v1/clinics/{clinicId}/invites/clinicians", varsHandler(a.SendClinicianInvite)).Methods("POST")
+	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.ResendClinicianInvite)).Methods("PATCH")
+	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.AcceptClinicianInvite)).Methods("PUT")
+	//c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.DeleteClinicianInvite)).Methods("DELETE")
 
 	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians", varsHandler(a.SendClinicianInvite)).Methods("POST")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.ResendClinicianInvite)).Methods("PATCH")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.AcceptClinicianInvite)).Methods("PUT")
+	//rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.DeleteClinicianInvite)).Methods("DELETE")
 }
 
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
