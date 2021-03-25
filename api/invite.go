@@ -869,6 +869,74 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 	}
 }
 
+//
+//// Delete the given invite
+////
+//// http.StatusOK when accepted
+//// http.StatusBadRequest when the incoming data is incomplete or incorrect
+//// http.StatusForbidden when mismatch of user ID's, type or status
+//func (a *Api) DeleteClinicianInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+//	if token := a.token(res, req); token != nil {
+//		ctx := req.Context()
+//		clinicId := vars["clinicId"]
+//		inviteId := vars["inviteId"]
+//
+//		filter := &models.Confirmation{
+//			Key: inviteId,
+//			ClinicId: clinicId,
+//			Type: models.TypeClinicianInvite,
+//			Status: models.StatusPending,
+//		}
+//
+//		if !token.IsServer {
+//			currentUser := a.findExistingUser(token.UserID, req.Header.Get(TP_SESSION_TOKEN))
+//			if currentUser == nil {
+//				log.Println("AcceptClinicianInvite ", STATUS_UNAUTHORIZED)
+//				a.sendModelAsResWithStatus(
+//					res,
+//					status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)},
+//					http.StatusUnauthorized,
+//				)
+//				return
+//			}
+//			filter.Email = currentUser.Emails[0]
+//		}
+//
+//		conf, err := a.findExistingConfirmation(req.Context(), filter, res)
+//		if err != nil {
+//			log.Printf("AcceptClinicianInvite error while finding confirmation [%s]\n", err.Error())
+//			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+//			return
+//		}
+//		if conf == nil {
+//			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
+//			log.Println("AcceptClinicianInvite ", statusErr.Error())
+//			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+//			return
+//		}
+//
+//		association := clinics.AssociateClinicianToUserJSONRequestBody{UserId: invitedUsr.UserID}
+//		response, err := a.clinics.AssociateClinicianToUserWithResponse(ctx, clinicId, inviteId, association)
+//		if err != nil || response.StatusCode() != http.StatusOK {
+//			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+//			return
+//		}
+//
+//		conf.UpdateStatus(models.StatusCompleted)
+//		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
+//			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+//			log.Println("AcceptClinicianInvite ", statusErr.Error())
+//			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+//			return
+//		}
+//
+//		a.logMetric("accept_clinician_invite", req)
+//		res.WriteHeader(http.StatusOK)
+//		res.Write([]byte(STATUS_OK))
+//		return
+//	}
+//}
+
 func (a *Api) sendClinicianConfirmation(res http.ResponseWriter, req *http.Request, clinic *clinics.Clinic, confirmation *models.Confirmation) {
 	ctx := req.Context()
 	if a.addOrUpdateConfirmation(ctx, confirmation, res) {
