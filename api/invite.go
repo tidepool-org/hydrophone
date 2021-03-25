@@ -703,6 +703,8 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 
 		confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
 		confirmation.Email = body.Email
+		confirmation.Creator.ClinicId = string(clinic.JSON200.Id)
+		confirmation.Creator.ClinicName = clinic.JSON200.Name
 
 		invitedUsr := a.findExistingUser(body.Email, a.sl.TokenProvide())
 		if invitedUsr != nil && invitedUsr.UserID != "" {
@@ -759,12 +761,27 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			return
 		}
 
-		email := string(inviteReponse.JSON200.Email)
-		confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
-		confirmation.Email = email
-		confirmation.Key = inviteId
+		filter := &models.Confirmation{
+			Key: inviteId,
+			Type: models.TypeClinicianInvite,
+			Status: models.StatusPending,
+		}
+		confirmation, err := a.findExistingConfirmation(req.Context(), filter, res)
+		if err != nil {
+			log.Printf("ResendClinicianInvite error while finding confirmation [%s]\n", err.Error())
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+		if confirmation == nil {
+			confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
+			confirmation.Key = inviteId
+		}
+		
+		confirmation.Email = string(inviteReponse.JSON200.Email)
+		confirmation.Creator.ClinicId = string(clinic.JSON200.Id)
+		confirmation.Creator.ClinicName = clinic.JSON200.Name
 
-		invitedUsr := a.findExistingUser(email, a.sl.TokenProvide())
+		invitedUsr := a.findExistingUser(confirmation.Email, a.sl.TokenProvide())
 		if invitedUsr != nil && invitedUsr.UserID != "" {
 			confirmation.UserId = invitedUsr.UserID
 		}
@@ -952,11 +969,8 @@ func (a *Api) sendClinicianConfirmation(res http.ResponseWriter, req *http.Reque
 				webPath = "login"
 			}
 
-			clinicName := clinic.Name
-			confirmation.Creator.ClinicName = clinicName
-
 			emailContent := map[string]interface{}{
-				"ClinicName":  clinicName,
+				"ClinicName":  confirmation.Creator.ClinicName,
 				"CreatorName": fullName,
 				"Email":       confirmation.Email,
 				"WebPath":     webPath,

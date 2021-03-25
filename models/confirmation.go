@@ -30,7 +30,8 @@ type (
 	Creator struct {
 		*Profile   `json:"profile" bson:"-"`
 		UserId     string `json:"userid" bson:"-"` //for compatability with blip
-		ClinicName string `json:"clinicName,omitempty"`
+		ClinicId   string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
+		ClinicName string `json:"clinicName,omitempty" bson:"clinicName,omitempty"`
 	}
 	Patient struct {
 		Birthday      string `json:"birthday"`
