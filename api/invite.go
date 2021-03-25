@@ -703,6 +703,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 
 		confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
 		confirmation.Email = body.Email
+		confirmation.ClinicId = string(clinic.JSON200.Id)
 		confirmation.Creator.ClinicId = string(clinic.JSON200.Id)
 		confirmation.Creator.ClinicName = clinic.JSON200.Name
 
@@ -762,8 +763,8 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 
 		filter := &models.Confirmation{
-			Key: inviteId,
-			Type: models.TypeClinicianInvite,
+			Key:    inviteId,
+			Type:   models.TypeClinicianInvite,
 			Status: models.StatusPending,
 		}
 		confirmation, err := a.findExistingConfirmation(req.Context(), filter, res)
@@ -776,8 +777,9 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
 			confirmation.Key = inviteId
 		}
-		
+
 		confirmation.Email = string(inviteReponse.JSON200.Email)
+		confirmation.ClinicId = string(clinic.JSON200.Id)
 		confirmation.Creator.ClinicId = string(clinic.JSON200.Id)
 		confirmation.Creator.ClinicName = clinic.JSON200.Name
 
@@ -805,7 +807,7 @@ func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request
 		invitedUsr := a.findExistingUser(inviteeID, req.Header.Get(TP_SESSION_TOKEN))
 
 		// Tokens only legit when for same userid
-		if  inviteeID != token.UserID || invitedUsr == nil {
+		if inviteeID != token.UserID || invitedUsr == nil {
 			log.Printf("GetClinicianInvitations %s ", STATUS_UNAUTHORIZED)
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
@@ -845,11 +847,11 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 
 		accept := &models.Confirmation{
-			Key: inviteId,
+			Key:      inviteId,
 			ClinicId: clinicId,
-			Email: invitedUsr.Emails[0],
-			Type: models.TypeClinicianInvite,
-			Status: models.StatusPending,
+			Email:    invitedUsr.Emails[0],
+			Type:     models.TypeClinicianInvite,
+			Status:   models.StatusPending,
 		}
 		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
 		if err != nil {
