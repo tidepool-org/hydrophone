@@ -202,7 +202,7 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 
 		a.logMetric("accept_clinician_invite", req)
 		res.WriteHeader(http.StatusOK)
-		res.Write([]byte(STATUS_OK))
+		res.Write(response.Body)
 		return
 	}
 }
@@ -231,7 +231,7 @@ func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request,
 			return
 		}
 
-		a.cancelClinicianInviteWithStatus(res, req, filter, models.StatusDeclined)
+		a.cancelClinicianInviteWithStatus(res, req, conf, models.StatusDeclined)
 	}
 }
 
@@ -265,7 +265,7 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 			return
 		}
-		a.cancelClinicianInviteWithStatus(res, req, filter, models.StatusCanceled)
+		a.cancelClinicianInviteWithStatus(res, req, conf, models.StatusCanceled)
 	}
 }
 
