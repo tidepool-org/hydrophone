@@ -82,10 +82,13 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 	if notification.ShortKey == "11111111" {
 		return nil, nil
 	}
+	if notification.Key == "key.to.be.dismissed" {
+		notification.Status = "Pending"
+	}
 	return notification, nil
 }
 
-func (d *MockStoreClient) FindConfirmations(ctx context.Context, confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
+func (d *MockStoreClient) FindConfirmations(ctx context.Context, confirmation *models.Confirmation, statuses []models.Status, types []models.Type) (results []*models.Confirmation, err error) {
 	if d.doBad {
 		return nil, errors.New("FindConfirmation failure")
 	}
@@ -95,7 +98,9 @@ func (d *MockStoreClient) FindConfirmations(ctx context.Context, confirmation *m
 
 	confirmation.Created = time.Now().AddDate(0, 0, -3) // created three days ago
 	confirmation.Context = []byte(`{"view":{}, "note":{}}`)
-	confirmation.UpdateStatus(statuses[0])
+	if len(statuses) == 1 {
+		confirmation.UpdateStatus(statuses[0])
+	}
 
 	return []*models.Confirmation{confirmation}, nil
 }

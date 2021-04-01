@@ -46,6 +46,7 @@ func Test_NewTemplates(t *testing.T) {
 	}
 	expectedTemplates := []models.TemplateName{
 		models.TemplateNameCareteamInvite,
+		models.TemplateNameMedicalteamInvite,
 		models.TemplateNameNoAccount,
 		models.TemplateNamePasswordReset,
 		models.TemplateNamePatientPasswordReset,

@@ -1,0 +1,20 @@
+{
+    "name": "medicalteam_remove",
+    "description": "email for those that have been removed from a medical crew",
+    "templateFilename": "medicalteam_remove.html",
+    "subject": "MedicalTeamRemoveSubject",
+    "contentParts":[
+        "MedicalTeamRemoveHeadline",
+        "MedicalTeamRemoveBody1",
+        "MedicalTeamRemoveBody2",
+        "MedicalTeamRemoveInfo",
+        "MedicalTeamRemoveAction",
+        "FooterGetSupport"
+    ],
+    "escapeContentParts":[
+        "MedicalteamName",
+        "CreatorName",
+        "AssetURL",
+        "Language"
+    ]
+}

@@ -121,6 +121,10 @@ github.com/mattn/go-isatty v0.0.12 h1:wuysRhFDzyxgEmMf5xjvJ2M9dZoWAXNNr5LSBS7uHX
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
 github.com/mdblp/crew v0.2.0 h1:dfrRepoROLi34mRI9hvCfY4ETTDPCfhFjCsQYs5ty6Y=
 github.com/mdblp/crew v0.2.0/go.mod h1:u+Q1thOw/RqyzdeRqr+e9bb57nxaKiAd34LcSvVmbgs=
+github.com/mdblp/crew v0.2.1-0.20210311101945-5ad7fce3802c h1:dL7o7YlC0VY3UZXgjqA1EIGgTjQplMxifh7FPhu28D0=
+github.com/mdblp/crew v0.2.1-0.20210311101945-5ad7fce3802c/go.mod h1:u+Q1thOw/RqyzdeRqr+e9bb57nxaKiAd34LcSvVmbgs=
+github.com/mdblp/crew v0.2.1-0.20210317150621-ffff31584f21 h1:I8L7NIPILTCnoEAVd1g0hPOue9GhoU1x045yzyteEB0=
+github.com/mdblp/crew v0.2.1-0.20210317150621-ffff31584f21/go.mod h1:u+Q1thOw/RqyzdeRqr+e9bb57nxaKiAd34LcSvVmbgs=
 github.com/mdblp/go-common v0.7.0 h1:jddiiztvvwByq5jXVSINd1X0AABQRSdw4xMzUw36aKU=
 github.com/mdblp/go-common v0.7.0/go.mod h1:cFFwPnC4pEjrr1YUwjyTfL8ogUgwuvjKe8+eS0bm9oA=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 h1:ZqeYNhU3OHLH3mGKHDcjJRFFRrJa6eAM5H+CtDdOsPc=

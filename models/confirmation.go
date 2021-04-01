@@ -21,6 +21,8 @@ type (
 
 		TemplateName TemplateName `json:"-" bson:"templateName"`
 		UserId       string       `json:"-" bson:"userId"`
+		TeamID       string       `json:"teamId" bson:"teamId"`
+		IsAdmin      string       `json:"-" bson:"isAdmin"`
 		Status       Status       `json:"-" bson:"status"`
 		Modified     time.Time    `json:"-" bson:"modified"`
 		ShortKey     string       `json:"shortKey" bson:"shortKey"`
@@ -67,7 +69,10 @@ const (
 	TypePasswordReset        Type = "password_reset"
 	TypePatientPasswordReset Type = "patient_password_reset"
 	TypePatientPasswordInfo  Type = "patient_password_info"
-	TypeCareteamInvite       Type = "careteam_invitation"
+	TypeCareteamInvite       Type = "careteam_invitation"    // invite and share data to a caregiver
+	TypeMedicalTeamInvite    Type = "medicalteam_invitation" // invite an hcp to a medical team
+	TypeMedicalTeamDoAdmin   Type = "medicalteam_do_admin"
+	TypeMedicalTeamRemove    Type = "medicalteam_remove"
 	TypeSignUp               Type = "signup_confirmation"
 	TypeNoAccount            Type = "no_account"
 	TypeInformation          Type = "patient_information"
@@ -82,6 +87,7 @@ var (
 		TypePasswordReset:        7 * 24 * time.Hour,
 		TypeSignUp:               31 * 24 * time.Hour,
 		TypePatientPasswordReset: 1 * time.Hour,
+		TypeMedicalTeamInvite:    7 * 24 * time.Hour,
 	}
 )
 
@@ -176,6 +182,16 @@ func (c *Confirmation) ValidateUserID(expectedUserID string, validationErrors *[
 	return c
 }
 
+func (c *Confirmation) ValidateTeamID(expectedTeamID string, validationErrors *[]error) *Confirmation {
+	if expectedTeamID != c.TeamID {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("Confirmation expected TeamId of `%s` but had `%s`", expectedTeamID, c.TeamID),
+		)
+	}
+	return c
+}
+
 func (c *Confirmation) ValidateStatus(expectedStatus Status, validationErrors *[]error) *Confirmation {
 	if expectedStatus != c.Status {
 		*validationErrors = append(
@@ -199,6 +215,7 @@ func (c *Confirmation) ValidateType(expectedType Type, validationErrors *[]error
 func (c *Confirmation) IsExpired() bool {
 	timeout, ok := Timeouts[c.Type]
 	if !ok {
+		log.Printf("[%s] does not exist", c.Type)
 		return false
 	}
 

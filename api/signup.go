@@ -23,6 +23,7 @@ const (
 	STATUS_SIGNUP_ERROR      = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
 	STATUS_ERR_FINDING_USR   = "Error finding user"
 	STATUS_ERR_UPDATING_USR  = "Error updating user"
+	STATUS_ERR_UPDATING_TEAM = "Error updating team"
 	STATUS_NO_PASSWORD       = "User does not have a password"
 	STATUS_MISSING_PASSWORD  = "Password is missing"
 	STATUS_INVALID_PASSWORD  = "Password specified is invalid"
@@ -543,7 +544,10 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 			return
 		}
 
-		if signups, _ := a.Store.FindConfirmations(req.Context(), &models.Confirmation{UserId: userId, Type: models.TypeSignUp}, models.StatusPending); signups == nil {
+		statuses := []models.Status{models.StatusPending}
+		noTypes := []models.Type{}
+
+		if signups, _ := a.Store.FindConfirmations(req.Context(), &models.Confirmation{UserId: userId, Type: models.TypeSignUp}, statuses, noTypes); signups == nil {
 			log.Printf("getSignUp %s", STATUS_SIGNUP_NOT_FOUND)
 			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
 			return

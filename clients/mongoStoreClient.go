@@ -71,6 +71,9 @@ func (c *Client) FindConfirmation(ctx context.Context, confirmation *models.Conf
 	if confirmation.ShortKey != "" {
 		query["shortKey"] = confirmation.ShortKey
 	}
+	if confirmation.TeamID != "" {
+		query["teamId"] = confirmation.TeamID
+	}
 	opts := options.FindOne()
 	opts.SetSort(bson.D{primitive.E{Key: "created", Value: -1}})
 	if err = mgoConfirmationsCollection(c).FindOne(ctx, query, opts).Decode(&result); err != nil && err != mongo.ErrNoDocuments {
@@ -82,7 +85,7 @@ func (c *Client) FindConfirmation(ctx context.Context, confirmation *models.Conf
 }
 
 // FindConfirmations returns all created confirmations matching filter passed as parameter
-func (c *Client) FindConfirmations(ctx context.Context, confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
+func (c *Client) FindConfirmations(ctx context.Context, confirmation *models.Confirmation, statuses []models.Status, types []models.Type) (results []*models.Confirmation, err error) {
 
 	var query bson.M = bson.M{}
 
@@ -93,8 +96,12 @@ func (c *Client) FindConfirmations(ctx context.Context, confirmation *models.Con
 	if confirmation.Key != "" {
 		query["_id"] = confirmation.Key
 	}
-	if string(confirmation.Type) != "" {
-		query["type"] = confirmation.Type
+	if len(types) > 0 {
+		query["type"] = bson.M{"$in": types}
+	} else {
+		if string(confirmation.Type) != "" {
+			query["type"] = confirmation.Type
+		}
 	}
 	if confirmation.CreatorId != "" {
 		query["creatorId"] = confirmation.CreatorId
@@ -107,6 +114,9 @@ func (c *Client) FindConfirmations(ctx context.Context, confirmation *models.Con
 	}
 	if confirmation.ShortKey != "" {
 		query["shortKey"] = confirmation.ShortKey
+	}
+	if confirmation.TeamID != "" {
+		query["teamId"] = confirmation.TeamID
 	}
 
 	opts := options.Find()

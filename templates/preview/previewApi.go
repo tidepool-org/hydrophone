@@ -118,6 +118,12 @@ func (a *Api) buildPreview(res http.ResponseWriter, req *http.Request, vars map[
 	switch vars["template"] {
 	case "careteam_invitation":
 		templateName = models.TemplateNameCareteamInvite
+	case "medicalteam_invitation":
+		templateName = models.TemplateNameMedicalteamInvite
+	case "medicalteam_do_admin":
+		templateName = models.TemplateNameMedicalteamDoAdmin
+	case "medicalteam_remove":
+		templateName = models.TemplateNameMedicalteamRemove
 	case "no_account":
 		templateName = models.TemplateNameNoAccount
 	case "password_reset":
@@ -171,15 +177,20 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 	supportEmail := fmt.Sprintf("<a href=%s>%s</a>", a.Config.SupportURL, strings.Replace(a.Config.SupportURL, "mailto:", "", 1))
 
 	content := map[string]interface{}{
-		"Key":          "123456789123456789123456789123456789",
-		"Email":        "john@diabeloop.com",
+		"Key":                      "123456789123456789123456789123456789",
+		"Email":                    "john@diabeloop.com",
 		"EncodedEmail": url.QueryEscape("john@diabeloop.com"),
-		"FullName":     "John Doe",
-		"PatientName":  "John Doe",
-		"WebPath":      "login",
-		"ShortKey":     "12345678",
-		"OTP":          "165236984",
-		"SupportEmail": supportEmail,
+		"FullName":                 "John Doe",
+		"CareteamName":             "John Doe",
+		"WebPath":                  "login",
+		"ShortKey":                 "12345678",
+		"OTP":                      "165236984",
+		"SupportEmail":             supportEmail,
+		"MedicalteamName":          "Team CHU",
+		"MedicalteamAddress":       "Bd de la chantourne, 38000 Grenoble",
+		"MedicalteamIentification": "123-456-789",
+		"CreatorName":              "John Doe",
+		"Language":                 "en",
 	}
 	// Content collection is here to replace placeholders in template body/content
 	content["CreatorName"] = "John Doe"

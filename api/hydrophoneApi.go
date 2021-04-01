@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"runtime"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	crewClient "github.com/mdblp/crew/client"
+	"github.com/mdblp/crew/store"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/portal"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -69,16 +69,22 @@ const (
 	STATUS_ERR_CLINICAL_USR          = "Cannot send an information to clinical"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
+	STATUS_ERR_FINDING_TEAM          = "Error finding the team"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
 	STATUS_ERR_FINDING_VALIDATION    = "Error finding the account validation"
+	STATUS_ERR_DECODING_INVITE       = "Error decoding the invitation"
+	STATUS_ERR_MISSING_DATA_INVITE   = "Error missing data in the invitation"
 
 	//returned status messages
-	STATUS_NOT_FOUND     = "Nothing found"
-	STATUS_NO_TOKEN      = "No x-tidepool-session-token was found"
-	STATUS_INVALID_TOKEN = "The x-tidepool-session-token was invalid"
-	STATUS_UNAUTHORIZED  = "Not authorized for requested operation"
-	STATUS_OK            = "OK"
+	STATUS_NOT_FOUND           = "Nothing found"
+	STATUS_NO_TOKEN            = "No x-tidepool-session-token was found"
+	STATUS_INVALID_TOKEN       = "The x-tidepool-session-token was invalid"
+	STATUS_UNAUTHORIZED        = "Not authorized for requested operation"
+	STATUS_ROLE_ALRDY_ASSIGNED = "Role already assigned to user"
+	STATUS_NOT_MEMBER          = "User is not a member"
+	STATUS_NOT_ADMIN           = STATUS_UNAUTHORIZED
+	STATUS_OK                  = "OK"
 )
 
 func InitApi(
@@ -127,6 +133,13 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	send.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
 	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
+	// POST /confirm/send/team/invite
+	send.Handle("/team/invite", varsHandler(a.SendTeamInvite)).Methods("POST")
+	// POST /confirm/send/team/role/:userid - add or remove admin role to userid
+	send.Handle("/team/role/{userid}", varsHandler(a.UpdateTeamRole)).Methods("PUT")
+	// DELETE /confirm/team/leave/:userid - delete member
+	send.Handle("/team/leave/{userid}", varsHandler(a.DeleteTeamMember)).Methods("DELETE")
+
 	// POST /confirm/send/inform/:userid
 	send.Handle("/inform/{userid}", varsHandler(a.sendSignUpInformation)).Methods("POST")
 	send.Handle("/pin-reset/{userid}", varsHandler(a.SendPinReset)).Methods("POST")
@@ -141,6 +154,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	accept.Handle("/signup/{confirmationid}", varsHandler(a.acceptSignUp)).Methods("PUT")
 	accept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
 	accept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
+	// PUT /confirm/accept/team/invite
+	accept.Handle("/team/invite/{userid}/{teamid}", varsHandler(a.AcceptTeamInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid
@@ -157,6 +172,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 		varsHandler(a.DismissInvite)).Methods("PUT")
 	dismiss.Handle("/signup/{userid}",
 		varsHandler(a.dismissSignUp)).Methods("PUT")
+	// PUT /confirm/dismiss/team/invite/{teamid}
+	dismiss.Handle("/team/invite/{teamid}", varsHandler(a.DismissTeamInvite)).Methods("PUT")
 
 	// PUT /confirm/:userid/invited/:invited_address
 	// PUT /confirm/signup/:userid
@@ -267,6 +284,12 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 			templateName = models.TemplateNamePatientPasswordInfo
 		case models.TypeCareteamInvite:
 			templateName = models.TemplateNameCareteamInvite
+		case models.TypeMedicalTeamInvite:
+			templateName = models.TemplateNameMedicalteamInvite
+		case models.TypeMedicalTeamDoAdmin:
+			templateName = models.TemplateNameMedicalteamDoAdmin
+		case models.TypeMedicalTeamRemove:
+			templateName = models.TemplateNameMedicalteamRemove
 		case models.TypeSignUp:
 			templateName = models.TemplateNameSignup
 		case models.TypeNoAccount:
@@ -282,8 +305,6 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 	// Support address configuration contains the mailto we want to strip out
 	supportEmail := fmt.Sprintf("<a href=%s>%s</a>", a.Config.SupportURL, strings.Replace(a.Config.SupportURL, "mailto:", "", 1))
 
-	// Create an Encoded Email entry
-	content["EmailEncoded"] = url.QueryEscape(content["Email"].(string))
 	// Content collection is here to replace placeholders in template body/content
 	content["WebURL"] = a.getWebURL(req)
 	content["SupportURL"] = a.Config.SupportURL
@@ -448,4 +469,32 @@ func (a *Api) isAuthorizedUser(tokenData *shoreline.TokenData, userId string) bo
 	} else {
 		return false
 	}
+}
+
+// userId is member of a Team
+// Settings the all parameter to true will return all the members while it will only return the accepted members if the parameter is set false
+func (a *Api) isTeamMember(userID string, team store.Team, all bool) bool {
+	for i := 0; i < len(team.Members); i++ {
+		if team.Members[i].UserID == userID && (team.Members[i].InvitationStatus == "accepted" || all) {
+			return true
+		}
+	}
+	return false
+}
+
+//
+// return true is the user userID is admin of the Team identified by teamID
+// it returns the Team object corresponding to the team
+// if any error occurs during the search, it returns an error with the
+// related code
+func (a *Api) getTeamForUser(token, teamID, userID string, res http.ResponseWriter) (bool, store.Team, error) {
+	var auth = false
+	team, err := a.perms.GetTeam(token, teamID)
+	if err != nil {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_FINDING_TEAM)}
+		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+		return auth, store.Team{}, err
+	}
+	auth = a.isTeamAdmin(userID, *team)
+	return auth, *team, nil
 }

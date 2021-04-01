@@ -1,0 +1,23 @@
+{
+    "name": "medicalteam_do_admin",
+    "description": "email for those that become admin of a medical crew",
+    "templateFilename": "medicalteam_do_admin.html",
+    "subject": "MedicalTeamDoAdminSubject",
+    "contentParts":[
+        "MedicalTeamDoAdminHeadline",
+        "MedicalTeamDoAdminBody1",
+        "MedicalTeamDoAdminBody2",
+        "MedicalTeamDoAdminListItem1",
+        "MedicalTeamDoAdminListItem2",
+        "MedicalTeamDoAdminListItem3",
+        "MedicalTeamDoAdminInfo",
+        "MedicalTeamDoAdminAction",
+        "FooterGetSupport"
+    ],
+    "escapeContentParts":[
+        "MedicalteamName",
+        "CreatorName",
+        "AssetURL",
+        "Language"
+    ]
+}

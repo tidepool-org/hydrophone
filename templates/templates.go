@@ -32,6 +32,24 @@ func New(templatesPath string, localizer localize.Localizer) (models.Templates, 
 		templates[template.Name()] = template
 	}
 
+	if template, err := newTemplate(templatesPath, models.TemplateNameMedicalteamInvite, localizer); err != nil {
+		return nil, fmt.Errorf("templates: failure to create medical invite template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
+	if template, err := newTemplate(templatesPath, models.TemplateNameMedicalteamDoAdmin, localizer); err != nil {
+		return nil, fmt.Errorf("templates: failure to create medical team admin template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
+	if template, err := newTemplate(templatesPath, models.TemplateNameMedicalteamRemove, localizer); err != nil {
+		return nil, fmt.Errorf("templates: failure to create medical team remove member: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
 	if template, err := newTemplate(templatesPath, models.TemplateNameNoAccount, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create no account template: %s", err)
 	} else {

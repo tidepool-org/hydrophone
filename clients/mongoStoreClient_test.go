@@ -103,8 +103,10 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	mc.UpsertConfirmation(ctx, c2)
 
 	searchForm := &models.Confirmation{CreatorId: fromUser}
+	searchStatus := []models.Status{models.StatusDeclined, models.StatusCompleted}
+	searchTypes := []models.Type{}
 
-	if confirmations, err := mc.FindConfirmations(ctx, searchForm, models.StatusDeclined, models.StatusCompleted); err == nil {
+	if confirmations, err := mc.FindConfirmations(ctx, searchForm, searchStatus, searchTypes); err == nil {
 		if len(confirmations) != 2 {
 			t.Fatalf("we should have found 2 confirmations %v", confirmations)
 		}
@@ -130,8 +132,10 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 		}
 	}
 	searchToOtherEmail := &models.Confirmation{CreatorId: fromUser, Email: toOtherEmail}
+	searchStatus = []models.Status{models.StatusDeclined, models.StatusCompleted}
+	searchTypes = []models.Type{}
 	//only email address
-	if confirmations, err := mc.FindConfirmations(ctx, searchToOtherEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
+	if confirmations, err := mc.FindConfirmations(ctx, searchToOtherEmail, searchStatus, searchTypes); err == nil {
 		if len(confirmations) != 1 {
 			t.Fatalf("we should have found 1 confirmations %v", confirmations)
 		}
@@ -143,8 +147,10 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 		}
 	}
 	searchToEmail := &models.Confirmation{CreatorId: fromUser, Email: toEmail}
+	searchStatus = []models.Status{models.StatusDeclined, models.StatusCompleted}
+	searchTypes = []models.Type{}
 	//with both userid and email address
-	if confirmations, err := mc.FindConfirmations(ctx, searchToEmail, models.StatusDeclined, models.StatusCompleted); err == nil {
+	if confirmations, err := mc.FindConfirmations(ctx, searchToEmail, searchStatus, searchTypes); err == nil {
 		if len(confirmations) != 1 {
 			t.Fatalf("we should have found 1 confirmations %v", confirmations)
 		}

@@ -17,10 +17,10 @@
         /* One Column Layout */
         /* Media Queries */
         @media screen and (max-width: 360px) {
-        p {
-          font-size: 10px;
-          padding: 0 0 0 4px;
-        }
+          p {
+            font-size: 10px;
+            padding: 0 0 0 4px;
+          }
         }
       </style>
     </head>
@@ -44,17 +44,39 @@
                   </tr>
                   <tr>
                     <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                      <p class="content-width" style="font-size:18px;line-height:1.5;margin:0;margin-bottom:10px;font-weight:bold;margin-left:auto;margin-right:auto;max-width:400px;">
-                        {{ .PatientPasswordInfoHeadline }}
+                      <p class="content-width" style="font-size:18px;line-height:1.5;margin:0;margin-bottom:16px;font-weight:bold;margin-left:auto;margin-right:auto;max-width:400px;">
+                        {{.MedicalTeamRemoveHeadline}}
                       </p>
                       <p class="content-width" style="font-size:14px;line-height:1.5;margin:0;margin-bottom:10px;margin-left:auto;margin-right:auto;max-width:400px;">
-                        {{ .PatientPasswordInfoBody }} 
-                        <br/>
-                        <br/>
-                        {{ .PatientPasswordInfoBody2 }}
-                        <br/>
-                        <br/>
+                        {{ .MedicalTeamRemoveBody1 }}
                       </p>
+                      <p class="content-width" style="font-size:14px;line-height:1.5;margin:0;margin-bottom:10px;margin-left:auto;margin-right:auto;max-width:400px;">
+                        {{ .MedicalTeamRemoveBody2 }}
+                      </p>
+                      <br />
+                      <br />
+                      <p class="h1 content-width" style="font-size:14px;line-height:1.5;margin:0;margin-bottom:10px;font-weight:bold;margin-left:auto;margin-right:auto;max-width:400px;">
+                        {{.MedicalTeamRemoveInfo}}
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                      <!--[if (gte mso 9)|(IE)]>
+                        <table bgcolor="#627CFF">
+                          <tr>
+                            <td>
+                      <![endif]-->
+                      <a class="btn primary" href="{{.WebURL}}/{{ .WebPath }}" style="text-decoration:none;display:inline-block;font-family:'Ubuntu', sans-serif;border-radius:4px;padding:10px 20px;background-color:#6fc3bb;font-size:16px;font-weight:bold;color:#ffffff;margin-left:5px;margin-right:5px;margin-bottom:10px;">
+                        {{.MedicalTeamRemoveAction}}
+                      </a>
+                      <!--[if (gte mso 9)|(IE)]>
+                      </td>
+                    </tr>
+                  </table>
+                      <![endif]-->
+                      <br />
+                      <br />
                     </td>
                   </tr>
                   <tr>
