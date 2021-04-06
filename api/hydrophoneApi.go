@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	clinicsClient "github.com/tidepool-org/clinic/client"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"reflect"
@@ -33,6 +34,7 @@ type (
 		gatekeeper commonClients.Gatekeeper
 		seagull    commonClients.Seagull
 		metrics    highwater.Client
+		logger     *zap.SugaredLogger
 		Config     Config
 	}
 	Config struct {
@@ -79,6 +81,7 @@ func NewApi(
 	metrics highwater.Client,
 	seagull commonClients.Seagull,
 	templates models.Templates,
+	logger *zap.SugaredLogger,
 ) *Api {
 	return &Api{
 		Store:      store,
@@ -90,6 +93,7 @@ func NewApi(
 		metrics:    metrics,
 		seagull:    seagull,
 		templates:  templates,
+		logger:     logger,
 	}
 }
 

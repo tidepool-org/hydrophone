@@ -6,6 +6,7 @@ import (
 	clinicsClient "github.com/tidepool-org/clinic/client"
 	ev "github.com/tidepool-org/go-common/events"
 	"github.com/tidepool-org/hydrophone/events"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"time"
@@ -144,6 +145,16 @@ func cloudEventsConsumerProvider(config *ev.CloudEventsConfig, handler ev.EventH
 	return consumer, nil
 }
 
+func loggerProvider() (*zap.SugaredLogger, error) {
+	config := zap.NewProductionConfig()
+	config.EncoderConfig.FunctionKey = "function"
+	logger, err := config.Build()
+	if err != nil {
+		return nil, err
+	}
+	return logger.Sugar(), nil
+}
+
 //InvocationParams are the parameters need to kick off a service
 type InvocationParams struct {
 	fx.In
@@ -226,6 +237,7 @@ func main() {
 			emailTemplateProvider,
 			serverProvider,
 			clinicProvider,
+			loggerProvider,
 			api.NewApi,
 		),
 		fx.Invoke(startEventConsumer),

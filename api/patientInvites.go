@@ -7,7 +7,7 @@ import (
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -27,14 +27,14 @@ func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars
 		}
 
 		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
-			log.Println(err.Error())
+			a.logger.Errorw("token owner is not a clinic admin", zap.Error(err))
 			return
 		}
 
 		//find all oustanding invites that are associated to this clinic
 		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{ClinicId: clinicId, Type: models.TypeCareteamInvite}, models.StatusPending)
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
-			log.Printf("GetPatientInvitations: found and have checked [%d] invites ", len(invites))
+			a.logger.Infof("found and checked %d confirmations", len(invites))
 			a.logMetric("get_patient_invites", req)
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
 			return
@@ -60,7 +60,7 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 		}
 
 		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
-			log.Println(err.Error())
+			a.logger.Errorw("token owner is not a clinic admin", zap.Error(err))
 			return
 		}
 
@@ -71,13 +71,13 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 
 		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
 		if err != nil {
-			log.Printf("AcceptPatientInvite error while finding confirmation [%s]\n", err.Error())
+			a.logger.Errorw("error while finding confirmation", zap.Error(err))
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
 		}
 		if conf == nil {
+			a.logger.Warn("confirmation not found")
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
-			log.Println("AcceptPatientInvite ", statusErr.Error())
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 			return
 		}
@@ -89,7 +89,7 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 
 		if len(validationErrors) > 0 {
 			for _, validationError := range validationErrors {
-				log.Println("AcceptPatientInvite forbidden as there was a expectation mismatch", validationError)
+				a.logger.Warnw("forbidden as there was a expectation mismatch", zap.Error(validationError))
 			}
 			a.sendModelAsResWithStatus(
 				res,
@@ -101,7 +101,7 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 
 		patient, err := a.createClinicPatient(ctx, *conf)
 		if err != nil {
-			log.Printf("AcceptPatientInvite error creating patient [%v]\n", err)
+			a.logger.Errorw("error creating patient", zap.Error(err))
 			a.sendModelAsResWithStatus(
 				res,
 				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT)},
@@ -112,8 +112,8 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 
 		conf.UpdateStatus(models.StatusCompleted)
 		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
+			a.logger.Warn("error adding or updating confirmation")
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
-			log.Println("AcceptInvite ", statusErr.Error())
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 			return
 		}
@@ -145,7 +145,7 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 		return nil, fmt.Errorf("unexpected status code %v when creating patient from existing user", response.StatusCode())
 	}
 
-	log.Printf("AcceptPatientInvite: permissions were set as [%v] after an invite was accepted", permissions)
+	a.logger.Infof("permissions were set as [%v] after an invite was accepted", permissions)
 	return response.JSON200, nil
 }
 
@@ -156,4 +156,3 @@ func getPermission(permissions commonClients.Permissions, permission string) *ma
 	}
 	return nil
 }
-

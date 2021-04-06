@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -62,10 +63,10 @@ func TestForgotResponds(t *testing.T) {
 		var testRtr = mux.NewRouter()
 
 		if test.returnNone {
-			hydrophoneFindsNothing := NewApi(FAKE_CONFIG, nil, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
+			hydrophoneFindsNothing := NewApi(FAKE_CONFIG, nil, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates, zap.NewNop().Sugar())
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
-			hydrophone := NewApi(FAKE_CONFIG, nil, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates)
+			hydrophone := NewApi(FAKE_CONFIG, nil, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates, zap.NewNop().Sugar())
 			hydrophone.SetHandlers("", testRtr)
 		}
 

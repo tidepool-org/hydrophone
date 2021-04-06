@@ -9,7 +9,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -25,6 +25,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 		clinicId := vars["clinicId"]
 
 		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
+			a.logger.Warnw("token owner is not clinic admin", err)
 			return
 		}
 
@@ -37,7 +38,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 		defer req.Body.Close()
 		var body = &ClinicianInvite{}
 		if err := json.NewDecoder(req.Body).Decode(body); err != nil {
-			log.Printf("SendClinicianInvite: error decoding invite to %v\n", err)
+			a.logger.Errorw("error decoding invite", zap.Error(err))
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 			return
@@ -83,6 +84,7 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		inviteId := vars["inviteId"]
 
 		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
+			a.logger.Warnw("token owner is not clinic admin", err)
 			return
 		}
 
@@ -111,7 +113,7 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 		confirmation, err := a.findExistingConfirmation(req.Context(), filter, res)
 		if err != nil {
-			log.Printf("ResendClinicianInvite error while finding confirmation [%s]\n", err.Error())
+			a.logger.Errorw("error while finding confirmation", zap.Error(err))
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
 		}
@@ -145,7 +147,7 @@ func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request
 
 		// Tokens only legit when for same userid
 		if userId != token.UserID || invitedUsr == nil {
-			log.Printf("GetClinicianInvitations %s ", STATUS_UNAUTHORIZED)
+			a.logger.Errorw("token belongs to a different user or user doesn't exist")
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
@@ -153,7 +155,7 @@ func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request
 		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeClinicianInvite}, models.StatusPending)
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(req.Context(), userId, invites)
-			log.Printf("GetClinicianInvitations: found and have checked [%d] invites ", len(invites))
+			a.logger.Infof("found and checked %v invites", len(invites))
 			a.logMetric("get_clinician_invitations", req)
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
 			return
@@ -176,12 +178,12 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
 		if err != nil {
-			log.Printf("AcceptClinicianInvite error while finding confirmation [%s]\n", err.Error())
+			a.logger.Errorw("error while finding confirmation", zap.Error(err))
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
 		}
 		if err := a.assertRecipientAuthorized(res, req, token, conf); err != nil {
-			log.Println(err)
+			a.logger.Errorw("recipient is not authorized to accept invite", zap.Error(err))
 			return
 		}
 
@@ -194,8 +196,8 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 
 		conf.UpdateStatus(models.StatusCompleted)
 		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
+			a.logger.Errorw("error while adding or updating confirmation", zap.Error(err))
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
-			log.Println("AcceptClinicianInvite ", statusErr.Error())
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 			return
 		}
@@ -222,12 +224,12 @@ func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request,
 		}
 		conf, err := a.findExistingConfirmation(ctx, filter, res)
 		if err != nil {
-			log.Printf("DismissClinicianInvite error while finding confirmation [%s]\n", err.Error())
+			a.logger.Errorw("error while finding confirmation", zap.Error(err))
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
 		}
 		if err := a.assertRecipientAuthorized(res, req, token, conf); err != nil {
-			log.Println(err)
+			a.logger.Errorw("recipient is not authorized to accept invite", zap.Error(err))
 			return
 		}
 
@@ -243,7 +245,7 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		inviteId := vars["inviteId"]
 
 		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
-			log.Println(err.Error())
+			a.logger.Warnw("token owner is not clinic admin", err)
 			return
 		}
 
@@ -255,13 +257,13 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 		conf, err := a.findExistingConfirmation(ctx, filter, res)
 		if err != nil {
-			log.Printf("cancelClinicianInvite error while finding confirmation [%s]\n", err.Error())
+			a.logger.Errorw("error while finding confirmation", zap.Error(err))
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
 		}
 		if conf == nil {
+			a.logger.Warn("confirmation not found")
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
-			log.Println("cancelClinicianInvite ", statusErr.Error())
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 			return
 		}
@@ -275,7 +277,7 @@ func (a *Api) sendClinicianConfirmation(res http.ResponseWriter, req *http.Reque
 		a.logMetric("clinician_invite_created", req)
 
 		if err := a.addProfile(confirmation); err != nil {
-			log.Println("SendClinicianInvite: ", err.Error())
+			a.logger.Errorw("error adding profile information to confirmation", zap.Error(err))
 		} else {
 			fullName := confirmation.Creator.Profile.FullName
 
@@ -311,7 +313,6 @@ func (a *Api) assertRecipientAuthorized(res http.ResponseWriter, req *http.Reque
 
 	invitedUsr := a.findExistingUser(token.UserID, req.Header.Get(TP_SESSION_TOKEN))
 	if invitedUsr == nil || confirmation == nil || confirmation.Email != invitedUsr.Emails[0] {
-		log.Println("DismissClinicianInvite ", STATUS_UNAUTHORIZED)
 		err := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}
 		a.sendModelAsResWithStatus(res, err, http.StatusUnauthorized)
 		return err
@@ -324,15 +325,15 @@ func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http
 	ctx := req.Context()
 	response, err := a.clinics.DeleteInvitedClinicianWithResponse(ctx, conf.ClinicId, conf.Key)
 	if err != nil || (response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusNotFound) {
-		log.Printf("cancelClinicianInvite error while finding confirmation [%s]\n", err)
+		a.logger.Errorw("error while finding confirmation", zap.Error(err))
 		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 		return
 	}
 
 	conf.UpdateStatus(statusUpdate)
 	if !a.addOrUpdateConfirmation(ctx, conf, res) {
+		a.logger.Warn("error adding or updating confirmation")
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
-		log.Println("cancelClinicianInvite ", statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return
 	}

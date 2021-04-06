@@ -13,4 +13,5 @@ require (
 	github.com/tidepool-org/go-common v0.7.1
 	go.mongodb.org/mongo-driver v1.4.1
 	go.uber.org/fx v1.13.1
+	go.uber.org/zap v1.16.0 // indirect
 )

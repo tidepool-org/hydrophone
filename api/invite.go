@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	clinics "github.com/tidepool-org/clinic/client"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 
@@ -106,7 +107,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		}
 		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeID != token.UserID {
-			log.Printf("GetReceivedInvitations %s ", STATUS_UNAUTHORIZED)
+			a.logger.Warnf("token owner %s is not authorized to accept invite of for %s", token.UserID, inviteeID)
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
@@ -126,15 +127,13 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 
 		//find all oustanding invites were this user is the invite//
 		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
-
-		//log.Printf("GetReceivedInvitations: found [%d] pending invite(s)", len(found))
 		if err != nil {
-			log.Printf("GetReceivedInvitations: error [%v] when finding peding invites ", err)
+			a.logger.Errorw("error while finding pending invites", zap.Error(err))
 		}
 
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(req.Context(), inviteeID, invites)
-			log.Printf("GetReceivedInvitations: found and have checked [%d] invites ", len(invites))
+			a.logger.Infof("found and have checked [%d] invites ", len(invites))
 			a.logMetric("get received invites", req)
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
 			return
@@ -414,7 +413,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		defer req.Body.Close()
 		var ib = &inviteBody{}
 		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-			log.Printf("SendInvite: error decoding invite to detail %v\n", err)
+			a.logger.Errorw("error decoding invite", zap.Error(err))
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 			return
@@ -426,7 +425,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		}
 
 		if existingInvite := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, res); existingInvite {
-			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
+			a.logger.Infof("invited [%s] user already has or had an invite from %v", ib.Email, invitorID)
 			return
 		}
 
@@ -448,17 +447,18 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			invite.ClinicId = string(clinic.Id)
 			patientExists, err := a.checkExistingPatientOfClinic(ctx, invitorID, invite.ClinicId)
 			if err != nil {
+				a.logger.Errorw("error checking if user is already a patient of clinic", zap.Error(err))
 				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 				return
 			}
 			if patientExists {
-				log.Println(statusExistingMemberMessage)
+				a.logger.Info("user is already a patient of clinic")
 				statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingPatientMessage)}
 				a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 				return
 			}
 		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email, res); alreadyMember {
-			log.Printf("SendInvite: invited [%s] user is already a member of the care team", ib.Email)
+			a.logger.Infof("invited [%s] user is already a member of the care team of %v", ib.Email, invitorID)
 			return
 		} else {
 			if invitedUsr != nil {
@@ -470,7 +470,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			a.logMetric("invite created", req)
 
 			if err := a.addProfile(invite); err != nil {
-				log.Println("SendInvite: ", err.Error())
+				a.logger.Errorw("error adding profile information to confirmation", zap.Error(err))
 			} else {
 
 				fullName := invite.Creator.Profile.FullName

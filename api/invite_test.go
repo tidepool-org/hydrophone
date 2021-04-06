@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,6 +24,7 @@ func initTestingRouterNoPerms() *mux.Router {
 		mockMetrics,
 		mockSeagull,
 		mockTemplates,
+		zap.NewNop().Sugar(),
 	)
 	hydrophone.SetHandlers("", testRtr)
 	return testRtr
@@ -250,6 +252,7 @@ func TestInviteResponds(t *testing.T) {
 			mockMetrics,
 			mockSeagull,
 			mockTemplates,
+			zap.NewNop().Sugar(),
 		)
 
 		//testing when there is nothing to return from the store
@@ -264,6 +267,7 @@ func TestInviteResponds(t *testing.T) {
 				mockMetrics,
 				mockSeagull,
 				mockTemplates,
+				zap.NewNop().Sugar(),
 			)
 		}
 
