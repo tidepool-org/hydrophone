@@ -51,7 +51,7 @@ func shorelineProvider(config OutboundConfig, httpClient *http.Client) shoreline
 	return shoreline.NewShorelineClientBuilder().
 		WithHostGetter(disc.NewStaticHostGetterFromString(config.AuthClientAddress)).
 		WithHttpClient(httpClient).
-		WithName("shoreline").
+		WithName("hydrophone").
 		WithSecret(config.ServerSecret).
 		WithTokenRefreshInterval(time.Hour).
 		Build()
@@ -147,6 +147,7 @@ func cloudEventsConsumerProvider(config *ev.CloudEventsConfig, handler ev.EventH
 
 func loggerProvider() (*zap.SugaredLogger, error) {
 	config := zap.NewProductionConfig()
+	config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
 	config.EncoderConfig.FunctionKey = "function"
 	logger, err := config.Build()
 	if err != nil {
