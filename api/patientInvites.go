@@ -14,7 +14,7 @@ import (
 func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 		if !a.Config.ClinicServiceEnabled {
-			a.sendModelAsResWithStatus(res, []*models.Confirmation{}, http.StatusOK)
+			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
 			return
 		}
 
