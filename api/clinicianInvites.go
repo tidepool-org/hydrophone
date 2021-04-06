@@ -18,7 +18,7 @@ type ClinicianInvite struct {
 	Roles []string `json:"roles"`
 }
 
-//Send an invite to become a clinic member
+// Send an invite to become a clinic member
 func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 		ctx := req.Context()
@@ -76,7 +76,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 	}
 }
 
-//Send an invite to become a clinic member
+// Send an invite to become a clinic member
 func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 		ctx := req.Context()
@@ -94,15 +94,15 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			return
 		}
 
-		inviteReponse, err := a.clinics.GetInvitedClinicianWithResponse(ctx, clinicId, inviteId)
+		inviteResponse, err := a.clinics.GetInvitedClinicianWithResponse(ctx, clinicId, inviteId)
 		if err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
-		if inviteReponse.StatusCode() != http.StatusOK || inviteReponse.JSON200 == nil {
+		if inviteResponse.StatusCode() != http.StatusOK || inviteResponse.JSON200 == nil {
 			res.Header().Set("content-type", "application/json")
-			res.WriteHeader(inviteReponse.StatusCode())
-			res.Write(inviteReponse.Body)
+			res.WriteHeader(inviteResponse.StatusCode())
+			res.Write(inviteResponse.Body)
 			return
 		}
 
@@ -122,7 +122,7 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			confirmation.Key = inviteId
 		}
 
-		confirmation.Email = string(inviteReponse.JSON200.Email)
+		confirmation.Email = string(inviteResponse.JSON200.Email)
 		confirmation.ClinicId = string(clinic.JSON200.Id)
 		confirmation.Creator.ClinicId = string(clinic.JSON200.Id)
 		confirmation.Creator.ClinicName = clinic.JSON200.Name
@@ -349,7 +349,7 @@ func (a *Api) assertClinicAdmin(ctx context.Context, clinicId string, token *sho
 	// Non-server tokens only legit when for same userid
 	if !token.IsServer {
 		if result, err := a.clinics.GetClinicianWithResponse(ctx, clinicId, token.UserID); err != nil || result.StatusCode() == http.StatusInternalServerError {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return err
 		} else if result.StatusCode() != http.StatusOK {
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)

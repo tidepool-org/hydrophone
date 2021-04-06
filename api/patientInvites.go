@@ -31,7 +31,7 @@ func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars
 			return
 		}
 
-		//find all oustanding invites that are associated to this clinic
+		// find all outstanding invites that are associated to this clinic
 		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{ClinicId: clinicId, Type: models.TypeCareteamInvite}, models.StatusPending)
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.logger.Infof("found and checked %d confirmations", len(invites))
@@ -83,9 +83,9 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 		}
 
 		validationErrors := make([]error, 0)
-		conf.ValidateStatus(models.StatusPending, &validationErrors).
-			ValidateType(models.TypeCareteamInvite, &validationErrors).
-			ValidateClinicID(clinicId, &validationErrors)
+		conf.ValidateStatus(models.StatusPending, &validationErrors)
+		conf.ValidateType(models.TypeCareteamInvite, &validationErrors)
+		conf.ValidateClinicID(clinicId, &validationErrors)
 
 		if len(validationErrors) > 0 {
 			for _, validationError := range validationErrors {

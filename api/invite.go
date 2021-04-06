@@ -21,7 +21,6 @@ const (
 	statusExistingMemberMessage  = "The user is already an existing member"
 	statusExistingPatientMessage = "The user is already a patient of the clinic"
 	statusInviteNotFoundMessage  = "No matching invite was found"
-	statusInviteCanceledMessage  = "Invite has been canceled"
 	statusForbiddenMessage       = "Forbidden to perform requested operation"
 )
 
@@ -395,14 +394,14 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 		ctx := req.Context()
-		invitorID := vars["userid"]
+		inviterID := vars["userid"]
 
-		if invitorID == "" {
+		if inviterID == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+		if permissions, err := a.tokenUserHasRequestedPermissions(token, inviterID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
@@ -424,12 +423,12 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if existingInvite := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, res); existingInvite {
-			a.logger.Infof("invited [%s] user already has or had an invite from %v", ib.Email, invitorID)
+		if existingInvite := a.checkForDuplicateInvite(req.Context(), ib.Email, inviterID, res); existingInvite {
+			a.logger.Infof("invited [%s] user already has or had an invite from %v", ib.Email, inviterID)
 			return
 		}
 
-		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
+		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, inviterID, ib.Permissions)
 		invite.Email = ib.Email
 
 		var clinic *clinics.Clinic
@@ -445,7 +444,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 		if clinic != nil {
 			invite.ClinicId = string(clinic.Id)
-			patientExists, err := a.checkExistingPatientOfClinic(ctx, invitorID, invite.ClinicId)
+			patientExists, err := a.checkExistingPatientOfClinic(ctx, inviterID, invite.ClinicId)
 			if err != nil {
 				a.logger.Errorw("error checking if user is already a patient of clinic", zap.Error(err))
 				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
@@ -457,13 +456,11 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 				a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 				return
 			}
-		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email, res); alreadyMember {
-			a.logger.Infof("invited [%s] user is already a member of the care team of %v", ib.Email, invitorID)
+		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(inviterID, ib.Email, res); alreadyMember {
+			a.logger.Infof("invited [%s] user is already a member of the care team of %v", ib.Email, inviterID)
 			return
-		} else {
-			if invitedUsr != nil {
-				invite.UserId = invitedUsr.UserID
-			}
+		} else if invitedUsr != nil {
+			invite.UserId = invitedUsr.UserID
 		}
 
 		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
