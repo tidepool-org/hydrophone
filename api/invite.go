@@ -444,7 +444,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 		if clinic != nil {
 			invite.ClinicId = string(clinic.Id)
-			patientExists, err := a.checkExistingPatientOfClinic(ctx, inviterID, invite.ClinicId)
+			patientExists, err := a.checkExistingPatientOfClinic(ctx, invite.ClinicId, inviterID)
 			if err != nil {
 				a.logger.Errorw("error checking if user is already a patient of clinic", zap.Error(err))
 				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
