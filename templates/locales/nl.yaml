@@ -8,8 +8,8 @@ FooterGetSupport: "SUPPORT"
 #(email for those that requested password reset but did not create their account before)
 NoAccountSubject: "Onbekend e-mailadres"
 NoAccountHeadline: "Je hebt gevraagd om je YourLoops-wachtwoord opnieuw in te stellen, maar er is nog geen account aangemaakt met dit e-mailadres."
-NoAccountBody: "Als je al een Diabeloop-sytem gebruikt, log dan in met het e-mailadres en wachtwoord dat je hebt ingevoerd bij het instellen van je DBL.\nAls je een zorgverlener bent en je wil een account maken, klik dan op de onderstaande link.\n"
-NoAccountSignUp: "Professioneel account aanmaken"
+NoAccountBody: "Als je al een Diabeloop-sytem gebruikt, log dan in met het e-mailadres en wachtwoord dat je hebt ingevoerd bij het instellen van je DBL.\nAls je een zorgverlener bent en je wil een account maken, klik dan op de onderstaande link."
+NoAccountSignUp: "Account aanmaken"
 #Password Reset
 #(email for those that requested password reset)
 PasswordResetSubject: "Wachtwoord resetten"
@@ -32,9 +32,9 @@ PatientPasswordInfoBody2: "Als je deze e-mail ten onrechte ontvangt, neem dan co
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Uitnodiging voor de patiënt"
 #CareTeamInviteHello: "Hello,"
-CareTeamInviteHeadline: "{{ .PatientName }} wil zijn/haar diabetesgegevens met jou delen op YourLoops."
-CareTeamInviteBody: "YourLoops is een visualisatieplatform voor diabetesmanagement en -rapportage. Alle gegevens die door een DBL zijn vastgelegd, worden weergegeven in grafieken en diagrammen. "
-CareTeamInviteBody2: "Je patiënt {{ .PatientName }} heeft ervoor gekozen zijn gegevens met je te delen. Klik op de onderstaande link om zijn/haar uitnodiging te accepteren."
+CareTeamInviteHeadline: "{{ .CareteamName }} wil zijn/haar diabetesgegevens met jou delen op YourLoops."
+CareTeamInviteBody: "YourLoops is een visualisatieplatform voor diabetesmanagement en -rapportage. Alle gegevens die door een DBL zijn vastgelegd, worden weergegeven in grafieken en diagrammen."
+CareTeamInviteBody2: "{{ .PatientName }} chose to share their data with you. To respond, click on the link below."
 CareTeamInviteJoin: "Gegevens bekijken"
 #Signup
 #(email to ask patient for verification of email)
@@ -77,3 +77,28 @@ PatientPinResetHeadline: "Je hebt gevraagd om je DBL-PIN opnieuw in te stellen."
 PatientPinResetBody: "Hier is je tijdelijke code:"
 PatientPinResetBody2: "De code vervalt over 30 minuten."
 PatientPinResetBody3: "Als de code is verlopen, vraag dan een nieuwe aan op je DBL."
+#Medical/Care team invitation
+MedicalTeamInvitationSubject: "{{ .CreatorName }} nodigt je uit om lid te worden van zijn/haar behandelteam."
+MedicalTeamInviteHeadline: "{{ .CreatorName }} wil dat je lid wordt van zijn/haar behandelteam op YourLoops."
+MedicalTeamInviteBody1: "YourLoops is een diabetesmanagementplatform dat is ontworpen voor Diabeloop DBL systemen."
+MedicalTeamInviteBody2: "Door lid te worden van {{ .MedicalteamName }}, krijg je toegang tot je patiëntengegevens en kun je rapporten aanmaken."
+MedicalTeamInviteWarning: "Controleer of je deze persoon kent, bevestig dat je deel uitmaakt van dit behandelteam en controleer de onderstaande gegevens voordat je de uitnodiging accepteert."
+MedicalTeamInviteInfo: "Je hebt een professioneel account nodig om lid te worden van een team. Als je al als mantelzorger bent geregistreerd, kun je in je accountvoorkeuren overschakelen naar een professioneel account. Anders kun je je aanmelden via de onderstaande link."
+MedicalTeamInviteJoin: "Reageren op uitnodiging"
+#Medical/Care team do Admin
+MedicalTeamDoAdminSubject: "Je bent nu een beheerder van {{ .MedicalteamName }}"
+MedicalTeamDoAdminHeadline: "Je bent nu een beheerder van {{ .MedicalteamName }}"
+MedicalTeamDoAdminBody1: "Een beheerder van het team heeft je beheerder van {{ .MedicalteamName }} gemaakt."
+MedicalTeamDoAdminBody2: "Je kunt nu:"
+MedicalTeamDoAdminListItem1: "Teamleden uitnodigen/verwijderen"
+MedicalTeamDoAdminListItem2: "Teaminformatie bewerken"
+MedicalTeamDoAdminListItem3: "Beheerdersrechten toewijzen of verwijderen"
+MedicalTeamDoAdminInfo: "Lees ons <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
+MedicalTeamDoAdminAction: "Naar YourLoops gaan"
+#Medical/Care team remove member
+MedicalTeamRemoveSubject: "Je bent niet langer lid van {{ .MedicalteamName }}"
+MedicalTeamRemoveHeadline: "Een beheerder van het team heeft je uit het team verwijderd."
+MedicalTeamRemoveBody1: "Je hebt geen toegang meer tot patiëntengegevens van {{ .MedicalteamName }}, maar je account is nog steeds actief."
+MedicalTeamRemoveBody2: "Denk je dat dit een vergissing is? Neem contact op met een beheerder van het team."
+MedicalTeamRemoveInfo: "Lees ons <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
+MedicalTeamRemoveAction: "Naar YourLoops gaan"
