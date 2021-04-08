@@ -242,100 +242,6 @@ func TestSignupResponds(t *testing.T) {
 			respCode:   404,
 		},
 		{
-			// failure - user does not yet have a password; no body
-			method:   "PUT",
-			url:      "/accept/signup/WithoutPassword",
-			respCode: 409,
-			response: testJSONObject{
-				"code":   float64(409),
-				"error":  float64(1001),
-				"reason": "User does not have a password",
-			},
-		},
-		{
-			// failure - user does not yet have a password; password missing, but birthday correct
-			method: "PUT",
-			url:    "/accept/signup/WithoutPassword",
-			body: testJSONObject{
-				"birthday": "2016-01-01",
-			},
-			respCode: 409,
-			response: testJSONObject{
-				"code":   float64(409),
-				"error":  float64(1002),
-				"reason": "Password is missing",
-			},
-		},
-		{
-			// failure - user does not yet have a password; password invalid, but birthday correct
-			method: "PUT",
-			url:    "/accept/signup/WithoutPassword",
-			body: testJSONObject{
-				"password": "1234",
-				"birthday": "2016-01-01",
-			},
-			respCode: 409,
-			response: testJSONObject{
-				"code":   float64(409),
-				"error":  float64(1003),
-				"reason": "Password specified is invalid",
-			},
-		},
-		{
-			// failure - user does not yet have a password; password valid and birthday missing
-			method: "PUT",
-			url:    "/accept/signup/WithoutPassword",
-			body: testJSONObject{
-				"password": "12345678",
-			},
-			respCode: 409,
-			response: testJSONObject{
-				"code":   float64(409),
-				"error":  float64(1004),
-				"reason": "Birthday is missing",
-			},
-		},
-		{
-			// failure - user does not yet have a password; password valid and birthday invalid
-			method: "PUT",
-			url:    "/accept/signup/WithoutPassword",
-			body: testJSONObject{
-				"password": "12345678",
-				"birthday": "aaaaaaaa",
-			},
-			respCode: 409,
-			response: testJSONObject{
-				"code":   float64(409),
-				"error":  float64(1005),
-				"reason": "Birthday specified is invalid",
-			},
-		},
-		{
-			// failure - user does not yet have a password; password valid and birthday not correct
-			method: "PUT",
-			url:    "/accept/signup/WithoutPassword",
-			body: testJSONObject{
-				"password": "12345678",
-				"birthday": "2015-12-31",
-			},
-			respCode: 409,
-			response: testJSONObject{
-				"code":   float64(409),
-				"error":  float64(1006),
-				"reason": "Birthday specified does not match patient birthday",
-			},
-		},
-		{
-			// all good - user does not yet have a password; password valid and birthday correct
-			method: "PUT",
-			url:    "/accept/signup/WithoutPassword",
-			body: testJSONObject{
-				"password": "12345678",
-				"birthday": "2016-01-01",
-			},
-			respCode: 200,
-		},
-		{
 			// all good
 			method:   "PUT",
 			url:      "/accept/signup/UID",
@@ -404,6 +310,13 @@ func TestSignupResponds(t *testing.T) {
 
 		//fresh each time
 		var testRtr = mux.NewRouter()
+		mockSeagull.SetMockNextCollectionCall("NewUserID"+"profile", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.SetMockNextCollectionCall("EnglishUserID"+"profile", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.SetMockNextCollectionCall("FrenchUserID"+"profile", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.SetMockNextCollectionCall("email.resend@address.org"+"profile", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.SetMockNextCollectionCall("profile", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.SetMockNextCollectionCall("WithoutPassword"+"profile", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.SetMockNextCollectionCall("UID"+"profile", `{"Something":"anit no thing"}`, nil)
 
 		if test.returnNone {
 			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)

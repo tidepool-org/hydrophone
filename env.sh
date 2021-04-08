@@ -2,7 +2,6 @@ export TIDEPOOL_HYDROPHONE_ENV='{
     "portal": { "serviceSpec": { "type": "static", "hosts": ["http://localhost:9507"] } },
     "hakken": { "host": "localhost:8000" },
     "gatekeeper": { "serviceSpec": { "type": "static", "hosts": ["http://localhost:9123"] } },
-    "seagull": { "serviceSpec": { "type": "static", "hosts": ["http://localhost:9120"] } },
     "shoreline": {
         "serviceSpec": { "type": "static", "hosts": ["http://localhost:9107"] },
         "name": "hydrophone-local",
@@ -11,6 +10,7 @@ export TIDEPOOL_HYDROPHONE_ENV='{
     }
 }'
 
+export SEAGULL_HOST="http://localhost:9120"
 # Use this below to override local AWS credentials. Otherwise local credentials will be used so the user/profile needs to have rights for sending emails
 # export "AWS_PROFILE" = "${NON_DEFAULT_PROFILE}" for using a .aws/credentials non default profile
 # OR
@@ -51,3 +51,4 @@ export TIDEPOOL_HYDROPHONE_SERVICE='{
         "password": ""
     }
 }'
+

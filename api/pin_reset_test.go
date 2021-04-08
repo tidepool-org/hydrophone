@@ -139,6 +139,7 @@ func TestPinResetResponds(t *testing.T) {
 		if pinResetTest.patientConfig != nil {
 			mockPortal.SetMockPatientConfig(pinResetTest.test.token, pinResetTest.patientConfig, nil)
 		}
+		mockSeagull.SetMockNextCollectionCall(testing_uid1+"preferences", `{"Something":"anit no thing"}`, nil)
 
 		//testing when there is nothing to return from the store
 		if pinResetTest.test.returnNone {

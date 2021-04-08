@@ -126,10 +126,7 @@ func main() {
 	logger.Print("Shoreline client started")
 
 	permsClient := crewClient.NewCrewApiClientFromEnv(httpClient)
-	seagull := clients.NewSeagullClientBuilder().
-		WithHostGetter(config.SeagullConfig.ToHostGetter(hakkenClient)).
-		WithHttpClient(httpClient).
-		Build()
+	seagull := clients.NewSeagullClientFromEnv(httpClient)
 
 	portal := portal.NewPortalClientBuilder().
 		WithHostGetter(config.PortalConfig.ToHostGetter(hakkenClient)).

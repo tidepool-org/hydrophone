@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/mdblp/crew/store"
-	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
@@ -27,11 +26,10 @@ const (
 type (
 	//Invite details for generating a new invite
 	inviteBody struct {
-		Email       string                    `json:"email"`
-		User        string                    `json:"user"`
-		Permissions commonClients.Permissions `json:"permissions"`
-		TeamID      string                    `json:"teamId"`
-		IsAdmin     string                    `json:"isAdmin"`
+		Email   string `json:"email"`
+		User    string `json:"user"`
+		TeamID  string `json:"teamId"`
+		IsAdmin string `json:"isAdmin"`
 	}
 )
 
@@ -766,7 +764,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if ib.Email == "" || ib.Permissions == nil {
+		if ib.Email == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -776,7 +774,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		} else {
 			//None exist so lets create the invite
-			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
+			invite, _ := models.NewConfirmation(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID)
 
 			// if the invitee is already a Tidepool user, we can use his preferences
 			invite.Email = ib.Email
@@ -901,11 +899,10 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 		return
 	} else {
 		//None exist so lets create the invite
-		invite, _ := models.NewConfirmationWithContext(
+		invite, _ := models.NewConfirmation(
 			models.TypeMedicalTeamInvite,
 			models.TemplateNameMedicalteamInvite,
-			invitorID,
-			ib.Permissions)
+			invitorID)
 
 		// if the invitee is already a user, we can use his preferences
 		invite.TeamID = ib.TeamID
@@ -1054,11 +1051,10 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 	}
 	// Send the notification and email when adding admin role
 	if memberRole == "admin" {
-		invite, _ := models.NewConfirmationWithContext(
+		invite, _ := models.NewConfirmation(
 			models.TypeMedicalTeamDoAdmin,
 			models.TemplateNameMedicalteamDoAdmin,
-			invitorID,
-			ib.Permissions)
+			invitorID)
 
 		// if the invitee is already a user, we can use his preferences
 		invite.TeamID = ib.TeamID
@@ -1167,11 +1163,10 @@ func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars 
 		return
 	}
 
-	invite, _ := models.NewConfirmationWithContext(
+	invite, _ := models.NewConfirmation(
 		models.TypeMedicalTeamRemove,
 		models.TemplateNameMedicalteamRemove,
-		invitorID,
-		ib.Permissions)
+		invitorID)
 
 	// let's use the user preferences
 	invite.TeamID = ib.TeamID

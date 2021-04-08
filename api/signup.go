@@ -432,48 +432,9 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		emailVerified := true
 		updates := shoreline.UserUpdate{EmailVerified: &emailVerified}
 
-		if user, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide()); err != nil {
+		if _, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide()); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error trying to get user to check email verified: ", err.Error())
 			return
-
-		} else if !user.PasswordExists {
-			acceptance := &models.Acceptance{}
-			if req.Body != nil {
-				if err := json.NewDecoder(req.Body).Decode(acceptance); err != nil {
-					a.sendErrorWithCode(res, http.StatusConflict, ERROR_NO_PASSWORD, STATUS_NO_PASSWORD, "acceptSignUp: error decoding acceptance: ", err.Error())
-					return
-				}
-			}
-
-			if acceptance.Password == "" {
-				a.sendErrorWithCode(res, http.StatusConflict, ERROR_MISSING_PASSWORD, STATUS_MISSING_PASSWORD, "acceptSignUp: missing password")
-				return
-			}
-			if !IsValidPassword(acceptance.Password) {
-				a.sendErrorWithCode(res, http.StatusConflict, ERROR_INVALID_PASSWORD, STATUS_INVALID_PASSWORD, "acceptSignUp: invalid password specified")
-				return
-			}
-			if acceptance.Birthday == "" {
-				a.sendErrorWithCode(res, http.StatusConflict, ERROR_MISSING_BIRTHDAY, STATUS_MISSING_BIRTHDAY, "acceptSignUp: missing birthday")
-				return
-			}
-			if !IsValidDate(acceptance.Birthday) {
-				a.sendErrorWithCode(res, http.StatusConflict, ERROR_INVALID_BIRTHDAY, STATUS_INVALID_BIRTHDAY, "acceptSignUp: invalid birthday specified")
-				return
-			}
-
-			profile := &models.Profile{}
-			if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
-				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error getting the users profile: ", err.Error())
-				return
-			}
-
-			if acceptance.Birthday != profile.Patient.Birthday {
-				a.sendErrorWithCode(res, http.StatusConflict, ERROR_MISMATCH_BIRTHDAY, STATUS_MISMATCH_BIRTHDAY, "acceptSignUp: acceptance birthday does not match user patient birthday")
-				return
-			}
-
-			updates.Password = &acceptance.Password
 		}
 
 		if err := a.sl.UpdateUser(found.UserId, updates, a.sl.TokenProvide()); err != nil {

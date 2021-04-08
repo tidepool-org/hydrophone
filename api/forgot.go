@@ -196,7 +196,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		// patient reset
 		resetCnf = &models.Confirmation{Email: rb.Email, Type: models.TypePatientPasswordReset, ShortKey: rb.ShortKey, Status: models.StatusPending}
 	} else {
-		resetCnf = &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
+		resetCnf = &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset, Status: models.StatusPending}
 	}
 
 	if conf := a.findResetConfirmation(req.Context(), resetCnf, res); conf != nil {

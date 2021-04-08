@@ -51,7 +51,8 @@ var (
 	mockPerms     = crewClient.NewMock()
 
 	mockSeagull = commonClients.NewSeagullMock()
-	mockPortal  = portal.NewMock()
+
+	mockPortal = portal.NewMock()
 
 	mockTemplates = models.Templates{}
 
@@ -65,9 +66,8 @@ var (
 	/*
 	 * users permissons scenarios
 	 */
-	mock_NoPermsGatekeeper = commonClients.NewGatekeeperMock(commonClients.Permissions{"upload": commonClients.Permission{"userid": "other-id"}}, nil)
-	mock_uid1Shoreline     = newtestingShorelingMock(testing_uid1)
-	mock_uid2Shoreline     = newtestingShorelingMock(testing_uid2)
+	mock_uid1Shoreline = newtestingShorelingMock(testing_uid1)
+	mock_uid2Shoreline = newtestingShorelingMock(testing_uid2)
 
 	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
 

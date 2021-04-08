@@ -37,9 +37,6 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 	// Init mock data
 	token1 := "00000"
 	teams1 := []store.Team{}
-	mockPerms.SetMockNextCall(token1, teams1, nil)
-	// teamId2 := "123456"
-	// token2 := testing_token_uid1
 	members := []store.Member{
 		{
 			UserID:           testing_uid1,
@@ -140,6 +137,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		InvitationStatus: "pending",
 	}
 
+	mockPerms.SetMockNextCall(token1, teams1, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1, teams1, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"123456", &team123456, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+testing_uid3, &member_uid3, nil)
@@ -149,6 +147,8 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 	mockPerms.SetMockNextCall(testing_token_uid1+testing_uid1, &membersDismissInvite_uid1, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamDismissInvite", &teamDismissInvite, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamDismissInviteAsAdmin", &teamDismissInviteAsAdmin, nil)
+
+	mockSeagull.SetMockNextCollectionCall(testing_uid3+"preferences", `{"Something":"anit no thing"}`, nil)
 
 	hydrophone := InitApi(
 		FAKE_CONFIG,
@@ -484,16 +484,6 @@ func TestInviteResponds(t *testing.T) {
 			respCode: http.StatusBadRequest,
 		},
 		{
-			desc:     "can't invite without permissions",
-			method:   http.MethodPost,
-			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
-			token:    testing_token_uid1,
-			respCode: http.StatusBadRequest,
-			body: testJSONObject{
-				"email": "personToInvite@email.com",
-			},
-		},
-		{
 			desc:     "can't invite without email",
 			method:   http.MethodPost,
 			url:      fmt.Sprintf("/send/invite/%s", testing_uid1),
@@ -606,6 +596,10 @@ func TestInviteResponds(t *testing.T) {
 			continue
 		}
 		var testRtr = mux.NewRouter()
+
+		mockSeagull.SetMockNextCollectionCall("personToInvite@email.com"+"preferences", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.SetMockNextCollectionCall(testing_uid1+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.SetMockNextCollectionCall(testing_uid2+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
 
 		//default flow, fully authorized
 		hydrophone := InitApi(
