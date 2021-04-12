@@ -34,8 +34,8 @@ CareTeamInvitationSubject: "Invito per paziente"
 #CareTeamInviteHello: "Hello,"
 CareTeamInviteHeadline: "{{ .CareteamName }} vuole condividere con te i propri dati sul diabete su YourLoops."
 CareTeamInviteBody: "YourLoops è una piattaforma di visualizzazione per la gestione del diabete e la generazione di report. Troverai tutti i dati acquisiti da un DBL visualizzati in grafici e diagrammi. \nIl tuo paziente {{ .CareteamName }} ha scelto di condividere i suoi dati con te. Per accettare l’invito, fai clic sul link sottostante."
-CareTeamInviteBody2: "{{ .PatientName }} chose to share their data with you. To respond, click on the link below."
-CareTeamInviteJoin: "Visualizzazione dati"
+CareTeamInviteBody2: "{{ .PatientName }} ha scelto di condividere i propri dati con te. Per rispondere, clicca sul link qui sotto."
+CareTeamInviteJoin: "Rispondi all’invito"
 #Signup
 #(email to ask patient for verification of email)
 SignupConfirmationSubject: "Verifica il tuo indirizzo e-mail"
@@ -102,3 +102,12 @@ MedicalTeamRemoveBody1: "Non potrà più accedere ai dati dei pazienti del team 
 MedicalTeamRemoveBody2: "Ritiene che sia un errore? Contatti uno degli amministratori del team."
 MedicalTeamRemoveInfo: "Per ulteriori informazioni, legga la nostra <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>informativa sulla privacy</a>."
 MedicalTeamRemoveAction: "Accedi a YourLoops"
+#Medical/Care team patient invitation
+MedicalTeamPatientInvitationSubject: "Condivida i suoi dati con un team di cura"
+MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} la invita a condividere i suoi dati con il team {{ .MedicalteamName }}"
+MedicalTeamPatientInviteBody: "{{ .CreatorName }} la invita a condividere i suoi dati con il suo team di cura su YourLoops."
+MedicalTeamPatientInviteWarning: "Prima di rispondere all’invito, verifichi che i dettagli precedenti corrispondano alle informazioni fornite dall’operatore sanitario."
+MedicalTeamPatientInviteWarning2: "Se non è sicuro, si metta in contatto con l’operatore sanitario e non accetti l’invito."
+MedicalTeamPatientInviteInfo: "Aggiungendo questo team, lei acconsente a condividere i suoi dati personali (compresi i dati sanitari) con i membri del team, che sono operatori sanitari autorizzati registrati su YourLoops."
+MedicalTeamPatientInviteInfo2: "Per ulteriori informazioni, legga la nostra <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>informativa sulla privacy</a>."
+MedicalTeamPatientInviteJoin: "Rispondi all’invito"
