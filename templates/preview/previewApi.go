@@ -118,6 +118,8 @@ func (a *Api) buildPreview(res http.ResponseWriter, req *http.Request, vars map[
 	switch vars["template"] {
 	case "careteam_invitation":
 		templateName = models.TemplateNameCareteamInvite
+	case "medicalteam_patient_invitation":
+		templateName = models.TemplateNameMedicalteamPatientInvite
 	case "medicalteam_invitation":
 		templateName = models.TemplateNameMedicalteamInvite
 	case "medicalteam_do_admin":
@@ -188,6 +190,7 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 		"SupportEmail":             supportEmail,
 		"MedicalteamName":          "Team CHU",
 		"MedicalteamAddress":       "Bd de la chantourne, 38000 Grenoble",
+		"MedicalteamPhone":         "33 4 760 101",
 		"MedicalteamIentification": "123-456-789",
 		"CreatorName":              "John Doe",
 		"Language":                 "en",

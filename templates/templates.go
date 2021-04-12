@@ -32,6 +32,12 @@ func New(templatesPath string, localizer localize.Localizer) (models.Templates, 
 		templates[template.Name()] = template
 	}
 
+	if template, err := newTemplate(templatesPath, models.TemplateNameMedicalteamPatientInvite, localizer); err != nil {
+		return nil, fmt.Errorf("templates: failure to create patient invite into medical team template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
 	if template, err := newTemplate(templatesPath, models.TemplateNameMedicalteamInvite, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create medical invite template: %s", err)
 	} else {

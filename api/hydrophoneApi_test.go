@@ -33,6 +33,7 @@ const (
 	testing_uid2       = "UID999"
 
 	testing_uid3 = "UID002"
+	testing_uid4 = "UID004"
 )
 
 var (
@@ -94,6 +95,10 @@ func (m *testingShorelingMock) GetUser(userID, token string) (*shoreline.UserDat
 	if userID == "me2@myemail.com" {
 		return &shoreline.UserData{UserID: testing_uid3, Emails: []string{userID}, Username: userID}, nil
 	}
+	if userID == "patient.team@myemail.com" {
+		return &shoreline.UserData{UserID: testing_uid4, Emails: []string{userID}, Username: userID}, nil
+	}
+
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
 func (m *testingShorelingMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate, token string) error {

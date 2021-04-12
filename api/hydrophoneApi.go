@@ -286,6 +286,8 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 			templateName = models.TemplateNameCareteamInvite
 		case models.TypeMedicalTeamInvite:
 			templateName = models.TemplateNameMedicalteamInvite
+		case models.TypeMedicalTeamPatientInvite:
+			templateName = models.TemplateNameMedicalteamPatientInvite
 		case models.TypeMedicalTeamDoAdmin:
 			templateName = models.TemplateNameMedicalteamDoAdmin
 		case models.TypeMedicalTeamRemove:
