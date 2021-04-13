@@ -670,6 +670,57 @@ func TestInviteResponds(t *testing.T) {
 			token:    testing_token_uid1,
 			respCode: http.StatusOK,
 		},
+		{
+			desc:     "valid request to accept an team invite",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/accept/team/invite/%s/%s", "123.456.789", "123456"),
+			token:    testing_token_uid1,
+			respCode: http.StatusOK,
+			body: testJSONObject{
+				"key": "medicalteam.invite.member",
+			},
+		},
+		{
+			desc:     "valid request to accept an team invite for a patient",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/accept/team/invite/%s/%s", "123.456.789", "123456"),
+			token:    testing_token_uid1,
+			respCode: http.StatusOK,
+			body: testJSONObject{
+				"key":  "medicalteam.invite.patient",
+				"role": "patient",
+			},
+		},
+		{
+			desc:     "not authorized request to accept an team invite",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/accept/team/invite/%s/%s", "not.authorized", "123456"),
+			token:    testing_token_uid1,
+			respCode: http.StatusUnauthorized,
+			body: testJSONObject{
+				"key": "medicalteam.invite.member",
+			},
+		},
+		{
+			desc:     "invitation does not exist",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/accept/team/invite/%s/%s", "123.456.789", "123456"),
+			token:    testing_token_uid1,
+			respCode: http.StatusForbidden,
+			body: testJSONObject{
+				"key": "invalid.key",
+			},
+		},
+		{
+			desc:     "invalid invitation",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/accept/team/invite/%s/%s", "123.456.789", "123456"),
+			token:    testing_token_uid1,
+			respCode: http.StatusNotFound,
+			body: testJSONObject{
+				"key": "key.does.not.exist",
+			},
+		},
 	}
 
 	templatesPath, found := os.LookupEnv("TEMPLATE_PATH")
@@ -688,6 +739,16 @@ func TestInviteResponds(t *testing.T) {
 		mockSeagull.SetMockNextCollectionCall("personToInvite@email.com"+"preferences", `{"Something":"anit no thing"}`, nil)
 		mockSeagull.SetMockNextCollectionCall(testing_uid1+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
 		mockSeagull.SetMockNextCollectionCall(testing_uid2+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
+
+		teams1 := []store.Team{}
+		membersAccepted := store.Member{
+			UserID:           testing_uid1,
+			TeamID:           "123.456.789",
+			InvitationStatus: "accepted",
+		}
+
+		mockPerms.SetMockNextCall(testing_token_uid1, teams1, nil)
+		mockPerms.SetMockNextCall(testing_token+"123.456.789", &membersAccepted, nil)
 
 		//default flow, fully authorized
 		hydrophone := InitApi(

@@ -421,6 +421,14 @@ func (a *Api) AcceptTeamInvite(res http.ResponseWriter, req *http.Request, vars 
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	if token.UserID != userID {
+		a.sendModelAsResWithStatus(
+			res,
+			&status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)},
+			http.StatusUnauthorized,
+		)
+		return
+	}
 
 	accept := &models.Confirmation{}
 	if err := json.NewDecoder(req.Body).Decode(accept); err != nil {
@@ -455,9 +463,14 @@ func (a *Api) AcceptTeamInvite(res http.ResponseWriter, req *http.Request, vars 
 	validationErrors := []error{}
 
 	conf.ValidateStatus(models.StatusPending, &validationErrors).
-		ValidateType(models.TypeMedicalTeamInvite, &validationErrors).
 		ValidateUserID(userID, &validationErrors).
 		ValidateTeamID(teamID, &validationErrors)
+
+	if conf.Role != "patient" {
+		conf.ValidateType(models.TypeMedicalTeamInvite, &validationErrors)
+	} else {
+		conf.ValidateType(models.TypeMedicalTeamPatientInvite, &validationErrors)
+	}
 
 	if len(validationErrors) > 0 {
 		for _, validationError := range validationErrors {
@@ -478,20 +491,20 @@ func (a *Api) AcceptTeamInvite(res http.ResponseWriter, req *http.Request, vars 
 		Role:             conf.Role,
 	}
 	// are we updating a team member or a patient
+	err = nil
 	if conf.Role != "patient" {
-		if _, err := a.perms.UpdateTeamMember(req.Header.Get(TP_SESSION_TOKEN), member); err != nil {
-			log.Printf("AcceptInvite error setting permissions [%v]\n", err)
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)},
-				http.StatusInternalServerError,
-			)
-			return
-		}
+		_, err = a.perms.UpdateTeamMember(req.Header.Get(TP_SESSION_TOKEN), member)
 	} else {
-		// TODO
-		// a.perms.UpdateTeamPatient(req.Header.Get(TP_SESSION_TOKEN), member)
-		log.Printf("Update patient invitation")
+		_, err = a.perms.AddOrUpdatePatient(req.Header.Get(TP_SESSION_TOKEN), member)
+	}
+	if err != nil {
+		log.Printf("AcceptInvite error setting permissions [%v]\n", err)
+		a.sendModelAsResWithStatus(
+			res,
+			&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)},
+			http.StatusInternalServerError,
+		)
+		return
 	}
 
 	log.Printf("AcceptInvite: permissions were set for [%v -> %v] after an invite was accepted", teamID, userID)
@@ -943,16 +956,18 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 			member.UserID = invitedUsr.UserID
 			inviteeLanguage = a.getUserLanguage(invite.UserId, res)
 		}
+		err := error(nil)
 		if !managePatients {
-			if _, err := a.perms.AddTeamMember(tokenValue, member); err != nil {
-				statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
-				a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-				return
-			}
+			_, err = a.perms.AddTeamMember(tokenValue, member)
+			log.Printf("Add member %s in Team %s", invitedUsr.UserID, invite.TeamID)
 		} else {
-			// TODO
-			// a.perms.AddTeamPatient(req.Header.Get(TP_SESSION_TOKEN), member)
+			_, err = a.perms.AddOrUpdatePatient(tokenValue, member)
 			log.Printf("Add patient %s in Team %s", invitedUsr.UserID, invite.TeamID)
+		}
+		if err != nil {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
+			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+			return
 		}
 
 		if a.addOrUpdateConfirmation(req.Context(), invite, res) {

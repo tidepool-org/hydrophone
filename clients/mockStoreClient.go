@@ -83,7 +83,28 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 		return nil, nil
 	}
 	if notification.Key == "key.to.be.dismissed" {
-		notification.Status = "Pending"
+		notification.Status = "pending"
+	}
+	if notification.Key == "medicalteam.invite.member" {
+		notification.Status = "pending"
+		notification.Type = "medicalteam_invitation"
+		notification.TeamID = "123456"
+		notification.UserId = "123.456.789"
+	}
+	if notification.Key == "medicalteam.invite.patient" {
+		notification.Status = "pending"
+		notification.Type = "medicalteam_patient_invitation"
+		notification.TeamID = "123456"
+		notification.UserId = "123.456.789"
+	}
+	if notification.Key == "invalid.key" {
+		notification.Status = ""
+		notification.Type = ""
+		notification.TeamID = ""
+		notification.UserId = ""
+	}
+	if notification.Key == "key.does.not.exist" {
+		return nil, nil
 	}
 	return notification, nil
 }
