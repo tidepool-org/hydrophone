@@ -3,17 +3,17 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	ev "github.com/tidepool-org/go-common/events"
-	"github.com/tidepool-org/hydrophone/events"
 	"log"
 	"net/http"
 	"time"
+
+	ev "github.com/tidepool-org/go-common/events"
+	"github.com/tidepool-org/hydrophone/events"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
 
 	"github.com/kelseyhightower/envconfig"
-	common "github.com/tidepool-org/go-common"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/highwater"
@@ -23,6 +23,8 @@ import (
 	"github.com/tidepool-org/hydrophone/models"
 	"github.com/tidepool-org/hydrophone/templates"
 )
+
+var defaultStopTimeout = 60 * time.Second
 
 type (
 	// OutboundConfig contains how to communicate with the dependent services
@@ -110,11 +112,11 @@ func emailTemplateProvider() (models.Templates, error) {
 	return emailTemplates, err
 }
 
-func serverProvider(config InboundConfig, rtr *mux.Router) *common.Server {
-	return common.NewServer(&http.Server{
+func serverProvider(config InboundConfig, rtr *mux.Router) *http.Server {
+	return &http.Server{
 		Addr:    config.ListenAddress,
 		Handler: rtr,
-	})
+	}
 }
 
 func cloudEventsConfigProvider() (*ev.CloudEventsConfig, error) {
@@ -125,8 +127,8 @@ func cloudEventsConfigProvider() (*ev.CloudEventsConfig, error) {
 	return cfg, nil
 }
 
-func cloudEventsConsumerProvider(config *ev.CloudEventsConfig, handler ev.EventHandler) (ev.EventConsumer, error) {
-	consumer, err := ev.NewSaramaCloudEventsConsumer(config)
+func faultTolerantConsumerProvider(config *ev.CloudEventsConfig, handler ev.EventHandler) (ev.EventConsumer, error) {
+	consumer, err := ev.NewFaultTolerantCloudEventsConsumer(config)
 	if err != nil {
 		return nil, err
 	}
@@ -137,59 +139,69 @@ func cloudEventsConsumerProvider(config *ev.CloudEventsConfig, handler ev.EventH
 //InvocationParams are the parameters need to kick off a service
 type InvocationParams struct {
 	fx.In
-	Lifecycle      fx.Lifecycle
-	Shoreline      shoreline.Client
-	Config         InboundConfig
-	Server         *common.Server
-	EventsConsumer ev.EventConsumer
+	Lifecycle  fx.Lifecycle
+	Shutdowner fx.Shutdowner
+	Shoreline  shoreline.Client
+	Config     InboundConfig
+	Server     *http.Server
+	Consumer   ev.EventConsumer
 }
 
-func startEventConsumer(consumer ev.EventConsumer, lifecycle fx.Lifecycle) {
-	consumerCtx, cancel := context.WithCancel(context.Background())
-	done := make(chan struct{}, 1)
-	lifecycle.Append(fx.Hook{
+func startEventConsumer(p InvocationParams) {
+	p.Lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			go func(){
-				// blocks until context is terminated
-				err := consumer.Start(consumerCtx)
-				if err != nil {
+			go func() {
+				if err := p.Consumer.Start(); err != nil {
 					log.Printf("Unable to start cloud events consumer: %v", err)
+					log.Printf("Shutting down the service")
+					if shutdownErr := p.Shutdowner.Shutdown(); shutdownErr != nil {
+						log.Printf("Failed to shutdown: %v", shutdownErr)
+					}
 				}
-				done <- struct{}{}
 			}()
 			return nil
 		},
-		OnStop:  func(ctx context.Context) error {
-			cancel()
-			<-done
-			return nil
+		OnStop: func(ctx context.Context) error {
+			return p.Consumer.Stop()
 		},
 	})
 }
 
-func startService(p InvocationParams) {
+func startShoreline(p InvocationParams) {
 	p.Lifecycle.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
-
 				if err := p.Shoreline.Start(); err != nil {
+					log.Printf("Unable to start Shoreline: %v", err)
 					return err
 				}
-
-				var start func() error
-				if p.Config.Protocol == "https" {
-					start = func() error { return p.Server.ListenAndServeTLS(p.Config.SslCertFile, p.Config.SslKeyFile) }
-				} else {
-					start = func() error { return p.Server.ListenAndServe() }
-				}
-				if err := start(); err != nil {
-					return err
-				}
-
 				return nil
 			},
 			OnStop: func(ctx context.Context) error {
-				return p.Server.Close()
+				p.Shoreline.Close()
+				return nil
+			},
+		},
+	)
+}
+
+func startServer(p InvocationParams) {
+	p.Lifecycle.Append(
+		fx.Hook{
+			OnStart: func(ctx context.Context) error {
+				go func() {
+					if err := p.Server.ListenAndServe(); err != nil {
+						log.Printf("Server error: %v", err)
+						log.Printf("Shutting down the service")
+						if shutdownErr := p.Shutdowner.Shutdown(); shutdownErr != nil {
+							log.Printf("Failed to shutdown: %v", shutdownErr)
+						}
+					}
+				}()
+				return nil
+			},
+			OnStop: func(ctx context.Context) error {
+				return p.Server.Shutdown(ctx)
 			},
 		},
 	)
@@ -202,7 +214,7 @@ func main() {
 		api.RouterModule,
 		fx.Provide(
 			cloudEventsConfigProvider,
-			cloudEventsConsumerProvider,
+			faultTolerantConsumerProvider,
 			events.NewHandler,
 		),
 		fx.Provide(
@@ -217,7 +229,9 @@ func main() {
 			serverProvider,
 			api.NewApi,
 		),
+		fx.Invoke(startShoreline),
 		fx.Invoke(startEventConsumer),
-		fx.Invoke(startService),
+		fx.Invoke(startServer),
+		fx.StopTimeout(defaultStopTimeout),
 	).Run()
 }

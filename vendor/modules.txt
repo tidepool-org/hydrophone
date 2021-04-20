@@ -2,6 +2,8 @@
 github.com/BurntSushi/toml
 # github.com/Shopify/sarama v1.27.0
 github.com/Shopify/sarama
+# github.com/avast/retry-go v3.0.0+incompatible
+github.com/avast/retry-go
 # github.com/aws/aws-sdk-go v1.34.22
 ## explicit
 github.com/aws/aws-sdk-go/aws
@@ -111,9 +113,8 @@ github.com/pierrec/lz4/internal/xxh32
 github.com/pkg/errors
 # github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/go-common v0.7.1
+# github.com/tidepool-org/go-common v0.8.2
 ## explicit
-github.com/tidepool-org/go-common
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc
 github.com/tidepool-org/go-common/clients/hakken
