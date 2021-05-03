@@ -35,7 +35,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/hakken"
 	"github.com/tidepool-org/go-common/clients/mongo"
-	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/mdblp/shoreline/clients/shoreline"
 	"github.com/tidepool-org/hydrophone/api"
 	sc "github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/localize"
@@ -113,11 +113,7 @@ func main() {
 
 	httpClient := &http.Client{Transport: tr}
 
-	shoreline := shoreline.NewShorelineClientBuilder().
-		WithHostGetter(config.ShorelineConfig.ToHostGetter(hakkenClient)).
-		WithHttpClient(httpClient).
-		WithConfig(&config.ShorelineConfig.ShorelineClientConfig).
-		Build()
+	shoreline := shoreline.NewShorelineClientFromEnv(httpClient)
 
 	if err := shoreline.Start(); err != nil {
 		logger.Fatal(err)

@@ -9,6 +9,8 @@ require (
 	github.com/aws/aws-sdk-go v1.34.24
 	github.com/gorilla/mux v1.8.0
 	github.com/mdblp/crew v0.2.1-0.20210413074601-a0518c3b3ebf
+	// Retrieved through go get github.com/mdblp/shoreline/clients/shoreline@dblp.1.5.1
+	github.com/mdblp/shoreline v0.14.2-0.20210503074837-5c41e0d08861
 	github.com/nicksnyder/go-i18n/v2 v2.0.3
 	github.com/swaggo/swag v1.7.0
 	github.com/tidepool-org/go-common v0.0.0-00010101000000-000000000000

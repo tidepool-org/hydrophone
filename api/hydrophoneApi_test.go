@@ -13,7 +13,9 @@ import (
 	crewClient "github.com/mdblp/crew/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/portal"
-	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/mdblp/shoreline/clients/shoreline"
+	"github.com/mdblp/shoreline/schema"
+	"github.com/mdblp/shoreline/token"
 	"github.com/tidepool-org/go-common/clients/version"
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/localize"
@@ -84,28 +86,28 @@ func newtestingShorelingMock(userid string) *testingShorelingMock {
 
 func (m *testingShorelingMock) Start() error { return nil }
 func (m *testingShorelingMock) Close()       { return }
-func (m *testingShorelingMock) Login(username, password string) (*shoreline.UserData, string, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, "", nil
+func (m *testingShorelingMock) Login(username, password string) (*schema.UserData, string, error) {
+	return &schema.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, "", nil
 }
-func (m *testingShorelingMock) Signup(username, password, email string) (*shoreline.UserData, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
+func (m *testingShorelingMock) Signup(username, password, email string) (*schema.UserData, error) {
+	return &schema.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
 func (m *testingShorelingMock) TokenProvide() string { return testing_token }
-func (m *testingShorelingMock) GetUser(userID, token string) (*shoreline.UserData, error) {
+func (m *testingShorelingMock) GetUser(userID, token string) (*schema.UserData, error) {
 	if userID == "me2@myemail.com" {
-		return &shoreline.UserData{UserID: testing_uid3, Emails: []string{userID}, Username: userID}, nil
+		return &schema.UserData{UserID: testing_uid3, Emails: []string{userID}, Username: userID}, nil
 	}
 	if userID == "patient.team@myemail.com" {
-		return &shoreline.UserData{UserID: testing_uid4, Emails: []string{userID}, Username: userID}, nil
+		return &schema.UserData{UserID: testing_uid4, Emails: []string{userID}, Username: userID}, nil
 	}
 
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
+	return &schema.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
-func (m *testingShorelingMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate, token string) error {
+func (m *testingShorelingMock) UpdateUser(userID string, userUpdate schema.UserUpdate, token string) error {
 	return nil
 }
-func (m *testingShorelingMock) CheckToken(token string) *shoreline.TokenData {
-	return &shoreline.TokenData{UserID: m.userid, IsServer: false}
+func (m *testingShorelingMock) CheckToken(chkToken string) *token.TokenData {
+	return &token.TokenData{UserId: m.userid, IsServer: false}
 }
 
 type (
@@ -192,7 +194,7 @@ func (i *testJSONObject) deepCompare(j *testJSONObject) string {
 }
 
 func Test_isAuthorizedUser_Server(t *testing.T) {
-	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: true}
+	tokenData := &token.TokenData{UserId: "abcdef1234", IsServer: true}
 	res := responsableHydrophone.isAuthorizedUser(tokenData, "some_server")
 	if res != true {
 		t.Fatalf("Test_isAuthorizedUser_Server should have returned true")
@@ -200,7 +202,7 @@ func Test_isAuthorizedUser_Server(t *testing.T) {
 }
 
 func Test_isAuthorizedUser_Owner(t *testing.T) {
-	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
+	tokenData := &token.TokenData{UserId: "abcdef1234", IsServer: false}
 	res := responsableHydrophone.isAuthorizedUser(tokenData, "abcdef1234")
 	if res != true {
 		t.Fatalf("Test_isAuthorizedUser_Owner should have returned true")
@@ -208,7 +210,7 @@ func Test_isAuthorizedUser_Owner(t *testing.T) {
 }
 
 func Test_isAuthorizedUser_UnAuthorized(t *testing.T) {
-	tokenData := &shoreline.TokenData{UserID: "abcdef1234", IsServer: false}
+	tokenData := &token.TokenData{UserId: "abcdef1234", IsServer: false}
 	res := responsableHydrophone.isAuthorizedUser(tokenData, "abcdef1238")
 	if res == true {
 		t.Fatalf("Test_isAuthorizedUser_UnAuthorized should have returned false")

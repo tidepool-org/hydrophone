@@ -4,11 +4,11 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	
+	"github.com/mdblp/shoreline/schema"
 
 	otp "github.com/tidepool-org/hydrophone/utils/otp"
-
 	"github.com/tidepool-org/go-common/clients/portal"
-	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
 )
@@ -43,7 +43,7 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 	// by default, language is EN. It will be overriden if preferred language is found later
 	var userLanguage = "en"
 	var newOTP *models.Confirmation
-	var usrDetails *shoreline.UserData
+	var usrDetails *schema.UserData
 	var err error
 
 	if token := a.token(res, req); token == nil {
@@ -72,8 +72,8 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 		return
 	}
 
-	if usrDetails.IsClinic() {
-		log.Printf("sendPinReset - Clinician account [%s] cannot receive PIN Reset message", usrDetails.UserID)
+	if !usrDetails.HasRole("patient") {
+		log.Printf("sendPinReset - Clinician/Caregiver account [%s] cannot receive PIN Reset message", usrDetails.UserID)
 		a.sendModelAsResWithStatus(res, STATUS_ERR_CLINICAL_USR, http.StatusForbidden)
 		return
 	}

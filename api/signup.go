@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/mdblp/shoreline/schema"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
 )
@@ -120,8 +120,8 @@ func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, 
 		a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
 		return
 	} else {
-		if usrDetails.IsClinic() {
-			log.Printf("Clinician account [%s] cannot receive information message", usrDetails.UserID)
+		if !usrDetails.HasRole("patient") {
+			log.Printf("Clinician/Caregiver account [%s] cannot receive information message", usrDetails.UserID)
 			a.sendModelAsResWithStatus(res, STATUS_ERR_CLINICAL_USR, http.StatusForbidden)
 			return
 		}
@@ -211,27 +211,8 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				var templateName models.TemplateName
 				var creatorID string
 
-				if usrDetails.IsClinic() {
+				if !usrDetails.HasRole("patient") {
 					templateName = models.TemplateNameSignupClinic
-				} else if usrDetails.IsCustodial() {
-					if token.IsServer {
-						templateName = models.TemplateNameSignupCustodial
-					} else {
-						tokenUserDetails, err := a.sl.GetUser(token.UserID, a.sl.TokenProvide())
-						if err != nil {
-							log.Printf("sendSignUp: error when getting token user [%s]", err.Error())
-							a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-							return
-						}
-
-						creatorID = token.UserID
-
-						if tokenUserDetails.IsClinic() {
-							templateName = models.TemplateNameSignupCustodialClinic
-						} else {
-							templateName = models.TemplateNameSignupCustodial
-						}
-					}
 				} else {
 					templateName = models.TemplateNameSignup
 				}
@@ -430,7 +411,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		emailVerified := true
-		updates := shoreline.UserUpdate{EmailVerified: &emailVerified}
+		updates := schema.UserUpdate{EmailVerified: &emailVerified}
 
 		if _, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide()); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error trying to get user to check email verified: ", err.Error())
