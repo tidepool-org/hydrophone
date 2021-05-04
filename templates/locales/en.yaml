@@ -79,7 +79,7 @@ PatientPinResetBody2: "The code will expire in 30 minutes."
 PatientPinResetBody3: "If the code has expired, please request a new one on your DBL."
 
 # Medical/Care team invitation
-MedicalTeamInvitationSubject: "{{ .CreatorName }} invites you to join their care team."
+MedicalTeamInvitationSubject: "Invitation to join a care team"
 MedicalTeamInviteHeadline: "{{ .CreatorName }} wants you to join their care team on YourLoops."
 MedicalTeamInviteBody1: "YourLoops is a diabetes management platform designed for Diabeloop closed-loop systems."
 MedicalTeamInviteBody2: "By joining {{ .MedicalteamName }}, you will have access to your patients data and will be able to create reports."
@@ -89,7 +89,7 @@ If you’re already registered as a caregiver you can switch to a Professional a
 MedicalTeamInviteJoin: "Respond to invitation"
 
 # Medical/Care team do Admin
-MedicalTeamDoAdminSubject: "You are now an administrator of {{ .MedicalteamName }}"
+MedicalTeamDoAdminSubject: "Admin permission granted"
 MedicalTeamDoAdminHeadline: "You are now an administrator of {{ .MedicalteamName }}"
 MedicalTeamDoAdminBody1: "A team administrator made you an admin of {{ .MedicalteamName }}."
 MedicalTeamDoAdminBody2: "Now you can:"
@@ -100,17 +100,17 @@ MedicalTeamDoAdminInfo: "Read our <a href='{{ .AssetURL }}/data-privacy.{{ .Lang
 MedicalTeamDoAdminAction: "Go to YourLoops"
 
 # Medical/Care team remove member
-MedicalTeamRemoveSubject: "You are no longer a member of {{ .MedicalteamName }}"
-MedicalTeamRemoveHeadline: "A team administrator removed you from the team."
+MedicalTeamRemoveSubject: "Removal from a care team"
+MedicalTeamRemoveHeadline: "You are no longer a member of {{ .MedicalteamName }}"
+MedicalTeamRemoveBody0: "A team administrator removed you from the team."
 MedicalTeamRemoveBody1: "You will no longer have access to {{ .MedicalteamName }} patients data but your account is still active."
 MedicalTeamRemoveBody2: "Think it’s a mistake? Get in touch with a team administrator."
 MedicalTeamRemoveInfo: "Read our <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacy policy</a> for more information."
 MedicalTeamRemoveAction: "Go to YourLoops"
 
 # Medical/Care team patient invitation
-MedicalTeamPatientInvitationSubject: "Share your data with a care team"
+MedicalTeamPatientInvitationSubject: "Invitation to share data"
 MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} invites you to share your data with {{ .MedicalteamName }}"
-MedicalTeamPatientInviteBody: "{{ .CreatorName }} invites you to share your data with your medical team on YourLoops."
 MedicalTeamPatientInviteWarning: "Please verify that the above details match the information provided by your healthcare provider before responding to the invitation."
 MedicalTeamPatientInviteWarning2: "If you're unsure, get in touch with your healthcare provider and do not accept this invitation."
 MedicalTeamPatientInviteInfo: "By adding this team, you consent to share your personal data (including health data) with its members, who are authorized healthcare professionals registered on YourLoops."

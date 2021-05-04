@@ -5,6 +5,7 @@
     "subject": "MedicalTeamRemoveSubject",
     "contentParts":[
         "MedicalTeamRemoveHeadline",
+        "MedicalTeamRemoveBody0",
         "MedicalTeamRemoveBody1",
         "MedicalTeamRemoveBody2",
         "MedicalTeamRemoveInfo",
