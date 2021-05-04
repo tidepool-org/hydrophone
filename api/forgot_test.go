@@ -193,6 +193,16 @@ func TestForgotResponds(t *testing.T) {
 				"password": "myN3wpa55w0rd",
 			},
 		},
+		{
+			// no key in the payload
+			returnNone: true,
+			method:     "PUT",
+			url:        "/accept/forgot",
+			respCode:   400,
+			body: testJSONObject{
+				"email": "patient@myemail.com",
+			},
+		},
 	}
 
 	templatesPath, found := os.LookupEnv("TEMPLATE_PATH")

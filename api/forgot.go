@@ -175,11 +175,11 @@ func (a *Api) findResetConfirmation(ctx context.Context, conf *models.Confirmati
 // @Produce  json
 // @Param payload body api.resetBody true "reset password details"
 // @Success 200 {string} string "OK"
-// @Failure 400 {object} status.Status "Error while decoding the confirmation or while resetting password"
+// @Failure 400 {object} status.Status "Error while decoding the confirmation or while resetting password or missing key in the payload"
 // @Failure 401 {object} status.Status "Password reset confirmation has expired"
 // @Failure 404 {object} status.Status "No matching reset confirmation was found"
 // @Failure 500 {object} status.Status "Internal error while searching the confirmation"
-// @Router /accept/forgot [put]
+// @Router /confirm/accept/forgot [put]
 func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	defer req.Body.Close()
@@ -196,7 +196,14 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		// patient reset
 		resetCnf = &models.Confirmation{Email: rb.Email, Type: models.TypePatientPasswordReset, ShortKey: rb.ShortKey, Status: models.StatusPending}
 	} else {
-		resetCnf = &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset, Status: models.StatusPending}
+		if rb.Key != "" {
+			resetCnf = &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset, Status: models.StatusPending}
+		} else {
+			log.Printf("acceptPassword: No key provided for %s\n", rb.Email)
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_FINDING_CONFIRMATION)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+			return
+		}
 	}
 
 	if conf := a.findResetConfirmation(req.Context(), resetCnf, res); conf != nil {
