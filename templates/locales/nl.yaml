@@ -41,7 +41,7 @@ CareTeamInviteJoin: "Reageren op uitnodiging"
 SignupConfirmationSubject: "Verifieer je e-mailadres"
 #SignupHello: "Hello,"
 SignupHeadline: "Verifieer je e-mailadres om je YourLoops-account te activeren."
-SignupBody: "Je hebt een account aangemaakt op YourLoops. Klik op de onderstaande link om je identiteit te bevestigen en je profiel te voltooien."
+SignupBody: "Je hebt een account aangemaakt op YourLoops. Klik op de onderstaande link om je identiteit te bevestigen."
 SignupVerify: "Mijn account activeren"
 #Signup Clinic
 #(email to ask clinician for verification of email)
