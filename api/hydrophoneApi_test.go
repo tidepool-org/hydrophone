@@ -11,11 +11,11 @@ import (
 	"github.com/gorilla/mux"
 
 	crewClient "github.com/mdblp/crew/client"
-	commonClients "github.com/tidepool-org/go-common/clients"
-	"github.com/tidepool-org/go-common/clients/portal"
 	"github.com/mdblp/shoreline/clients/shoreline"
 	"github.com/mdblp/shoreline/schema"
 	"github.com/mdblp/shoreline/token"
+	commonClients "github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/portal"
 	"github.com/tidepool-org/go-common/clients/version"
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/localize"
@@ -116,6 +116,7 @@ type (
 		desc          string
 		skip          bool
 		returnNone    bool
+		doBad         bool
 		method        string
 		url           string
 		body          testJSONObject

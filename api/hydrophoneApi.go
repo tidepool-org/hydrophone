@@ -157,7 +157,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	accept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
 	accept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
 	// PUT /confirm/accept/team/invite
-	accept.Handle("/team/invite/{userid}/{teamid}", varsHandler(a.AcceptTeamInvite)).Methods("PUT")
+	accept.Handle("/team/invite", varsHandler(a.AcceptTeamNotifs)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid

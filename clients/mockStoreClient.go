@@ -85,11 +85,23 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 	if notification.Key == "key.to.be.dismissed" {
 		notification.Status = "pending"
 	}
+	if notification.Key == "invite.wrong.type" {
+		notification.Status = "pending"
+		notification.Type = "a.wrong.type"
+		notification.TeamID = "123456"
+		notification.UserId = "123.456.789"
+	}
 	if notification.Key == "medicalteam.invite.member" {
 		notification.Status = "pending"
 		notification.Type = "medicalteam_invitation"
 		notification.TeamID = "123456"
 		notification.UserId = "123.456.789"
+	}
+	if notification.Key == "medicalteam.invite.wrong.member" {
+		notification.Status = "pending"
+		notification.Type = "medicalteam_invitation"
+		notification.TeamID = "123456"
+		notification.UserId = "not.my.id"
 	}
 	if notification.Key == "medicalteam.invite.patient" {
 		notification.Status = "pending"
@@ -105,6 +117,22 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 	}
 	if notification.Key == "key.does.not.exist" {
 		return nil, nil
+	}
+	if notification.Key == "any.invite.invalid.key" {
+		return nil, nil
+	}
+	if notification.Key == "any.invite.completed.key" {
+		notification.Status = "completed"
+	}
+	if notification.Key == "any.invite.pending.do.admin" {
+		notification.Status = "pending"
+		notification.Type = "medicalteam_do_admin"
+		notification.UserId = "123.456.789"
+	}
+	if notification.Key == "any.invite.pending.remove" {
+		notification.Status = "pending"
+		notification.Type = "medicalteam_remove"
+		notification.UserId = "123.456.789"
 	}
 	return notification, nil
 }

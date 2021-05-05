@@ -347,7 +347,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 		validationErrors := []error{}
 
 		conf.ValidateStatus(models.StatusPending, &validationErrors).
-			ValidateType(models.TypeCareteamInvite, &validationErrors).
+			ValidateType([]models.Type{models.TypeCareteamInvite}, &validationErrors).
 			ValidateUserID(inviteeID, &validationErrors).
 			ValidateCreatorID(invitorID, &validationErrors)
 
@@ -387,49 +387,32 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 	}
 }
 
-//Accept the team invite for a member
+//Accept the given invite
 //
 // http.StatusOK when accepted
 // http.StatusBadRequest when the incoming data is incomplete or incorrect
 // http.StatusForbidden when mismatch of user ID's, type or status
 // @Summary Accept the given invite
 // @Description  This would be PUT by the web page at the link in the invite email. No authentication is required.
-// @ID hydrophone-api-acceptTeamInvite
+// @ID hydrophone-api-acceptTeamNotifs
 // @Accept  json
 // @Produce  json
-// @Param userid path string true "invitee id"
-// @Param teamid path string true "team id"
 // @Param invitation body models.Confirmation true "invitation details"
 // @Success 200 {string} string "OK"
-// @Failure 400 {object} status.Status "inviteeid, invitorid or/and the payload is missing or malformed"
+// @Failure 400 {object} status.Status "the payload is missing or malformed: key is not provided"
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
-// @Failure 403 {object} status.Status "Operation is forbiden. Either the authorization token is invalid or this invite cannot be accepted"
+// @Failure 403 {object} status.Status "Operation is forbiden. The invitation cannot be accepted for this given user"
 // @Failure 404 {object} status.Status "invitation not found"
 // @Failure 500 {object} status.Status "Error (internal) while processing the data"
-// @Router /accept/team/invite/{userid}/{teamid} [put]
+// @Router /accept/team/invite [put]
 // @security TidepoolAuth
-func (a *Api) AcceptTeamInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+func (a *Api) AcceptTeamNotifs(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	token := a.token(res, req)
 	if token == nil {
 		return
 	}
 
-	userID := vars["userid"]
-	teamID := vars["teamid"]
-
-	if userID == "" || teamID == "" {
-		log.Printf("AcceptInvite inviteeID %s or teamID %s not set", userID, teamID)
-		res.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if token.UserId != userID {
-		a.sendModelAsResWithStatus(
-			res,
-			&status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)},
-			http.StatusUnauthorized,
-		)
-		return
-	}
+	inviteeID := token.UserId
 
 	accept := &models.Confirmation{}
 	if err := json.NewDecoder(req.Body).Decode(accept); err != nil {
@@ -464,14 +447,13 @@ func (a *Api) AcceptTeamInvite(res http.ResponseWriter, req *http.Request, vars 
 	validationErrors := []error{}
 
 	conf.ValidateStatus(models.StatusPending, &validationErrors).
-		ValidateUserID(userID, &validationErrors).
-		ValidateTeamID(teamID, &validationErrors)
-
-	if conf.Role != "patient" {
-		conf.ValidateType(models.TypeMedicalTeamInvite, &validationErrors)
-	} else {
-		conf.ValidateType(models.TypeMedicalTeamPatientInvite, &validationErrors)
-	}
+		ValidateType([]models.Type{
+			models.TypeMedicalTeamDoAdmin,
+			models.TypeMedicalTeamRemove,
+			models.TypeMedicalTeamInvite,
+			models.TypeMedicalTeamPatientInvite,
+		}, &validationErrors).
+		ValidateUserID(inviteeID, &validationErrors)
 
 	if len(validationErrors) > 0 {
 		for _, validationError := range validationErrors {
@@ -485,14 +467,40 @@ func (a *Api) AcceptTeamInvite(res http.ResponseWriter, req *http.Request, vars 
 		return
 	}
 
+	switch conf.Type {
+	case models.TypeMedicalTeamPatientInvite, models.TypeMedicalTeamInvite:
+		a.acceptTeamInvite(res, req, conf)
+	default:
+		a.acceptAnyInvite(res, req, conf)
+	}
+
+	log.Printf("AcceptInvite: permissions were set for [%v] after an invite was accepted", inviteeID)
+
+}
+
+func (a *Api) acceptAnyInvite(res http.ResponseWriter, req *http.Request, conf *models.Confirmation) {
+	conf.UpdateStatus(models.StatusCompleted)
+	if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+		log.Println("AcceptAnyInvite ", statusErr.Error())
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+		return
+	}
+	a.logAudit(req, "acceptanyinvite")
+	res.WriteHeader(http.StatusOK)
+	res.Write([]byte(STATUS_OK))
+}
+
+func (a *Api) acceptTeamInvite(res http.ResponseWriter, req *http.Request, conf *models.Confirmation) {
+
 	var member = store.Member{
-		UserID:           userID,
-		TeamID:           teamID,
+		UserID:           conf.UserId,
+		TeamID:           conf.TeamID,
 		InvitationStatus: "accepted",
 		Role:             conf.Role,
 	}
 	// are we updating a team member or a patient
-	err = nil
+	var err error
 	if conf.Role != "patient" {
 		_, err = a.perms.UpdateTeamMember(req.Header.Get(TP_SESSION_TOKEN), member)
 	} else {
@@ -508,7 +516,7 @@ func (a *Api) AcceptTeamInvite(res http.ResponseWriter, req *http.Request, vars 
 		return
 	}
 
-	log.Printf("AcceptInvite: permissions were set for [%v -> %v] after an invite was accepted", teamID, userID)
+	log.Printf("AcceptInvite: permissions were set for [%v -> %v] after an invite was accepted", conf.TeamID, conf.UserId)
 	conf.UpdateStatus(models.StatusCompleted)
 	if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
@@ -1011,7 +1019,7 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 }
 
 // @Summary Send notification to an hcp that becomes admin
-// @Description  Send an email and a notification to the new admin user. Removing the admin role does not trigger any notification or email.
+// @Description  Send an email and a notification to the new admin user. The role change is done but notification is pushed for information (notification status is set to pending). Removing the admin role is managed as an exception. It does not trigger any notification or email.
 // @ID hydrophone-api-UpdateTeamRole
 // @Accept  json
 // @Produce  json
