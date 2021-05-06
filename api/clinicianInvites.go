@@ -383,7 +383,7 @@ func (a *Api) assertClinicAdmin(ctx context.Context, clinicId string, token *sho
 			return err
 		} else if result.StatusCode() != http.StatusOK {
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
-			return fmt.Errorf("unexpected status code %v when fetching clinician %v from clinic %v", result.StatusCode(), clinicId, token.UserID)
+			return fmt.Errorf("unexpected status code %v when fetching clinician %v from clinic %v", result.StatusCode(), token.UserID, clinicId)
 		} else {
 			clinician := result.JSON200
 			for _, role := range clinician.Roles {
