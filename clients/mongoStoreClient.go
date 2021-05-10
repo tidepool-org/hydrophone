@@ -71,8 +71,8 @@ func (c *Client) FindConfirmation(ctx context.Context, confirmation *models.Conf
 	if confirmation.ShortKey != "" {
 		query["shortKey"] = confirmation.ShortKey
 	}
-	if confirmation.TeamID != "" {
-		query["teamId"] = confirmation.TeamID
+	if confirmation.Team != nil && confirmation.Team.TeamID != "" {
+		query["teamId"] = confirmation.Team.TeamID
 	}
 	opts := options.FindOne()
 	opts.SetSort(bson.D{primitive.E{Key: "created", Value: -1}})
@@ -115,8 +115,8 @@ func (c *Client) FindConfirmations(ctx context.Context, confirmation *models.Con
 	if confirmation.ShortKey != "" {
 		query["shortKey"] = confirmation.ShortKey
 	}
-	if confirmation.TeamID != "" {
-		query["teamId"] = confirmation.TeamID
+	if confirmation.Team != nil && confirmation.Team.TeamID != "" {
+		query["teamId"] = confirmation.Team.TeamID
 	}
 
 	opts := options.Find()

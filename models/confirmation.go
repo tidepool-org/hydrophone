@@ -21,13 +21,17 @@ type (
 
 		TemplateName TemplateName `json:"-" bson:"templateName"`
 		UserId       string       `json:"-" bson:"userId"`
-		TeamID       string       `json:"teamId" bson:"teamId"`
+		Team         *Team        `json:"target" bson:",inline"`
 		Role         string       `json:"role" bson:"role"`
 		Status       Status       `json:"-" bson:"status"`
 		Modified     time.Time    `json:"-" bson:"modified"`
 		ShortKey     string       `json:"shortKey" bson:"shortKey"`
 	}
 
+	Team struct {
+		TeamID   string `json:"teamId" bson:"teamId"`
+		TeamName string `json:"teamName" bson:"-"`
+	}
 	//basic details for the creator of the confirmation
 	Creator struct {
 		*Profile `json:"profile" bson:"-"`
@@ -118,6 +122,7 @@ func NewConfirmation(theType Type, templateName TemplateName, creatorId string) 
 			TemplateName: templateName,
 			CreatorId:    creatorId,
 			Creator:      Creator{}, //set before sending back to client
+			Team:         &Team{},
 			Status:       status,
 			Created:      time.Now(),
 			ShortKey:     shortKey,
@@ -178,6 +183,26 @@ func (c *Confirmation) ValidateUserID(expectedUserID string, validationErrors *[
 		*validationErrors = append(
 			*validationErrors,
 			fmt.Errorf("Confirmation expected UserID of `%s` but had `%s`", expectedUserID, c.UserId),
+		)
+	}
+	return c
+}
+
+func (c *Confirmation) ValidateTeamID(expectedTeamID string, validationErrors *[]error) *Confirmation {
+	if c.Team != nil && expectedTeamID != c.Team.TeamID {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("Confirmation expected TeamId of `%s` but had `%s`", expectedTeamID, c.Team.TeamID),
+		)
+	}
+	return c
+}
+
+func (c *Confirmation) ValidateTeamName(expectedTeamName string, validationErrors *[]error) *Confirmation {
+	if c.Team != nil && expectedTeamName != c.Team.TeamName {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("Confirmation expected TeamName of `%s` but had `%s`", expectedTeamName, c.Team.TeamName),
 		)
 	}
 	return c

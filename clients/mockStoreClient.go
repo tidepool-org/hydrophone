@@ -88,31 +88,46 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 	if notification.Key == "invite.wrong.type" {
 		notification.Status = "pending"
 		notification.Type = "a.wrong.type"
-		notification.TeamID = "123456"
+		if notification.Team == nil {
+			notification.Team = &models.Team{}
+		}
+		notification.Team.TeamID = "123456"
 		notification.UserId = "123.456.789"
 	}
 	if notification.Key == "medicalteam.invite.member" {
 		notification.Status = "pending"
 		notification.Type = "medicalteam_invitation"
-		notification.TeamID = "123456"
+		if notification.Team == nil {
+			notification.Team = &models.Team{}
+		}
+		notification.Team.TeamID = "123456"
 		notification.UserId = "123.456.789"
 	}
 	if notification.Key == "medicalteam.invite.wrong.member" {
 		notification.Status = "pending"
 		notification.Type = "medicalteam_invitation"
-		notification.TeamID = "123456"
+		if notification.Team == nil {
+			notification.Team = &models.Team{}
+		}
+		notification.Team.TeamID = "123456"
 		notification.UserId = "not.my.id"
 	}
 	if notification.Key == "medicalteam.invite.patient" {
 		notification.Status = "pending"
 		notification.Type = "medicalteam_patient_invitation"
-		notification.TeamID = "123456"
+		if notification.Team == nil {
+			notification.Team = &models.Team{}
+		}
+		notification.Team.TeamID = "123456"
 		notification.UserId = "123.456.789"
 	}
 	if notification.Key == "invalid.key" {
 		notification.Status = ""
 		notification.Type = ""
-		notification.TeamID = ""
+		if notification.Team == nil {
+			notification.Team = &models.Team{}
+		}
+		notification.Team.TeamID = ""
 		notification.UserId = ""
 	}
 	if notification.Key == "key.does.not.exist" {

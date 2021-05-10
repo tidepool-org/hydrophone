@@ -248,7 +248,7 @@ func (a *Api) addProfile(conf *models.Confirmation) error {
 
 //Find these confirmations
 //write error if fails or write no-content if it doesn't exist
-func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
+func (a *Api) checkFoundConfirmations(token string, res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
 	if err != nil {
 		log.Println("Error finding confirmations ", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
@@ -264,6 +264,14 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 			if err = a.addProfile(results[i]); err != nil {
 				//report and move on
 				log.Println("Error getting profile", err.Error())
+			}
+			if results[i].Team != nil && results[i].Team.TeamID != "" {
+				team, err := a.perms.GetTeam(token, results[i].Team.TeamID)
+				if err != nil {
+					log.Println("Error getting team", err.Error())
+				} else {
+					results[i].Team.TeamName = team.Name
+				}
 			}
 		}
 		return results

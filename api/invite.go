@@ -88,9 +88,11 @@ func (a *Api) checkForDuplicateTeamInvite(ctx context.Context, inviteeEmail, inv
 	invites, _ := a.Store.FindConfirmations(
 		ctx,
 		&models.Confirmation{
-			Email:  inviteeEmail,
-			TeamID: team.ID,
-			Type:   invite},
+			Email: inviteeEmail,
+			Team: &models.Team{
+				TeamID: team.ID,
+			},
+			Type: invite},
 		[]models.Status{models.StatusPending},
 		[]models.Type{},
 	)
@@ -172,6 +174,7 @@ func (a *Api) isTeamAdmin(userid string, team store.Team) bool {
 // @security TidepoolAuth
 func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
+		tokenValue := req.Header.Get(TP_SESSION_TOKEN)
 		inviteeID := vars["userid"]
 
 		if inviteeID == "" {
@@ -214,7 +217,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			log.Printf("GetReceivedInvitations: error [%v] when finding pending invites ", err)
 		}
 
-		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
+		if invites := a.checkFoundConfirmations(tokenValue, res, found, err); invites != nil {
 			a.ensureIdSet(req.Context(), inviteeID, invites)
 			log.Printf("GetReceivedInvitations: found and have checked [%d] invites ", len(invites))
 			a.logAudit(req, "get received invites")
@@ -244,6 +247,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 		return
 	}
 
+	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
 	invitorID := vars["userid"]
 
 	if invitorID == "" {
@@ -263,7 +267,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 		[]models.Status{models.StatusPending, models.StatusDeclined},
 		[]models.Type{models.TypeCareteamInvite, models.TypeMedicalTeamInvite, models.TypeMedicalTeamPatientInvite},
 	)
-	if invitations := a.checkFoundConfirmations(res, found, err); invitations != nil {
+	if invitations := a.checkFoundConfirmations(tokenValue, res, found, err); invitations != nil {
 		a.logAudit(req, "get sent invites")
 		a.sendModelAsResWithStatus(res, invitations, http.StatusOK)
 		return
@@ -495,7 +499,7 @@ func (a *Api) acceptTeamInvite(res http.ResponseWriter, req *http.Request, conf 
 
 	var member = store.Member{
 		UserID:           conf.UserId,
-		TeamID:           conf.TeamID,
+		TeamID:           conf.Team.TeamID,
 		InvitationStatus: "accepted",
 		Role:             conf.Role,
 	}
@@ -516,7 +520,7 @@ func (a *Api) acceptTeamInvite(res http.ResponseWriter, req *http.Request, conf 
 		return
 	}
 
-	log.Printf("AcceptInvite: permissions were set for [%v -> %v] after an invite was accepted", conf.TeamID, conf.UserId)
+	log.Printf("AcceptInvite: permissions were set for [%v -> %v] after an invite was accepted", conf.Team.TeamID, conf.UserId)
 	conf.UpdateStatus(models.StatusCompleted)
 	if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
@@ -706,7 +710,7 @@ func (a *Api) DismissTeamInvite(res http.ResponseWriter, req *http.Request, vars
 	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
 	// by default you can just act on your records
 	dismiss.UserId = userID
-	dismiss.TeamID = teamID
+	dismiss.Team = &models.Team{TeamID: teamID}
 
 	if isAdmin, _, err := a.getTeamForUser(tokenValue, teamID, token.UserId, res); isAdmin && err == nil {
 		// as team admin you can act on behalf of members
@@ -736,7 +740,7 @@ func (a *Api) DismissTeamInvite(res http.ResponseWriter, req *http.Request, vars
 			conf.UpdateStatus(models.StatusDeclined)
 
 			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
-				log.Printf("dismiss invite [%s] for [%s]", dismiss.Key, dismiss.TeamID)
+				log.Printf("dismiss invite [%s] for [%s]", dismiss.Key, dismiss.Team.TeamID)
 				a.logAudit(req, "dismissinvite ")
 				res.WriteHeader(http.StatusOK)
 				return
@@ -952,7 +956,7 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 		}
 
 		// if the invitee is already a user, we can use his preferences
-		invite.TeamID = ib.TeamID
+		invite.Team = &models.Team{TeamID: ib.TeamID}
 		invite.Email = ib.Email
 		invite.Role = ib.Role
 		var member = store.Member{
@@ -968,10 +972,10 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 		err := error(nil)
 		if !managePatients {
 			_, err = a.perms.AddTeamMember(tokenValue, member)
-			log.Printf("Add member %s in Team %s", invitedUsr.UserID, invite.TeamID)
+			log.Printf("Add member %s in Team %s", invitedUsr.UserID, invite.Team.TeamID)
 		} else {
 			_, err = a.perms.AddOrUpdatePatient(tokenValue, member)
-			log.Printf("Add patient %s in Team %s", invitedUsr.UserID, invite.TeamID)
+			log.Printf("Add patient %s in Team %s", invitedUsr.UserID, invite.Team.TeamID)
 		}
 		if err != nil {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
@@ -1107,7 +1111,7 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 			invitorID)
 
 		// if the invitee is already a user, we can use his preferences
-		invite.TeamID = ib.TeamID
+		invite.Team.TeamID = ib.TeamID
 		invite.Email = ib.Email
 		invite.Role = ib.Role
 		invite.Status = models.StatusPending
@@ -1219,7 +1223,7 @@ func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars 
 		invitorID)
 
 	// let's use the user preferences
-	invite.TeamID = ib.TeamID
+	invite.Team.TeamID = ib.TeamID
 	invite.Email = ib.Email
 	invite.Role = ib.Role
 	invite.UserId = inviteeID
