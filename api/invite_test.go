@@ -94,6 +94,12 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		Members:     membersAddAdminRole,
 		ID:          "teamDeleteMember",
 	}
+	teamAddPatientAsMember := store.Team{
+		Name:        "team add a patient as a member",
+		Description: "Fake Team",
+		Members:     members,
+		ID:          "teamInvitePatient",
+	}
 	membersDismissInvite := []store.Member{
 		{
 			UserID:           testing_uid3,
@@ -156,6 +162,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 	mockPerms.SetMockNextCall(testing_token_uid1+testing_uid3, &member_uid3, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamAddAdminRole", &teamAddAdminRole, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamAlreadyMember", &teamAlreadyMember, nil)
+	mockPerms.SetMockNextCall(testing_token_uid1+"teamInvitePatient", &teamAddPatientAsMember, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamDeleteMember", &teamDeleteMember, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+testing_uid1, &membersDismissInvite_uid1, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamDismissInvite", &teamDismissInvite, nil)
@@ -229,6 +236,18 @@ func initTests() []toTest {
 			body: testJSONObject{
 				"email":  "me2@myemail.com",
 				"teamId": "teamAlreadyMember",
+			},
+		},
+		// returns a 405 when the invited member is a patient
+		{
+			method:     "POST",
+			url:        "/send/team/invite",
+			returnNone: true,
+			respCode:   405,
+			token:      testing_token_uid1,
+			body: testJSONObject{
+				"email":  "patient.team@myemail.com",
+				"teamId": "teamInvitePatient",
 			},
 		},
 		// returns a 200 when everything goes well to add an admin role

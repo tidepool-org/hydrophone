@@ -882,6 +882,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 // @Failure 400 {object} status.Status "userId, teamId and isAdmin were not provided or the payload is missing/malformed"
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provide sufficient privileges"
 // @Failure 403 {object} status.Status "Authorization token is invalid"
+// @Failure 405 {object} status.Status "HCP cannot invite a patient to care team"
 // @Failure 409 {object} status.Status "user already has a pending or declined invite OR user is already part of the team"
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
 // @Failure 500 {object} status.Status "Internal error while processing the invite, detailled error returned in the body"
@@ -968,6 +969,12 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 			invite.UserId = invitedUsr.UserID
 			member.UserID = invitedUsr.UserID
 			inviteeLanguage = a.getUserLanguage(invite.UserId, res)
+		}
+		// patient cannot be invited as a member of a care team
+		if invitedUsr.HasRole("patient") && !managePatients {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusMethodNotAllowed, STATUS_PATIENT_NOT_AUTH)}
+			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+			return
 		}
 		err := error(nil)
 		if !managePatients {

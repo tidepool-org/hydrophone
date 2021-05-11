@@ -30,6 +30,7 @@ const (
 	STATUS_MISSING_BIRTHDAY  = "Birthday is missing"
 	STATUS_INVALID_BIRTHDAY  = "Birthday specified is invalid"
 	STATUS_MISMATCH_BIRTHDAY = "Birthday specified does not match patient birthday"
+	STATUS_PATIENT_NOT_AUTH  = "Patient cannot be member of care team"
 )
 
 const (
