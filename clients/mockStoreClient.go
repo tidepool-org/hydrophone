@@ -85,6 +85,10 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 	if notification.Key == "key.to.be.dismissed" {
 		notification.Status = "pending"
 	}
+	if notification.Key == "patient.key.to.be.dismissed" {
+		notification.Type = "medicalteam_patient_invitation"
+		notification.Status = "pending"
+	}
 	if notification.Key == "invite.wrong.type" {
 		notification.Status = "pending"
 		notification.Type = "a.wrong.type"

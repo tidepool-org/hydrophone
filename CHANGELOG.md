@@ -6,7 +6,9 @@ This API sends notifications to users for things like forgotten passwords, initi
 ## unreleased 
 ### Changed
 - YLP-682 Add team information in received invitations
-### Fixed
+
+### Fixed 
+- YLP-709 Bug: get the coorect ID to dismiss an invite
 - YLP-708 A HCP user shouldn't invite a patient to join a team 
 - YLP-743 A team invitation for a patient is valid if the patient account exists
 ## 1.6.1 - 2021-05-04
