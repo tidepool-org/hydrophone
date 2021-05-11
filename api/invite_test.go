@@ -361,6 +361,19 @@ func initTests() []toTest {
 				"role":   "patient",
 			},
 		},
+		// returns a 403 when account of the patient does not exist
+		{
+			method:     "POST",
+			url:        "/send/team/invite",
+			returnNone: true,
+			respCode:   403,
+			token:      testing_token_uid1,
+			body: testJSONObject{
+				"email":  "patient.doesnotexist@myemail.com",
+				"teamId": "123456",
+				"role":   "patient",
+			},
+		},
 		// returns a 409 when user is already a member
 		{
 			method:     "POST",

@@ -874,7 +874,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 }
 
 // @Summary Send invitation to a hcp or patient for joining a medical team
-// @Description  create a notification for the invitee and send him an email with the invitation
+// @Description  create a notification for the invitee and send him an email with the invitation. The patient account has to exist otherwise the invitation is rejected.
 // @ID hydrophone-api-SendTeamInvite
 // @Accept  json
 // @Produce  json
@@ -969,6 +969,11 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 			invite.UserId = invitedUsr.UserID
 			member.UserID = invitedUsr.UserID
 			inviteeLanguage = a.getUserLanguage(invite.UserId, res)
+		} else if managePatients {
+			// we return an error as the invitedUser does not exist yet
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_ERR_FINDING_USER)}
+			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+			return
 		}
 		// patient cannot be invited as a member of a care team
 		if invitedUsr.HasRole("patient") && !managePatients {

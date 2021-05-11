@@ -8,7 +8,7 @@ This API sends notifications to users for things like forgotten passwords, initi
 - YLP-682 Add team information in received invitations
 ### Fixed
 - YLP-708 A HCP user shouldn't invite a patient to join a team 
-
+- YLP-743 A team invitation for a patient is valid if the patient account exists
 ## 1.6.1 - 2021-05-04
 ### Changed
 - YLP-710 Modify route /accept/team/invite to acknowledge notifications that does not requires a specific action (i.e. change member role)
