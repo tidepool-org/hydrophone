@@ -95,7 +95,7 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 		if notification.Team == nil {
 			notification.Team = &models.Team{}
 		}
-		notification.Team.TeamID = "123456"
+		notification.Team.ID = "123456"
 		notification.UserId = "123.456.789"
 	}
 	if notification.Key == "medicalteam.invite.member" {
@@ -104,7 +104,7 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 		if notification.Team == nil {
 			notification.Team = &models.Team{}
 		}
-		notification.Team.TeamID = "123456"
+		notification.Team.ID = "123456"
 		notification.UserId = "123.456.789"
 	}
 	if notification.Key == "medicalteam.invite.wrong.member" {
@@ -113,7 +113,7 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 		if notification.Team == nil {
 			notification.Team = &models.Team{}
 		}
-		notification.Team.TeamID = "123456"
+		notification.Team.ID = "123456"
 		notification.UserId = "not.my.id"
 	}
 	if notification.Key == "medicalteam.invite.patient" {
@@ -122,7 +122,7 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 		if notification.Team == nil {
 			notification.Team = &models.Team{}
 		}
-		notification.Team.TeamID = "123456"
+		notification.Team.ID = "123456"
 		notification.UserId = "123.456.789"
 	}
 	if notification.Key == "invalid.key" {
@@ -131,7 +131,7 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 		if notification.Team == nil {
 			notification.Team = &models.Team{}
 		}
-		notification.Team.TeamID = ""
+		notification.Team.ID = ""
 		notification.UserId = ""
 	}
 	if notification.Key == "key.does.not.exist" {

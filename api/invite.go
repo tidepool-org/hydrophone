@@ -90,7 +90,7 @@ func (a *Api) checkForDuplicateTeamInvite(ctx context.Context, inviteeEmail, inv
 		&models.Confirmation{
 			Email: inviteeEmail,
 			Team: &models.Team{
-				TeamID: team.ID,
+				ID: team.ID,
 			},
 			Type: invite},
 		[]models.Status{models.StatusPending},
@@ -499,7 +499,7 @@ func (a *Api) acceptTeamInvite(res http.ResponseWriter, req *http.Request, conf 
 
 	var member = store.Member{
 		UserID:           conf.UserId,
-		TeamID:           conf.Team.TeamID,
+		TeamID:           conf.Team.ID,
 		InvitationStatus: "accepted",
 		Role:             conf.Role,
 	}
@@ -520,7 +520,7 @@ func (a *Api) acceptTeamInvite(res http.ResponseWriter, req *http.Request, conf 
 		return
 	}
 
-	log.Printf("AcceptInvite: permissions were set for [%v -> %v] after an invite was accepted", conf.Team.TeamID, conf.UserId)
+	log.Printf("AcceptInvite: permissions were set for [%v -> %v] after an invite was accepted", conf.Team.ID, conf.UserId)
 	conf.UpdateStatus(models.StatusCompleted)
 	if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
@@ -710,7 +710,7 @@ func (a *Api) DismissTeamInvite(res http.ResponseWriter, req *http.Request, vars
 	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
 	// by default you can just act on your records
 	dismiss.UserId = userID
-	dismiss.Team = &models.Team{TeamID: teamID}
+	dismiss.Team = &models.Team{ID: teamID}
 
 	if isAdmin, _, err := a.getTeamForUser(tokenValue, teamID, token.UserId, res); isAdmin && err == nil {
 		// as team admin you can act on behalf of members
@@ -748,7 +748,7 @@ func (a *Api) DismissTeamInvite(res http.ResponseWriter, req *http.Request, vars
 			conf.UpdateStatus(models.StatusDeclined)
 
 			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
-				log.Printf("dismiss invite [%s] for [%s]", dismiss.Key, dismiss.Team.TeamID)
+				log.Printf("dismiss invite [%s] for [%s]", dismiss.Key, dismiss.Team.ID)
 				a.logAudit(req, "dismissinvite ")
 				res.WriteHeader(http.StatusOK)
 				return
@@ -964,7 +964,7 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 		}
 
 		// if the invitee is already a user, we can use his preferences
-		invite.Team = &models.Team{TeamID: ib.TeamID}
+		invite.Team = &models.Team{ID: ib.TeamID}
 		invite.Email = ib.Email
 		invite.Role = ib.Role
 		var member = store.Member{
@@ -988,13 +988,19 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
 			return
 		}
+		// patient cannot be invited as a member of a care team
+		if managePatients && !invitedUsr.HasRole("patient") {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusMethodNotAllowed, STATUS_MEMBER_NOT_AUTH)}
+			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+			return
+		}
 		err := error(nil)
 		if !managePatients {
 			_, err = a.perms.AddTeamMember(tokenValue, member)
-			log.Printf("Add member %s in Team %s", invitedUsr.UserID, invite.Team.TeamID)
+			log.Printf("Add member %s in Team %s", invitedUsr.UserID, invite.Team.ID)
 		} else {
 			_, err = a.perms.AddOrUpdatePatient(tokenValue, member)
-			log.Printf("Add patient %s in Team %s", invitedUsr.UserID, invite.Team.TeamID)
+			log.Printf("Add patient %s in Team %s", invitedUsr.UserID, invite.Team.ID)
 		}
 		if err != nil {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
@@ -1130,7 +1136,7 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 			invitorID)
 
 		// if the invitee is already a user, we can use his preferences
-		invite.Team.TeamID = ib.TeamID
+		invite.Team.ID = ib.TeamID
 		invite.Email = ib.Email
 		invite.Role = ib.Role
 		invite.Status = models.StatusPending
@@ -1242,7 +1248,7 @@ func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars 
 		invitorID)
 
 	// let's use the user preferences
-	invite.Team.TeamID = ib.TeamID
+	invite.Team.ID = ib.TeamID
 	invite.Email = ib.Email
 	invite.Role = ib.Role
 	invite.UserId = inviteeID

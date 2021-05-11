@@ -29,8 +29,8 @@ type (
 	}
 
 	Team struct {
-		TeamID   string `json:"teamId" bson:"teamId"`
-		TeamName string `json:"teamName" bson:"-"`
+		ID   string `json:"id" bson:"teamId"`
+		Name string `json:"name" bson:"-"`
 	}
 	//basic details for the creator of the confirmation
 	Creator struct {
@@ -189,20 +189,20 @@ func (c *Confirmation) ValidateUserID(expectedUserID string, validationErrors *[
 }
 
 func (c *Confirmation) ValidateTeamID(expectedTeamID string, validationErrors *[]error) *Confirmation {
-	if c.Team != nil && expectedTeamID != c.Team.TeamID {
+	if c.Team != nil && expectedTeamID != c.Team.ID {
 		*validationErrors = append(
 			*validationErrors,
-			fmt.Errorf("Confirmation expected TeamId of `%s` but had `%s`", expectedTeamID, c.Team.TeamID),
+			fmt.Errorf("Confirmation expected TeamId of `%s` but had `%s`", expectedTeamID, c.Team.ID),
 		)
 	}
 	return c
 }
 
 func (c *Confirmation) ValidateTeamName(expectedTeamName string, validationErrors *[]error) *Confirmation {
-	if c.Team != nil && expectedTeamName != c.Team.TeamName {
+	if c.Team != nil && expectedTeamName != c.Team.Name {
 		*validationErrors = append(
 			*validationErrors,
-			fmt.Errorf("Confirmation expected TeamName of `%s` but had `%s`", expectedTeamName, c.Team.TeamName),
+			fmt.Errorf("Confirmation expected TeamName of `%s` but had `%s`", expectedTeamName, c.Team.Name),
 		)
 	}
 	return c
