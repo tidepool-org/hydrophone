@@ -32,7 +32,7 @@ PatientPasswordInfoBody2: "Als je deze e-mail ten onrechte ontvangt, neem dan co
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Uitnodiging voor de patiënt"
 #CareTeamInviteHello: "Hello,"
-CareTeamInviteHeadline: "{{ .CareteamName }} wil zijn/haar diabetesgegevens met jou delen op YourLoops."
+CareTeamInviteHeadline: "{{ .PatientName }} wil zijn/haar diabetesgegevens met jou delen op YourLoops."
 CareTeamInviteBody: "YourLoops is een visualisatieplatform voor diabetesmanagement en -rapportage. Alle gegevens die door een DBL zijn vastgelegd, worden weergegeven in grafieken en diagrammen."
 CareTeamInviteBody2: "{{ .PatientName }} koos om hun gegevens met u te delen. Om te reageren, klik op de link hieronder."
 CareTeamInviteJoin: "Reageren op uitnodiging"

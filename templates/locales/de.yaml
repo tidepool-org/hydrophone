@@ -32,7 +32,7 @@ PatientPasswordInfoBody2: "Wenn Sie diese E-Mail irrtümlich erhalten, wenden Si
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Einladung Diabetes Care Team"
 #CareTeamInviteHello: "Hello,"
-CareTeamInviteHeadline: "{{ .CareteamName }} möchte seine Diabetes-Daten mit Ihnen auf YourLoops teilen."
+CareTeamInviteHeadline: "{{ .PatientName }} möchte seine Diabetes-Daten mit Ihnen auf YourLoops teilen."
 CareTeamInviteBody: "YourLoops ist eine Visualisierungsplattform für das Diabetes-Management und die Berichterstattung. Sie finden alle von einer DBL erfassten Daten in Diagrammen und Grafiken dargestellt."
 CareTeamInviteBody2: "{{ .PatientName }} hat sich entschieden, seine Daten mit Ihnen zu teilen. Um zu antworten, klicken Sie auf den unten stehenden Link."
 CareTeamInviteJoin: "Auf Einladung antworten"
@@ -52,17 +52,17 @@ SignupClinicBody: "Sie haben ein Konto für Ärzte bei YourLoops erstellt. Um Ih
 SignupClinicVerify: "Aktiviere mein Konto"
 #Signup Custodial => SUPPRIMER
 #(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialConfirmationSubject: "Überprüfe Dein Konto."
+SignupCustodialConfirmationSubject: "Verify your YourLoops account"
 #SignupCustodialHello: "Hello,"
 SignupCustodialHeadline: "Congrats on creating your YourLoops account!"
-SignupCustodialVerify: "Überprüfe Dein Konto."
+SignupCustodialVerify: "Verify Your Account"
 #Signup Custodial Clinic => SUPPRIMER
 #(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialClinicConfirmationSubject: "Diabetes Zentrum Follow-up - Fordere Dein Konto an."
-SignupCustodialClinicHello: "Hallo,{{ .FullName }}!"
-SignupCustodialClinicAccount: "{{ .CreatorName }} hat ein Konto für Deine Diabetes-Gerätedaten erstellt."
-SignupCustodialClinicOwnership: "Du kannst Dein kostenloses Konto in Anspruch nehmen, um Daten von zu Hause aus anzusehen und hochzuladen."
-SignupCustodialClinicClaim: "Fordere Dein Konto an"
+SignupCustodialClinicConfirmationSubject: "Diabetes Clinic Follow Up - Claim Your Account"
+SignupCustodialClinicHello: "Hi, {{ .FullName }}!"
+SignupCustodialClinicAccount: "{{ .CreatorName }} created a YourLoops account for your diabetes device data."
+SignupCustodialClinicOwnership: "You can take ownership of your free account to view and upload data from home."
+SignupCustodialClinicClaim: "Claim Your Account"
 #Patient Information
 PatientInfoSubject: "Willkommen bei YourLoops!"
 PatientInfoHeadline: "Melden Sie sich an, um Ihre DBL-Daten anzusehen."

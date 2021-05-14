@@ -32,8 +32,8 @@ PatientPasswordInfoBody2: "Se questa e-mail ti è arrivata per errore, contatta 
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Invito per paziente"
 #CareTeamInviteHello: "Hello,"
-CareTeamInviteHeadline: "{{ .CareteamName }} vuole condividere con te i propri dati sul diabete su YourLoops."
-CareTeamInviteBody: "YourLoops è una piattaforma di visualizzazione per la gestione del diabete e la generazione di report. Troverai tutti i dati acquisiti da un DBL visualizzati in grafici e diagrammi. \nIl tuo paziente {{ .CareteamName }} ha scelto di condividere i suoi dati con te. Per accettare l’invito, fai clic sul link sottostante."
+CareTeamInviteHeadline: "{{ .PatientName }} vuole condividere con te i propri dati sul diabete su YourLoops."
+CareTeamInviteBody: "YourLoops è una piattaforma di visualizzazione per la gestione del diabete e la generazione di report. Troverai tutti i dati acquisiti da un DBL visualizzati in grafici e diagrammi."
 CareTeamInviteBody2: "{{ .PatientName }} ha scelto di condividere i propri dati con te. Per rispondere, clicca sul link qui sotto."
 CareTeamInviteJoin: "Rispondi all’invito"
 #Signup
