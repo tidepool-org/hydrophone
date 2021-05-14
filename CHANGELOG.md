@@ -3,9 +3,10 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
-## Unreleased
+## 1.6.3
 ### Fixed 
 - Encoded emails are missing in email templates.
+- Hydromail: correct the preview of new emails (caregiver invitation)
 
 ## 1.6.2 
 ### Changed
