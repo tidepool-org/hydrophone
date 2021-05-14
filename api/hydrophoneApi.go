@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"runtime"
 	"strings"
@@ -323,6 +324,11 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 	content["AssetURL"] = a.Config.AssetURL
 	content["PatientPasswordResetURL"] = a.Config.PatientPasswordResetURL
 	content["SupportEmail"] = supportEmail
+
+	mail, ok := content["Email"]
+	if ok {
+		content["EncodedEmail"] = url.QueryEscape(mail.(string))
+	}
 
 	// Retrieve the template from all the preloaded templates
 	template, ok := a.templates[templateName]
