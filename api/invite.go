@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	clinics "github.com/tidepool-org/clinic/client"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
@@ -389,19 +388,18 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 // status: 200 models.Confirmation
 // status: 409 statusExistingInviteMessage - user already has a pending or declined invite
 // status: 409 statusExistingMemberMessage - user is already part of the team
-// status: 409 statusExistingPatientMessage - user is already patient of the clinic
 // status: 400
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		ctx := req.Context()
-		inviterID := vars["userid"]
 
-		if inviterID == "" {
+		invitorID := vars["userid"]
+
+		if invitorID == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, inviterID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
@@ -412,7 +410,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		defer req.Body.Close()
 		var ib = &inviteBody{}
 		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-			a.logger.Errorw("error decoding invite", zap.Error(err))
+			log.Printf("SendInvite: error decoding invite to detail %v\n", err)
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 			return
@@ -423,78 +421,55 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if existingInvite := a.checkForDuplicateInvite(req.Context(), ib.Email, inviterID, res); existingInvite {
-			a.logger.Infof("invited [%s] user already has or had an invite from %v", ib.Email, inviterID)
+		if existingInvite := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, res); existingInvite {
+			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
 			return
-		}
-
-		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, inviterID, ib.Permissions)
-		invite.Email = ib.Email
-
-		var clinic *clinics.Clinic
-		var err error
-		if a.Config.ClinicServiceEnabled {
-			clinic, err = a.findExistingClinic(ctx, ib.Email)
-		}
-
-		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email, res); alreadyMember {
+			a.logger.Infof("invited [%s] user is already a member of the care team of %v", ib.Email, invitorID)
 			return
-		}
+		} else {
+			//None exist so lets create the invite
+			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
 
-		if clinic != nil {
-			invite.ClinicId = string(clinic.Id)
-			patientExists, err := a.checkExistingPatientOfClinic(ctx, invite.ClinicId, inviterID)
-			if err != nil {
-				a.logger.Errorw("error checking if user is already a patient of clinic", zap.Error(err))
-				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			invite.Email = ib.Email
+			if invitedUsr != nil {
+				invite.UserId = invitedUsr.UserID
+			}
+
+			if a.addOrUpdateConfirmation(req.Context(), invite, res) {
+				a.logMetric("invite created", req)
+
+				if err := a.addProfile(invite); err != nil {
+					log.Println("SendInvite: ", err.Error())
+				} else {
+
+					fullName := invite.Creator.Profile.FullName
+
+					if invite.Creator.Profile.Patient.IsOtherPerson {
+						fullName = invite.Creator.Profile.Patient.FullName
+					}
+
+					var webPath = "signup"
+
+					if invite.UserId != "" {
+						webPath = "login"
+					}
+
+					emailContent := map[string]interface{}{
+						"CareteamName": fullName,
+						"Email":        invite.Email,
+						"WebPath":      webPath,
+					}
+
+					if a.createAndSendNotification(req, invite, emailContent) {
+						a.logMetric("invite sent", req)
+					}
+				}
+
+				a.sendModelAsResWithStatus(res, invite, http.StatusOK)
 				return
 			}
-			if patientExists {
-				a.logger.Info("user is already a patient of clinic")
-				statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingPatientMessage)}
-				a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-				return
-			}
-		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(inviterID, ib.Email, res); alreadyMember {
-			a.logger.Infof("invited [%s] user is already a member of the care team of %v", ib.Email, inviterID)
-			return
-		} else if invitedUsr != nil {
-			invite.UserId = invitedUsr.UserID
 		}
 
-		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
-			a.logMetric("invite created", req)
-
-			if err := a.addProfile(invite); err != nil {
-				a.logger.Errorw("error adding profile information to confirmation", zap.Error(err))
-			} else {
-
-				fullName := invite.Creator.Profile.FullName
-
-				if invite.Creator.Profile.Patient.IsOtherPerson {
-					fullName = invite.Creator.Profile.Patient.FullName
-				}
-
-				var webPath = "signup"
-
-				if invite.UserId != "" {
-					webPath = "login"
-				}
-
-				emailContent := map[string]interface{}{
-					"CareteamName": fullName,
-					"Email":        invite.Email,
-					"WebPath":      webPath,
-				}
-
-				if a.createAndSendNotification(req, invite, emailContent) {
-					a.logMetric("invite sent", req)
-				}
-			}
-
-			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
-			return
-		}
 	}
 }
