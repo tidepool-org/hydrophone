@@ -155,6 +155,10 @@ github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Ky
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/mdblp/crew v0.2.1-0.20210413074601-a0518c3b3ebf h1:CvxQG6oXItzFecKrZZmiy0ErJ2GvYzlrQyazPollM4o=
 github.com/mdblp/crew v0.2.1-0.20210413074601-a0518c3b3ebf/go.mod h1:Q7F8ZLcx6V5/0ZBNlCGX1fHOritHUf16P1kib0A1UCU=
+github.com/mdblp/crew v0.2.1-0.20210519152427-dc9844d2e998 h1:avcNk6OPVldVWirL4gmJx+S7q0DX3drOuN0ZIxrCtpM=
+github.com/mdblp/crew v0.2.1-0.20210519152427-dc9844d2e998/go.mod h1:Q7F8ZLcx6V5/0ZBNlCGX1fHOritHUf16P1kib0A1UCU=
+github.com/mdblp/crew v0.2.1-0.20210519164127-29a9da20595d h1:rf1b7s1XpYu4HLUFr5g1FmtZbzo4xAZoE0EMBLS4f70=
+github.com/mdblp/crew v0.2.1-0.20210519164127-29a9da20595d/go.mod h1:Q7F8ZLcx6V5/0ZBNlCGX1fHOritHUf16P1kib0A1UCU=
 github.com/mdblp/go-common v0.7.2-0.20210323141933-6b225f5dacf1 h1:fVMLmm4A/uFQ6xQjd9vpRiXBzOqcgFOQuUhCVgQJWVw=
 github.com/mdblp/go-common v0.7.2-0.20210323141933-6b225f5dacf1/go.mod h1:cFFwPnC4pEjrr1YUwjyTfL8ogUgwuvjKe8+eS0bm9oA=
 github.com/mdblp/shoreline v0.14.2-0.20210330081142-417f8c014a42 h1:EU/k1g4MKQ2O+AOCCzxeLlM2of2bnukp6eWwoqkZ+oM=
@@ -163,9 +167,11 @@ github.com/mdblp/shoreline v0.14.2-0.20210503074837-5c41e0d08861 h1:kBojRIsHZU2M
 github.com/mdblp/shoreline v0.14.2-0.20210503074837-5c41e0d08861/go.mod h1:R6FWve5zivjue7E2nHqATc+bfsQDISbdaLVB0oS2suE=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 h1:ZqeYNhU3OHLH3mGKHDcjJRFFRrJa6eAM5H+CtDdOsPc=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
+github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 h1:Esafd1046DLDQ0W1YjYsBW+p8U2u7vzgW2SQVmlNazg=
 github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
+github.com/modern-go/reflect2 v1.0.1 h1:9f412s+6RmYXLWZSEzVVgPGK7C2PphHj5RJrvfx9AWI=
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe/go.mod h1:wL8QJuTMNUDYhXwkmfOly8iTdp5TEcJFWZD2D7SIkUc=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=

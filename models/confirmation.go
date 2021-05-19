@@ -88,11 +88,12 @@ const (
 
 var (
 	Timeouts TypeDurations = TypeDurations{
-		TypeCareteamInvite:       7 * 24 * time.Hour,
-		TypePasswordReset:        7 * 24 * time.Hour,
-		TypeSignUp:               31 * 24 * time.Hour,
-		TypePatientPasswordReset: 1 * time.Hour,
-		TypeMedicalTeamInvite:    7 * 24 * time.Hour,
+		TypeCareteamInvite:           7 * 24 * time.Hour,
+		TypePasswordReset:            7 * 24 * time.Hour,
+		TypeSignUp:                   31 * 24 * time.Hour,
+		TypePatientPasswordReset:     1 * time.Hour,
+		TypeMedicalTeamInvite:        7 * 24 * time.Hour,
+		TypeMedicalTeamPatientInvite: 7 * 24 * time.Hour,
 	}
 )
 
