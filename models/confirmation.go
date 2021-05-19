@@ -23,7 +23,7 @@ type (
 		UserId       string       `json:"-" bson:"userId"`
 		Team         *Team        `json:"target" bson:",inline"`
 		Role         string       `json:"role" bson:"role"`
-		Status       Status       `json:"-" bson:"status"`
+		Status       Status       `json:"status" bson:"status"`
 		Modified     time.Time    `json:"-" bson:"modified"`
 		ShortKey     string       `json:"shortKey" bson:"shortKey"`
 	}

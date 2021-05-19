@@ -264,7 +264,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 	found, err := a.Store.FindConfirmations(
 		req.Context(),
 		&models.Confirmation{CreatorId: invitorID, Type: models.TypeCareteamInvite},
-		[]models.Status{models.StatusPending, models.StatusDeclined},
+		[]models.Status{models.StatusPending},
 		[]models.Type{models.TypeCareteamInvite, models.TypeMedicalTeamInvite, models.TypeMedicalTeamPatientInvite},
 	)
 	if invitations := a.checkFoundConfirmations(tokenValue, res, found, err); invitations != nil {
