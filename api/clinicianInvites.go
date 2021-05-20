@@ -75,7 +75,13 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 			return
 		}
 
-		a.sendClinicianConfirmation(res, req, confirmation)
+		statusErr := a.sendClinicianConfirmation(req, confirmation)
+		if statusErr != nil {
+			a.sendError(res, statusErr.Code, statusErr.Reason, statusErr.Error())
+		}
+
+		res.WriteHeader(http.StatusOK)
+		res.Write(response.Body)
 		return
 	}
 }
@@ -141,7 +147,13 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			confirmation.UserId = invitedUsr.UserID
 		}
 
-		a.sendClinicianConfirmation(res, req, confirmation)
+		statusErr := a.sendClinicianConfirmation(req, confirmation)
+		if statusErr != nil {
+			a.sendError(res, statusErr.Code, statusErr.Reason, statusErr.Error())
+		}
+
+		res.WriteHeader(http.StatusOK)
+		res.Write(inviteResponse.Body)
 		return
 	}
 }
@@ -300,36 +312,41 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 	}
 }
 
-func (a *Api) sendClinicianConfirmation(res http.ResponseWriter, req *http.Request, confirmation *models.Confirmation) {
+func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.Confirmation) *status.StatusError {
 	ctx := req.Context()
-	if a.addOrUpdateConfirmation(ctx, confirmation, res) {
-		a.logMetric("clinician_invite_created", req)
-
-		if err := a.addProfile(confirmation); err != nil {
-			a.logger.Errorw("error adding profile information to confirmation", zap.Error(err))
-		} else {
-			fullName := confirmation.Creator.Profile.FullName
-
-			var webPath = "signup"
-			if confirmation.UserId != "" {
-				webPath = "login"
-			}
-
-			emailContent := map[string]interface{}{
-				"ClinicName":  confirmation.Creator.ClinicName,
-				"CreatorName": fullName,
-				"Email":       confirmation.Email,
-				"WebPath":     webPath,
-			}
-
-			if a.createAndSendNotification(req, confirmation, emailContent) {
-				a.logMetric("clinician_invite_sent", req)
-			}
-		}
-
-		a.sendModelAsResWithStatus(res, confirmation, http.StatusOK)
-		return
+	if err := a.Store.UpsertConfirmation(ctx, confirmation); err != nil {
+		return  &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 	}
+
+	a.logMetric("clinician_invite_created", req)
+
+	if err := a.addProfile(confirmation); err != nil {
+		a.logger.Errorw("error adding profile information to confirmation", zap.Error(err))
+		return &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+	}
+
+	fullName := confirmation.Creator.Profile.FullName
+
+	var webPath = "signup"
+	if confirmation.UserId != "" {
+		webPath = "login"
+	}
+
+	emailContent := map[string]interface{}{
+		"ClinicName":  confirmation.Creator.ClinicName,
+		"CreatorName": fullName,
+		"Email":       confirmation.Email,
+		"WebPath":     webPath,
+	}
+
+	if !a.createAndSendNotification(req, confirmation, emailContent) {
+		return &status.StatusError{
+			Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SENDING_EMAIL),
+		}
+	}
+
+	a.logMetric("clinician_invite_sent", req)
+	return nil
 }
 
 func (a *Api) assertRecipientAuthorized(res http.ResponseWriter, req *http.Request, token *shoreline.TokenData, confirmation *models.Confirmation) (err error) {
