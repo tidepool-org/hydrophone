@@ -3,6 +3,13 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
+## 1.6.4 - 2021-05-20
+### Fixed
+- It is not allowed to send multiple team invite to the same patient (duplicates)
+
+### Added
+- New generic route to cancel invites (caregiver and team invites)
+
 ## 1.6.3
 ### Fixed 
 - Encoded emails are missing in email templates.

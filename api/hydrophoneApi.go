@@ -15,7 +15,6 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	crewClient "github.com/mdblp/crew/client"
-	"github.com/mdblp/crew/store"
 	"github.com/mdblp/shoreline/clients/shoreline"
 	"github.com/mdblp/shoreline/schema"
 	"github.com/mdblp/shoreline/token"
@@ -177,6 +176,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 		varsHandler(a.dismissSignUp)).Methods("PUT")
 	// PUT /confirm/dismiss/team/invite/{teamid}
 	dismiss.Handle("/team/invite/{teamid}", varsHandler(a.DismissTeamInvite)).Methods("PUT")
+	rtr.Handle("/cancel/invite", varsHandler(a.CancelAnyInvite)).Methods("POST")
 
 	// PUT /confirm/:userid/invited/:invited_address
 	// PUT /confirm/signup/:userid
@@ -487,32 +487,4 @@ func (a *Api) isAuthorizedUser(tokenData *token.TokenData, userId string) bool {
 	} else {
 		return false
 	}
-}
-
-// userId is member of a Team
-// Settings the all parameter to true will return all the members while it will only return the accepted members if the parameter is set false
-func (a *Api) isTeamMember(userID string, team store.Team, all bool) bool {
-	for i := 0; i < len(team.Members); i++ {
-		if team.Members[i].UserID == userID && (team.Members[i].InvitationStatus == "accepted" || all) {
-			return true
-		}
-	}
-	return false
-}
-
-//
-// return true is the user userID is admin of the Team identified by teamID
-// it returns the Team object corresponding to the team
-// if any error occurs during the search, it returns an error with the
-// related code
-func (a *Api) getTeamForUser(token, teamID, userID string, res http.ResponseWriter) (bool, store.Team, error) {
-	var auth = false
-	team, err := a.perms.GetTeam(token, teamID)
-	if err != nil {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_FINDING_TEAM)}
-		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-		return auth, store.Team{}, err
-	}
-	auth = a.isTeamAdmin(userID, *team)
-	return auth, *team, nil
 }

@@ -162,6 +162,13 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		InvitationStatus: "pending",
 	}
 
+	member_dup := store.Member{
+		UserID:           testing_uid4,
+		TeamID:           "teamAlreadyMember",
+		Role:             "patient",
+		InvitationStatus: "pending",
+	}
+
 	member_dismissed := store.Member{
 		UserID:           testing_uid4,
 		TeamID:           "123456",
@@ -181,6 +188,9 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 	mockPerms.SetMockNextCall(testing_token_uid1+testing_uid3, &member_uid3, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamAddAdminRole", &teamAddAdminRole, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamAlreadyMember", &teamAlreadyMember, nil)
+	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"teamAlreadyMember", []store.Member{member_dup}, nil)
+	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"teamInvitePatient", []store.Member{}, nil)
+	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"123456", []store.Member{}, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamInvitePatient", &teamAddPatientAsMember, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamDeleteMember", &teamDeleteMember, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+testing_uid1, &membersDismissInvite_uid1, nil)
