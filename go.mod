@@ -8,7 +8,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/aws/aws-sdk-go v1.34.24
 	github.com/gorilla/mux v1.8.0
-	github.com/mdblp/crew v0.2.1-0.20210519164127-29a9da20595d
+	github.com/mdblp/crew v0.2.1-0.20210520130101-e923243fc406
 	// Retrieved through go get github.com/mdblp/shoreline/clients/shoreline@dblp.1.5.1
 	github.com/mdblp/shoreline v0.14.2-0.20210503074837-5c41e0d08861
 	github.com/nicksnyder/go-i18n/v2 v2.0.3

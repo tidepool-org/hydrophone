@@ -159,6 +159,8 @@ github.com/mdblp/crew v0.2.1-0.20210519152427-dc9844d2e998 h1:avcNk6OPVldVWirL4g
 github.com/mdblp/crew v0.2.1-0.20210519152427-dc9844d2e998/go.mod h1:Q7F8ZLcx6V5/0ZBNlCGX1fHOritHUf16P1kib0A1UCU=
 github.com/mdblp/crew v0.2.1-0.20210519164127-29a9da20595d h1:rf1b7s1XpYu4HLUFr5g1FmtZbzo4xAZoE0EMBLS4f70=
 github.com/mdblp/crew v0.2.1-0.20210519164127-29a9da20595d/go.mod h1:Q7F8ZLcx6V5/0ZBNlCGX1fHOritHUf16P1kib0A1UCU=
+github.com/mdblp/crew v0.2.1-0.20210520130101-e923243fc406 h1:fiK+dORky4ieFuHAOp5ua17XQfM7xy0O+McomTEYzyU=
+github.com/mdblp/crew v0.2.1-0.20210520130101-e923243fc406/go.mod h1:Q7F8ZLcx6V5/0ZBNlCGX1fHOritHUf16P1kib0A1UCU=
 github.com/mdblp/go-common v0.7.2-0.20210323141933-6b225f5dacf1 h1:fVMLmm4A/uFQ6xQjd9vpRiXBzOqcgFOQuUhCVgQJWVw=
 github.com/mdblp/go-common v0.7.2-0.20210323141933-6b225f5dacf1/go.mod h1:cFFwPnC4pEjrr1YUwjyTfL8ogUgwuvjKe8+eS0bm9oA=
 github.com/mdblp/shoreline v0.14.2-0.20210330081142-417f8c014a42 h1:EU/k1g4MKQ2O+AOCCzxeLlM2of2bnukp6eWwoqkZ+oM=
