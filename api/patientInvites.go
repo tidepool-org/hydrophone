@@ -138,15 +138,29 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 		},
 	}
 
-	response, err := a.clinics.CreatePatientFromUserWithResponse(ctx, clinics.ClinicId(confirmation.ClinicId), clinics.PatientId(confirmation.CreatorId), body)
+	var patient *clinics.Patient
+	clinicId := clinics.ClinicId(confirmation.ClinicId)
+	patientId := clinics.PatientId(confirmation.CreatorId)
+	response, err := a.clinics.CreatePatientFromUserWithResponse(ctx, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
+	} else if response.StatusCode() == http.StatusConflict {
+		patientResponse, err := a.clinics.GetPatientWithResponse(ctx, clinicId, patientId)
+		if err != nil {
+			return nil, err
+		}
+		if patientResponse.StatusCode() != http.StatusOK {
+			return nil, fmt.Errorf("unexpected status code %v when fetching patient by id", patientResponse.StatusCode())
+		}
+		patient = patientResponse.JSON200
 	} else if response.StatusCode() != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code %v when creating patient from existing user", response.StatusCode())
+	} else {
+		patient = response.JSON200
 	}
 
-	a.logger.Infof("permissions were set as [%v] after an invite was accepted", permissions)
-	return response.JSON200, nil
+	a.logger.Infof("permissions were set as [%v] after an invite was accepted", patient.Permissions)
+	return patient, nil
 }
 
 func getPermission(permissions commonClients.Permissions, permission string) *map[string]interface{} {
