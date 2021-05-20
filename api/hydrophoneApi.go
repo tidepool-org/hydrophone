@@ -143,11 +143,13 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	csend.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
 	csend.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	csend.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
+	csend.Handle("/invite/{userId}/clinic", varsHandler(a.InviteClinic)).Methods("POST")
 
 	send := rtr.PathPrefix("/send").Subrouter()
 	send.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
 	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
+	send.Handle("/invite/{userId}/clinic", varsHandler(a.InviteClinic)).Methods("POST")
 
 	// POST /confirm/resend/signup/:useremail
 	c.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
@@ -388,23 +390,6 @@ func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
 	} else {
 		return usr
 	}
-}
-
-func (a *Api) findExistingClinic(ctx context.Context, email string) (*clinicsClient.Clinic, error) {
-	response, err := a.clinics.ListClinicsWithResponse(ctx, &clinicsClient.ListClinicsParams{
-		Email: &email,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code '%v' while listing clinics", response.StatusCode())
-	}
-	if len(*response.JSON200) == 0 {
-		return nil, nil
-	}
-	return &(*response.JSON200)[0], nil
 }
 
 //Makesure we have set the userId on these confirmations

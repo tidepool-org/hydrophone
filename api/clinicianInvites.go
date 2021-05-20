@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	oapiTypes "github.com/deepmap/oapi-codegen/pkg/types"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
@@ -34,7 +33,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 			return
 		}
 
-		clinic, err := a.clinics.GetClinicWithResponse(ctx, clinicId)
+		clinic, err := a.clinics.GetClinicWithResponse(ctx, clinics.ClinicId(clinicId))
 		if err != nil || clinic == nil || clinic.JSON200 == nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
@@ -60,9 +59,9 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 			confirmation.UserId = invitedUsr.UserID
 		}
 
-		response, err := a.clinics.CreateClinicianWithResponse(ctx, clinicId, clinics.CreateClinicianJSONRequestBody{
+		response, err := a.clinics.CreateClinicianWithResponse(ctx, clinics.ClinicId(clinicId), clinics.CreateClinicianJSONRequestBody{
 			InviteId: &confirmation.Key,
-			Email:    oapiTypes.Email(body.Email),
+			Email:    body.Email,
 			Roles:    body.Roles,
 		})
 		if err != nil {
@@ -98,13 +97,13 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			return
 		}
 
-		clinic, err := a.clinics.GetClinicWithResponse(ctx, clinicId)
+		clinic, err := a.clinics.GetClinicWithResponse(ctx, clinics.ClinicId(clinicId))
 		if err != nil || clinic == nil || clinic.JSON200 == nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 
-		inviteResponse, err := a.clinics.GetInvitedClinicianWithResponse(ctx, clinicId, inviteId)
+		inviteResponse, err := a.clinics.GetInvitedClinicianWithResponse(ctx, clinics.ClinicId(clinicId), clinics.InviteId(inviteId))
 		if err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
@@ -208,7 +207,7 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 
 		association := clinics.AssociateClinicianToUserJSONRequestBody{UserId: token.UserID}
-		response, err := a.clinics.AssociateClinicianToUserWithResponse(ctx, conf.ClinicId, inviteId, association)
+		response, err := a.clinics.AssociateClinicianToUserWithResponse(ctx, clinics.ClinicId(conf.ClinicId), clinics.InviteId(inviteId), association)
 		if err != nil || response.StatusCode() != http.StatusOK {
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
@@ -353,7 +352,7 @@ func (a *Api) assertRecipientAuthorized(res http.ResponseWriter, req *http.Reque
 
 func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http.Request, conf *models.Confirmation, statusUpdate models.Status) {
 	ctx := req.Context()
-	response, err := a.clinics.DeleteInvitedClinicianWithResponse(ctx, conf.ClinicId, conf.Key)
+	response, err := a.clinics.DeleteInvitedClinicianWithResponse(ctx, clinics.ClinicId(conf.ClinicId), clinics.InviteId(conf.Key))
 	if err != nil || (response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusNotFound) {
 		a.logger.Errorw("error while finding confirmation", zap.Error(err))
 		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
@@ -378,7 +377,7 @@ func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http
 func (a *Api) assertClinicAdmin(ctx context.Context, clinicId string, token *shoreline.TokenData, res http.ResponseWriter) error {
 	// Non-server tokens only legit when for same userid
 	if !token.IsServer {
-		if result, err := a.clinics.GetClinicianWithResponse(ctx, clinicId, token.UserID); err != nil || result.StatusCode() == http.StatusInternalServerError {
+		if result, err := a.clinics.GetClinicianWithResponse(ctx, clinics.ClinicId(clinicId), clinics.ClinicianId(token.UserID)); err != nil || result.StatusCode() == http.StatusInternalServerError {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return err
 		} else if result.StatusCode() != http.StatusOK {

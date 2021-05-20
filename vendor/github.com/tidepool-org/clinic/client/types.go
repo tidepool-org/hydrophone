@@ -18,18 +18,19 @@ type AssociateClinicianToUser struct {
 
 // Clinic defines model for Clinic.
 type Clinic struct {
-	Address    *string             `json:"address,omitempty"`
-	City       *string             `json:"city,omitempty"`
-	ClinicSize *int                `json:"clinicSize,omitempty"`
-	ClinicType *string             `json:"clinicType,omitempty"`
-	Country    *string             `json:"country,omitempty"`
-	Email      openapi_types.Email `json:"email"`
+	Address    *string `json:"address,omitempty"`
+	City       *string `json:"city,omitempty"`
+	ClinicSize *int    `json:"clinicSize,omitempty"`
+	ClinicType *string `json:"clinicType,omitempty"`
+	Country    *string `json:"country,omitempty"`
+	Email      string  `json:"email"`
 
 	// String representation of a resource id
 	Id           Id             `json:"id"`
 	Name         string         `json:"name"`
 	PhoneNumbers *[]PhoneNumber `json:"phoneNumbers,omitempty"`
 	PostalCode   *string        `json:"postalCode,omitempty"`
+	ShareCode    string         `json:"shareCode"`
 	State        *string        `json:"state,omitempty"`
 }
 
@@ -37,10 +38,10 @@ type Clinic struct {
 type Clinician struct {
 
 	// The email of the clinician
-	Email openapi_types.Email `json:"email"`
+	Email string `json:"email"`
 
 	// String representation of a Tidepool User ID
-	Id *UserId `json:"id,omitempty"`
+	Id *TidepoolUserId `json:"id,omitempty"`
 
 	// The id of the invite if it hasn't been accepted
 	InviteId *string `json:"inviteId,omitempty"`
@@ -49,6 +50,15 @@ type Clinician struct {
 	Name  *string        `json:"name,omitempty"`
 	Roles ClinicianRoles `json:"roles"`
 }
+
+// ClinicianClinicRelationship defines model for ClinicianClinicRelationship.
+type ClinicianClinicRelationship struct {
+	Clinic    Clinic    `json:"clinic"`
+	Clinician Clinician `json:"clinician"`
+}
+
+// ClinicianClinicRelationships defines model for ClinicianClinicRelationships.
+type ClinicianClinicRelationships []ClinicianClinicRelationship
 
 // ClinicianRoles defines model for ClinicianRoles.
 type ClinicianRoles []string
@@ -77,16 +87,16 @@ type Id string
 type Patient struct {
 
 	// YYYY-MM-DD
-	BirthDate *openapi_types.Date `json:"birthDate,omitempty"`
+	BirthDate openapi_types.Date `json:"birthDate"`
 
 	// The email of the patient
-	Email *openapi_types.Email `json:"email,omitempty"`
+	Email *string `json:"email,omitempty"`
 
 	// The full name of the patient
-	FullName *string `json:"fullName,omitempty"`
+	FullName string `json:"fullName"`
 
 	// String representation of a Tidepool User ID
-	Id UserId `json:"id"`
+	Id TidepoolUserId `json:"id"`
 
 	// The medical record number of the patient
 	Mrn           *string             `json:"mrn,omitempty"`
@@ -120,17 +130,50 @@ type PhoneNumber struct {
 	Type   *string `json:"type,omitempty"`
 }
 
-// UserId defines model for UserId.
-type UserId string
+// TidepoolUserId defines model for TidepoolUserId.
+type TidepoolUserId string
+
+// ClinicId defines model for clinicId.
+type ClinicId string
+
+// ClinicianId defines model for clinicianId.
+type ClinicianId string
+
+// Email defines model for email.
+type Email openapi_types.Email
+
+// InviteId defines model for inviteId.
+type InviteId string
+
+// Limit defines model for limit.
+type Limit int
+
+// Offset defines model for offset.
+type Offset int
+
+// PatientId defines model for patientId.
+type PatientId string
+
+// Search defines model for search.
+type Search string
+
+// ShareCode defines model for shareCode.
+type ShareCode string
+
+// UserId defines model for userId.
+type UserId TidepoolUserId
+
+// ListClinicsForClinicianParams defines parameters for ListClinicsForClinician.
+type ListClinicsForClinicianParams struct {
+	Offset *Offset `json:"offset,omitempty"`
+	Limit  *Limit  `json:"limit,omitempty"`
+}
 
 // ListClinicsParams defines parameters for ListClinics.
 type ListClinicsParams struct {
-	Limit       *int    `json:"limit,omitempty"`
-	Offset      *int    `json:"offset,omitempty"`
-	Sort        *string `json:"sort,omitempty"`
-	ClinicianId *string `json:"clinicianId,omitempty"`
-	PatientId   *string `json:"patientId,omitempty"`
-	Email       *string `json:"email,omitempty"`
+	Limit     *Limit     `json:"limit,omitempty"`
+	Offset    *Offset    `json:"offset,omitempty"`
+	ShareCode *ShareCode `json:"shareCode,omitempty"`
 }
 
 // CreateClinicJSONBody defines parameters for CreateClinic.
@@ -143,10 +186,10 @@ type UpdateClinicJSONBody Clinic
 type ListCliniciansParams struct {
 
 	// Full text search query
-	Search *string `json:"search,omitempty"`
-	Offset *int    `json:"offset,omitempty"`
-	Limit  *int    `json:"limit,omitempty"`
-	Email  *string `json:"email,omitempty"`
+	Search *Search `json:"search,omitempty"`
+	Offset *Offset `json:"offset,omitempty"`
+	Limit  *Limit  `json:"limit,omitempty"`
+	Email  *Email  `json:"email,omitempty"`
 }
 
 // CreateClinicianJSONBody defines parameters for CreateClinician.
@@ -161,10 +204,10 @@ type AssociateClinicianToUserJSONBody AssociateClinicianToUser
 // ListPatientsParams defines parameters for ListPatients.
 type ListPatientsParams struct {
 
-	// Full text search query that matches patient's name, email and mrn
-	Search *string `json:"search,omitempty"`
-	Offset *int    `json:"offset,omitempty"`
-	Limit  *int    `json:"limit,omitempty"`
+	// Full text search query
+	Search *Search `json:"search,omitempty"`
+	Offset *Offset `json:"offset,omitempty"`
+	Limit  *Limit  `json:"limit,omitempty"`
 }
 
 // CreatePatientAccountJSONBody defines parameters for CreatePatientAccount.
@@ -179,10 +222,10 @@ type UpdatePatientJSONBody Patient
 // UpdatePatientPermissionsJSONBody defines parameters for UpdatePatientPermissions.
 type UpdatePatientPermissionsJSONBody PatientPermissions
 
-// GetPatientClinicRelationshipsParams defines parameters for GetPatientClinicRelationships.
-type GetPatientClinicRelationshipsParams struct {
-	Offset *int `json:"offset,omitempty"`
-	Limit  *int `json:"limit,omitempty"`
+// ListClinicsForPatientParams defines parameters for ListClinicsForPatient.
+type ListClinicsForPatientParams struct {
+	Offset *Offset `json:"offset,omitempty"`
+	Limit  *Limit  `json:"limit,omitempty"`
 }
 
 // CreateClinicJSONRequestBody defines body for CreateClinic for application/json ContentType.

@@ -138,7 +138,7 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 		},
 	}
 
-	response, err := a.clinics.CreatePatientFromUserWithResponse(ctx, confirmation.ClinicId, confirmation.CreatorId, body)
+	response, err := a.clinics.CreatePatientFromUserWithResponse(ctx, clinics.ClinicId(confirmation.ClinicId), clinics.PatientId(confirmation.CreatorId), body)
 	if err != nil {
 		return nil, err
 	} else if response.StatusCode() != http.StatusOK {

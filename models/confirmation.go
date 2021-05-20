@@ -14,6 +14,7 @@ type (
 		Key       string          `json:"key" bson:"_id"`
 		Type      Type            `json:"type" bson:"type"`
 		Email     string          `json:"email" bson:"email"`
+		ClinicId  string          `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
 		Creator   Creator         `json:"creator" bson:"creator"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
@@ -21,7 +22,6 @@ type (
 
 		TemplateName TemplateName `json:"-" bson:"templateName"`
 		UserId       string       `json:"-" bson:"userId"`
-		ClinicId     string       `json:"-" bson:"clinicId"`
 		Status       Status       `json:"-" bson:"status"`
 		Modified     time.Time    `json:"-" bson:"modified"`
 	}

@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 
+	clinics "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
@@ -58,7 +59,7 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 }
 
 func (a *Api) checkExistingPatientOfClinic(ctx context.Context, clinicId, patientId string) (bool, error) {
-	response, err := a.clinics.GetPatientWithResponse(ctx, clinicId, patientId)
+	response, err := a.clinics.GetPatientWithResponse(ctx, clinics.ClinicId(clinicId), clinics.PatientId(patientId))
 	if err != nil {
 		return false, err
 	} else if response.StatusCode() == http.StatusNotFound {
@@ -96,7 +97,6 @@ func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, 
 // status: 400
 func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		ctx := req.Context()
 		inviteeID := vars["userid"]
 
 		if inviteeID == "" {
@@ -111,17 +111,6 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		}
 
 		invitedUsr := a.findExistingUser(inviteeID, req.Header.Get(TP_SESSION_TOKEN))
-
-		// Return an empty list if there is a clinic with the same email address
-		if a.Config.ClinicServiceEnabled {
-			if clinic, err := a.findExistingClinic(ctx, invitedUsr.Emails[0]); err != nil {
-				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
-				return
-			} else if clinic != nil {
-				a.sendModelAsResWithStatus(res, []*models.Confirmation{}, http.StatusOK)
-				return
-			}
-		}
 
 		//find all oustanding invites were this user is the invite//
 		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
