@@ -780,6 +780,19 @@ func (a *Api) DismissTeamInvite(res http.ResponseWriter, req *http.Request, vars
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 }
 
+// @Summary Cancel an invite
+// @Description Admin can cancel a team invite sent to an HCP. A member can cancel an invite sent to a patient. A patient can cancel an invite sent to a caregiver
+// @ID hydrophone-api-cancelAnyInvite
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} status.Status "payload is missing or malformed"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provide sufficient privileges"
+// @Failure 403 {object} status.Status "Authorization token is invalid"
+// @Failure 404 {object} status.Status "invitation not found"
+// @Failure 500 {object} status.Status "Error (internal) while processing the data"
+// @Router /cancel/invite [post]
+// @security TidepoolAuth
 func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	token := a.token(res, req)
 	if token == nil {
@@ -845,7 +858,7 @@ func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars m
 		conf.UpdateStatus(models.StatusDeclined)
 
 		if a.addOrUpdateConfirmation(req.Context(), conf, res) {
-			log.Printf("cancel invite [%s] for [%s]", cancel.Key, cancel.Email)
+			log.Printf("cancel invite [%s]", cancel.Key)
 			a.logAudit(req, "cancelInvite ")
 			res.WriteHeader(http.StatusOK)
 			return
