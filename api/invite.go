@@ -127,7 +127,7 @@ func (a *Api) checkForDuplicateTeamInvite(ctx context.Context, inviteeEmail, inv
 			return true, invitedUsr
 		}
 		for i := 0; i < len(members); i++ {
-			if members[i].UserID == invitedUsr.UserID {
+			if members[i].UserID == invitedUsr.UserID && members[i].InvitationStatus != "rejected" {
 				statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingMemberMessage)}
 				a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 				return true, invitedUsr
