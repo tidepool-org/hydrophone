@@ -780,13 +780,12 @@ func (a *Api) DismissTeamInvite(res http.ResponseWriter, req *http.Request, vars
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 }
 
-/*
 func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	token := a.token(res, req)
 	if token == nil {
 		return
 	}
-	userID := token.UserId
+	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
 
 	cancel := &models.Confirmation{}
 	if err := json.NewDecoder(req.Body).Decode(cancel); err != nil {
@@ -796,69 +795,67 @@ func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars m
 		return
 	}
 
-	// key of the request
+	// mandatory fields from the request body
 	if cancel.Key == "" {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
-	// by default you can just act on your records
-	cancel.UserId = userID
-	cancel.Team = &models.Team{ID: teamID}
-
-	if isAdmin, _, err := a.getTeamForUser(tokenValue, teamID, token.UserId, res); isAdmin && err == nil {
-		// as team admin you can act on behalf of members
-		// for any invitation for the given team
-		cancel.UserId = ""
+	if (cancel.Team == nil || cancel.Team.ID == "") && cancel.Email == "" {
+		res.WriteHeader(http.StatusBadRequest)
+		return
 	}
-
+	cancel.Status = models.StatusPending
 	if conf, err := a.findExistingConfirmation(req.Context(), cancel, res); err != nil {
 		log.Printf("CancelInvite: finding [%s]", err.Error())
 		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 		return
 	} else if conf != nil {
 
-		if conf.Status != models.StatusDeclined && conf.Status != models.StatusCanceled {
-
-			var member = store.Member{
-				UserID:           conf.UserId,
-				TeamID:           teamID,
-				InvitationStatus: "rejected",
-			}
-
-			var err error
-			switch conf.Type {
-			case models.TypeMedicalTeamPatientInvite:
-				_, err = a.perms.AddOrUpdatePatient(tokenValue, member)
-			default:
-				_, err = a.perms.UpdateTeamMember(tokenValue, member)
-			}
-			if err != nil {
+		var err error
+		switch conf.Type {
+		case models.TypeMedicalTeamPatientInvite:
+			err = a.perms.RemovePatient(tokenValue, conf.Team.ID, conf.UserId)
+		case models.TypeMedicalTeamInvite:
+			if requestorIsAdmin, _, err := a.getTeamForUser(tokenValue, cancel.Team.ID, token.UserId, res); err != nil {
 				statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
 				a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
 				return
-			}
-
-			conf.UpdateStatus(models.StatusDeclined)
-
-			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
-				log.Printf("cancel invite [%s] for [%s]", cancel.Key, cancel.Team.ID)
-				a.logAudit(req, "dismissinvite ")
-				res.WriteHeader(http.StatusOK)
+			} else if !requestorIsAdmin {
+				res.WriteHeader(http.StatusUnauthorized)
 				return
 			}
+			err = a.perms.RemoveTeamMember(tokenValue, conf.Team.ID, conf.UserId)
+		case models.TypeCareteamInvite:
+			//verify the request comes from the creator
+			if !a.isAuthorizedUser(token, conf.CreatorId) {
+				a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+				return
+			}
+		default:
+			res.WriteHeader(http.StatusBadRequest)
+			return
 		}
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotModified, statusInviteNotActiveMessage)}
-		log.Printf("CancelInvite: [%s]", statusErr.Error())
-		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-		return
+
+		if err != nil {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
+			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+			return
+		}
+
+		conf.UpdateStatus(models.StatusDeclined)
+
+		if a.addOrUpdateConfirmation(req.Context(), conf, res) {
+			log.Printf("cancel invite [%s] for [%s]", cancel.Key, cancel.Email)
+			a.logAudit(req, "cancelInvite ")
+			res.WriteHeader(http.StatusOK)
+			return
+		}
 	}
 	statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
 	log.Printf("CancelInvite: [%s]", statusErr.Error())
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 }
-*/
+
 // @Summary Send a invite to join a patient's team
 // @Description  Send a invite to new or existing users to join the patient's team
 // @ID hydrophone-api-SendInvite
