@@ -1,5 +1,7 @@
 # github.com/Shopify/sarama v1.27.0
 github.com/Shopify/sarama
+# github.com/avast/retry-go v3.0.0+incompatible
+github.com/avast/retry-go
 # github.com/aws/aws-sdk-go v1.34.22
 ## explicit
 github.com/aws/aws-sdk-go/aws
@@ -60,7 +62,6 @@ github.com/cloudevents/sdk-go/v2/types
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
 # github.com/deepmap/oapi-codegen v1.5.1
-## explicit
 github.com/deepmap/oapi-codegen/pkg/runtime
 github.com/deepmap/oapi-codegen/pkg/types
 # github.com/eapache/go-resiliency v1.2.0
@@ -119,9 +120,8 @@ github.com/rcrowley/go-metrics
 # github.com/tidepool-org/clinic/client v0.0.0-20210518092136-8cd22038d368
 ## explicit
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/go-common v0.7.1
+# github.com/tidepool-org/go-common v0.8.2
 ## explicit
-github.com/tidepool-org/go-common
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc
 github.com/tidepool-org/go-common/clients/hakken
