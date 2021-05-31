@@ -1058,73 +1058,47 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 	} else {
 		// lets create the invite depending o type of invited member
 		var invite *models.Confirmation
-		if managePatients {
-			invite, _ = models.NewConfirmation(
-				models.TypeMedicalTeamPatientInvite,
-				models.TemplateNameMedicalteamPatientInvite,
-				invitorID)
-		} else {
-			invite, _ = models.NewConfirmation(
-				models.TypeMedicalTeamInvite,
-				models.TemplateNameMedicalteamInvite,
-				invitorID)
-		}
-
-		// if the invitee is already a user, we can use his preferences
-		invite.Team = &models.Team{ID: ib.TeamID}
-		invite.Email = ib.Email
-		invite.Role = ib.Role
 		var member = store.Member{
 			TeamID:           ib.TeamID,
 			Role:             ib.Role,
 			InvitationStatus: "pending",
 		}
+		if managePatients {
+			if statusErr := a.invitePatient(invitedUsr, member, tokenValue); statusErr != nil {
+				a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+				return
+			}
+			invite, _ = models.NewConfirmation(
+				models.TypeMedicalTeamPatientInvite,
+				models.TemplateNameMedicalteamPatientInvite,
+				invitorID)
+		} else {
+			if statusErr := a.inviteHcp(invitedUsr, member, tokenValue); statusErr != nil {
+				a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+				return
+			}
+			invite, _ = models.NewConfirmation(
+				models.TypeMedicalTeamInvite,
+				models.TemplateNameMedicalteamInvite,
+				invitorID)
+		}
+		// complete invite
+		invite.Team = &models.Team{ID: ib.TeamID}
+		invite.Email = ib.Email
+		invite.Role = ib.Role
 		if invitedUsr != nil {
 			invite.UserId = invitedUsr.UserID
-			member.UserID = invitedUsr.UserID
 			inviteeLanguage = a.getUserLanguage(invite.UserId, res)
-		} else if managePatients {
-			// we return an error as the invitedUser does not exist yet
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_ERR_FINDING_USER)}
-			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-			return
 		}
-		// patient cannot be invited as a member of a care team
-		if invitedUsr.HasRole("patient") && !managePatients {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusMethodNotAllowed, STATUS_PATIENT_NOT_AUTH)}
-			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-			return
-		}
-		// patient cannot be invited as a member of a care team
-		if managePatients && !invitedUsr.HasRole("patient") {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusMethodNotAllowed, STATUS_MEMBER_NOT_AUTH)}
-			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-			return
-		}
-		err := error(nil)
-		if !managePatients {
-			_, err = a.perms.AddTeamMember(tokenValue, member)
-			log.Printf("Add member %s in Team %s", invitedUsr.UserID, invite.Team.ID)
-		} else {
-			_, err = a.perms.AddOrUpdatePatient(tokenValue, member)
-			log.Printf("Add patient %s in Team %s", invitedUsr.UserID, invite.Team.ID)
-		}
-		if err != nil {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
-			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-			return
-		}
-
 		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
 			a.logAudit(req, "invite created")
 
 			if err := a.addProfile(invite); err != nil {
 				log.Println("SendInvite: ", err.Error())
 			} else {
-				// TODO add parameter for /notifications -> /<role>/notifications
 				var webPath = ""
 				if !managePatients && invite.UserId == "" {
-					webPath = "hcp/signup"
+					webPath = "signup"
 				}
 
 				emailContent := map[string]interface{}{
@@ -1152,6 +1126,41 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 		}
 	}
 
+}
+
+func (a *Api) invitePatient(invitedUsr *schema.UserData, member store.Member, token string) *status.StatusError {
+	if invitedUsr == nil {
+		// we return an error as the invitedUser does not exist yet
+		return &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_ERR_FINDING_USER)}
+	}
+	// non-patient cannot be invited as a patient of a care team
+	if !invitedUsr.HasRole("patient") {
+		return &status.StatusError{Status: status.NewStatus(http.StatusMethodNotAllowed, STATUS_MEMBER_NOT_AUTH)}
+	}
+	member.UserID = invitedUsr.UserID
+	if _, err := a.perms.AddOrUpdatePatient(token, member); err != nil {
+		return &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
+	} else {
+		log.Printf("Add patient %s in Team %s", invitedUsr.UserID, member.TeamID)
+		return nil
+	}
+}
+
+func (a *Api) inviteHcp(invitedUsr *schema.UserData, member store.Member, token string) *status.StatusError {
+	if invitedUsr == nil {
+		return nil
+	}
+	// patient cannot be invited as a member
+	if invitedUsr.HasRole("patient") {
+		return &status.StatusError{Status: status.NewStatus(http.StatusMethodNotAllowed, STATUS_PATIENT_NOT_AUTH)}
+	}
+	member.UserID = invitedUsr.UserID
+	if _, err := a.perms.AddTeamMember(token, member); err != nil {
+		return &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
+	} else {
+		log.Printf("Add member %s in Team %s", invitedUsr.UserID, member.TeamID)
+		return nil
+	}
 }
 
 // @Summary Send notification to an hcp that becomes admin

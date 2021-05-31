@@ -413,9 +413,22 @@ func initTests() []toTest {
 			respCode:   403,
 			token:      testing_token_uid1,
 			body: testJSONObject{
-				"email":  "patient.doesnotexist@myemail.com",
+				"email":  "doesnotexist@myemail.com",
 				"teamId": "123456",
 				"role":   "patient",
+			},
+		},
+		// returns a 403 when account of the hcp does not exist
+		{
+			method:     "POST",
+			url:        "/send/team/invite",
+			returnNone: true,
+			respCode:   200,
+			token:      testing_token_uid1,
+			body: testJSONObject{
+				"email":  "doesnotexist@myemail.com",
+				"teamId": "123456",
+				"role":   "member",
 			},
 		},
 		// returns a 409 when user is already a member
