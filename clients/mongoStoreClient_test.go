@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mdblp/hydrophone/models"
 	goComMgo "github.com/tidepool-org/go-common/clients/mongo"
-	"github.com/tidepool-org/hydrophone/models"
 )
 
 var logger = log.New(os.Stdout, "mongo-test ", log.LstdFlags|log.LUTC|log.Lshortfile)

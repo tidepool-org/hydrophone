@@ -12,8 +12,8 @@ import (
 	"github.com/gorilla/mux"
 	common "github.com/tidepool-org/go-common"
 
-	"github.com/tidepool-org/hydrophone/localize"
-	"github.com/tidepool-org/hydrophone/templates"
+	"github.com/mdblp/hydrophone/localize"
+	"github.com/mdblp/hydrophone/templates"
 )
 
 type Config struct {

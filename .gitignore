@@ -4,6 +4,5 @@ docs/
 .vscode/launch.json
 vendor/
 
-hydrophone
 artifact_go.sh
 *.exe

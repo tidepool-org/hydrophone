@@ -20,7 +20,7 @@ type (
 		Created   time.Time       `json:"created" bson:"created"`
 
 		TemplateName TemplateName `json:"-" bson:"templateName"`
-		UserId       string       `json:"-" bson:"userId"`
+		UserId       string       `json:"userId" bson:"userId"`
 		Team         *Team        `json:"target" bson:",inline"`
 		Role         string       `json:"role" bson:"role"`
 		Status       Status       `json:"status" bson:"status"`

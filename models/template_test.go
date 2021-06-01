@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	"github.com/tidepool-org/hydrophone/localize"
+	"github.com/mdblp/hydrophone/localize"
 )
 
 type (

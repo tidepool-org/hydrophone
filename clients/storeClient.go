@@ -3,8 +3,8 @@ package clients
 import (
 	"context"
 
+	"github.com/mdblp/hydrophone/models"
 	goComMgo "github.com/tidepool-org/go-common/clients/mongo"
-	"github.com/tidepool-org/hydrophone/models"
 )
 
 type StoreClient interface {

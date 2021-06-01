@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/tidepool-org/hydrophone/templates"
+	"github.com/mdblp/hydrophone/templates"
 )
 
 func TestForgotResponds(t *testing.T) {

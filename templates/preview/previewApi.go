@@ -12,10 +12,10 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/mdblp/hydrophone/localize"
+	"github.com/mdblp/hydrophone/models"
+	"github.com/mdblp/hydrophone/templates"
 	"github.com/tidepool-org/go-common/clients/status"
-	"github.com/tidepool-org/hydrophone/localize"
-	"github.com/tidepool-org/hydrophone/models"
-	"github.com/tidepool-org/hydrophone/templates"
 )
 
 type (

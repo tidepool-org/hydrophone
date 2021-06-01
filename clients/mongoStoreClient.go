@@ -6,8 +6,8 @@ import (
 	"log"
 	"regexp"
 
+	"github.com/mdblp/hydrophone/models"
 	goComMgo "github.com/tidepool-org/go-common/clients/mongo"
-	"github.com/tidepool-org/hydrophone/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

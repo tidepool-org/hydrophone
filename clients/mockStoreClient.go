@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/tidepool-org/hydrophone/models"
+	"github.com/mdblp/hydrophone/models"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

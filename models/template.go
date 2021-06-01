@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"text/template"
 
-	"github.com/tidepool-org/hydrophone/localize"
+	"github.com/mdblp/hydrophone/localize"
 )
 
 type TemplateName string

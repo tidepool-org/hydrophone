@@ -10,8 +10,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/tidepool-org/hydrophone/localize"
-	"github.com/tidepool-org/hydrophone/models"
+	"github.com/mdblp/hydrophone/localize"
+	"github.com/mdblp/hydrophone/models"
 )
 
 type TemplateMeta struct {

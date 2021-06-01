@@ -11,7 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mdblp/crew/store"
-	"github.com/tidepool-org/hydrophone/templates"
+	"github.com/mdblp/hydrophone/templates"
 )
 
 func initTestingRouterNoPerms() *mux.Router {

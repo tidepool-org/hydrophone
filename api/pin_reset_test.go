@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/mdblp/hydrophone/templates"
 	"github.com/tidepool-org/go-common/clients/portal"
-	"github.com/tidepool-org/hydrophone/templates"
 )
 
 type (

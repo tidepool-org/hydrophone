@@ -1,4 +1,4 @@
-module github.com/tidepool-org/hydrophone
+module github.com/mdblp/hydrophone
 
 go 1.15
 
