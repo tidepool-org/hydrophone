@@ -156,6 +156,21 @@ func TestInviteResponds(t *testing.T) {
 			},
 		},
 		{
+			desc:     "can have a duplicate invite if key is provided",
+			method:   http.MethodPost,
+			url:      fmt.Sprintf("/send/invite/%s", testing_uid2),
+			token:    testing_token_uid1,
+			respCode: http.StatusOK,
+			body: testJSONObject{
+				"key":   "abc123",
+				"email": testing_uid2 + "@email.org",
+				"permissions": testJSONObject{
+					"view": testJSONObject{},
+					"note": testJSONObject{},
+				},
+			},
+		},
+		{
 			desc:       "invite valid if email, permissons and not a duplicate",
 			returnNone: true,
 			method:     http.MethodPost,

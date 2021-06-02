@@ -26,12 +26,13 @@ type (
 	inviteBody struct {
 		Email       string                    `json:"email"`
 		Permissions commonClients.Permissions `json:"permissions"`
+		Key         string                    `json:"key"`
 	}
 )
 
 //Checks do they have an existing invite or are they already a team member
 //Or are they an existing user and already in the group?
-func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
+func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID, token string, resendExistingUnexpired bool, res http.ResponseWriter) (bool, *shoreline.UserData) {
 
 	//already has invite from this user?
 	invites, _ := a.Store.FindConfirmations(
@@ -42,8 +43,8 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 
 	if len(invites) > 0 {
 
-		//rule is we cannot send if the invite is not yet expired
-		if !invites[0].IsExpired() {
+		//rule is we do not send if the invite is not yet expired or we haven't explicitly allowed resending
+		if !invites[0].IsExpired() && !resendExistingUnexpired {
 			log.Println(statusExistingInviteMessage)
 			log.Println("last invite not yet expired")
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage)}
@@ -390,11 +391,14 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if existingInvite, invitedUsr := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, req.Header.Get(TP_SESSION_TOKEN), res); existingInvite {
+		// If a Key is passed in the request body, we are resending an existing invite
+		resendingExisting := ib.Key != ""
+
+		if existingInvite, invitedUsr := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, req.Header.Get(TP_SESSION_TOKEN), resendingExisting, res); existingInvite {
 			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
 			return
 		} else {
-			//None exist so lets create the invite
+			// No pending invide exists, or we're intentionally resending so lets prepare the invite
 			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
 
 			invite.Email = ib.Email
@@ -402,8 +406,16 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 				invite.UserId = invitedUsr.UserID
 			}
 
+			if resendingExisting {
+				invite.Key = ib.Key
+			}
+
 			if a.addOrUpdateConfirmation(req.Context(), invite, res) {
-				a.logMetric("invite created", req)
+				if resendingExisting {
+					a.logMetric("invite updated", req)
+				} else {
+					a.logMetric("invite created", req)
+				}
 
 				if err := a.addProfile(invite); err != nil {
 					log.Println("SendInvite: ", err.Error())
@@ -428,7 +440,11 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 					}
 
 					if a.createAndSendNotification(req, invite, emailContent) {
-						a.logMetric("invite sent", req)
+						if resendingExisting {
+							a.logMetric("invite re-sent", req)
+						} else {
+							a.logMetric("invite sent", req)
+						}
 					}
 				}
 
