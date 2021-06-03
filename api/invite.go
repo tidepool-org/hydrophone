@@ -398,7 +398,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
 			return
 		} else {
-			// No pending invide exists, or we're intentionally resending so lets prepare the invite
+			// No pending invite exists, or we're intentionally resending so lets prepare the invite
 			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
 
 			invite.Email = ib.Email
