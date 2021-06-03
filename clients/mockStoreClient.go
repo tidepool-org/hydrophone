@@ -105,7 +105,7 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 			notification.Team = &models.Team{}
 		}
 		notification.Team.ID = "123456"
-		notification.UserId = "123.456.789"
+		notification.UserId = "UID123"
 	}
 	if notification.Key == "medicalteam.invite.wrong.member" {
 		notification.Status = "pending"
@@ -123,7 +123,7 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 			notification.Team = &models.Team{}
 		}
 		notification.Team.ID = "123456"
-		notification.UserId = "123.456.789"
+		notification.UserId = "UID123"
 	}
 	if notification.Key == "invalid.key" {
 		notification.Status = ""
@@ -146,12 +146,12 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 	if notification.Key == "any.invite.pending.do.admin" {
 		notification.Status = "pending"
 		notification.Type = "medicalteam_do_admin"
-		notification.UserId = "123.456.789"
+		notification.UserId = "UID123"
 	}
 	if notification.Key == "any.invite.pending.remove" {
 		notification.Status = "pending"
 		notification.Type = "medicalteam_remove"
-		notification.UserId = "123.456.789"
+		notification.UserId = "UID123"
 	}
 	return notification, nil
 }

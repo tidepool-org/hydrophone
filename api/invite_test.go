@@ -413,9 +413,22 @@ func initTests() []toTest {
 			respCode:   403,
 			token:      testing_token_uid1,
 			body: testJSONObject{
-				"email":  "patient.doesnotexist@myemail.com",
+				"email":  "doesnotexist@myemail.com",
 				"teamId": "123456",
 				"role":   "patient",
+			},
+		},
+		// returns a 403 when account of the hcp does not exist
+		{
+			method:     "POST",
+			url:        "/send/team/invite",
+			returnNone: true,
+			respCode:   200,
+			token:      testing_token_uid1,
+			body: testJSONObject{
+				"email":  "doesnotexist@myemail.com",
+				"teamId": "123456",
+				"role":   "member",
 			},
 		},
 		// returns a 409 when user is already a member
@@ -637,7 +650,7 @@ func TestDismissInvite_NoPerms(t *testing.T) {
 	}
 }
 
-func TestInviteResponds(t *testing.T) {
+func TestCaregiverInvite(t *testing.T) {
 
 	inviteTests := []toTest{
 		{
@@ -744,125 +757,6 @@ func TestInviteResponds(t *testing.T) {
 			method:   http.MethodPut,
 			url:      fmt.Sprintf("/%s/invited/other@youremail.com", testing_uid1),
 			token:    testing_token_uid1,
-			respCode: http.StatusOK,
-		},
-		{
-			desc:     "valid request to accept an team invite",
-			method:   http.MethodPut,
-			url:      "/accept/team/invite",
-			token:    testing_token_uid1,
-			respCode: http.StatusOK,
-			body: testJSONObject{
-				"key": "medicalteam.invite.member",
-			},
-		},
-		{
-			desc:     "valid request to accept an team invite for a patient",
-			method:   http.MethodPut,
-			url:      "/accept/team/invite",
-			token:    testing_token_uid1,
-			respCode: http.StatusOK,
-			body: testJSONObject{
-				"key":  "medicalteam.invite.patient",
-				"role": "patient",
-			},
-		},
-		{
-			desc:     "not authorized request to accept a team invite",
-			method:   http.MethodPut,
-			url:      "/accept/team/invite",
-			token:    testing_token_uid1,
-			respCode: http.StatusForbidden,
-			body: testJSONObject{
-				"key": "medicalteam.invite.wrong.member",
-			},
-		},
-		{
-			desc:     "invitation does not exist",
-			method:   http.MethodPut,
-			url:      "/accept/team/invite",
-			token:    testing_token_uid1,
-			respCode: http.StatusForbidden,
-			body: testJSONObject{
-				"key": "invalid.key",
-			},
-		},
-		{
-			desc:     "invalid invitation",
-			method:   http.MethodPut,
-			url:      "/accept/team/invite",
-			token:    testing_token_uid1,
-			respCode: http.StatusNotFound,
-			body: testJSONObject{
-				"key": "key.does.not.exist",
-			},
-		},
-		{
-			desc:     "Any invite no key",
-			method:   http.MethodPut,
-			url:      "/accept/team/invite",
-			token:    testing_token_uid1,
-			respCode: http.StatusBadRequest,
-		},
-		{
-			desc:   "Any invite invalid key",
-			method: http.MethodPut,
-			url:    "/accept/team/invite",
-			token:  testing_token_uid1,
-			body: testJSONObject{
-				"key": "any.invite.invalid.key",
-			},
-			respCode: http.StatusNotFound,
-		},
-		{
-			desc:   "Any invite already completed",
-			method: http.MethodPut,
-			url:    "/accept/team/invite",
-			token:  testing_token_uid1,
-			body: testJSONObject{
-				"key": "any.invite.completed.key",
-			},
-			respCode: http.StatusForbidden,
-		},
-		{
-			desc:   "Error getting invite",
-			doBad:  true,
-			method: http.MethodPut,
-			url:    "/accept/team/invite",
-			token:  testing_token_uid1,
-			body: testJSONObject{
-				"key": "foo",
-			},
-			respCode: http.StatusInternalServerError,
-		},
-		{
-			desc:   "Any invite not a valid type",
-			method: http.MethodPut,
-			url:    "/accept/team/invite",
-			token:  testing_token_uid1,
-			body: testJSONObject{
-				"key": "invite.wrong.type",
-			},
-			respCode: http.StatusForbidden,
-		},
-		{
-			desc:   "Any valid invite do admin",
-			method: http.MethodPut,
-			url:    "/accept/team/invite",
-			token:  testing_token_uid1,
-			body: testJSONObject{
-				"key": "any.invite.pending.do.admin",
-			},
-			respCode: http.StatusOK,
-		},
-		{
-			desc:   "Any valid invite remove",
-			method: http.MethodPut,
-			url:    "/accept/team/invite",
-			token:  testing_token_uid1,
-			body: testJSONObject{
-				"key": "any.invite.pending.remove",
-			},
 			respCode: http.StatusOK,
 		},
 	}
@@ -989,4 +883,242 @@ func TestUpdateTeamRole_WrongBody(t *testing.T) {
 func TestDeleteTeamInvite_WrongBody(t *testing.T) {
 
 	sendTeamInvite("DELETE", "/send/team/leave/UID0000", t)
+}
+
+func TestAcceptTeamInvite(t *testing.T) {
+
+	inviteTests := []toTest{
+		{
+			desc:     "valid request to accept a team invite",
+			method:   http.MethodPut,
+			url:      "/accept/team/invite",
+			token:    testing_token_hcp,
+			respCode: http.StatusOK,
+			body: testJSONObject{
+				"key": "medicalteam.invite.member",
+			},
+		},
+		{
+			desc:     "valid request to accept a team invite for a patient",
+			method:   http.MethodPut,
+			url:      "/accept/team/invite",
+			token:    testing_token_uid1,
+			respCode: http.StatusOK,
+			body: testJSONObject{
+				"key":  "medicalteam.invite.patient",
+				"role": "patient",
+			},
+		},
+		{
+			desc:     "valid request to accept a team invite",
+			method:   http.MethodPut,
+			url:      "/accept/team/invite",
+			token:    testing_token_caregiver,
+			respCode: http.StatusForbidden,
+			body: testJSONObject{
+				"key": "medicalteam.invite.member",
+			},
+		},
+		{
+			desc:     "not authorized request to accept a team invite",
+			method:   http.MethodPut,
+			url:      "/accept/team/invite",
+			token:    testing_token_uid1,
+			respCode: http.StatusForbidden,
+			body: testJSONObject{
+				"key": "medicalteam.invite.wrong.member",
+			},
+		},
+		{
+			desc:     "invitation does not exist",
+			method:   http.MethodPut,
+			url:      "/accept/team/invite",
+			token:    testing_token_uid1,
+			respCode: http.StatusForbidden,
+			body: testJSONObject{
+				"key": "invalid.key",
+			},
+		},
+		{
+			desc:     "invalid invitation",
+			method:   http.MethodPut,
+			url:      "/accept/team/invite",
+			token:    testing_token_uid1,
+			respCode: http.StatusNotFound,
+			body: testJSONObject{
+				"key": "key.does.not.exist",
+			},
+		},
+		{
+			desc:     "Any invite no key",
+			method:   http.MethodPut,
+			url:      "/accept/team/invite",
+			token:    testing_token_uid1,
+			respCode: http.StatusBadRequest,
+		},
+		{
+			desc:   "Any invite invalid key",
+			method: http.MethodPut,
+			url:    "/accept/team/invite",
+			token:  testing_token_uid1,
+			body: testJSONObject{
+				"key": "any.invite.invalid.key",
+			},
+			respCode: http.StatusNotFound,
+		},
+		{
+			desc:   "Any invite already completed",
+			method: http.MethodPut,
+			url:    "/accept/team/invite",
+			token:  testing_token_uid1,
+			body: testJSONObject{
+				"key": "any.invite.completed.key",
+			},
+			respCode: http.StatusForbidden,
+		},
+		{
+			desc:   "Error getting invite",
+			doBad:  true,
+			method: http.MethodPut,
+			url:    "/accept/team/invite",
+			token:  testing_token_uid1,
+			body: testJSONObject{
+				"key": "foo",
+			},
+			respCode: http.StatusInternalServerError,
+		},
+		{
+			desc:   "Any invite not a valid type",
+			method: http.MethodPut,
+			url:    "/accept/team/invite",
+			token:  testing_token_uid1,
+			body: testJSONObject{
+				"key": "invite.wrong.type",
+			},
+			respCode: http.StatusForbidden,
+		},
+		{
+			desc:   "Any valid invite do admin",
+			method: http.MethodPut,
+			url:    "/accept/team/invite",
+			token:  testing_token_uid1,
+			body: testJSONObject{
+				"key": "any.invite.pending.do.admin",
+			},
+			respCode: http.StatusOK,
+		},
+		{
+			desc:   "Any valid invite remove",
+			method: http.MethodPut,
+			url:    "/accept/team/invite",
+			token:  testing_token_uid1,
+			body: testJSONObject{
+				"key": "any.invite.pending.remove",
+			},
+			respCode: http.StatusOK,
+		},
+	}
+
+	templatesPath, found := os.LookupEnv("TEMPLATE_PATH")
+	if found {
+		FAKE_CONFIG.I18nTemplatesPath = templatesPath
+	}
+	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath, mockLocalizer)
+
+	for idx, inviteTest := range inviteTests {
+		// don't run a test if it says to skip it
+		if inviteTest.skip {
+			continue
+		}
+		var testRtr = mux.NewRouter()
+
+		mockSeagull.SetMockNextCollectionCall(testing_uid1+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.SetMockNextCollectionCall(testing_uid2+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
+
+		teams1 := []store.Team{}
+		membersAccepted := store.Member{
+			UserID:           testing_uid1,
+			TeamID:           "123456",
+			InvitationStatus: "accepted",
+		}
+
+		mockPerms.SetMockNextCall(testing_token, teams1, nil)
+		mockPerms.SetMockNextCall(testing_token+testing_uid1, &membersAccepted, nil)
+		mockPerms.SetMockNextCall(inviteTest.token+testing_uid1, &membersAccepted, nil)
+
+		//default flow, fully authorized
+		hydrophone := InitApi(
+			FAKE_CONFIG,
+			mockStore,
+			mockNotifier,
+			mock_uid1Shoreline,
+			mockPerms,
+			mockSeagull,
+			mockPortal,
+			mockTemplates,
+		)
+
+		//testing when there is nothing to return from the store
+		if inviteTest.returnNone {
+			hydrophone = InitApi(
+				FAKE_CONFIG,
+				mockStoreEmpty,
+				mockNotifier,
+				mock_uid1Shoreline,
+				mockPerms,
+				mockSeagull,
+				mockPortal,
+				mockTemplates,
+			)
+		}
+		// testing when returning errors
+		if inviteTest.doBad {
+			hydrophone = InitApi(
+				FAKE_CONFIG,
+				mockStoreFails,
+				mockNotifier,
+				mock_uid1Shoreline,
+				mockPerms,
+				mockSeagull,
+				mockPortal,
+				mockTemplates,
+			)
+		}
+
+		hydrophone.SetHandlers("", testRtr)
+
+		var body = &bytes.Buffer{}
+		// build the body only if there is one defined in the test
+		if len(inviteTest.body) != 0 {
+			json.NewEncoder(body).Encode(inviteTest.body)
+		}
+		request, _ := http.NewRequest(inviteTest.method, inviteTest.url, body)
+		if inviteTest.token != "" {
+			request.Header.Set(TP_SESSION_TOKEN, inviteTest.token)
+		}
+		response := httptest.NewRecorder()
+		testRtr.ServeHTTP(response, request)
+
+		if response.Code != inviteTest.respCode {
+			t.Logf("TestId `%d` `%s` expected `%d` actual `%d`", idx, inviteTest.desc, inviteTest.respCode, response.Code)
+			t.Fail()
+		}
+
+		if response.Body.Len() != 0 && len(inviteTest.response) != 0 {
+			var result = &testJSONObject{}
+			err := json.NewDecoder(response.Body).Decode(result)
+			if err != nil {
+				//TODO: not dealing with arrays at the moment ....
+				if err.Error() != "json: cannot unmarshal array into Go value of type api.testJSONObject" {
+					t.Logf("TestId `%d` `%s` errored `%s` body `%v`", idx, inviteTest.desc, err.Error(), response.Body)
+					t.Fail()
+				}
+			}
+
+			if cmp := result.deepCompare(&inviteTest.response); cmp != "" {
+				t.Logf("TestId `%d` `%s` URL `%s` body `%s`", idx, inviteTest.desc, inviteTest.url, cmp)
+				t.Fail()
+			}
+		}
+	}
 }
