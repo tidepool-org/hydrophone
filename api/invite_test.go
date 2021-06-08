@@ -526,6 +526,145 @@ func TestTeam(t *testing.T) {
 	}
 }
 
+func TestInvitesLocales(t *testing.T) {
+	tests := []toTest{
+		//When the invitee is not a member yet:
+		{
+			desc:       "Caregiver invite to a non registered person, expect DE Language",
+			returnNone: true,
+			method:     http.MethodPost,
+			url:        fmt.Sprintf("/send/invite/%s", testing_uid1),
+			token:      testing_token_uid1,
+			respCode:   http.StatusOK,
+			body: testJSONObject{
+				"email":       "doesnotexist@myemail.com",
+				"permissions": testJSONObject{"view": testJSONObject{}},
+			},
+			customHeaders: map[string]string{
+				"x-tidepool-language": "de",
+			},
+			emailSubject: "Einladung Diabetes Care Team",
+		},
+		{
+			desc:       "Medical team invite to a non registered person, expect DE Language",
+			method:     "POST",
+			returnNone: true,
+			url:        "/send/team/invite",
+			respCode:   200,
+			token:      testing_token_uid2,
+			body: testJSONObject{
+				"email":  "doesnotexist@myemail.com",
+				"teamId": "123456",
+				"role":   "member",
+			},
+			customHeaders: map[string]string{
+				"x-tidepool-language": "de",
+			},
+			emailSubject: "Einladung zur Teilnahme an einem Betreuungsteam",
+		},
+		// WHen the member is already a user
+		{
+			desc:       "Caregiver invite to an existing user, expect user's language",
+			returnNone: true,
+			method:     http.MethodPost,
+			url:        fmt.Sprintf("/send/invite/%s", testing_uid1),
+			token:      testing_token_uid1,
+			respCode:   http.StatusOK,
+			body: testJSONObject{
+				"email":       "caregiver@myemail.com",
+				"permissions": testJSONObject{"view": testJSONObject{}},
+			},
+			customHeaders: map[string]string{
+				"x-tidepool-language": "de",
+			},
+			emailSubject: "Invitation patient",
+		},
+		{
+			method:     "POST",
+			returnNone: true,
+			url:        "/send/team/invite",
+			respCode:   200,
+			token:      testing_token_uid1,
+			body: testJSONObject{
+				"email":  "hcpMember@myemail.com",
+				"teamId": "123456",
+				"role":   "member",
+			},
+			customHeaders: map[string]string{
+				"x-tidepool-language": "de",
+			},
+			emailSubject: "Invitación para unirse a un equipo de atención",
+		},
+	}
+	templatesPath, found := os.LookupEnv("TEMPLATE_PATH")
+	if found {
+		FAKE_CONFIG.I18nTemplatesPath = templatesPath
+	}
+	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath, mockLocalizer)
+
+	for idx, test := range tests {
+		var testRtr = initTestingTeamRouter(test.returnNone)
+		mockSeagull.SetMockNextCollectionCall(testing_uid1+"preferences", `{"displayLanguageCode":"fr"}`, nil)
+		mockSeagull.SetMockNextCollectionCall(testing_uid2+"preferences", `{"displayLanguageCode":"es"}`, nil)
+		// mock user preference:
+		// mockSeagull.SetMockNextCollectionCall(testing_uid2+"@email.org"+"preferences", `{"DisplayLanguage": "de"}`, nil)
+		teams1 := []store.Team{}
+		membersAccepted := store.Member{
+			UserID:           testing_token_uid2,
+			TeamID:           "123456",
+			InvitationStatus: "accepted",
+		}
+
+		mockPerms.SetMockNextCall(testing_token_uid1, teams1, nil)
+		mockPerms.SetMockNextCall(testing_token_uid2, teams1, nil)
+		mockPerms.SetMockNextCall(testing_token_uid1+testing_uid2, &membersAccepted, nil)
+		mockPerms.SetMockNextCall(testing_token_uid1, []store.DataShare{}, nil)
+		var body = &bytes.Buffer{}
+		if len(test.body) != 0 {
+			json.NewEncoder(body).Encode(test.body)
+		}
+		request, _ := http.NewRequest(test.method, test.url, body)
+		if test.token != "" {
+			request.Header.Set(TP_SESSION_TOKEN, testing_token_uid1)
+		}
+		if test.customHeaders != nil {
+			for header, value := range test.customHeaders {
+				request.Header.Set(header, value)
+			}
+		}
+		response := httptest.NewRecorder()
+		testRtr.ServeHTTP(response, request)
+
+		if response.Code != test.respCode {
+			t.Fatalf("Test %d url: '%s'\nNon-expected status code %d (expected %d):\n\tbody: %v",
+				idx, test.url, response.Code, test.respCode, response.Body)
+		}
+		t.Logf("Test %d url: '%s'\nExpected status code %d (expected %d):\n\tbody: %v",
+			idx, test.url, response.Code, test.respCode, response.Body)
+
+		if response.Body.Len() != 0 && len(test.response) != 0 {
+			// compare bodies by comparing the unmarshalled JSON results
+			var result = &testJSONObject{}
+
+			if err := json.NewDecoder(response.Body).Decode(result); err != nil {
+				t.Logf("Err decoding nonempty response body: [%v]\n [%v]\n", err, response.Body)
+				return
+			}
+
+			if cmp := result.deepCompare(&test.response); cmp != "" {
+				t.Fatalf("Test %d url: '%s'\n\t%s\n", idx, test.url, cmp)
+			}
+		}
+
+		if test.emailSubject != "" {
+			if emailSubjectSent := mockNotifier.GetLastEmailSubject(); emailSubjectSent != test.emailSubject {
+				t.Fatalf("Test %d url: '%s'\nNon-expected email subject %s (expected %s)",
+					idx, test.url, emailSubjectSent, test.emailSubject)
+			}
+		}
+	}
+}
+
 func initWrongBodies() []testJSONObject {
 	var bodies []testJSONObject
 	bodies = append(

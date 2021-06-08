@@ -59,9 +59,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	// or ENglish as default values
 	// In case the resetter is found a known user and has a language set, the language will be overridden in a later step
 	if resetterLanguage = GetUserChosenLanguage(req); resetterLanguage == "" {
-		if resetterLanguage = GetBrowserPreferredLanguage(req); resetterLanguage == "" {
-			resetterLanguage = "en"
-		}
+		resetterLanguage = "en"
 	}
 
 	email := vars["useremail"]

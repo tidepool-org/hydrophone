@@ -274,9 +274,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 					// however, just to play it safe, we can continue taking the browser preferred language
 					// or ENglish as default values
 					if signerLanguage = GetUserChosenLanguage(req); signerLanguage == "" {
-						if signerLanguage = GetBrowserPreferredLanguage(req); signerLanguage == "" {
-							signerLanguage = "en"
-						}
+						signerLanguage = "en"
 					}
 
 					if a.createAndSendNotification(req, newSignUp, emailContent, signerLanguage) {
@@ -357,9 +355,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				// so we rely on the language chosen by the user on the page through the list box
 				// otherwise if null it will be browser preferences otherwise EN
 				if signerLanguage = GetUserChosenLanguage(req); signerLanguage == "" {
-					if signerLanguage = GetBrowserPreferredLanguage(req); signerLanguage == "" {
-						signerLanguage = "en"
-					}
+					signerLanguage = "en"
 				}
 
 				if a.createAndSendNotification(req, found, emailContent, signerLanguage) {

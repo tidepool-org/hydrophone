@@ -852,7 +852,9 @@ func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars m
 				res.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			err = a.perms.RemoveTeamMember(tokenValue, conf.Team.ID, conf.UserId)
+			if conf.UserId != "" {
+				err = a.perms.RemoveTeamMember(tokenValue, conf.Team.ID, conf.UserId)
+			}
 		case models.TypeCareteamInvite:
 			//verify the request comes from the creator
 			if !a.isAuthorizedUser(token, conf.CreatorId) {
@@ -902,7 +904,7 @@ func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars m
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	// By default, the invitee language will be "en" for Englih (as we don't know which language suits him)
 	// In case the invitee is a known user, the language will be overriden in a later step
-	var inviteeLanguage = "en"
+	var inviteeLanguage = GetUserChosenLanguage(req)
 	if token := a.token(res, req); token != nil {
 
 		invitorID := vars["userid"]
@@ -1018,7 +1020,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	// By default, the invitee language will be "en" for Englih (as we don't know which language suits him)
 	// In case the invitee is a known user, the language will be overriden in a later step
-	var inviteeLanguage = "en"
+	var inviteeLanguage = GetUserChosenLanguage(req)
 	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
 	token := a.token(res, req)
 	if token == nil {
@@ -1196,7 +1198,7 @@ func (a *Api) inviteHcp(invitedUsr *schema.UserData, member store.Member, token 
 func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	// By default, the invitee language will be "en" for Englih (as we don't know which language suits him)
 	// In case the invitee is a known user, the language will be overriden in a later step
-	var inviteeLanguage = "en"
+	var inviteeLanguage = GetUserChosenLanguage(req)
 	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
 	token := a.token(res, req)
 	if token == nil {
@@ -1320,7 +1322,7 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	// By default, the invitee language will be "en" for Englih (as we don't know which language suits him)
 	// In case the invitee is a known user, the language will be overriden in a later step
-	var inviteeLanguage = "en"
+	var inviteeLanguage = GetUserChosenLanguage(req)
 	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
 	token := a.token(res, req)
 	if token == nil {
