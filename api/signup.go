@@ -32,6 +32,7 @@ const (
 	STATUS_MISMATCH_BIRTHDAY = "Birthday specified does not match patient birthday"
 	STATUS_PATIENT_NOT_AUTH  = "Patient cannot be member of care team"
 	STATUS_MEMBER_NOT_AUTH   = "Non patient users cannot be a patient of care team"
+	STATUS_PATIENT_NOT_CAREGIVER  = "Patient cannot be added as caregiver"
 )
 
 const (

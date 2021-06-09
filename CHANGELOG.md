@@ -7,6 +7,7 @@ This API sends notifications to users for things like forgotten passwords, initi
 ### Fixed
 - YLP-802: Handle special case when a team invite is sent to someone who is not yet registered
 - YLP-795: Set invitation language with the sender's language when the invitee's language is not known
+- YLP-778: A patient shouldn't be able to add another patient as a caregiver
 
 ### Engineering
 - YLP-804 Implement hydrophone client for harbour

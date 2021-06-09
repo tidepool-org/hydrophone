@@ -57,7 +57,6 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 		}
 	}
 
-	//already in the group?
 	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
 
 	if invitedUsr != nil && invitedUsr.UserID != "" {
@@ -937,6 +936,13 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
 			return
 		} else {
+
+			if invitedUsr != nil && invitedUsr.HasRole("patient") {
+				statusErr := &status.StatusError{Status: status.NewStatus(http.StatusMethodNotAllowed, STATUS_PATIENT_NOT_CAREGIVER)}
+				a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+				return
+			}
+
 			//None exist so lets create the invite
 			invite, _ := models.NewConfirmation(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID)
 
@@ -970,7 +976,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						fullName = invite.Creator.Profile.Patient.FullName
 					}
 
-					var webPath = "signup/clinician"
+					var webPath = "signup"
 
 					// if invitee is already a user (ie already has an account), he won't go to signup but login instead
 					if invite.UserId != "" {

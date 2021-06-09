@@ -115,7 +115,7 @@ func (m *testingShorelingMock) GetUser(userID, token string) (*schema.UserData, 
 		return nil, nil
 	}
 
-	return &schema.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
+	return &schema.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org", Roles: []string{"hcp"}}, nil
 }
 func (m *testingShorelingMock) UpdateUser(userID string, userUpdate schema.UserUpdate, token string) error {
 	return nil

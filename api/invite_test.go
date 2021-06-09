@@ -18,7 +18,7 @@ func initTestingRouterNoPerms() *mux.Router {
 	testRtr := mux.NewRouter()
 	hydrophone := InitApi(
 		FAKE_CONFIG,
-		mockStore,
+		mockStoreEmpty,
 		mockNotifier,
 		mock_uid1Shoreline,
 		mockPerms,
@@ -729,6 +729,29 @@ func TestSendInvite_NoPerms(t *testing.T) {
 	}
 }
 
+func TestSendInvite_ToAnother_Patient_Should_Respond_MethodNotAllowed(t *testing.T) {
+
+	tstRtr := initTestingRouterNoPerms()
+	sendBody := &bytes.Buffer{}
+	json.NewEncoder(sendBody).Encode(testJSONObject{
+		"email": "patient.team@myemail.com",
+		"permissions": testJSONObject{
+			"view": testJSONObject{},
+			"note": testJSONObject{},
+		},
+	})
+
+	request, _ := http.NewRequest("POST", fmt.Sprintf("/send/invite/%s", testing_uid1), sendBody)
+	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
+	response := httptest.NewRecorder()
+	tstRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusMethodNotAllowed {
+		t.Logf("expected %d actual %d", http.StatusMethodNotAllowed, response.Code)
+		t.Fail()
+	}
+}
+
 func TestGetReceivedInvitations_NoPerms(t *testing.T) {
 
 	tstRtr := initTestingRouterNoPerms()
@@ -832,7 +855,7 @@ func TestCaregiverInvite(t *testing.T) {
 			token:      testing_token_uid1,
 			respCode:   http.StatusOK,
 			body: testJSONObject{
-				"email":       testing_uid2 + "@email.org",
+				"email":       testing_uid2 + "hcp@email.org",
 				"permissions": testJSONObject{"view": testJSONObject{}},
 			},
 		},
@@ -916,6 +939,7 @@ func TestCaregiverInvite(t *testing.T) {
 		mockSeagull.SetMockNextCollectionCall("personToInvite@email.com"+"preferences", `{"Something":"anit no thing"}`, nil)
 		mockSeagull.SetMockNextCollectionCall(testing_uid1+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
 		mockSeagull.SetMockNextCollectionCall(testing_uid2+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.SetMockNextCollectionCall(testing_uid2+"hcp@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
 
 		teams1 := []store.Team{}
 		membersAccepted := store.Member{
