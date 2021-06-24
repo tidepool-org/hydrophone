@@ -80,6 +80,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 			a.sendError(res, statusErr.Code, statusErr.Reason, statusErr.Error())
 		}
 
+		res.Header().Set("content-type", "application/json")
 		res.WriteHeader(http.StatusOK)
 		res.Write(response.Body)
 		return
