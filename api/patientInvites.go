@@ -124,6 +124,87 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 	}
 }
 
+// Cancel or dismiss patient invite for a given clinic
+func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if token := a.token(res, req); token != nil {
+		if !a.Config.ClinicServiceEnabled {
+			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
+			return
+		}
+
+		ctx := req.Context()
+		clinicId := vars["clinicId"]
+		inviteId := vars["inviteId"]
+
+		if clinicId == "" || inviteId == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		accept := &models.Confirmation{
+			ClinicId: clinicId,
+			Key:      inviteId,
+			Status:   models.StatusPending,
+		}
+
+		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
+		if err != nil {
+			a.logger.Errorw("error while finding confirmation", zap.Error(err))
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+		if conf == nil {
+			a.logger.Warn("confirmation not found")
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+			return
+		}
+
+		updatedStatus := models.StatusCanceled
+		if token.UserID != conf.CreatorId {
+			updatedStatus = models.StatusDeclined
+			if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
+				a.logger.Errorw("token owner is not a clinic admin", zap.Error(err))
+				return
+			}
+		}
+
+		validationErrors := make([]error, 0)
+		conf.ValidateStatus(models.StatusPending, &validationErrors)
+		conf.ValidateType(models.TypeCareteamInvite, &validationErrors)
+		conf.ValidateClinicID(clinicId, &validationErrors)
+
+		if len(validationErrors) > 0 {
+			for _, validationError := range validationErrors {
+				a.logger.Warnw("forbidden as there was a expectation mismatch", zap.Error(validationError))
+			}
+			a.sendModelAsResWithStatus(
+				res,
+				&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		conf.UpdateStatus(updatedStatus)
+		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
+			a.logger.Warn("error adding or updating confirmation")
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+			return
+		}
+
+		if conf.Status == models.StatusDeclined {
+			a.logMetric("decline_patient_invite", req)
+		} else if conf.Status == models.StatusCanceled {
+			a.logMetric("cancel_clinic_invite", req)
+		}
+
+		a.sendModelAsResWithStatus(res, conf, http.StatusOK)
+		return
+	}
+}
+
 func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confirmation) (*clinics.Patient, error) {
 	var permissions commonClients.Permissions
 	if err := confirmation.DecodeContext(&permissions); err != nil {
