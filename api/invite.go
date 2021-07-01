@@ -128,7 +128,6 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 	}
 }
 
-
 //Get the still-pending invitations for a group you own or are an admin of.
 //These are the invitations you have sent that have not been accepted.
 //There is no way to tell if an invitation has been ignored.
@@ -460,5 +459,92 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 		}
 
+	}
+}
+
+//Resend a care team invite
+func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if token := a.token(res, req); token != nil {
+		inviteId := vars["inviteId"]
+
+		if inviteId == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		find := &models.Confirmation{
+			Key:    inviteId,
+			Status: models.StatusPending,
+			Type:   models.TypeCareteamInvite,
+		}
+
+		invite, err := a.findExistingConfirmation(req.Context(), find, res)
+		if err != nil {
+			a.logger.Errorw("error while finding confirmation", zap.Error(err))
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+		if invite == nil || invite.ClinicId != "" {
+			a.logger.Warn("confirmation not found")
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+			return
+		}
+
+		if permissions, err := a.tokenUserHasRequestedPermissions(token, invite.CreatorId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			return
+		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			return
+		}
+
+		if err := invite.ResetKey(); err != nil {
+			a.logger.Error("Unable to reset invite key", zap.Error(err))
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+
+		// Make sure we're not overwriting an existing invite
+		duplicate, err := a.findExistingConfirmation(req.Context(), &models.Confirmation{Key: invite.Key}, res)
+		if duplicate != nil {
+			a.logger.Errorw("found confirmation with duplicate key")
+		}
+		if err != nil {
+			a.logger.Errorw("unable to find confirmation", zap.Error(err))
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+
+		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
+			a.logMetric("invite updated", req)
+
+			if err := a.addProfile(invite); err != nil {
+				a.logger.Warn("Resend invite", zap.Error(err))
+			} else {
+				fullName := invite.Creator.Profile.FullName
+				if invite.Creator.Profile.Patient.IsOtherPerson {
+					fullName = invite.Creator.Profile.Patient.FullName
+				}
+
+				var webPath = "signup"
+				if invite.UserId != "" {
+					webPath = "login"
+				}
+
+				emailContent := map[string]interface{}{
+					"CareteamName": fullName,
+					"Email":        invite.Email,
+					"WebPath":      webPath,
+				}
+
+				if a.createAndSendNotification(req, invite, emailContent) {
+					a.logMetric("invite resent", req)
+				}
+			}
+
+			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+			return
+		}
 	}
 }
