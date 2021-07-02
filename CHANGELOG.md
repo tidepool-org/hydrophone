@@ -3,6 +3,10 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
+## 1.7.0 - 2021-07-01
+### Engineering
+- YLP-867: Create a new route to cancel invites sent to a specific email address.
+
 ## 1.6.7 - 2021-06-15
 ### Fixed
 - YLP-802: Handle special case when a team invite is sent to someone who is not yet registered

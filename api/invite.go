@@ -887,6 +887,49 @@ func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars m
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 }
 
+// @Summary Cancel all invites
+// @Description Server token can cancel all team invites for a given user
+// @ID hydrophone-api-cancelAllInvites
+// @Accept  json
+// @Produce  json
+// @Param email path string true "invitee email address"
+// @Success 200 {string} string "OK"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provide sufficient privileges"
+// @Failure 403 {object} status.Status "Authorization token is invalid"
+// @Failure 500 {object} status.Status "Error (internal) while processing the data"
+// @Router /cancel/all/{email} [post]
+// @security TidepoolAuth
+func (a *Api) CancelAllInvites(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	token := a.token(res, req)
+	inviteeEmail := vars["email"]
+	if !token.IsServer {
+		a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+		return
+	}
+
+	invites, _ := a.Store.FindConfirmations(
+		req.Context(),
+		&models.Confirmation{CreatorId: "", Email: inviteeEmail},
+		[]models.Status{models.StatusPending},
+		[]models.Type{},
+	)
+	if len(invites) == 0 {
+		return
+	}
+
+	for _, inv := range invites {
+		inv.UpdateStatus(models.StatusCanceled)
+		if !a.addOrUpdateConfirmation(req.Context(), inv, res) {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+			log.Printf("CancelAllInvite failed: [%s]", statusErr.Error())
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+			return
+		}
+	}
+	log.Printf("cancel invites for [%s]", inviteeEmail)
+	res.WriteHeader(http.StatusOK)
+}
+
 // @Summary Send a invite to join a patient's team
 // @Description  Send a invite to new or existing users to join the patient's team
 // @ID hydrophone-api-SendInvite

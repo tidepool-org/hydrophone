@@ -8,11 +8,12 @@
            "mode": "debug",
            "program": "${workspaceRoot}",
            "env": {
-                "TIDEPOOL_HYDROPHONE_ENV":"{ \"portal\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://localhost:9507\"] } }, \"hakken\": { \"host\": \"fake-hakken\", \"skipHakken\":true } }",
-                "TIDEPOOL_HYDROPHONE_SERVICE":"{ \"service\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"hydrophone\" : { \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"D:\/git\/mdblp\/go\/src\/github.com\/tidepool-org\/hydrophone\/templates\", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://diabeloop.zendesk.com/hc/articles/360021365373\" }, \"notifierType\": \"null\" }",
+                "TIDEPOOL_HYDROPHONE_ENV":"{ \"portal\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://api-private:3000\"] } }, \"hakken\": { \"host\": \"fake-hakken\", \"skipHakken\":true } }",
+                "TIDEPOOL_HYDROPHONE_SERVICE":"{ \"service\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"hydrophone\" : { \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"/temaple/path/local", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://xxxx\" }, \"notifierType\": \"null\" }",
                 "SERVICE_NAME":"hydrophone",
-                "SEAGULL_HOST":"http://localhost:9120",
-                "SHORELINE_HOST":"http://localhost:9107",
+                "SEAGULL_HOST":"http://api-private:3000/metadata",
+                "SHORELINE_HOST":"http://api-private:3000/auth",
+                "CREW_HOST":"http://api-private:3000/crew/v0",
                 "SERVER_SECRET": "shoreline shared server secret",
                 "SHORELINE_TOKEN_REFRESH_INTERVAL":"1h",
                 "SHORELINE_TOKEN_GET_INTERVAL":"5m",
@@ -28,8 +29,8 @@
                // Use this below to override local AWS credentials. Otherwise local credentials will be used so the user/profile needs to have rights for sending emails
                // "AWS_PROFILE":"${NON_DEFAULT_PROFILE}" for using a .aws/credentials non default profile
                // OR
-               // "AWS_ACCESS_KEY_ID":"",
-               // "AWS_SECRET_ACCESS_KEY":""
+               "AWS_ACCESS_KEY_ID":"xxxxx",
+               "AWS_SECRET_ACCESS_KEY":"xxxxx"
            },
            "args": []
        },

@@ -15,6 +15,7 @@ require (
 	github.com/swaggo/swag v1.7.0
 	github.com/tidepool-org/go-common v0.0.0-00010101000000-000000000000
 	go.mongodb.org/mongo-driver v1.4.1
+	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 	golang.org/x/text v0.3.5
 	gopkg.in/yaml.v2 v2.4.0
 )

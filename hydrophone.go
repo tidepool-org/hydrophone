@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"strings"
 	"syscall"
 
 	"github.com/tidepool-org/go-common/clients/portal"
@@ -65,6 +66,12 @@ func main() {
 		logger.Panic("Problem loading config ", err)
 	}
 
+	isTestEnv, found := os.LookupEnv("TEST")
+	if found && strings.ToUpper(isTestEnv) == "TRUE" {
+		config.Api.EnableTestRoutes = true
+	} else {
+		config.Api.EnableTestRoutes = false
+	}
 	region, found := os.LookupEnv("REGION")
 	if found {
 		config.Ses.Region = region
