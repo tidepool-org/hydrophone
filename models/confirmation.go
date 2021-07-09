@@ -14,6 +14,7 @@ type (
 		Key       string          `json:"key" bson:"_id"`
 		Type      Type            `json:"type" bson:"type"`
 		Email     string          `json:"email" bson:"email"`
+		ClinicId  string          `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
 		Creator   Creator         `json:"creator" bson:"creator"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
@@ -27,8 +28,10 @@ type (
 
 	//basic details for the creator of the confirmation
 	Creator struct {
-		*Profile `json:"profile" bson:"-"`
-		UserId   string `json:"userid" bson:"-"` //for compatability with blip
+		*Profile   `json:"profile" bson:"-"`
+		UserId     string `json:"userid" bson:"-"` //for compatability with blip
+		ClinicId   string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
+		ClinicName string `json:"clinicName,omitempty" bson:"clinicName,omitempty"`
 	}
 	Patient struct {
 		Birthday      string `json:"birthday"`
@@ -60,10 +63,11 @@ const (
 	StatusCanceled  Status = "canceled"
 	StatusDeclined  Status = "declined"
 	//Available Type's
-	TypePasswordReset  Type = "password_reset"
-	TypeCareteamInvite Type = "careteam_invitation"
-	TypeSignUp         Type = "signup_confirmation"
-	TypeNoAccount      Type = "no_account"
+	TypePasswordReset   Type = "password_reset"
+	TypeCareteamInvite  Type = "careteam_invitation"
+	TypeClinicianInvite Type = "clinician_invitation"
+	TypeSignUp          Type = "signup_confirmation"
+	TypeNoAccount       Type = "no_account"
 )
 
 var (
@@ -145,6 +149,16 @@ func (c *Confirmation) ValidateUserID(expectedUserID string, validationErrors *[
 		*validationErrors = append(
 			*validationErrors,
 			fmt.Errorf("Confirmation expected UserID of `%s` but had `%s`", expectedUserID, c.UserId),
+		)
+	}
+	return c
+}
+
+func (c *Confirmation) ValidateClinicID(expectedClinicID string, validationErrors *[]error) *Confirmation {
+	if expectedClinicID != c.ClinicId {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("confirmation expected ClinicId of `%s` but had `%s`", expectedClinicID, c.UserId),
 		)
 	}
 	return c

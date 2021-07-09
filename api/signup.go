@@ -126,6 +126,23 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
 			return
+		} else if len(usrDetails.Emails) == 0 {
+			// Delete existing any existing invites if the email address is empty
+			existing, err := a.Store.FindConfirmation(req.Context(), &models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
+			if err != nil {
+				log.Printf("sendSignUp: error finding old invite [%s]", err.Error())
+				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+				return
+			}
+			if existing != nil {
+				if err := a.Store.RemoveConfirmation(req.Context(), existing); err != nil {
+					log.Printf("sendSignUp: error deleting old [%s]", err.Error())
+					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+					return
+				}
+			}
+			res.WriteHeader(http.StatusOK)
+			return
 		} else {
 
 			// get any existing confirmations

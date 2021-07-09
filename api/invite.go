@@ -3,9 +3,12 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 
+	clinics "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
@@ -14,11 +17,11 @@ import (
 
 const (
 	//Status message we return from the service
-	statusExistingInviteMessage = "There is already an existing invite"
-	statusExistingMemberMessage = "The user is already an existing member"
-	statusInviteNotFoundMessage = "No matching invite was found"
-	statusInviteCanceledMessage = "Invite has been canceled"
-	statusForbiddenMessage      = "Forbidden to perform requested operation"
+	statusExistingInviteMessage  = "There is already an existing invite"
+	statusExistingMemberMessage  = "The user is already an existing member"
+	statusExistingPatientMessage = "The user is already a patient of the clinic"
+	statusInviteNotFoundMessage  = "No matching invite was found"
+	statusForbiddenMessage       = "Forbidden to perform requested operation"
 )
 
 type (
@@ -31,7 +34,7 @@ type (
 
 //Checks do they have an existing invite or are they already a team member
 //Or are they an existing user and already in the group?
-func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID, token string, res http.ResponseWriter) (bool, *shoreline.UserData) {
+func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID string, res http.ResponseWriter) bool {
 
 	//already has invite from this user?
 	invites, _ := a.Store.FindConfirmations(
@@ -48,10 +51,27 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 			log.Println("last invite not yet expired")
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-			return true, nil
+			return true
 		}
 	}
 
+	return false
+}
+
+func (a *Api) checkExistingPatientOfClinic(ctx context.Context, clinicId, patientId string) (bool, error) {
+	response, err := a.clinics.GetPatientWithResponse(ctx, clinics.ClinicId(clinicId), clinics.PatientId(patientId))
+	if err != nil {
+		return false, err
+	} else if response.StatusCode() == http.StatusNotFound {
+		return false, nil
+	} else if response.StatusCode() == http.StatusOK {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("unexpected status code %v when checking if user is existing patient", response.StatusCode())
+}
+
+func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, res http.ResponseWriter) (bool, *shoreline.UserData) {
 	//already in the group?
 	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
 
@@ -66,6 +86,7 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 		}
 		return false, invitedUsr
 	}
+
 	return false, nil
 }
 
@@ -84,7 +105,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		}
 		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeID != token.UserID {
-			log.Printf("GetReceivedInvitations %s ", STATUS_UNAUTHORIZED)
+			a.logger.Warnf("token owner %s is not authorized to accept invite of for %s", token.UserID, inviteeID)
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
@@ -93,15 +114,13 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 
 		//find all oustanding invites were this user is the invite//
 		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
-
-		//log.Printf("GetReceivedInvitations: found [%d] pending invite(s)", len(found))
 		if err != nil {
-			log.Printf("GetReceivedInvitations: error [%v] when finding peding invites ", err)
+			a.logger.Errorw("error while finding pending invites", zap.Error(err))
 		}
 
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(req.Context(), inviteeID, invites)
-			log.Printf("GetReceivedInvitations: found and have checked [%d] invites ", len(invites))
+			a.logger.Infof("found and have checked [%d] invites ", len(invites))
 			a.logMetric("get received invites", req)
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
 			return
@@ -390,8 +409,11 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if existingInvite, invitedUsr := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, req.Header.Get(TP_SESSION_TOKEN), res); existingInvite {
+		if existingInvite := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, res); existingInvite {
 			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
+			return
+		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email, res); alreadyMember {
+			a.logger.Infof("invited [%s] user is already a member of the care team of %v", ib.Email, invitorID)
 			return
 		} else {
 			//None exist so lets create the invite
@@ -437,5 +459,92 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 		}
 
+	}
+}
+
+//Resend a care team invite
+func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if token := a.token(res, req); token != nil {
+		inviteId := vars["inviteId"]
+
+		if inviteId == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		find := &models.Confirmation{
+			Key:    inviteId,
+			Status: models.StatusPending,
+			Type:   models.TypeCareteamInvite,
+		}
+
+		invite, err := a.findExistingConfirmation(req.Context(), find, res)
+		if err != nil {
+			a.logger.Errorw("error while finding confirmation", zap.Error(err))
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+		if invite == nil || invite.ClinicId != "" {
+			a.logger.Warn("confirmation not found")
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+			return
+		}
+
+		if permissions, err := a.tokenUserHasRequestedPermissions(token, invite.CreatorId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			return
+		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			return
+		}
+
+		if err := invite.ResetKey(); err != nil {
+			a.logger.Error("Unable to reset invite key", zap.Error(err))
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+
+		// Make sure we're not overwriting an existing invite
+		duplicate, err := a.findExistingConfirmation(req.Context(), &models.Confirmation{Key: invite.Key}, res)
+		if duplicate != nil {
+			a.logger.Errorw("found confirmation with duplicate key")
+		}
+		if err != nil {
+			a.logger.Errorw("unable to find confirmation", zap.Error(err))
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+
+		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
+			a.logMetric("invite updated", req)
+
+			if err := a.addProfile(invite); err != nil {
+				a.logger.Warn("Resend invite", zap.Error(err))
+			} else {
+				fullName := invite.Creator.Profile.FullName
+				if invite.Creator.Profile.Patient.IsOtherPerson {
+					fullName = invite.Creator.Profile.Patient.FullName
+				}
+
+				var webPath = "signup"
+				if invite.UserId != "" {
+					webPath = "login"
+				}
+
+				emailContent := map[string]interface{}{
+					"CareteamName": fullName,
+					"Email":        invite.Email,
+					"WebPath":      webPath,
+				}
+
+				if a.createAndSendNotification(req, invite, emailContent) {
+					a.logMetric("invite resent", req)
+				}
+			}
+
+			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+			return
+		}
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	clinicsClient "github.com/tidepool-org/clinic/client"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"reflect"
@@ -25,19 +27,22 @@ import (
 type (
 	Api struct {
 		Store      clients.StoreClient
+		clinics    clinicsClient.ClientWithResponsesInterface
 		notifier   clients.Notifier
 		templates  models.Templates
 		sl         shoreline.Client
 		gatekeeper commonClients.Gatekeeper
 		seagull    commonClients.Seagull
 		metrics    highwater.Client
+		logger     *zap.SugaredLogger
 		Config     Config
 	}
 	Config struct {
-		ServerSecret string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
-		WebUrl       string `split_words:"true" required:"true"`
-		AssetUrl     string `split_words:"true" required:"true"`
-		Protocol     string `default:"http"`
+		ServerSecret         string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
+		ClinicServiceEnabled bool   `envconfig:"TIDEPOOL_CLINIC_SERVICE_ENABLED" default:"false"`
+		WebUrl               string `split_words:"true" required:"true"`
+		AssetUrl             string `split_words:"true" required:"true"`
+		Protocol             string `default:"http"`
 	}
 
 	// this just makes it easier to bind a handler for the Handle function
@@ -53,7 +58,9 @@ const (
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
+	STATUS_ERR_FINDING_CLINIC        = "Error finding the clinic"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
+	STATUS_ERR_CREATING_PATIENT      = "Error creating patient"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
 
 	//returned status messages
@@ -66,6 +73,7 @@ const (
 
 func NewApi(
 	cfg Config,
+	clinics clinicsClient.ClientWithResponsesInterface,
 	store clients.StoreClient,
 	ntf clients.Notifier,
 	sl shoreline.Client,
@@ -73,16 +81,19 @@ func NewApi(
 	metrics highwater.Client,
 	seagull commonClients.Seagull,
 	templates models.Templates,
+	logger *zap.SugaredLogger,
 ) *Api {
 	return &Api{
 		Store:      store,
 		Config:     cfg,
+		clinics:    clinics,
 		notifier:   ntf,
 		sl:         sl,
 		gatekeeper: gatekeeper,
 		metrics:    metrics,
 		seagull:    seagull,
 		templates:  templates,
+		logger:     logger,
 	}
 }
 
@@ -132,15 +143,22 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	csend.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
 	csend.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	csend.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
+	csend.Handle("/invite/{userId}/clinic", varsHandler(a.InviteClinic)).Methods("POST")
 
 	send := rtr.PathPrefix("/send").Subrouter()
 	send.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
 	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
+	send.Handle("/invite/{userId}/clinic", varsHandler(a.InviteClinic)).Methods("POST")
 
 	// POST /confirm/resend/signup/:useremail
+	// POST /confirm/resend/invite/:inviteId
 	c.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
+	c.Handle("/resend/invite/{inviteId}", varsHandler(a.ResendInvite)).Methods("PATCH")
+
 	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
+	rtr.Handle("/resend/invite/{inviteId}", varsHandler(a.ResendInvite)).Methods("PATCH")
+
 
 	// PUT /confirm/accept/signup/:confirmationID
 	// PUT /confirm/accept/forgot/
@@ -185,6 +203,32 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
 	rtr.Handle("/signup/{userid}", varsHandler(a.cancelSignUp)).Methods("PUT")
+
+	// GET /v1/clinics/:clinicId/invites/patients
+	// GET /v1/clinics/:clinicId/invites/patients/:inviteId
+	c.Handle("/v1/clinics/{clinicId}/invites/patients", varsHandler(a.GetPatientInvites)).Methods("GET")
+	c.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.AcceptPatientInvite)).Methods("PUT")
+	c.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.CancelOrDismissPatientInvite)).Methods("DELETE")
+
+	rtr.Handle("/v1/clinics/{clinicId}/invites/patients", varsHandler(a.GetPatientInvites)).Methods("GET")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.AcceptPatientInvite)).Methods("PUT")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.CancelOrDismissPatientInvite)).Methods("DELETE")
+
+	c.Handle("/v1/clinicians/{userId}/invites", varsHandler(a.GetClinicianInvitations)).Methods("GET")
+	c.Handle("/v1/clinicians/{userId}/invites/{inviteId}", varsHandler(a.AcceptClinicianInvite)).Methods("PUT")
+	c.Handle("/v1/clinicians/{userId}/invites/{inviteId}", varsHandler(a.DismissClinicianInvite)).Methods("DELETE")
+
+	rtr.Handle("/v1/clinicians/{userId}/invites", varsHandler(a.GetClinicianInvitations)).Methods("GET")
+	rtr.Handle("/v1/clinicians/{userId}/invites/{inviteId}", varsHandler(a.AcceptClinicianInvite)).Methods("PUT")
+	rtr.Handle("/v1/clinicians/{userId}/invites/{inviteId}", varsHandler(a.DismissClinicianInvite)).Methods("DELETE")
+
+	c.Handle("/v1/clinics/{clinicId}/invites/clinicians", varsHandler(a.SendClinicianInvite)).Methods("POST")
+	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.ResendClinicianInvite)).Methods("PATCH")
+	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.CancelClinicianInvite)).Methods("DELETE")
+
+	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians", varsHandler(a.SendClinicianInvite)).Methods("POST")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.ResendClinicianInvite)).Methods("PATCH")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.CancelClinicianInvite)).Methods("DELETE")
 }
 
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
