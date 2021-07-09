@@ -19,10 +19,10 @@ type (
 		Creator   Creator         `json:"creator" bson:"creator"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
 		Created   time.Time       `json:"created" bson:"created"`
+		Status    Status          `json:"status" bson:"status"`
 
 		TemplateName TemplateName `json:"-" bson:"templateName"`
 		UserId       string       `json:"-" bson:"userId"`
-		Status       Status       `json:"-" bson:"status"`
 		Modified     time.Time    `json:"-" bson:"modified"`
 	}
 
