@@ -201,10 +201,14 @@ func (c *Confirmation) ResetKey() error {
 
 	c.Key = key
 	c.Status = StatusPending
-	c.Created = time.Now()
-	c.Modified = time.Time{}
+	c.ResetCreationAttributes()
 
 	return nil
+}
+
+func (c *Confirmation) ResetCreationAttributes() {
+	c.Created = time.Now()
+	c.Modified = time.Time{}
 }
 
 func generateKey() (string, error) {

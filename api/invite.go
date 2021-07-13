@@ -499,23 +499,7 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		if err := invite.ResetKey(); err != nil {
-			a.logger.Error("Unable to reset invite key", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-			return
-		}
-
-		// Make sure we're not overwriting an existing invite
-		duplicate, err := a.findExistingConfirmation(req.Context(), &models.Confirmation{Key: invite.Key}, res)
-		if duplicate != nil {
-			a.logger.Errorw("found confirmation with duplicate key")
-		}
-		if err != nil {
-			a.logger.Errorw("unable to find confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-			return
-		}
-
+		invite.ResetCreationAttributes()
 		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
 			a.logMetric("invite updated", req)
 
