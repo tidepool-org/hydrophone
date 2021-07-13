@@ -495,7 +495,7 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(res, http.StatusForbidden, statusForbiddenMessage)
 			return
 		}
 
