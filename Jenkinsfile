@@ -59,6 +59,7 @@ pipeline {
             steps {
                 withCredentials ([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                     pack()
+                    sh 'docker build -f Dockerfile.hydromail --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} -t hydromail:${GIT_COMMIT} .'
                 }
             }
         }
@@ -73,6 +74,9 @@ pipeline {
             when { branch "dblp" }
             steps {
                 publish()
+                withCredentials([usernamePassword(credentialsId: 'nexus-jenkins', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PWD')]) {
+                    pushDocker("${utils.diabeloopRegistry}", "${NEXUS_USER}", "${NEXUS_PWD}", "hydromail:${GIT_COMMIT}", "${version}")
+                }
             }
         }
     }

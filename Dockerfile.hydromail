@@ -1,0 +1,32 @@
+# Development
+FROM golang:1.15-alpine AS development
+ENV GO111MODULE=on
+
+WORKDIR /go/src/github.com/tidepool-org/hydrophone
+ARG GITHUB_TOKEN
+
+COPY . .
+
+RUN apk --no-cache update && \
+    apk --no-cache upgrade && \
+    apk add git rsync
+    
+RUN git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+RUN  cd ./templates/preview && ./build.sh
+
+# Production
+FROM alpine:latest AS production
+WORKDIR /home/tidepool
+RUN apk --no-cache update && \
+    apk --no-cache upgrade && \
+    apk add --no-cache ca-certificates && \
+    adduser -D tidepool
+USER tidepool
+ENV GO111MODULE=on
+COPY --chown=tidepool templates/html ./templates/html/
+COPY --chown=tidepool templates/locales ./templates/locales/
+COPY --chown=tidepool templates/meta ./templates/meta/
+COPY --from=development --chown=tidepool /go/src/github.com/tidepool-org/hydrophone/templates/preview/dist/ ./
+
+CMD ["./hydromail"]
