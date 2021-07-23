@@ -199,15 +199,14 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 
 		ctx := req.Context()
-		userId := vars["userId"]
 		inviteId := vars["inviteId"]
 
 		accept := &models.Confirmation{
 			Key:    inviteId,
-			UserId: userId,
 			Type:   models.TypeClinicianInvite,
 			Status: models.StatusPending,
 		}
+
 		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
 		if err != nil {
 			a.logger.Errorw("error while finding confirmation", zap.Error(err))
@@ -354,6 +353,13 @@ func (a *Api) assertRecipientAuthorized(res http.ResponseWriter, req *http.Reque
 	// Do not allow servers to handle actions on behalf of users
 	if token.IsServer {
 		err = &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}
+		a.sendModelAsResWithStatus(res, err, http.StatusUnauthorized)
+		return err
+	}
+
+	// Do not let the requesting user accept invites they don't own
+	if confirmation != nil && confirmation.UserId != token.UserID && confirmation.UserId != "" {
+		err := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}
 		a.sendModelAsResWithStatus(res, err, http.StatusUnauthorized)
 		return err
 	}

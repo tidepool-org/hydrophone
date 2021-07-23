@@ -300,6 +300,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 		if conf, err := a.findExistingConfirmation(req.Context(), invite, res); err != nil {
 			log.Printf("CancelInvite: finding [%s]", err.Error())
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
 		} else if conf != nil {
 			//cancel the invite
 			conf.UpdateStatus(models.StatusCanceled)
