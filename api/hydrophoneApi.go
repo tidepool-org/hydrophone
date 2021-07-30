@@ -350,8 +350,14 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 		return false
 	}
 
+	var tags = make(map[string]string)
+	tags["hydrophoneTemplate"] = templateName.String()
+	if traceSession := req.Header.Get(TP_TRACE_SESSION); traceSession != "" {
+		tags[TP_TRACE_SESSION] = traceSession
+	}
+
 	// Finally send the email
-	if status, details := a.notifier.Send([]string{conf.Email}, subject, body); status != http.StatusOK {
+	if status, details := a.notifier.Send([]string{conf.Email}, subject, body, tags); status != http.StatusOK {
 		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
 		return false
 	}

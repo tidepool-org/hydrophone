@@ -15,7 +15,7 @@ func NewNullNotifier() (*NullNotifier, error) {
 }
 
 // Send do nothing, return 200, "OK"
-func (c *NullNotifier) Send(to []string, subject string, msg string) (int, string) {
+func (c *NullNotifier) Send(to []string, subject string, msg string, tags map[string]string) (int, string) {
 	var toAddress = to[0]
 	log.Printf("Not sending mail to %s, disabled by server configuration: %s\n", toAddress, subject)
 	return 200, "OK"

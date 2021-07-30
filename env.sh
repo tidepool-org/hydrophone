@@ -40,7 +40,12 @@ export TIDEPOOL_HYDROPHONE_SERVICE='{
     "sesEmail" : {
         "region":"eu-west-1",
         "fromAddress": "${SUPPORT_EMAIL_ADDR}"
-        "serverEndpoint": ""
+        "serverEndpoint": "",
+        "configurationSet": "yourloops",
+        "defaultTags": {
+            "environment": "dev",
+            "service": "hydrophone"
+        }
     },
     "smtpEmail": {
         "fromAddress": "${SUPPORT_EMAIL_ADDR}",

@@ -60,7 +60,8 @@ func (a *Api) sendSanityCheckEmail(res http.ResponseWriter, req *http.Request, v
 			// Here, we assume the email address found for the user is valid
 
 			// Try sending
-			if status, details := a.notifier.Send([]string{recipient}, subject, body); status != http.StatusOK {
+			tags := make(map[string]string)
+			if status, details := a.notifier.Send([]string{recipient}, subject, body, tags); status != http.StatusOK {
 				log.Printf("Issue sending sanity check email: Status [%d] Message [%s]", status, details)
 				res.WriteHeader(http.StatusInternalServerError)
 				return

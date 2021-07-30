@@ -30,7 +30,7 @@ func NewSmtpNotifier(cfg *SmtpNotifierConfig) (*SmtpNotifier, error) {
 }
 
 // Send a message to a list of recipients with a given subject
-func (c *SmtpNotifier) Send(to []string, subject string, msg string) (int, string) {
+func (c *SmtpNotifier) Send(to []string, subject string, msg string, tags map[string]string) (int, string) {
 	// Set up authentication information.
 	var auth smtp.Auth
 	// If no user is provided, then do not try to authenticate to the server (for dev only)

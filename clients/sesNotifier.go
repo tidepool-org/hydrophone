@@ -29,9 +29,11 @@ type (
 	// SesNotifierConfig contains the static configuration for the Amazon SES service
 	// Credentials come from the environment and are not passed in via configuration variables.
 	SesNotifierConfig struct {
-		From     string `json:"fromAddress"`
-		Region   string `json:"region"`
-		Endpoint string `json:"serverEndpoint"`
+		From             string            `json:"fromAddress"`
+		Region           string            `json:"region"`
+		Endpoint         string            `json:"serverEndpoint"`
+		ConfigurationSet string            `json:"configurationSet"`
+		DefaultTags      map[string]string `json:"defaultTags"`
 	}
 )
 
@@ -74,12 +76,37 @@ func NewSesNotifier(cfg *SesNotifierConfig) (*SesNotifier, error) {
 	}, nil
 }
 
+// Returns SES Message tags based on default tags in config and tags passed as parameter
+func (c *SesNotifier) getSesTags(tags map[string]string) []*ses.MessageTag {
+	allTags := make(map[string]string)
+	for k, v := range c.Config.DefaultTags {
+		allTags[k] = v
+	}
+	for k, v := range tags {
+		allTags[k] = v
+	}
+	var sesTags = make([]*ses.MessageTag, 0, len(allTags))
+	for tagName, tagValue := range allTags {
+		if tagName != "" && tagValue != "" {
+			sesMessageTag := ses.MessageTag{Name: aws.String(tagName), Value: aws.String(tagValue)}
+			sesTags = append(sesTags, &sesMessageTag)
+		}
+	}
+	return sesTags
+}
+
 // Send a message to a list of recipients with a given subject
-func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string) {
+func (c *SesNotifier) Send(to []string, subject string, msg string, tags map[string]string) (int, string) {
 	var toAwsAddress = make([]*string, len(to))
 	for i, x := range to {
 		toAwsAddress[i] = aws.String(x)
 	}
+	confSetStr := c.Config.ConfigurationSet
+	var confSetName *string = nil
+	if confSetStr != "" {
+		confSetName = &confSetStr
+	}
+	sesTags := c.getSesTags(tags)
 
 	input := &ses.SendEmailInput{
 		Destination: &ses.Destination{
@@ -102,7 +129,9 @@ func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string
 				Data:    aws.String(subject),
 			},
 		},
-		Source: aws.String(c.Config.From),
+		Source:               aws.String(c.Config.From),
+		ConfigurationSetName: confSetName,
+		Tags:                 sesTags,
 	}
 
 	// Attempt to send the email.
