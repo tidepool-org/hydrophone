@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -1028,7 +1029,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						webPath = "login"
 					}
 
-					emailContent := map[string]interface{}{
+					emailContent := map[string]string{
 						"PatientName": fullName,
 						"Email":       invite.Email,
 						"WebPath":     webPath,
@@ -1169,9 +1170,9 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 					webPath = "signup"
 				}
 
-				emailContent := map[string]interface{}{
+				emailContent := map[string]string{
 					"MedicalteamName":          team.Name,
-					"MedicalteamAddress":       team.Address,
+					"MedicalteamAddress":       formatAddress(team.Address),
 					"MedicalteamPhone":         team.Phone,
 					"MedicalteamIentification": team.Code,
 					"CreatorName":              invite.Creator.Profile.FullName,
@@ -1194,6 +1195,14 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 		}
 	}
 
+}
+
+func formatAddress(addr store.Address) string {
+	if addr.Line2 != "" {
+		return fmt.Sprintf("%s %s, %s %s, %s", addr.Line1, addr.Line2, addr.Zip, addr.City, addr.Country)
+	} else {
+		return fmt.Sprintf("%s, %s %s, %s", addr.Line1, addr.Zip, addr.City, addr.Country)
+	}
 }
 
 func (a *Api) invitePatient(invitedUsr *schema.UserData, member store.Member, token string) *status.StatusError {
@@ -1334,7 +1343,7 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 				log.Println("SendInvite: ", err.Error())
 			} else {
 
-				emailContent := map[string]interface{}{
+				emailContent := map[string]string{
 					"MedicalteamName": team.Name,
 					"Email":           invite.Email,
 					"Language":        inviteeLanguage,
@@ -1452,7 +1461,7 @@ func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars 
 			log.Println("SendInvite: ", err.Error())
 		} else {
 
-			emailContent := map[string]interface{}{
+			emailContent := map[string]string{
 				"MedicalteamName": team.Name,
 				"Email":           invite.Email,
 				"Language":        inviteeLanguage,

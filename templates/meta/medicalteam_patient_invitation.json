@@ -18,6 +18,8 @@
         "MedicalteamAddress",
         "MedicalteamPhone",
         "MedicalteamIentification",
-        "CreatorName"
+        "CreatorName",
+        "AssetURL",
+        "Language"
     ]
 }

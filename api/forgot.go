@@ -116,7 +116,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 	if resetCnf != nil && (info != nil || a.addOrUpdateConfirmation(req.Context(), resetCnf, res)) {
 		a.logAudit(req, "reset confirmation created")
-		emailContent := map[string]interface{}{
+		emailContent := map[string]string{
 			"Key":      resetCnf.Key,
 			"Email":    resetCnf.Email,
 			"ShortKey": resetCnf.ShortKey,

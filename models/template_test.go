@@ -113,7 +113,7 @@ func Test_NewPrecompiledTemplate_Name(t *testing.T) {
 }
 
 func Test_NewPrecompiledTemplate_ExecuteSuccess(t *testing.T) {
-	content := make(map[string]interface{})
+	content := make(map[string]string)
 	content["Username"] = "Test User"
 	expectedSubject := `Username is 'Test User'`
 	expectedBody := `Key is '123.blah.456.blah'`
@@ -131,7 +131,7 @@ func Test_NewPrecompiledTemplate_ExecuteSuccess(t *testing.T) {
 }
 
 func Test_NewPrecompiledTemplate_ExecuteFailure(t *testing.T) {
-	content := make(map[string]interface{})
+	content := make(map[string]string)
 	content["Username2"] = "Test User"
 	// Should fail if the subject cannot be localized
 	tmpl, _ := NewPrecompiledTemplate(name, "subject2", bodySuccessTemplate, contentPart, espacePart, localizer)

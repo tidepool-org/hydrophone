@@ -14,25 +14,25 @@ import (
 )
 
 const (
-	STATUS_SIGNUP_NOT_FOUND  = "No matching signup confirmation was found"
-	STATUS_SIGNUP_NO_ID      = "Required userid is missing"
-	STATUS_SIGNUP_NO_CONF    = "Required confirmation id is missing"
-	STATUS_SIGNUP_ACCEPTED   = "User has had signup confirmed"
-	STATUS_EXISTING_SIGNUP   = "User already has an existing valid signup confirmation"
-	STATUS_SIGNUP_EXPIRED    = "The signup confirmation has expired"
-	STATUS_SIGNUP_ERROR      = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
-	STATUS_ERR_FINDING_USR   = "Error finding user"
-	STATUS_ERR_UPDATING_USR  = "Error updating user"
-	STATUS_ERR_UPDATING_TEAM = "Error updating team"
-	STATUS_NO_PASSWORD       = "User does not have a password"
-	STATUS_MISSING_PASSWORD  = "Password is missing"
-	STATUS_INVALID_PASSWORD  = "Password specified is invalid"
-	STATUS_MISSING_BIRTHDAY  = "Birthday is missing"
-	STATUS_INVALID_BIRTHDAY  = "Birthday specified is invalid"
-	STATUS_MISMATCH_BIRTHDAY = "Birthday specified does not match patient birthday"
-	STATUS_PATIENT_NOT_AUTH  = "Patient cannot be member of care team"
-	STATUS_MEMBER_NOT_AUTH   = "Non patient users cannot be a patient of care team"
-	STATUS_PATIENT_NOT_CAREGIVER  = "Patient cannot be added as caregiver"
+	STATUS_SIGNUP_NOT_FOUND      = "No matching signup confirmation was found"
+	STATUS_SIGNUP_NO_ID          = "Required userid is missing"
+	STATUS_SIGNUP_NO_CONF        = "Required confirmation id is missing"
+	STATUS_SIGNUP_ACCEPTED       = "User has had signup confirmed"
+	STATUS_EXISTING_SIGNUP       = "User already has an existing valid signup confirmation"
+	STATUS_SIGNUP_EXPIRED        = "The signup confirmation has expired"
+	STATUS_SIGNUP_ERROR          = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
+	STATUS_ERR_FINDING_USR       = "Error finding user"
+	STATUS_ERR_UPDATING_USR      = "Error updating user"
+	STATUS_ERR_UPDATING_TEAM     = "Error updating team"
+	STATUS_NO_PASSWORD           = "User does not have a password"
+	STATUS_MISSING_PASSWORD      = "Password is missing"
+	STATUS_INVALID_PASSWORD      = "Password specified is invalid"
+	STATUS_MISSING_BIRTHDAY      = "Birthday is missing"
+	STATUS_INVALID_BIRTHDAY      = "Birthday specified is invalid"
+	STATUS_MISMATCH_BIRTHDAY     = "Birthday specified does not match patient birthday"
+	STATUS_PATIENT_NOT_AUTH      = "Patient cannot be member of care team"
+	STATUS_MEMBER_NOT_AUTH       = "Non patient users cannot be a patient of care team"
+	STATUS_PATIENT_NOT_CAREGIVER = "Patient cannot be added as caregiver"
 )
 
 const (
@@ -136,7 +136,7 @@ func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, 
 			// send information message to patient
 			var templateName = models.TemplateNamePatientInformation
 
-			emailContent := map[string]interface{}{
+			emailContent := map[string]string{
 				"Email": usrDetails.Emails[0],
 			}
 
@@ -259,7 +259,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 
 					log.Printf("Sending email confirmation to %s with key %s", newSignUp.Email, newSignUp.Key)
 
-					emailContent := map[string]interface{}{
+					emailContent := map[string]string{
 						"Key":      newSignUp.Key,
 						"Email":    newSignUp.Email,
 						"FullName": profile.FullName,
@@ -341,7 +341,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 
 				log.Printf("Resending email confirmation to %s with key %s", found.Email, found.Key)
 
-				emailContent := map[string]interface{}{
+				emailContent := map[string]string{
 					"Key":      found.Key,
 					"Email":    found.Email,
 					"FullName": profile.FullName,
@@ -401,7 +401,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		return
 	}
 
-	toFind := &models.Confirmation{Key: confirmationId}
+	toFind := &models.Confirmation{Key: confirmationId, Type: models.TypeSignUp, Status: models.StatusPending}
 
 	if found := a.findSignUp(req.Context(), toFind, res); found != nil {
 		if found.IsExpired() {

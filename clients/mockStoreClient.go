@@ -63,9 +63,11 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 	if d.returnNone {
 		return nil, nil
 	}
-
 	if notification.UserId == "" {
 		notification.UserId = notification.Key
+	}
+	if notification.Key == "signupkey" && notification.Type != models.TypeSignUp {
+		return nil, nil
 	}
 	if notification.Email == "" {
 		notification.Email = notification.UserId

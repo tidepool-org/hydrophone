@@ -284,7 +284,7 @@ func (a *Api) checkFoundConfirmations(token string, res http.ResponseWriter, res
 }
 
 //Generate a notification from the given confirmation,write the error if it fails
-func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}, lang string) bool {
+func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]string, lang string) bool {
 	log.Printf("trying notification with template '%s' to %s with language '%s'", conf.TemplateName, conf.Email, lang)
 
 	// Get the template name based on the requested communication type
@@ -331,7 +331,7 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 
 	mail, ok := content["Email"]
 	if ok {
-		content["EncodedEmail"] = url.QueryEscape(mail.(string))
+		content["EncodedEmail"] = url.QueryEscape(mail)
 	}
 
 	// Retrieve the template from all the preloaded templates

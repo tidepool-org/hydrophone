@@ -13,7 +13,7 @@ func NewMockLocalizer(translations map[string]string) *MockLocalizer {
 }
 
 // getLocalizedContentPart returns translated content part based on key and locale
-func (l *MockLocalizer) Localize(key string, locale string, data map[string]interface{}) (string, error) {
+func (l *MockLocalizer) Localize(key string, locale string, data map[string]string) (string, error) {
 	if msg, ok := l.translations[key]; !ok {
 		return "", fmt.Errorf("failed to localize %s", key)
 	} else {

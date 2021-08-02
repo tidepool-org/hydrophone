@@ -178,7 +178,7 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 
 	supportEmail := fmt.Sprintf("<a href=%s>%s</a>", a.Config.SupportURL, strings.Replace(a.Config.SupportURL, "mailto:", "", 1))
 
-	content := map[string]interface{}{
+	content := map[string]string{
 		"Key":                      "123456789123456789123456789123456789",
 		"Email":                    "john@diabeloop.com",
 		"EncodedEmail":             url.QueryEscape("john@diabeloop.com"),
@@ -196,7 +196,6 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 		"Language":                 "en",
 	}
 	// Content collection is here to replace placeholders in template body/content
-	content["CreatorName"] = "John Doe"
 	content["WebURL"] = a.Config.WebURL
 	content["SupportURL"] = a.Config.SupportURL
 	content["AssetURL"] = a.Config.AssetURL

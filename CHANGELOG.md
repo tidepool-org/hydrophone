@@ -4,6 +4,10 @@ Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
 ## UNRELEASED
+### Fixed
+- YLP-908: verify the type of confirmation request when validating a signup (potential security issue)
+- YLP-907: escape html characters from dynamic values
+
 ### Engineering
 - Dockerise Hydromail so it can be deployed in k8s environments
 - YLP-879: SES monitoring: enable SES configuration set and tags in SES emails

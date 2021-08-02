@@ -15,7 +15,7 @@ import (
 )
 
 type Localizer interface {
-	Localize(key string, locale string, data map[string]interface{}) (string, error)
+	Localize(key string, locale string, data map[string]string) (string, error)
 }
 
 type I18nLocalizer struct {
@@ -57,7 +57,7 @@ func NewI18nLocalizer(localesPath string) (*I18nLocalizer, error) {
 }
 
 // getLocalizedContentPart returns translated content part based on key and locale
-func (l *I18nLocalizer) Localize(key string, locale string, data map[string]interface{}) (string, error) {
+func (l *I18nLocalizer) Localize(key string, locale string, data map[string]string) (string, error) {
 	localizer := i18n.NewLocalizer(l.bundle, locale)
 	msg, err := localizer.Localize(
 		&i18n.LocalizeConfig{

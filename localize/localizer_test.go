@@ -45,7 +45,7 @@ func Test_GetLocalizedPart(t *testing.T) {
 	}
 
 	// For each content that needs to be filled, add localized content to a temp variable "content"
-	content := make(map[string]interface{})
+	content := make(map[string]string)
 	content["TestCreatorName"] = TestCreatorName
 	localizedContent, _ := localizer.Localize("TestContentInjection", locale, content)
 

@@ -235,7 +235,7 @@ func TestSignupResponds(t *testing.T) {
 			respCode:   404,
 		},
 		{
-			// you can accept an invitation from another user key and userid wont give match
+			// you can't accept an invitation from another user key and userid wont give match
 			returnNone: true,
 			method:     "PUT",
 			url:        "/accept/signup/UID2/UID",
@@ -244,7 +244,7 @@ func TestSignupResponds(t *testing.T) {
 		{
 			// all good
 			method:   "PUT",
-			url:      "/accept/signup/UID",
+			url:      "/accept/signup/signupkey",
 			respCode: 200,
 		},
 		{

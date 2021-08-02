@@ -123,7 +123,7 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 
 	var templateName = models.TemplateNamePatientPinReset
 
-	emailContent := map[string]interface{}{
+	emailContent := map[string]string{
 		"Email": usrDetails.Emails[0],
 		"OTP":   re.ReplaceAllString(totp.OTP, `$1-$2-$3`),
 	}
