@@ -26,8 +26,8 @@ func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars
 			return
 		}
 
-		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
-			a.logger.Errorw("token owner is not a clinic admin", zap.Error(err))
+		if err := a.assertClinicMember(ctx, clinicId, token, res); err != nil {
+			a.logger.Errorw("token owner is not a clinic member", zap.Error(err))
 			return
 		}
 
@@ -59,8 +59,8 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 			return
 		}
 
-		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
-			a.logger.Errorw("token owner is not a clinic admin", zap.Error(err))
+		if err := a.assertClinicMember(ctx, clinicId, token, res); err != nil {
+			a.logger.Errorw("token owner is not a clinic member", zap.Error(err))
 			return
 		}
 
@@ -163,8 +163,8 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 		updatedStatus := models.StatusCanceled
 		if token.UserID != conf.CreatorId {
 			updatedStatus = models.StatusDeclined
-			if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
-				a.logger.Errorw("token owner is not a clinic admin", zap.Error(err))
+			if err := a.assertClinicMember(ctx, clinicId, token, res); err != nil {
+				a.logger.Errorw("token owner is not a clinic member", zap.Error(err))
 				return
 			}
 		}

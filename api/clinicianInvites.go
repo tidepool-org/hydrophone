@@ -397,6 +397,19 @@ func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http
 	return
 }
 
+func (a *Api) assertClinicMember(ctx context.Context, clinicId string, token *shoreline.TokenData, res http.ResponseWriter) error {
+	// Non-server tokens only legit when for same userid
+	if !token.IsServer {
+		if result, err := a.clinics.GetClinicianWithResponse(ctx, clinics.ClinicId(clinicId), clinics.ClinicianId(token.UserID)); err != nil || result.StatusCode() == http.StatusInternalServerError {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+			return err
+		} else if result.StatusCode() != http.StatusOK {
+			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+			return fmt.Errorf("unexpected status code %v when fetching clinician %v from clinic %v", result.StatusCode(), token.UserID, clinicId)
+		}
+	}
+	return nil
+}
 
 func (a *Api) assertClinicAdmin(ctx context.Context, clinicId string, token *shoreline.TokenData, res http.ResponseWriter) error {
 	// Non-server tokens only legit when for same userid
