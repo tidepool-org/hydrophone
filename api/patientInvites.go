@@ -33,7 +33,11 @@ func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars
 
 		// find all outstanding invites that are associated to this clinic
 		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{ClinicId: clinicId, Type: models.TypeCareteamInvite}, models.StatusPending)
-		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
+		if err == nil && len(found) == 0 {
+			result := make([]*models.Confirmation, 0)
+			a.sendModelAsResWithStatus(res, result, http.StatusOK)
+			return
+		} else if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.logger.Infof("found and checked %d confirmations", len(invites))
 			a.logMetric("get_patient_invites", req)
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
