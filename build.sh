@@ -22,8 +22,5 @@ go build -ldflags "-X $GO_COMMON_PATH/clients/version.ReleaseNumber=$VERSION_BAS
     -X $GO_COMMON_PATH/clients/version.ShortCommit=$VERSION_SHORT_COMMIT" \
     -o dist/hydrophone hydrophone.go
 
-cp env.sh dist/
-cp start.sh dist/
-
 echo "Push email templates"
 rsync -av --progress templates dist/ --exclude '*.go' --exclude 'preview'
