@@ -9,8 +9,8 @@
         "MedicalTeamPatientInviteWarning",
         "MedicalTeamPatientInviteWarning2",
         "MedicalTeamPatientInviteInfo",
-        "MedicalTeamPatientInviteInfo2",
-        "MedicalTeamPatientInviteJoin",
+        "ReadDataPrivacy",
+        "RespondToInvite",
         "FooterGetSupport"
     ],
     "escapeContentParts":[

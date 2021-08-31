@@ -2,7 +2,7 @@
     "name": "signup_clinic_confirmation",
     "description": "email to ask clinician for verification of email",
     "templateFilename": "signup_clinic_confirmation.html",
-    "subject": "SignupClinicConfirmationSubject",
+    "subject": "ConfirmationSubject",
     "contentParts":[
         "SignupClinicHeadline",
         "SignupClinicBody",

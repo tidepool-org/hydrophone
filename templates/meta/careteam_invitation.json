@@ -7,7 +7,7 @@
         "CareTeamInviteHeadline",
         "CareTeamInviteBody",
         "CareTeamInviteBody2",
-        "CareTeamInviteJoin",
+        "RespondToInvite",
         "FooterGetSupport"
     ],
     "escapeContentParts":[

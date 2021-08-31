@@ -35,18 +35,13 @@ CareTeamInvitationSubject: "Patient invitation"
 CareTeamInviteHeadline: "{{ .PatientName }} wants to share their diabetes data with you on YourLoops."
 CareTeamInviteBody: "YourLoops is a visualization platform for diabetes management and reporting. You’ll find all the data captured by a DBL displayed into charts and graphs."
 CareTeamInviteBody2: "{{ .PatientName }} chose to share their data with you. To respond, click on the link below."
-CareTeamInviteJoin: "Respond to invitation"
 #Signup
 #(email to ask patient for verification of email)
-SignupConfirmationSubject: "Verify your email address"
-#SignupHello: "Hello,"
 SignupHeadline: "Verify your email address to activate your YourLoops account."
 SignupBody: "You created an account on YourLoops. To confirm your identity, please click on the link below."
 SignupVerify: "Activate my account"
 #Signup Clinic
 #(email to ask clinician for verification of email)
-SignupClinicConfirmationSubject: "Verify your email address"
-#SignupClinicHello: "Hello,"
 SignupClinicHeadline: "Verify your email address to activate your YourLoops account."
 SignupClinicBody: "You created a healthcare professional account on YourLoops. To confirm your identity and complete your profile, please click on the link below."
 SignupClinicVerify: "Activate my account"
@@ -84,7 +79,6 @@ MedicalTeamInviteBody1: "YourLoops is a diabetes management platform designed fo
 MedicalTeamInviteBody2: "By joining {{ .MedicalteamName }}, you will have access to your patients data and will be able to create reports."
 MedicalTeamInviteWarning: "Please verify you know this person, confirm that you are part of this care team, and check the details provided below before accepting their invitation."
 MedicalTeamInviteInfo: "You need a Professional account to join a team. If you’re already registered as a caregiver you can switch to a Professional account in your account preferences. Otherwise you can sign up by following the link below."
-MedicalTeamInviteJoin: "Respond to invitation"
 #Medical/Care team do Admin
 MedicalTeamDoAdminSubject: "Admin permission granted"
 MedicalTeamDoAdminHeadline: "You are now an administrator of {{ .MedicalteamName }}"
@@ -93,7 +87,6 @@ MedicalTeamDoAdminBody2: "Now you can:"
 MedicalTeamDoAdminListItem1: "Invite / remove team members"
 MedicalTeamDoAdminListItem2: "Edit team information"
 MedicalTeamDoAdminListItem3: "Give or remove admin permissions"
-MedicalTeamDoAdminInfo: "Read our <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacy policy</a> for more information."
 MedicalTeamDoAdminAction: "Go to YourLoops"
 #Medical/Care team remove member
 MedicalTeamRemoveSubject: "Removal from a care team"
@@ -101,7 +94,6 @@ MedicalTeamRemoveHeadline: "You are no longer a member of {{ .MedicalteamName }}
 MedicalTeamRemoveBody0: "A team administrator removed you from the team."
 MedicalTeamRemoveBody1: "You will no longer have access to {{ .MedicalteamName }} patients data but your account is still active."
 MedicalTeamRemoveBody2: "Think it’s a mistake? Get in touch with a team administrator."
-MedicalTeamRemoveInfo: "Read our <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacy policy</a> for more information."
 MedicalTeamRemoveAction: "Go to YourLoops"
 #Medical/Care team patient invitation
 MedicalTeamPatientInvitationSubject: "Invitation to share data"
@@ -109,5 +101,7 @@ MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} invites you to share your 
 MedicalTeamPatientInviteWarning: "Please verify that the above details match the information provided by your healthcare professional before responding to the invitation."
 MedicalTeamPatientInviteWarning2: "If you're unsure, get in touch with your healthcare professional and do not accept this invitation."
 MedicalTeamPatientInviteInfo: "By adding this team, you consent to share your personal data (including health data) with its members, who are authorized healthcare professionals registered on YourLoops."
-MedicalTeamPatientInviteInfo2: "Read our <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacy policy</a> for more information."
-MedicalTeamPatientInviteJoin: "Respond to invitation"
+#Shared
+ReadDataPrivacy: "Read our <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacy policy</a> for more information."
+RespondToInvite: "Respond to invitation"
+ConfirmationSubject: "Verify your email address"

@@ -2,7 +2,7 @@
     "name": "signup_confirmation",
     "description": "email to ask patient for verification of email",
     "templateFilename": "signup_confirmation.html",
-    "subject": "SignupConfirmationSubject",
+    "subject": "ConfirmationSubject",
     "contentParts":[
         "SignupHeadline",
         "SignupBody",

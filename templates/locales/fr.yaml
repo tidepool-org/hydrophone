@@ -111,3 +111,7 @@ MedicalTeamPatientInviteWarning2: "En cas de doute, n'acceptez pas l'invitation 
 MedicalTeamPatientInviteInfo: "En ajoutant cette équipe, vous acceptez de partager vos données personnelles (dont certaines données de santé) avec ses membres, qui sont des professionnels de santé inscrits sur YourLoops."
 MedicalTeamPatientInviteInfo2: "Veuillez consulter notre <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>politique de confidentialité</a> pour plus d'informations."
 MedicalTeamPatientInviteJoin: "Répondre à l'invitation"
+#Shared
+ReadDataPrivacy: "Read our <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacy policy</a> for more information."
+RespondToInvite: "Répondre à l'invitation"
+ConfirmationSubject: "Vérification de votre adresse email"

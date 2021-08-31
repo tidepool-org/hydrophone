@@ -9,7 +9,7 @@
         "MedicalTeamInviteBody2",
         "MedicalTeamInviteWarning",
         "MedicalTeamInviteInfo",
-        "MedicalTeamInviteJoin",
+        "RespondToInvite",
         "FooterGetSupport"
     ],
     "escapeContentParts":[
