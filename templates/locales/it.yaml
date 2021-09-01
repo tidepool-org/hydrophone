@@ -35,18 +35,13 @@ CareTeamInvitationSubject: "Invito per paziente"
 CareTeamInviteHeadline: "{{ .PatientName }} vuole condividere con te i propri dati sul diabete su YourLoops."
 CareTeamInviteBody: "YourLoops è una piattaforma di visualizzazione per la gestione del diabete e la generazione di report. Troverai tutti i dati acquisiti da un DBL visualizzati in grafici e diagrammi."
 CareTeamInviteBody2: "{{ .PatientName }} ha scelto di condividere i propri dati con te. Per rispondere, clicca sul link qui sotto."
-CareTeamInviteJoin: "Rispondi all’invito"
 #Signup
 #(email to ask patient for verification of email)
-SignupConfirmationSubject: "Verifica il tuo indirizzo e-mail"
-#SignupHello: "Hello,"
 SignupHeadline: "Verifica il tuo indirizzo e-mail per attivare l’account YourLoops."
 SignupBody: "Hai creato un account su YourLoops. Per confermare la tua identità, fai clic sul link sottostante."
 SignupVerify: "Attiva il mio account"
 #Signup Clinic
 #(email to ask clinician for verification of email)
-SignupClinicConfirmationSubject: "Verifica il tuo indirizzo e-mail"
-#SignupClinicHello: "Hello,"
 SignupClinicHeadline: "Verifica il tuo indirizzo e-mail per attivare l’account YourLoops."
 SignupClinicBody: "Hai creato un account per medico curante su YourLoops. Per confermare la tua identità e completare il tuo profilo, fai clic sul link sottostante."
 SignupClinicVerify: "Attiva il mio account"
@@ -84,7 +79,6 @@ MedicalTeamInviteBody1: "YourLoops è una piattaforma per la gestione del diabet
 MedicalTeamInviteBody2: "Entrando a far parte del team {{ .MedicalteamName }}, avrà accesso ai dati dei suoi pazienti e avrà la possibilità di creare rapporti."
 MedicalTeamInviteWarning: "Prima di accettare l’invito, verifichi di conoscere questa persona, confermi di far parte di questo team di cura e controlli i dettagli forniti di seguito."
 MedicalTeamInviteInfo: "Per far parte di un team deve avere un account professionale. Se è già registrato come caregiver, può passare a un account professionale nelle preferenze dell’account. In alternativa, si iscriva utilizzando il link di seguito."
-MedicalTeamInviteJoin: "Rispondi all’invito"
 #Medical/Care team do Admin
 MedicalTeamDoAdminSubject: "Permesso admin concesso"
 MedicalTeamDoAdminHeadline: "Ora è un amministratore del team {{ .MedicalteamName }}"
@@ -93,7 +87,6 @@ MedicalTeamDoAdminBody2: "Adesso può:"
 MedicalTeamDoAdminListItem1: "Invitare/rimuovere i membri del team"
 MedicalTeamDoAdminListItem2: "Modificare le informazioni del team"
 MedicalTeamDoAdminListItem3: "Assegnare o rimuovere i permessi da amministratore"
-MedicalTeamDoAdminInfo: "Per ulteriori informazioni, legga la nostra <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>informativa sulla privacy</a>."
 MedicalTeamDoAdminAction: "Accedi a YourLoops"
 #Medical/Care team remove member
 MedicalTeamRemoveSubject: "Rimozione da un team di cura"
@@ -101,7 +94,6 @@ MedicalTeamRemoveHeadline: "Non è più un membro del team {{ .MedicalteamName }
 MedicalTeamRemoveBody0: "Uno degli amministratori del team l’ha rimossa dal team."
 MedicalTeamRemoveBody1: "Non potrà più accedere ai dati dei pazienti del team {{ .MedicalteamName }}, ma il suo account resterà attivo."
 MedicalTeamRemoveBody2: "Ritiene che sia un errore? Contatti uno degli amministratori del team."
-MedicalTeamRemoveInfo: "Per ulteriori informazioni, legga la nostra <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>informativa sulla privacy</a>."
 MedicalTeamRemoveAction: "Accedi a YourLoops"
 #Medical/Care team patient invitation
 MedicalTeamPatientInvitationSubject: "Invito per condividere i dati"
@@ -109,5 +101,7 @@ MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} la invita a condividere i 
 MedicalTeamPatientInviteWarning: "Prima di rispondere all’invito, verifichi che i dettagli precedenti corrispondano alle informazioni fornite dall’operatore sanitario."
 MedicalTeamPatientInviteWarning2: "Se non è sicuro, si metta in contatto con l’operatore sanitario e non accetti l’invito."
 MedicalTeamPatientInviteInfo: "Aggiungendo questo team, lei acconsente a condividere i suoi dati personali (compresi i dati sanitari) con i membri del team, che sono operatori sanitari autorizzati registrati su YourLoops."
-MedicalTeamPatientInviteInfo2: "Per ulteriori informazioni, legga la nostra <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>informativa sulla privacy</a>."
-MedicalTeamPatientInviteJoin: "Rispondi all’invito"
+#Shared
+ReadDataPrivacy: "Per ulteriori informazioni, legga la nostra <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>informativa sulla privacy</a>."
+RespondToInvite: "Rispondi all’invito"
+ConfirmationSubject: "Verifica il tuo indirizzo e-mail"

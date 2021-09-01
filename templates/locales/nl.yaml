@@ -35,18 +35,13 @@ CareTeamInvitationSubject: "Uitnodiging voor de patiënt"
 CareTeamInviteHeadline: "{{ .PatientName }} wil zijn/haar diabetesgegevens met jou delen op YourLoops."
 CareTeamInviteBody: "YourLoops is een visualisatieplatform voor diabetesmanagement en -rapportage. Alle gegevens die door een DBL zijn vastgelegd, worden weergegeven in grafieken en diagrammen."
 CareTeamInviteBody2: "{{ .PatientName }} koos om hun gegevens met u te delen. Om te reageren, klik op de link hieronder."
-CareTeamInviteJoin: "Reageren op uitnodiging"
 #Signup
 #(email to ask patient for verification of email)
-SignupConfirmationSubject: "Verifieer je e-mailadres"
-#SignupHello: "Hello,"
 SignupHeadline: "Verifieer je e-mailadres om je YourLoops-account te activeren."
 SignupBody: "Je hebt een account aangemaakt op YourLoops. Klik op de onderstaande link om je identiteit te bevestigen."
 SignupVerify: "Mijn account activeren"
 #Signup Clinic
 #(email to ask clinician for verification of email)
-SignupClinicConfirmationSubject: "Controleer je e-mailadres"
-#SignupClinicHello: "Hello,"
 SignupClinicHeadline: "Controleer je e-mailadres om je YourLoops-account te activeren."
 SignupClinicBody: "Je hebt een account voor zorgverleners aangemaakt op YourLoops. Klik op de onderstaande link om je identiteit te bevestigen en je profiel te voltooien."
 SignupClinicVerify: "Mijn account activeren"
@@ -84,7 +79,6 @@ MedicalTeamInviteBody1: "YourLoops is een diabetesmanagementplatform dat is ontw
 MedicalTeamInviteBody2: "Door lid te worden van {{ .MedicalteamName }}, krijg je toegang tot je patiëntengegevens en kun je rapporten aanmaken."
 MedicalTeamInviteWarning: "Controleer of je deze persoon kent, bevestig dat je deel uitmaakt van dit behandelteam en controleer de onderstaande gegevens voordat je de uitnodiging accepteert."
 MedicalTeamInviteInfo: "Je hebt een professioneel account nodig om lid te worden van een team. Als je al als mantelzorger bent geregistreerd, kun je in je accountvoorkeuren overschakelen naar een professioneel account. Anders kun je je aanmelden via de onderstaande link."
-MedicalTeamInviteJoin: "Reageren op uitnodiging"
 #Medical/Care team do Admin
 MedicalTeamDoAdminSubject: "Admin toestemming verleend"
 MedicalTeamDoAdminHeadline: "Je bent nu een beheerder van {{ .MedicalteamName }}"
@@ -93,7 +87,6 @@ MedicalTeamDoAdminBody2: "Je kunt nu:"
 MedicalTeamDoAdminListItem1: "Teamleden uitnodigen/verwijderen"
 MedicalTeamDoAdminListItem2: "Teaminformatie bewerken"
 MedicalTeamDoAdminListItem3: "Beheerdersrechten toewijzen of verwijderen"
-MedicalTeamDoAdminInfo: "Lees ons <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
 MedicalTeamDoAdminAction: "Naar YourLoops gaan"
 #Medical/Care team remove member
 MedicalTeamRemoveSubject: "Verwijdering van een behandelteam"
@@ -101,7 +94,6 @@ MedicalTeamRemoveHeadline: "Je bent niet langer lid van {{ .MedicalteamName }}"
 MedicalTeamRemoveBody0: "Een beheerder van het team heeft je uit het team verwijderd."
 MedicalTeamRemoveBody1: "Je hebt geen toegang meer tot patiëntengegevens van {{ .MedicalteamName }}, maar je account is nog steeds actief."
 MedicalTeamRemoveBody2: "Denk je dat dit een vergissing is? Neem contact op met een beheerder van het team."
-MedicalTeamRemoveInfo: "Lees ons <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
 MedicalTeamRemoveAction: "Naar YourLoops gaan"
 #Medical/Care team patient invitation
 MedicalTeamPatientInvitationSubject: "Uitnodiging om gegevens te delen"
@@ -109,5 +101,7 @@ MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} nodigt je uit om je gegeve
 MedicalTeamPatientInviteWarning: "Controleer of de bovenstaande gegevens overeenkomen met de informatie die door je zorgverlener is verstrekt voordat je op de uitnodiging reageert."
 MedicalTeamPatientInviteWarning2: "Neem bij twijfel contact op met je zorgverlener en accepteer deze uitnodiging niet."
 MedicalTeamPatientInviteInfo: "Door dit team toe te voegen, stem je ermee in om je persoonlijke gegevens (inclusief gezondheidsgegevens) te delen met de leden van het team, die geautoriseerde zorgverleners zijn die geregistreerd zijn op YourLoops."
-MedicalTeamPatientInviteInfo2: "Lees ons <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
-MedicalTeamPatientInviteJoin: "Reageren op uitnodiging"
+#Shared
+ReadDataPrivacy: "Lees ons <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
+RespondToInvite: "Reageren op uitnodiging"
+ConfirmationSubject: "Verifieer je e-mailadres"
