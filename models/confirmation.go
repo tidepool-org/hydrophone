@@ -174,6 +174,24 @@ func (c *Confirmation) ValidateStatus(expectedStatus Status, validationErrors *[
 	return c
 }
 
+func (c *Confirmation) ValidateStatusIn(expectedStatuses []Status, validationErrors *[]error) *Confirmation {
+	isValid := false
+	for _, status := range expectedStatuses {
+		if status == c.Status {
+			isValid = true
+			break
+		}
+	}
+
+	if !isValid {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("Confirmation expected Status in `%v` but had `%s`", expectedStatuses, c.Status),
+		)
+	}
+	return c
+}
+
 func (c *Confirmation) ValidateType(expectedType Type, validationErrors *[]error) *Confirmation {
 	if expectedType != c.Type {
 		*validationErrors = append(

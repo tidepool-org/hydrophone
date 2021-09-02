@@ -148,7 +148,6 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 		accept := &models.Confirmation{
 			ClinicId: clinicId,
 			Key:      inviteId,
-			Status:   models.StatusPending,
 		}
 
 		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
@@ -174,7 +173,7 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 		}
 
 		validationErrors := make([]error, 0)
-		conf.ValidateStatus(models.StatusPending, &validationErrors)
+		conf.ValidateStatusIn([]models.Status{models.StatusPending, models.StatusDeclined}, &validationErrors)
 		conf.ValidateType(models.TypeCareteamInvite, &validationErrors)
 		conf.ValidateClinicID(clinicId, &validationErrors)
 
