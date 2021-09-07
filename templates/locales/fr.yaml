@@ -44,13 +44,13 @@ SignupVerify: "Activer mon compte"
 #(email to ask clinician for verification of email)
 SignupClinicHeadline: "Vérifiez votre adresse email pour activer votre compte YourLoops."
 SignupClinicBody: "Vous souhaitez créer un compte professionnel de santé sur YourLoops. Pour confirmer qu’il s’agit bien de votre adresse email et finaliser votre inscription, veuillez cliquer sur le bouton ci-dessous."
-SignupClinicVerify: "Vérifier votre compte"
+SignupClinicVerify: "Activer mon compte"
 #Signup Custodial => SUPPRIMER
 #(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
 SignupCustodialConfirmationSubject: "Verify your YourLoops account"
 #SignupCustodialHello: "Hello,"
 SignupCustodialHeadline: "Congrats on creating your YourLoops account!"
-SignupCustodialVerify: "Verify Your Account"
+SignupCustodialVerify: "Activer mon compte"
 #Signup Custodial Clinic => SUPPRIMER
 #(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
 SignupCustodialClinicConfirmationSubject: "Diabetes Clinic Follow Up - Claim Your Account"
