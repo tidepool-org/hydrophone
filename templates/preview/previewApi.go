@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"strings"
 
 	"github.com/gorilla/mux"
 
@@ -176,8 +175,6 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 
 	log.Printf("trying preview with template '%s' with language '%s'", templateName, lang)
 
-	supportEmail := fmt.Sprintf("<a href=%s>%s</a>", a.Config.SupportURL, strings.Replace(a.Config.SupportURL, "mailto:", "", 1))
-
 	content := map[string]string{
 		"Key":                      "123456789123456789123456789123456789",
 		"Email":                    "john@diabeloop.com",
@@ -187,7 +184,7 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 		"WebPath":                  "login",
 		"ShortKey":                 "12345678",
 		"OTP":                      "165236984",
-		"SupportEmail":             supportEmail,
+		"SupportEmail":             a.Config.SupportURL,
 		"MedicalteamName":          "Team CHU",
 		"MedicalteamAddress":       "Bd de la chantourne, 38000 Grenoble",
 		"MedicalteamPhone":         "33 4 760 101",

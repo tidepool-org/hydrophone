@@ -4,6 +4,9 @@ Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
 ## UNRELEASED
+### Fixed
+- YLP-975: support email link is not correctly rendered on email "patient password info"
+
 ### Engineering
 - YLP-691: consolidate duplicate strings in locales
 - YLP-213: cleanup build/artifact scripts
