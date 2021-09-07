@@ -27,7 +27,7 @@ PatientPasswordResetBody2: "Cette clé est valable une heure. En cas d'expiratio
 PatientPasswordInfoSubject: "Réinitialisation du mot de passe"
 PatientPasswordInfoHeadline: "Vous avez demandé la réinitialisation de votre mot de passe depuis l’application YourLoops. Pour des raisons de sécurité, vous devez réaliser cette demande depuis votre DBL."
 PatientPasswordInfoBody: "Allez à Paramètres > YourLoops et suivez les instructions de votre DBL."
-PatientPasswordInfoBody2: "Si vous n’êtes pas à l’origine de cette demande, merci de contacter notre support à {{ .SupportEmail }}."
+PatientPasswordInfoBody2: "Si vous n’êtes pas à l’origine de cette demande, merci de contacter notre <a href='{{ .SupportEmail }}'>support</a>."
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Invitation patient"

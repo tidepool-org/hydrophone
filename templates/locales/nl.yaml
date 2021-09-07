@@ -27,7 +27,7 @@ PatientPasswordResetBody2: "De code is 1 uur geldig. Als deze is verlopen, vraag
 PatientPasswordInfoSubject: "Wachtwoord resetten"
 PatientPasswordInfoHeadline: "Je hebt gevraagd om je YourLoops-wachtwoord opnieuw in te stellen bij YourLoops. Om veiligheidsredenen moet je de wijziging echter aanvragen bij je DBL."
 PatientPasswordInfoBody: "Ga naar Instellingen > YourLoops en volg de instructies op je DBL."
-PatientPasswordInfoBody2: "Als je deze e-mail ten onrechte ontvangt, neem dan contact op met onze klantenservice op {{ .SupportEmail }}."
+PatientPasswordInfoBody2: "Als je deze e-mail ten onrechte ontvangt, neem dan contact op met onze <a href='{{ .SupportEmail }}'>klantenservice</a>."
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Uitnodiging voor de patiënt"
@@ -50,7 +50,7 @@ SignupClinicVerify: "Mijn account activeren"
 SignupCustodialConfirmationSubject: "Verify your YourLoops account"
 #SignupCustodialHello: "Hello,"
 SignupCustodialHeadline: "Congrats on creating your YourLoops account!"
-SignupCustodialVerify: "Activate Your Account"
+SignupCustodialVerify: "Verify Your Account"
 #Signup Custodial Clinic => SUPPRIMER
 #(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
 SignupCustodialClinicConfirmationSubject: "Diabetes Clinic Follow Up - Claim Your Account"

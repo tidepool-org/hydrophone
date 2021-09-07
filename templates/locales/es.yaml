@@ -27,7 +27,7 @@ PatientPasswordResetBody2: "La clave es válida durante 1 hora. Si ha caducado,
 PatientPasswordInfoSubject: "Restablecimiento de la contraseña"
 PatientPasswordInfoHeadline: "Ha solicitado restablecer su contraseña de YourLoops desde YourLoops. Sin embargo, por motivos de seguridad, el cambio debe solicitarse desde su DBL."
 PatientPasswordInfoBody: "Vaya a Ajustes > YourLoops y siga las instrucciones de su DBL."
-PatientPasswordInfoBody2: "Si ha recibido este mensaje de correo electrónico por error, póngase en contacto con el servicio de atención al cliente a través de {{ .SupportEmail }}."
+PatientPasswordInfoBody2: "Si ha recibido este mensaje de correo electrónico por error, póngase en contacto con el <a href='{{ .SupportEmail }}'>servicio de atención al cliente</a>."
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Invitación del paciente"
@@ -50,7 +50,7 @@ SignupClinicVerify: "Activar mi cuenta"
 SignupCustodialConfirmationSubject: "Verify your YourLoops account"
 #SignupCustodialHello: "Hello,"
 SignupCustodialHeadline: "Congrats on creating your YourLoops account!"
-SignupCustodialVerify: "Activate Your Account"
+SignupCustodialVerify: "Verify Your Account"
 #Signup Custodial Clinic => SUPPRIMER
 #(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
 SignupCustodialClinicConfirmationSubject: "Diabetes Clinic Follow Up - Claim Your Account"
