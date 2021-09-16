@@ -117,7 +117,7 @@ github.com/pierrec/lz4/internal/xxh32
 github.com/pkg/errors
 # github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/clinic/client v0.0.0-20210518092136-8cd22038d368
+# github.com/tidepool-org/clinic/client v0.0.0-20210916115412-a349705d686d
 ## explicit
 github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/go-common v0.8.2
