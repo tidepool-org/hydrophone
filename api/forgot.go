@@ -136,6 +136,11 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
 
 	if conf := a.findResetConfirmation(resetCnf, req.Context(), res); conf != nil {
+		if resetCnf.Key == "" || resetCnf.Email != conf.Email {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+			return
+		}
 
 		token := a.sl.TokenProvide()
 
