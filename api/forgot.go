@@ -133,7 +133,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		return
 	}
 
-	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset}
+	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Status: models.StatusPending, Type: models.TypePasswordReset}
 
 	if conf := a.findResetConfirmation(resetCnf, req.Context(), res); conf != nil {
 		if resetCnf.Key == "" || resetCnf.Email != conf.Email {
