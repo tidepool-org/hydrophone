@@ -224,6 +224,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	c.Handle("/v1/clinics/{clinicId}/invites/clinicians", varsHandler(a.SendClinicianInvite)).Methods("POST")
 	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.ResendClinicianInvite)).Methods("PATCH")
+	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.GetClinicianInvite)).Methods("GET")
 	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.CancelClinicianInvite)).Methods("DELETE")
 
 	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians", varsHandler(a.SendClinicianInvite)).Methods("POST")

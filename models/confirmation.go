@@ -19,11 +19,11 @@ type (
 		Creator   Creator         `json:"creator" bson:"creator"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
 		Created   time.Time       `json:"created" bson:"created"`
+		Modified  time.Time       `json:"modified" bson:"modified"`
 		Status    Status          `json:"status" bson:"status"`
 
 		TemplateName TemplateName `json:"-" bson:"templateName"`
 		UserId       string       `json:"-" bson:"userId"`
-		Modified     time.Time    `json:"-" bson:"modified"`
 	}
 
 	//basic details for the creator of the confirmation
