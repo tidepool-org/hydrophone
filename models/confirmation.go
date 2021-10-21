@@ -30,7 +30,7 @@ type (
 
 	Team struct {
 		ID   string `json:"id" bson:"teamId"`
-		Name string `json:"name" bson:"-"`
+		Name string `json:"name" bson:"teamName"`
 	}
 	//basic details for the creator of the confirmation
 	Creator struct {

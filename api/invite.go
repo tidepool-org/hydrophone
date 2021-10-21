@@ -1070,7 +1070,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 // @Router /confirm/send/team/invite [post]
 // @security TidepoolAuth
 func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	// By default, the invitee language will be "en" for Englih (as we don't know which language suits him)
+	// By default, the invitee language will be "en" for English (as we don't know which language suits him)
 	// In case the invitee is a known user, the language will be overriden in a later step
 	var inviteeLanguage = GetUserChosenLanguage(req)
 	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
@@ -1152,7 +1152,7 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 				invitorID)
 		}
 		// complete invite
-		invite.Team = &models.Team{ID: ib.TeamID}
+		invite.Team = &models.Team{ID: ib.TeamID, Name: team.Name}
 		invite.Email = ib.Email
 		invite.Role = ib.Role
 		if invitedUsr != nil {
@@ -1330,6 +1330,7 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 
 		// if the invitee is already a user, we can use his preferences
 		invite.Team.ID = ib.TeamID
+		invite.Team.Name = team.Name
 		invite.Email = ib.Email
 		invite.Role = ib.Role
 		invite.Status = models.StatusPending
@@ -1442,6 +1443,7 @@ func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars 
 
 	// let's use the user preferences
 	invite.Team.ID = ib.TeamID
+	invite.Team.Name = team.Name
 	invite.Email = ib.Email
 	invite.Role = ib.Role
 	invite.UserId = inviteeID

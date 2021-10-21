@@ -270,14 +270,6 @@ func (a *Api) checkFoundConfirmations(token string, res http.ResponseWriter, res
 				//report and move on
 				log.Println("Error getting profile", err.Error())
 			}
-			if results[i].Team != nil && results[i].Team.ID != "" {
-				team, err := a.perms.GetTeam(token, results[i].Team.ID)
-				if err != nil {
-					log.Println("Error getting team", err.Error())
-				} else {
-					results[i].Team.Name = team.Name
-				}
-			}
 		}
 		return results
 	}
