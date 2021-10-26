@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 
@@ -437,5 +438,76 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 		}
 
+	}
+}
+
+//Resend a care team invite
+func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	if token := a.token(res, req); token != nil {
+		inviteId := vars["inviteId"]
+
+		if inviteId == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		find := &models.Confirmation{
+			Key:    inviteId,
+			Status: models.StatusPending,
+			Type:   models.TypeCareteamInvite,
+		}
+
+		invite, err := a.findExistingConfirmation(req.Context(), find, res)
+		if err != nil {
+			log.Printf("error while finding confirmation: %v\n", zap.Error(err))
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+		if invite == nil {
+			log.Printf("confirmation with key not found: %v\n", inviteId)
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+			return
+		}
+
+		if permissions, err := a.tokenUserHasRequestedPermissions(token, invite.CreatorId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			return
+		} else if permissions["root"] == nil && permissions["custodian"] == nil {
+			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			return
+		}
+
+		invite.ResetCreationAttributes()
+		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
+			a.logMetric("invite updated", req)
+
+			if err := a.addProfile(invite); err != nil {
+				log.Printf("error resending invite: %v\n", err)
+			} else {
+				fullName := invite.Creator.Profile.FullName
+				if invite.Creator.Profile.Patient.IsOtherPerson {
+					fullName = invite.Creator.Profile.Patient.FullName
+				}
+
+				var webPath = "signup"
+				if invite.UserId != "" {
+					webPath = "login"
+				}
+
+				emailContent := map[string]interface{}{
+					"CareteamName": fullName,
+					"Email":        invite.Email,
+					"WebPath":      webPath,
+				}
+
+				if a.createAndSendNotification(req, invite, emailContent) {
+					a.logMetric("invite resent", req)
+				}
+			}
+
+			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+			return
+		}
 	}
 }
