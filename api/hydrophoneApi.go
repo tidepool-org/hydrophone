@@ -317,7 +317,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 }
 
 //Generate a notification from the given confirmation,write the error if it fails
-func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}) bool {
+func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}, recipients ...string) bool {
 	templateName := conf.TemplateName
 	if templateName == models.TemplateNameUndefined {
 		switch conf.Type {
@@ -350,7 +350,15 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 		return false
 	}
 
-	if status, details := a.notifier.Send([]string{conf.Email}, subject, body); status != http.StatusOK {
+	addresses := recipients
+	if conf.Email != "" {
+		addresses = append(recipients, conf.Email)
+	}
+	if len(addresses) == 0 {
+		return true
+	}
+
+	if status, details := a.notifier.Send(addresses, subject, body); status != http.StatusOK {
 		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
 		return false
 	}

@@ -12,6 +12,8 @@ import (
 	"net/http"
 )
 
+const CLINIC_ADMIN_ROLE = "CLINIC_ADMIN"
+
 type ClinicInvite struct {
 	ShareCode   string                    `json:"shareCode"`
 	Permissions commonClients.Permissions `json:"permissions"`
@@ -65,7 +67,7 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		limit := clinics.Limit(1)
 		response, err := a.clinics.ListClinicsWithResponse(ctx, &clinics.ListClinicsParams{
 			ShareCode: &shareCode,
-			Limit: &limit,
+			Limit:     &limit,
 		})
 		if err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
@@ -96,7 +98,26 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, inviterID, ib.Permissions)
+		// Get the list of clinicians to send a notification to
+		maxClinicians := clinics.Limit(100)
+		role := clinics.Role(CLINIC_ADMIN_ROLE)
+		params := &clinics.ListCliniciansParams{
+			Role: &role,
+			Limit:  &maxClinicians,
+		}
+		listResponse, err := a.clinics.ListCliniciansWithResponse(req.Context(), clinics.ClinicId(clinicId), params)
+		if err != nil || response.StatusCode() != http.StatusOK {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			return
+		}
+		var recipients []string
+		for _, clinician := range *listResponse.JSON200 {
+			if clinician.Email != "" {
+				recipients = append(recipients, clinician.Email)
+			}
+		}
+
+		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNamePatientClinicInvite, inviterID, ib.Permissions)
 		invite.ClinicId = clinicId
 
 		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
@@ -105,6 +126,23 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			if err := a.addProfile(invite); err != nil {
 				a.logger.Errorw("error adding profile information to confirmation", zap.Error(err))
 				return
+			} else {
+				fullName := invite.Creator.Profile.FullName
+
+				if invite.Creator.Profile.Patient.IsOtherPerson {
+					fullName = invite.Creator.Profile.Patient.FullName
+				}
+
+
+				emailContent := map[string]interface{}{
+					"CareteamName": fullName,
+					"ClinicName":   clinic.Name,
+					"WebPath":      "login",
+				}
+
+				if a.createAndSendNotification(req, invite, emailContent, recipients...) {
+					a.logMetric("invite sent", req)
+				}
 			}
 
 			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
@@ -112,7 +150,6 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		}
 	}
 }
-
 
 //Checks do they have an existing invite or are they already a team member
 //Or are they an existing user and already in the group?
