@@ -10,9 +10,10 @@ import (
 )
 
 type MockStoreClient struct {
-	doBad      bool
-	returnNone bool
-	now        time.Time
+	doBad                      bool
+	returnNone                 bool
+	now                        time.Time
+	CounterLatestConfirmations int64
 }
 
 func NewMockStoreClient(returnNone, doBad bool) *MockStoreClient {
@@ -62,6 +63,21 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 	}
 	if d.returnNone {
 		return nil, nil
+	}
+	if notification.CreatorId == "test.ResendCounterOk.CreatedRecent" && notification.Type == models.TypeSignUp {
+		notification.ResendCounter = 1
+		notification.Created = time.Now().Add(-time.Minute)
+		return notification, nil
+	}
+	if notification.UserId == "test.ResendCounterMax.CreatedLongAgo" && notification.Type == models.TypeSignUp {
+		notification.ResendCounter = 11
+		notification.Created = time.Now().Add(-24 * time.Hour)
+		return notification, nil
+	}
+	if notification.Email == "test.ResendCounterMax.CreatedRecent" && notification.Type == models.TypeSignUp {
+		notification.ResendCounter = 11
+		notification.Created = time.Now().Add(-time.Minute)
+		return notification, nil
 	}
 	if notification.UserId == "" {
 		notification.UserId = notification.Key
@@ -180,4 +196,11 @@ func (d *MockStoreClient) RemoveConfirmation(ctx context.Context, notification *
 		return errors.New("RemoveConfirmation failure")
 	}
 	return nil
+}
+
+func (d *MockStoreClient) CountLatestConfirmations(ctx context.Context, confirmation models.Confirmation, createdSince time.Time) (int64, error) {
+	if d.doBad {
+		return 0, errors.New("CountLatestConfirmations failure")
+	}
+	return d.CounterLatestConfirmations, nil
 }

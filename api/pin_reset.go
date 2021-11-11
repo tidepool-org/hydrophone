@@ -77,7 +77,17 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 		a.sendModelAsResWithStatus(res, STATUS_ERR_CLINICAL_USR, http.StatusForbidden)
 		return
 	}
-
+	sendOk, _, err := a.verifySendAttempts(req.Context(), models.TypePatientPinReset, usrDetails.UserID, "", "")
+	if err != nil {
+		log.Printf("sendPinReset - %s err[%s]", STATUS_ERR_COUNTING_CONF, err.Error())
+		a.sendModelAsResWithStatus(res, STATUS_ERR_COUNTING_CONF, http.StatusInternalServerError)
+		return
+	}
+	if !sendOk {
+		log.Printf("sendPinReset - Too many attempts for pin reset on account [%v]", usrDetails.UserID)
+		a.sendModelAsResWithStatus(res, STATUS_ERR_TOO_MANY_ATTEMPTS, http.StatusForbidden)
+		return
+	}
 	// send PIN Reset OTP to patient
 	// the secret for the TOTP is the concatenation of userID + IMEI + userID
 	// first get the IMEI of the patient's handset

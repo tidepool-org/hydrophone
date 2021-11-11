@@ -2,9 +2,11 @@ package clients
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
+	"time"
 
 	"github.com/mdblp/hydrophone/models"
 	goComMgo "github.com/tidepool-org/go-common/clients/mongo"
@@ -138,4 +140,26 @@ func (c *Client) RemoveConfirmation(ctx context.Context, confirmation *models.Co
 		return err
 	}
 	return nil
+}
+
+func (c *Client) CountLatestConfirmations(ctx context.Context, confirmation models.Confirmation, createdSince time.Time) (int64, error) {
+	if confirmation.CreatorId == "" && confirmation.Email == "" && confirmation.UserId == "" {
+		return 0, errors.New("CreatorId or UserId or Email is missing")
+	}
+	var query bson.M = bson.M{}
+	if confirmation.CreatorId != "" {
+		query["creatorId"] = confirmation.CreatorId
+	}
+	if confirmation.Email != "" {
+		query["email"] = confirmation.Email
+	}
+	if confirmation.UserId != "" {
+		query["userId"] = confirmation.UserId
+	}
+	if confirmation.Type != "" {
+		query["type"] = confirmation.Type
+	}
+	query["created"] = bson.M{"$gte": createdSince}
+	count, err := mgoConfirmationsCollection(c).CountDocuments(ctx, query)
+	return count, err
 }

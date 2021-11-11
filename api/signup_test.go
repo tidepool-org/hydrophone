@@ -228,6 +228,12 @@ func TestSignupResponds(t *testing.T) {
 			respCode: 200,
 		},
 		{
+			// testing too many resends
+			method:   "POST",
+			url:      "/resend/signup/test.ResendCounterMax.CreatedRecent",
+			respCode: 403,
+		},
+		{
 			// you can't accept an invitation you didn't get
 			returnNone: true,
 			method:     "PUT",

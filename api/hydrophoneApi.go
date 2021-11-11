@@ -10,6 +10,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -39,15 +40,17 @@ type (
 		logger         *log.Logger
 	}
 	Config struct {
-		ServerSecret              string `json:"serverSecret"`              //used for services
-		WebURL                    string `json:"webUrl"`                    // used for link to blip
-		SupportURL                string `json:"supportUrl"`                // used for link to support
-		AssetURL                  string `json:"assetUrl"`                  // used for location of the images
-		I18nTemplatesPath         string `json:"i18nTemplatesPath"`         // where are the templates located?
-		AllowPatientResetPassword bool   `json:"allowPatientResetPassword"` // true means that patients can reset their password, false means that only clinicianc can reset their password
-		PatientPasswordResetURL   string `json:"patientPasswordResetUrl"`   // URL of the help web site that is used to give instructions to reset password for patients
-		Protocol                  string `json:"protocol"`
-		EnableTestRoutes          bool   `json:"test"`
+		ServerSecret                   string `json:"serverSecret"`              //used for services
+		WebURL                         string `json:"webUrl"`                    // used for link to blip
+		SupportURL                     string `json:"supportUrl"`                // used for link to support
+		AssetURL                       string `json:"assetUrl"`                  // used for location of the images
+		I18nTemplatesPath              string `json:"i18nTemplatesPath"`         // where are the templates located?
+		AllowPatientResetPassword      bool   `json:"allowPatientResetPassword"` // true means that patients can reset their password, false means that only clinicianc can reset their password
+		PatientPasswordResetURL        string `json:"patientPasswordResetUrl"`   // URL of the help web site that is used to give instructions to reset password for patients
+		Protocol                       string `json:"protocol"`
+		EnableTestRoutes               bool   `json:"test"`
+		ConfirmationAttempts           int64
+		ConfirmationAttemptsTimeWindow time.Duration
 	}
 
 	group struct {
@@ -70,6 +73,7 @@ const (
 	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
 	STATUS_ERR_CLINICAL_USR          = "Cannot send an information to clinical"
+	STATUS_ERR_TOO_MANY_ATTEMPTS     = "Cannot send confirmation, too many attempts"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
 	STATUS_ERR_FINDING_TEAM          = "Error finding the team"
@@ -486,4 +490,37 @@ func (a *Api) isAuthorizedUser(tokenData *token.TokenData, userId string) bool {
 	} else {
 		return false
 	}
+}
+
+func (a *Api) verifySendAttempts(ctx context.Context, confirmationType models.Type, creatorId string, email string, userId string) (bool, int64, error) {
+	confirm := models.Confirmation{
+		Type:      confirmationType,
+		CreatorId: creatorId,
+		Email:     email,
+		UserId:    userId,
+	}
+	createdSince := time.Now().Add(-a.Config.ConfirmationAttemptsTimeWindow)
+	var count int64
+	var err error
+	if confirm.Type == models.TypeSignUp {
+		var res *models.Confirmation
+		res, err = a.Store.FindConfirmation(ctx, &confirm)
+		if err == nil {
+			if res == nil {
+				count = 0
+			} else if res.Created.After(createdSince) {
+				count = res.ResendCounter
+			}
+		}
+	} else {
+		count, err = a.Store.CountLatestConfirmations(ctx, confirm, createdSince)
+		a.logger.Printf("verifySendAttempts::count:%v for %v", count, confirm)
+	}
+	if err != nil {
+		return false, 0, err
+	}
+	if count >= a.Config.ConfirmationAttempts {
+		return false, count, nil
+	}
+	return true, count, nil
 }

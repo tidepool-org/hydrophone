@@ -24,6 +24,7 @@ const (
 	STATUS_ERR_FINDING_USR       = "Error finding user"
 	STATUS_ERR_UPDATING_USR      = "Error updating user"
 	STATUS_ERR_UPDATING_TEAM     = "Error updating team"
+	STATUS_ERR_COUNTING_CONF     = "Error counting existing confirmations"
 	STATUS_NO_PASSWORD           = "User does not have a password"
 	STATUS_MISSING_PASSWORD      = "Password is missing"
 	STATUS_INVALID_PASSWORD      = "Password specified is invalid"
@@ -311,7 +312,17 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 	email := vars["useremail"]
 
 	toFind := &models.Confirmation{Email: email, Status: models.StatusPending, Type: models.TypeSignUp}
-
+	sendOk, counter, err := a.verifySendAttempts(req.Context(), toFind.Type, "", email, "")
+	if err != nil {
+		log.Printf("resendSignUp - %s err[%s]", STATUS_ERR_COUNTING_CONF, err.Error())
+		a.sendModelAsResWithStatus(res, STATUS_ERR_COUNTING_CONF, http.StatusInternalServerError)
+		return
+	}
+	if !sendOk {
+		log.Printf("resendSignUp - Too many attempts for resending signup on account [%v]", email)
+		a.sendModelAsResWithStatus(res, STATUS_ERR_TOO_MANY_ATTEMPTS, http.StatusForbidden)
+		return
+	}
 	if found := a.findSignUp(req.Context(), toFind, res); found != nil {
 		if err := a.Store.RemoveConfirmation(req.Context(), found); err != nil {
 			log.Printf("resendSignUp: error deleting old [%s]", err.Error())
@@ -324,6 +335,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 			return
 		}
+		found.ResendCounter = counter + 1
 
 		if a.addOrUpdateConfirmation(req.Context(), found, res) {
 			a.logAudit(req, "signup confirmation recreated")

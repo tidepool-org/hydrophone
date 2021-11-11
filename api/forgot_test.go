@@ -136,6 +136,13 @@ func TestForgotResponds(t *testing.T) {
 			respCode:   200,
 		},
 		{
+			// testing too many forgot email sent
+			method:                     "POST",
+			url:                        "/send/forgot/clinic@myemail.com",
+			respCode:                   403,
+			counterLatestConfirmations: 11,
+		},
+		{
 			method:   "PUT",
 			url:      "/accept/forgot",
 			respCode: 200,
@@ -222,9 +229,11 @@ func TestForgotResponds(t *testing.T) {
 		mockSeagull.SetMockNextCollectionCall("expires@myemail.com"+"preferences", `{"Something":"anit no thing"}`, nil)
 
 		if test.returnNone {
+			mockStoreEmpty.CounterLatestConfirmations = test.counterLatestConfirmations
 			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
+			mockStore.CounterLatestConfirmations = test.counterLatestConfirmations
 			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
 			hydrophone.SetHandlers("", testRtr)
 		}

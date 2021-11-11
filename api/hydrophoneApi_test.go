@@ -1,12 +1,14 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -45,8 +47,10 @@ var (
 	NO_PARAMS = map[string]string{}
 
 	FAKE_CONFIG = Config{
-		ServerSecret:      "shhh! don't tell",
-		I18nTemplatesPath: "../templates",
+		ServerSecret:                   "shhh! don't tell",
+		I18nTemplatesPath:              "../templates",
+		ConfirmationAttempts:           10,
+		ConfirmationAttemptsTimeWindow: 10 * time.Minute,
 	}
 	/*
 	 * basics setup
@@ -133,18 +137,19 @@ func (m *testingShorelingMock) CheckToken(chkToken string) *token.TokenData {
 type (
 	//common test structure
 	toTest struct {
-		desc          string
-		skip          bool
-		returnNone    bool
-		doBad         bool
-		method        string
-		url           string
-		body          testJSONObject
-		token         string
-		respCode      int
-		response      testJSONObject
-		emailSubject  string
-		customHeaders map[string]string
+		desc                       string
+		skip                       bool
+		returnNone                 bool
+		doBad                      bool
+		method                     string
+		url                        string
+		body                       testJSONObject
+		token                      string
+		respCode                   int
+		response                   testJSONObject
+		emailSubject               string
+		customHeaders              map[string]string
+		counterLatestConfirmations int64
 	}
 	// These two types make it easier to define blobs of json inline.
 	// We don't use the types defined by the API because we want to
@@ -236,4 +241,86 @@ func Test_isAuthorizedUser_UnAuthorized(t *testing.T) {
 	if res == true {
 		t.Fatalf("Test_isAuthorizedUser_UnAuthorized should have returned false")
 	}
+}
+
+func Test_verifySendAttempts(t *testing.T) {
+	ctx := context.Background()
+	mockStore.CounterLatestConfirmations = 1
+	sendok, count, err := responsableHydrophone.verifySendAttempts(ctx, models.TypeInformation, "creatorId", "", "")
+	if err != nil {
+		t.Fatalf("Test_verifySendAttempts should return no error, got %v", err)
+	}
+	if sendok != true {
+		t.Fatal("Test_verifySendAttempts should have returned true")
+	}
+	if count != 1 {
+		t.Fatalf("Test_verifySendAttempts should return a count of 1, got %v", count)
+	}
+	mockStore.CounterLatestConfirmations = 11
+	sendok, count, err = responsableHydrophone.verifySendAttempts(ctx, models.TypeInformation, "creatorId", "", "")
+	if err != nil {
+		t.Fatalf("Test_verifySendAttempts should return no error, got %v", err)
+	}
+	if sendok != false {
+		t.Fatal("Test_verifySendAttempts should have returned false")
+	}
+	if count != 11 {
+		t.Fatalf("Test_verifySendAttempts should return a count of 11, got %v", count)
+	}
+	mockStore.CounterLatestConfirmations = 1
+	sendok, count, err = responsableHydrophone.verifySendAttempts(ctx, models.TypeSignUp, "test.ResendCounterOk.CreatedRecent", "", "")
+	if err != nil {
+		t.Fatalf("Test_verifySendAttempts should return no error, got %v", err)
+	}
+	if sendok != true {
+		t.Fatal("Test_verifySendAttempts should have returned true")
+	}
+	if count != 1 {
+		t.Fatalf("Test_verifySendAttempts should return a count of 1, got %v", count)
+	}
+	sendok, count, err = responsableHydrophone.verifySendAttempts(ctx, models.TypeSignUp, "", "", "test.ResendCounterMax.CreatedLongAgo")
+	if err != nil {
+		t.Fatalf("Test_verifySendAttempts should return no error, got %v", err)
+	}
+	if sendok != true {
+		t.Fatal("Test_verifySendAttempts should have returned true")
+	}
+	if count != 0 {
+		t.Fatalf("Test_verifySendAttempts should return a count of 0, got %v", count)
+	}
+	sendok, count, err = responsableHydrophone.verifySendAttempts(ctx, models.TypeSignUp, "", "test.ResendCounterMax.CreatedRecent", "")
+	if err != nil {
+		t.Fatalf("Test_verifySendAttempts should return no error, got %v", err)
+	}
+	if sendok != false {
+		t.Fatal("Test_verifySendAttempts should have returned false")
+	}
+	if count != 11 {
+		t.Fatalf("Test_verifySendAttempts should return a count of 11, got %v", count)
+	}
+
+	responsableHydrophone.Store = mockStoreEmpty
+	sendok, count, err = responsableHydrophone.verifySendAttempts(ctx, models.TypeSignUp, "", "test.verifySendAttempts.empty", "")
+	if err != nil {
+		t.Fatalf("Test_verifySendAttempts should return no error, got %v", err)
+	}
+	if sendok != true {
+		t.Fatal("Test_verifySendAttempts should have returned true")
+	}
+	if count != 0 {
+		t.Fatalf("Test_verifySendAttempts should return a count of 0, got %v", count)
+	}
+
+	responsableHydrophone.Store = mockStoreFails
+	sendok, count, err = responsableHydrophone.verifySendAttempts(ctx, models.TypeSignUp, "", "test.verifySendAttempts.fail", "")
+	if err == nil {
+		t.Fatal("Test_verifySendAttempts should return an error, got nil")
+	}
+	if sendok != false {
+		t.Fatal("Test_verifySendAttempts should have returned false")
+	}
+	if count != 0 {
+		t.Fatalf("Test_verifySendAttempts should return a count of 0, got %v", count)
+	}
+
 }

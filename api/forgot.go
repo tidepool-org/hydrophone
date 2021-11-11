@@ -92,6 +92,18 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.Email = email
 		resetCnf.UserId = resetUsr.UserID
 
+		sendOk, _, err := a.verifySendAttempts(req.Context(), resetCnf.Type, "", "", resetCnf.UserId)
+		if err != nil {
+			log.Printf("passwordReset - %s err[%s]", STATUS_ERR_COUNTING_CONF, err.Error())
+			a.sendModelAsResWithStatus(res, STATUS_ERR_COUNTING_CONF, http.StatusInternalServerError)
+			return
+		}
+		if !sendOk {
+			log.Printf("passwordReset - Too many attempts for pin reset on account [%v]", resetCnf.UserId)
+			a.sendModelAsResWithStatus(res, STATUS_ERR_TOO_MANY_ATTEMPTS, http.StatusForbidden)
+			return
+		}
+
 		// let's get the resetter user preferences
 		resetterPreferences := &models.Preferences{}
 		if err := a.seagull.GetCollection(resetCnf.UserId, "preferences", a.sl.TokenProvide(), resetterPreferences); err != nil {
@@ -112,6 +124,17 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.Email = email
 		//there is nothing more to do other than notify the user
 		resetCnf.UpdateStatus(models.StatusCompleted)
+		sendOk, _, err := a.verifySendAttempts(req.Context(), resetCnf.Type, "", resetCnf.Email, "")
+		if err != nil {
+			log.Printf("passwordReset - %s err[%s]", STATUS_ERR_COUNTING_CONF, err.Error())
+			a.sendModelAsResWithStatus(res, STATUS_ERR_COUNTING_CONF, http.StatusInternalServerError)
+			return
+		}
+		if !sendOk {
+			log.Printf("passwordReset - Too many attempts for pin reset on account [%v]", resetCnf.Email)
+			a.sendModelAsResWithStatus(res, STATUS_ERR_TOO_MANY_ATTEMPTS, http.StatusForbidden)
+			return
+		}
 	}
 
 	if resetCnf != nil && (info != nil || a.addOrUpdateConfirmation(req.Context(), resetCnf, res)) {

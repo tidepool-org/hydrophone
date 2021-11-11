@@ -19,13 +19,14 @@ type (
 		Context   json.RawMessage `json:"context" bson:"context,omitempty" swaggertype:"string" format:"base64"`
 		Created   time.Time       `json:"created" bson:"created"`
 
-		TemplateName TemplateName `json:"-" bson:"templateName"`
-		UserId       string       `json:"userId" bson:"userId"`
-		Team         *Team        `json:"target" bson:",inline"`
-		Role         string       `json:"role" bson:"role"`
-		Status       Status       `json:"status" bson:"status"`
-		Modified     time.Time    `json:"-" bson:"modified"`
-		ShortKey     string       `json:"shortKey" bson:"shortKey"`
+		TemplateName  TemplateName `json:"-" bson:"templateName"`
+		UserId        string       `json:"userId" bson:"userId"`
+		Team          *Team        `json:"target" bson:",inline"`
+		Role          string       `json:"role" bson:"role"`
+		Status        Status       `json:"status" bson:"status"`
+		Modified      time.Time    `json:"-" bson:"modified"`
+		ShortKey      string       `json:"shortKey" bson:"shortKey"`
+		ResendCounter int64        `bson:"resendCounter"`
 	}
 
 	Team struct {

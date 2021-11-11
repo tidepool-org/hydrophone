@@ -92,6 +92,16 @@ func TestPinResetResponds(t *testing.T) {
 			},
 		},
 		{
+			// testing too many pin reset sends
+			test: toTest{
+				method:                     "POST",
+				url:                        "/send/pin-reset/" + testing_uid1,
+				token:                      testing_token_uid1,
+				respCode:                   403,
+				counterLatestConfirmations: 11,
+			},
+		},
+		{
 			// everything OK goes 200
 			test: toTest{
 				returnNone: true,
@@ -122,7 +132,6 @@ func TestPinResetResponds(t *testing.T) {
 			continue
 		}
 		var testRtr = mux.NewRouter()
-
 		// if the token is not provided, shoreline will consider the requester as unauthorized
 		if pinResetTest.test.token == "" {
 			mockShoreline.Unauthorized = true
@@ -143,9 +152,11 @@ func TestPinResetResponds(t *testing.T) {
 
 		//testing when there is nothing to return from the store
 		if pinResetTest.test.returnNone {
+			mockStoreEmpty.CounterLatestConfirmations = pinResetTest.test.counterLatestConfirmations
 			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
+			mockStore.CounterLatestConfirmations = pinResetTest.test.counterLatestConfirmations
 			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
 			hydrophone.SetHandlers("", testRtr)
 		}

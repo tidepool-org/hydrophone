@@ -21,8 +21,10 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/tidepool-org/go-common/clients/portal"
 
@@ -65,7 +67,6 @@ func main() {
 	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
 		logger.Panic("Problem loading config ", err)
 	}
-
 	isTestEnv, found := os.LookupEnv("TEST")
 	if found && strings.ToUpper(isTestEnv) == "TRUE" {
 		config.Api.EnableTestRoutes = true
@@ -95,6 +96,21 @@ func main() {
 		config.Api.Protocol = protocol
 	} else {
 		config.Api.Protocol = "https"
+	}
+
+	if config.Api.ConfirmationAttempts == 0 {
+		attempts, _ := os.LookupEnv("CONFIRMATION_ATTEMPTS")
+		config.Api.ConfirmationAttempts, _ = strconv.ParseInt(attempts, 10, 64)
+		if config.Api.ConfirmationAttempts == 0 {
+			config.Api.ConfirmationAttempts = 10
+		}
+	}
+	if config.Api.ConfirmationAttemptsTimeWindow == 0 {
+		attemptsWindow, _ := os.LookupEnv("CONFIRMATION_ATTEMPTS_TIME_WINDOW")
+		config.Api.ConfirmationAttemptsTimeWindow, _ = time.ParseDuration(attemptsWindow)
+		if config.Api.ConfirmationAttemptsTimeWindow == 0 {
+			config.Api.ConfirmationAttemptsTimeWindow = time.Hour
+		}
 	}
 	/*
 	 * Hakken setup
