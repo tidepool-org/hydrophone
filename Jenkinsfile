@@ -21,7 +21,7 @@ pipeline {
                 }
             }
         }
-        stage('Build ') {
+        stage('Build') {
             agent {
                 docker {
                     image 'docker.ci.diabeloop.eu/go-build:1.15'
@@ -37,7 +37,7 @@ pipeline {
                 }
             }
         }
-        stage('Test ') {
+        stage('Test') {
             steps {
                 echo 'start mongo to serve as a testing db'
                 sh 'docker network create hydrotest${RUN_ID} && docker run --rm -d --net=hydrotest${RUN_ID} --name=mongo4hydrotest${RUN_ID} mongo:4.2'
@@ -54,6 +54,9 @@ pipeline {
             post {
                 always {
                     sh 'docker stop mongo4hydrotest${RUN_ID} && docker network rm hydrotest${RUN_ID}'
+                    junit 'test-report.xml'
+                    archiveArtifacts artifacts: 'coverage.html', allowEmptyArchive: true
+                    cobertura coberturaReportFile: 'coverage.xml'
                 }
             }
         }

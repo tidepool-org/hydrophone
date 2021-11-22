@@ -6,3 +6,10 @@ vendor/
 
 artifact_go.sh
 *.exe
+hydrophone
+
+test-report.xml
+test-report.txt
+coverage.out
+coverage.html
+coverage.xml

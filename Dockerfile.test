@@ -1,0 +1,38 @@
+# Usage:
+# docker build -t hydrophone:test -f Dockerfile.test --build-arg GITHUB_TOKEN=$GITHUB_TOKEN .
+# To retreive the coverage report run:
+# docker run hydrophone:test > coverage.html
+FROM mongo:4.2
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends apt-utils && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends wget build-essential psmisc git && \
+    apt-get clean -y
+WORKDIR /tmp
+ARG GITHUB_TOKEN
+ENV GO_ARCHIVE=go1.15.15.linux-amd64.tar.gz
+ENV GOROOT=/go
+ENV GOPATH=/root/go
+RUN wget -nv https://golang.org/dl/$GO_ARCHIVE && \
+    tar zxf $GO_ARCHIVE && \
+    mv -v /tmp/go /go && \
+    rm -v /tmp/$GO_ARCHIVE
+WORKDIR /root/go/src/github.com/mdblp/hydrophone
+
+COPY go.* ./
+RUN \
+  /usr/bin/git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/" && \
+  /go/bin/go mod download && \
+  /go/bin/go env GOPATH && \
+  /go/bin/go get 'github.com/jstemmer/go-junit-report' && \
+  /go/bin/go get 'github.com/t-yuki/gocover-cobertura'
+COPY . .
+RUN /bin/bash -c '/usr/local/bin/docker-entrypoint.sh mongod &' && \
+    sleep 1 && \
+    PATH=$PATH:/go/bin:$(/go/bin/go env GOPATH)/bin bash test.sh && echo 'No Error !' ; \
+    sleep 1 && \
+    kill "$(ps -C mongod -o pid=)" && \
+    sleep 1 && \
+    /bin/cat test-report.xml || /bin/true
+
+ENTRYPOINT ["/bin/cat", "coverage.html"]

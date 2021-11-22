@@ -1,1 +1,9 @@
-
+test-report.xml
+test-report.txt
+coverage.out
+coverage.html
+coverage.xml
+.vscode
+.github
+docs/
+Jenkinsfile
