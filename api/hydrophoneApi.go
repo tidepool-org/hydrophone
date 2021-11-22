@@ -82,6 +82,7 @@ const (
 	STATUS_ERR_FINDING_VALIDATION    = "Error finding the account validation"
 	STATUS_ERR_DECODING_INVITE       = "Error decoding the invitation"
 	STATUS_ERR_MISSING_DATA_INVITE   = "Error missing data in the invitation"
+	STATUS_ERR_INVALID_DATA          = "Error invalid data in the invitation"
 
 	//returned status messages
 	STATUS_NOT_FOUND           = "Nothing found"

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -51,16 +52,51 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 			InvitationStatus: "pending",
 		},
 	}
-	membersAddAdminRole := []store.Member{
+	membersSetMemberRole := []store.Member{
 		{
 			UserID:           testing_uid1,
-			TeamID:           "teamAddAdminRole",
+			TeamID:           "teamSetMemberRole",
+			Role:             "admin",
+			InvitationStatus: "accepted",
+		},
+		{
+			UserID:           testing_uid2,
+			TeamID:           "teamSetMemberRole",
+			Role:             "admin",
+			InvitationStatus: "accepted",
+		},
+		{
+			UserID:           testing_uid5,
+			TeamID:           "teamSetMemberRole",
+			Role:             "admin",
+			InvitationStatus: "accepted",
+		},
+	}
+	membersSetAdminRole := []store.Member{
+		{
+			UserID:           testing_uid1,
+			TeamID:           "teamSetAdminRole",
 			Role:             "admin",
 			InvitationStatus: "accepted",
 		},
 		{
 			UserID:           testing_uid3,
-			TeamID:           "teamAddAdminRole",
+			TeamID:           "teamSetAdminRole",
+			Role:             "member",
+			InvitationStatus: "accepted",
+		},
+	}
+	membersAlready := []store.Member{
+		{
+			UserID:           testing_uid1,
+			TeamID:           "teamAlreadyMember",
+			Role:             "admin",
+			InvitationStatus: "accepted",
+		},
+		{
+			UserID:           testing_uid3,
+			TeamID:           "teamAlreadyMember",
+			Role:             "member",
 			InvitationStatus: "accepted",
 		},
 		{
@@ -76,22 +112,28 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		Members:     members,
 		ID:          "123456",
 	}
-	teamAddAdminRole := store.Team{
+	teamSetMemberRole := store.Team{
 		Name:        "Led Zep",
 		Description: "Fake Team",
-		Members:     membersAddAdminRole,
+		Members:     membersSetMemberRole,
+		ID:          "123456",
+	}
+	teamSetAdminRole := store.Team{
+		Name:        "Led Zep",
+		Description: "Fake Team",
+		Members:     membersSetAdminRole,
 		ID:          "123456",
 	}
 	teamAlreadyMember := store.Team{
 		Name:        "team already member",
 		Description: "Fake Team",
-		Members:     membersAddAdminRole,
+		Members:     membersAlready,
 		ID:          "teamAlreadyMember",
 	}
 	teamDeleteMember := store.Team{
 		Name:        "team already member",
 		Description: "Fake Team",
-		Members:     membersAddAdminRole,
+		Members:     membersAlready,
 		ID:          "teamDeleteMember",
 	}
 	teamAddPatientAsMember := store.Team{
@@ -185,8 +227,13 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 	mockPerms.SetMockNextCall(token1, teams1, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1, teams1, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"123456", &team123456, nil)
-	mockPerms.SetMockNextCall(testing_token_uid1+testing_uid3, &member_uid3, nil)
-	mockPerms.SetMockNextCall(testing_token_uid1+"teamAddAdminRole", &teamAddAdminRole, nil)
+	mockPerms.SetMockNextCall(testing_token_uid1+testing_uid3, &member_uid3, nil) // Used in teamSetAdminRole too
+
+	mockPerms.SetMockNextCall(testing_token_uid1+"NotInAnyTeam", nil, fmt.Errorf("Member not found"))
+	mockPerms.SetMockNextCall(testing_token_uid1+"teamSetMemberRole", &teamSetMemberRole, nil)
+	mockPerms.SetMockNextCall(testing_token_uid1+testing_uid2, &membersSetMemberRole[1], nil)
+	mockPerms.SetMockNextCall(testing_token_uid1+"teamSetAdminRole", &teamSetAdminRole, nil)
+
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamAlreadyMember", &teamAlreadyMember, nil)
 	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"teamAlreadyMember", []store.Member{member_dup}, nil)
 	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"teamInvitePatient", []store.Member{}, nil)
@@ -283,16 +330,76 @@ func initTests() []toTest {
 				"teamId": "teamInvitePatient",
 			},
 		},
-		// returns a 200 when everything goes well to add an admin role
+		// returns a 400 when everything goes wrong to set member role
+		{
+			method:   "PUT",
+			url:      fmt.Sprintf("/send/team/role/%s", testing_uid5),
+			respCode: http.StatusBadRequest,
+			token:    testing_token_uid1,
+			body: testJSONObject{
+				"email":  testing_uid5 + "@example.com",
+				"teamId": "NotInAnyTeam",
+				"role":   "member",
+			},
+		},
+		// returns a 200 when everything goes well to set member role
+		{
+			method:   "PUT",
+			url:      fmt.Sprintf("/send/team/role/%s", testing_uid2),
+			respCode: 200,
+			token:    testing_token_uid1,
+			body: testJSONObject{
+				"email":  testing_uid2 + "@example.com",
+				"teamId": "teamSetMemberRole",
+				"role":   "member",
+			},
+		},
+		// returns a 200 when everything goes well to set admin role
 		{
 			method:   "PUT",
 			url:      fmt.Sprintf("/send/team/role/%s", testing_uid3),
 			respCode: 200,
 			token:    testing_token_uid1,
 			body: testJSONObject{
-				"user":   testing_uid3,
-				"teamId": "teamAddAdminRole",
+				"email":  testing_uid3 + "@example.com",
+				"teamId": "teamSetAdminRole",
 				"role":   "admin",
+			},
+		},
+		// returns 400 when the member do not exists
+		{
+			method:   "PUT",
+			url:      fmt.Sprintf("/send/team/role/%s", testing_uid5),
+			respCode: http.StatusBadRequest,
+			token:    testing_token_uid1,
+			body: testJSONObject{
+				"email":  testing_uid5 + "@example.com",
+				"teamId": "teamSetAdminRole",
+				"role":   "admin",
+			},
+		},
+		// returns a 409 when the member already has this role
+		{
+			method:   "PUT",
+			url:      fmt.Sprintf("/send/team/role/%s", testing_uid3),
+			respCode: http.StatusConflict,
+			token:    testing_token_uid1,
+			body: testJSONObject{
+				"email":  testing_uid3 + "@example.com",
+				"teamId": "teamSetAdminRole",
+				"role":   "member",
+			},
+		},
+		// returns a 500 when the update role failed in crew
+		{
+			method:   "PUT",
+			url:      fmt.Sprintf("/send/team/role/%s", testing_uid5),
+			respCode: http.StatusInternalServerError,
+			token:    testing_token_uid1,
+			body: testJSONObject{
+				"email":  testing_uid5 + "@example.com",
+				"teamId": "teamSetMemberRole",
+				"role":   "member",
 			},
 		},
 		// returns a 200 when everything goes well to delete a member
@@ -486,7 +593,7 @@ func TestTeam(t *testing.T) {
 		}
 		request, _ := http.NewRequest(test.method, test.url, body)
 		if test.token != "" {
-			request.Header.Set(TP_SESSION_TOKEN, testing_token_uid1)
+			request.Header.Set(TP_SESSION_TOKEN, test.token)
 		}
 		if test.customHeaders != nil {
 			for header, value := range test.customHeaders {
@@ -497,8 +604,8 @@ func TestTeam(t *testing.T) {
 		testRtr.ServeHTTP(response, request)
 
 		if response.Code != test.respCode {
-			t.Fatalf("Test %d url: '%s'\nNon-expected status code %d (expected %d):\n\tbody: %v",
-				idx, test.url, response.Code, test.respCode, response.Body)
+			t.Fatalf("Test %d url: %s '%s'\nNon-expected status code %d (expected %d):\n\tbody: %v",
+				idx, test.method, test.url, response.Code, test.respCode, response.Body)
 		}
 		t.Logf("Test %d url: '%s'\nExpected status code %d (expected %d):\n\tbody: %v",
 			idx, test.url, response.Code, test.respCode, response.Body)
@@ -681,6 +788,14 @@ func initWrongBodies() []testJSONObject {
 		},
 		testJSONObject{
 			"email": testing_uid2 + "@email.org",
+		},
+		testJSONObject{
+			"teamId": "abcdef",
+		},
+		testJSONObject{
+			"teamId": "abcdef",
+			"email":  testing_uid2 + "@email.org",
+			"role":   "god",
 		},
 		testJSONObject{},
 	)
@@ -1029,23 +1144,66 @@ func TestCaregiverInvite(t *testing.T) {
 }
 
 func TestSendTeamInvite_WrongBody(t *testing.T) {
-
 	sendTeamInvite("POST", "/send/team/invite", t)
-}
-
-func TestSendTeamInvite_NoTeam(t *testing.T) {
-
-	sendTeamInvite("POST", "/send/team/invite", t)
-}
-
-func TestUpdateTeamRole_WrongBody(t *testing.T) {
-
-	sendTeamInvite("PUT", "/send/team/role/UID0000", t)
 }
 
 func TestDeleteTeamInvite_WrongBody(t *testing.T) {
-
 	sendTeamInvite("DELETE", "/send/team/leave/UID0000", t)
+}
+
+func TestUpdateTeamRole_WrongBody(t *testing.T) {
+	sendTeamInvite("PUT", "/send/team/role/UID0000", t)
+}
+
+func TestUpdateTeamRole_NoToken(t *testing.T) {
+	tstRtr := initTestingRouterNoPerms()
+	body := &bytes.Buffer{}
+	json.NewEncoder(body).Encode(testJSONObject{})
+
+	request, _ := http.NewRequest("PUT", "/send/team/role/UID0000", body)
+	response := httptest.NewRecorder()
+	tstRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Logf("expected %d actual %d", http.StatusUnauthorized, response.Code)
+		t.Fail()
+	}
+}
+
+func TestUpdateTeamRole_InvalidBody(t *testing.T) {
+	tstRtr := initTestingRouterNoPerms()
+	body := strings.NewReader("[Invalid JSON]")
+
+	request, _ := http.NewRequest("PUT", "/send/team/role/UID0000", body)
+	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
+	response := httptest.NewRecorder()
+	tstRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Logf("expected %d actual %d", http.StatusBadRequest, response.Code)
+		t.Fail()
+	}
+	expectedBody := fmt.Sprintf("{\"code\":%d,\"reason\":\"%s\"}", http.StatusBadRequest, STATUS_ERR_DECODING_INVITE)
+	responseBody := response.Body.String()
+	if responseBody != expectedBody {
+		t.Fatalf("expected body '%s' receive '%s'", expectedBody, responseBody)
+	}
+}
+
+func TestUpdateTeamRole_NoinviteeID(t *testing.T) {
+	tstRtr := initTestingRouterNoPerms()
+	body := &bytes.Buffer{}
+	json.NewEncoder(body).Encode(testJSONObject{})
+
+	request, _ := http.NewRequest("PUT", "/send/team/role/", body)
+	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
+	response := httptest.NewRecorder()
+	tstRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNotFound {
+		t.Logf("expected %d actual %d", http.StatusNotFound, response.Code)
+		t.Fail()
+	}
 }
 
 func TestAcceptTeamInvite(t *testing.T) {

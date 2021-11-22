@@ -41,6 +41,7 @@ const (
 
 	testing_uid3 = "UID002"
 	testing_uid4 = "UID004"
+	testing_uid5 = "UID005"
 )
 
 var (

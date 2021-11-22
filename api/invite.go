@@ -28,7 +28,6 @@ type (
 	//Invite details for generating a new invite
 	inviteBody struct {
 		Email  string `json:"email"`
-		User   string `json:"user"`
 		TeamID string `json:"teamId"`
 		Role   string `json:"role"`
 	}
@@ -169,6 +168,7 @@ func (a *Api) isTeamAdmin(userid string, team store.Team) bool {
 			if team.Members[j].Role == "admin" {
 				return true
 			}
+			break
 		}
 	}
 	return false
@@ -1285,20 +1285,26 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 		return
 	}
 
-	if ib.TeamID == "" {
+	if ib.TeamID == "" || ib.Email == "" {
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_MISSING_DATA_INVITE)}
 		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
 		return
 	}
 	if strings.ToLower(ib.Role) == "admin" {
 		ib.Role = "admin"
+	} else if strings.ToLower(ib.Role) == "member" {
+		ib.Role = "member"
+	} else {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_INVALID_DATA)}
+		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+		return
 	}
 
-	_, team, err := a.getTeamForUser(tokenValue, ib.TeamID, token.UserId, res)
+	_, team, err := a.getTeamForUser(tokenValue, ib.TeamID, invitorID, res)
 	if err != nil {
 		return
 	}
-	if isMember := a.isTeamMember(inviteeID, team, false); !isMember {
+	if !a.isTeamMember(inviteeID, team, false) {
 		// the invitee is not an accepted member of the team
 		log.Printf("UpdateInvite: %s is not a member of %s", inviteeID, team.ID)
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_NOT_ADMIN)}
@@ -1360,7 +1366,6 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 				}
 			}
 			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
-			return
 		}
 	}
 }
