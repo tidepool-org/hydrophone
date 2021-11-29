@@ -1067,7 +1067,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 // @Failure 409 {object} status.Status "user already has a pending or declined invite OR user is already part of the team"
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
 // @Failure 500 {object} status.Status "Internal error while processing the invite, detailled error returned in the body"
-// @Router /confirm/send/team/invite [post]
+// @Router /send/team/invite [post]
 // @security TidepoolAuth
 func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	// By default, the invitee language will be "en" for English (as we don't know which language suits him)
@@ -1253,7 +1253,7 @@ func (a *Api) inviteHcp(invitedUsr *schema.UserData, member store.Member, token 
 // @Failure 409 {object} status.Status "No notification and email sent; User is already an admin"
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
 // @Failure 500 {object} status.Status "Internal error while processing the invite, detailled error returned in the body"
-// @Router /confirm/send/team/role/{userid} [put]
+// @Router /send/team/role/{userid} [put]
 // @security TidepoolAuth
 func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	// By default, the invitee language will be "en" for Englih (as we don't know which language suits him)
@@ -1383,7 +1383,7 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 // @Failure 409 {object} status.Status "No notification and email sent; User is not a member"
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
 // @Failure 500 {object} status.Status "Internal error while processing the invite, detailled error returned in the body"
-// @Router /confirm/send/team/leave/{userid} [delete]
+// @Router /send/team/leave/{userid} [delete]
 // @security TidepoolAuth
 func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	// By default, the invitee language will be "en" for Englih (as we don't know which language suits him)

@@ -200,7 +200,7 @@ func (a *Api) findResetConfirmation(ctx context.Context, conf *models.Confirmati
 // @Failure 401 {object} status.Status "Password reset confirmation has expired"
 // @Failure 404 {object} status.Status "No matching reset confirmation was found"
 // @Failure 500 {object} status.Status "Internal error while searching the confirmation"
-// @Router /confirm/accept/forgot [put]
+// @Router /accept/forgot [put]
 func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 
 	defer req.Body.Close()
