@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"strconv"
+	textTemplate "text/template"
 )
 
 type TemplateName string
@@ -36,7 +37,7 @@ type Templates map[TemplateName]Template
 
 type PrecompiledTemplate struct {
 	name               TemplateName
-	precompiledSubject *template.Template
+	precompiledSubject *textTemplate.Template
 	precompiledBody    *template.Template
 }
 
@@ -51,7 +52,7 @@ func NewPrecompiledTemplate(name TemplateName, subjectTemplate string, bodyTempl
 		return nil, errors.New("models: body template is missing")
 	}
 
-	precompiledSubject, err := template.New(name.String()).Parse(subjectTemplate)
+	precompiledSubject, err := textTemplate.New(name.String()).Parse(subjectTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("models: failure to precompile subject template: %s", err)
 	}
