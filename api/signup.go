@@ -171,7 +171,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 						if upsertCustodialSignUpInvite.ClinicId != "" {
 							templateName = models.TemplateNameSignupCustodialNewClinicExperience
 							creatorID = upsertCustodialSignUpInvite.InvitedBy
-							clinicId = upsertCustodialSignUpInvite.InvitedBy
+							clinicId = upsertCustodialSignUpInvite.ClinicId
 						} else {
 							templateName = models.TemplateNameSignupCustodial
 						}
