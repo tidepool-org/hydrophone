@@ -162,6 +162,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			} else if newSignUp == nil {
 				var templateName models.TemplateName
 				var creatorID string
+				var clinicId string
 
 				if usrDetails.IsClinic() {
 					templateName = models.TemplateNameSignupClinic
@@ -169,8 +170,8 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 					if token.IsServer {
 						if upsertCustodialSignUpInvite.ClinicId != "" {
 							templateName = models.TemplateNameSignupCustodialNewClinicExperience
-							newSignUp.ClinicId = upsertCustodialSignUpInvite.ClinicId
-							newSignUp.CreatorId = upsertCustodialSignUpInvite.InvitedBy
+							creatorID = upsertCustodialSignUpInvite.InvitedBy
+							clinicId = upsertCustodialSignUpInvite.InvitedBy
 						} else {
 							templateName = models.TemplateNameSignupCustodial
 						}
@@ -197,6 +198,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, templateName, creatorID)
 				newSignUp.UserId = usrDetails.UserID
 				newSignUp.Email = usrDetails.Emails[0]
+				newSignUp.ClinicId = clinicId
 			} else if newSignUp.Email != usrDetails.Emails[0] {
 				if err := a.Store.RemoveConfirmation(req.Context(), newSignUp); err != nil {
 					log.Printf("sendSignUp: error deleting old [%s]", err.Error())
