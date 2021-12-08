@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	clinics "github.com/tidepool-org/clinic/client"
+	"io"
 	"log"
 	"net/http"
 	"regexp"
@@ -124,11 +125,9 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 		}
 
 		var upsertCustodialSignUpInvite UpsertCustodialSignUpInvite
-		if req.Body != nil {
-			if err := json.NewDecoder(req.Body).Decode(&upsertCustodialSignUpInvite); err != nil {
-				a.sendModelAsResWithStatus(res, status.StatusError{Status:status.NewStatus(http.StatusBadRequest, "error decoding payload")}, http.StatusBadRequest)
-				return
-			}
+		if err := json.NewDecoder(req.Body).Decode(&upsertCustodialSignUpInvite); err != nil && err != io.EOF {
+			a.sendModelAsResWithStatus(res, status.StatusError{Status:status.NewStatus(http.StatusBadRequest, "error decoding payload")}, http.StatusBadRequest)
+			return
 		}
 
 		if usrDetails, err := a.sl.GetUser(userId, a.sl.TokenProvide()); err != nil {
