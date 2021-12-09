@@ -261,9 +261,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 					"Key":      newSignUp.Key,
 					"Email":    newSignUp.Email,
 					"FullName": profile.FullName,
-				}
-				if newSignUp.CreatorId != "" {
-					emailContent["CreatorName"] = creatorName
+					"CreatorName": creatorName,
 				}
 				if newSignUp.ClinicId != "" {
 					emailContent["ClinicName"] = clinicName
