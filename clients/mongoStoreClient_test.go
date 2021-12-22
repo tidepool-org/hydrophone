@@ -2,17 +2,16 @@ package clients
 
 import (
 	"context"
-	"log"
 	"os"
 	"testing"
 	"time"
 
+	goComMgo "github.com/mdblp/go-common/clients/mongo"
 	"github.com/mdblp/hydrophone/models"
-	goComMgo "github.com/tidepool-org/go-common/clients/mongo"
+	"github.com/sirupsen/logrus/hooks/test"
 )
 
-var logger = log.New(os.Stdout, "mongo-test ", log.LstdFlags|log.LUTC|log.Lshortfile)
-
+var logger, _ = test.NewNullLogger()
 var testingConfig = &goComMgo.Config{
 	Database:               "confirm_test",
 	Timeout:                2 * time.Second,

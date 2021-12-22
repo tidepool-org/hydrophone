@@ -18,13 +18,14 @@ pipeline {
                             returnStdout: true
                         ).trim().toUpperCase()
                     }
+                    env.APP_VERSION = env.version
                 }
             }
         }
         stage('Build') {
             agent {
                 docker {
-                    image 'docker.ci.diabeloop.eu/go-build:1.15'
+                    image 'docker.ci.diabeloop.eu/go-build:1.17'
                 }
             }
             steps {
@@ -42,7 +43,7 @@ pipeline {
                 echo 'start mongo to serve as a testing db'
                 sh 'docker network create hydrotest${RUN_ID} && docker run --rm -d --net=hydrotest${RUN_ID} --name=mongo4hydrotest${RUN_ID} mongo:4.2'
                 script {
-                    docker.image('docker.ci.diabeloop.eu/go-build:1.15').inside("--net=hydrotest${RUN_ID}") {
+                    docker.image('docker.ci.diabeloop.eu/go-build:1.17').inside("--net=hydrotest${RUN_ID}") {
                         withCredentials ([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                             sh 'git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"'
                             sh "TIDEPOOL_STORE_ADDRESSES=mongo4hydrotest${RUN_ID}:27017 TIDEPOOL_STORE_DATABASE=confirm_test $WORKSPACE/test.sh"
@@ -64,7 +65,7 @@ pipeline {
             steps {
                 withCredentials ([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                     pack()
-                    sh 'docker build -f Dockerfile.hydromail --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} -t hydromail:${GIT_COMMIT} .'
+                    sh 'docker build -f Dockerfile.hydromail --build-arg APP_VERSION=$version --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} -t hydromail:${GIT_COMMIT} .'
                 }
             }
         }

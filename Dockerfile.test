@@ -10,7 +10,7 @@ RUN apt-get update -y && \
     apt-get clean -y
 WORKDIR /tmp
 ARG GITHUB_TOKEN
-ENV GO_ARCHIVE=go1.15.15.linux-amd64.tar.gz
+ENV GO_ARCHIVE=go1.17.5.linux-amd64.tar.gz
 ENV GOROOT=/go
 ENV GOPATH=/root/go
 RUN wget -nv https://golang.org/dl/$GO_ARCHIVE && \
@@ -24,8 +24,8 @@ RUN \
   /usr/bin/git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/" && \
   /go/bin/go mod download && \
   /go/bin/go env GOPATH && \
-  /go/bin/go get 'github.com/jstemmer/go-junit-report' && \
-  /go/bin/go get 'github.com/t-yuki/gocover-cobertura'
+  /go/bin/go install github.com/jstemmer/go-junit-report@latest && \
+  /go/bin/go install github.com/t-yuki/gocover-cobertura@latest
 COPY . .
 RUN /bin/bash -c '/usr/local/bin/docker-entrypoint.sh mongod &' && \
     sleep 1 && \

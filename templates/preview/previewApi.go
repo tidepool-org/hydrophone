@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/gorilla/mux"
 
+	"github.com/mdblp/go-common/clients/status"
 	"github.com/mdblp/hydrophone/localize"
 	"github.com/mdblp/hydrophone/models"
 	"github.com/mdblp/hydrophone/templates"
-	"github.com/tidepool-org/go-common/clients/status"
 )
 
 type (

@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
+	goComMgo "github.com/mdblp/go-common/clients/mongo"
 	"github.com/mdblp/hydrophone/models"
-	goComMgo "github.com/tidepool-org/go-common/clients/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

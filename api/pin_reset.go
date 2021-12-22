@@ -1,16 +1,17 @@
 package api
 
 import (
-	"log"
 	"net/http"
 	"regexp"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/mdblp/shoreline/schema"
 
+	"github.com/mdblp/go-common/clients/portal"
+	"github.com/mdblp/go-common/clients/status"
 	"github.com/mdblp/hydrophone/models"
 	otp "github.com/mdblp/hydrophone/utils/otp"
-	"github.com/tidepool-org/go-common/clients/portal"
-	"github.com/tidepool-org/go-common/clients/status"
 )
 
 const (

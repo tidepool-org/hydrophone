@@ -1,6 +1,8 @@
 package clients
 
-import "log"
+import (
+	log "github.com/sirupsen/logrus"
+)
 
 type (
 	// NullNotifier for dummy e-mail client

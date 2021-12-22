@@ -15,8 +15,8 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,31 +26,28 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tidepool-org/go-common/clients/portal"
+	log "github.com/sirupsen/logrus"
 
-	"github.com/tidepool-org/go-common/clients/version"
+	"github.com/mdblp/go-common/clients/portal"
+	"github.com/mdblp/go-common/clients/seagull"
+	"github.com/mdblp/go-common/clients/version"
 
 	"github.com/gorilla/mux"
 
 	crewClient "github.com/mdblp/crew/client"
+	common "github.com/mdblp/go-common"
+	"github.com/mdblp/go-common/clients/mongo"
 	"github.com/mdblp/hydrophone/api"
 	sc "github.com/mdblp/hydrophone/clients"
 	"github.com/mdblp/hydrophone/localize"
 	"github.com/mdblp/hydrophone/templates"
 	"github.com/mdblp/shoreline/clients/shoreline"
-	common "github.com/tidepool-org/go-common"
-	"github.com/tidepool-org/go-common/clients"
-	"github.com/tidepool-org/go-common/clients/disc"
-	"github.com/tidepool-org/go-common/clients/hakken"
-	"github.com/tidepool-org/go-common/clients/mongo"
 )
 
 type (
 	// Config is the configuration for the service
 	Config struct {
-		clients.Config
-		Service      disc.ServiceListing   `json:"service"`
-		Mongo        mongo.Config          `json:"mongo"`
+		// Mongo        mongo.Config          `json:"mongo"`
 		Api          api.Config            `json:"hydrophone"`
 		Ses          sc.SesNotifierConfig  `json:"sesEmail"`
 		Smtp         sc.SmtpNotifierConfig `json:"smtpEmail"`
@@ -60,11 +57,27 @@ type (
 
 func main() {
 	var config Config
-	logger := log.New(os.Stdout, api.CONFIRM_API_PREFIX, log.LstdFlags|log.Lshortfile)
+	logger := log.New()
+	logger.Out = os.Stdout
+	logger.SetFormatter(&log.TextFormatter{
+		DisableColors: false,
+		FullTimestamp: true,
+	})
+	logger.SetReportCaller(true)
+	envLogLevel := os.Getenv("LOG_LEVEL")
+	logLevel, err := log.ParseLevel(envLogLevel)
+	if err != nil {
+		logLevel = log.WarnLevel
+	}
+	logger.SetLevel(logLevel)
+	logger.Printf("Starting hydophone service %v\n", version.GetVersion().String())
 
-	logger.Printf("Starting Hydrophone version %s", version.GetVersion().String())
+	servicePort := os.Getenv("HYDROPHONE_PORT")
+	if servicePort == "" {
+		servicePort = "9157"
+	}
 	// Load configuration from environment variables
-	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_ENV", "TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
+	if err := common.LoadEnvironmentConfig([]string{"TIDEPOOL_HYDROPHONE_SERVICE"}, &config); err != nil {
 		logger.Panic("Problem loading config ", err)
 	}
 	isTestEnv, found := os.LookupEnv("TEST")
@@ -82,12 +95,9 @@ func main() {
 		config.Ses.Region = "us-west-2"
 	}
 
-	config.Mongo.FromEnv()
-
 	// server secret may be passed via a separate env variable to accomodate easy secrets injection via Kubernetes
 	serverSecret, found := os.LookupEnv("SERVER_SECRET")
 	if found {
-		config.ShorelineConfig.Secret = serverSecret
 		config.Api.ServerSecret = serverSecret
 	}
 
@@ -112,19 +122,6 @@ func main() {
 			config.Api.ConfirmationAttemptsTimeWindow = time.Hour
 		}
 	}
-	/*
-	 * Hakken setup
-	 */
-	hakkenClient := hakken.NewHakkenBuilder().
-		WithConfig(&config.HakkenConfig).
-		Build()
-
-	if !config.HakkenConfig.SkipHakken {
-		if err := hakkenClient.Start(); err != nil {
-			logger.Fatal(err)
-		}
-		defer hakkenClient.Close()
-	}
 
 	/*
 	 * Clients
@@ -145,17 +142,21 @@ func main() {
 	logger.Print("Shoreline client started")
 
 	permsClient := crewClient.NewCrewApiClientFromEnv(httpClient)
-	seagull := clients.NewSeagullClientFromEnv(httpClient)
+	seagull, err := seagull.NewClientFromEnv(httpClient)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
-	portal := portal.NewPortalClientBuilder().
-		WithHostGetter(config.PortalConfig.ToHostGetter(hakkenClient)).
-		WithHTTPClient(httpClient).
-		Build()
-
+	portal, err := portal.NewClientFromEnv(httpClient)
+	if err != nil {
+		logger.Fatal(err)
+	}
 	/*
 	* hydrophone setup
 	 */
-	store, err := sc.NewStore(&config.Mongo, logger)
+	var mongoConfig mongo.Config
+	mongoConfig.FromEnv()
+	store, err := sc.NewStore(&mongoConfig, logger)
 	/* Check that database configuration is valid. It does not check database availability */
 	if err != nil {
 		logger.Fatal(err)
@@ -199,43 +200,41 @@ func main() {
 	}
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, permsClient, seagull, portal, emailTemplates)
+	api := api.InitApi(config.Api, store, mail, shoreline, permsClient, seagull, portal, emailTemplates, logger)
 	api.SetHandlers("", rtr)
 
 	/*
 	 * Serve it up and publish
 	 */
-	done := make(chan bool)
-	server := common.NewServer(&http.Server{
-		Addr:    config.Service.GetPort(),
+	logger.Printf("Creating http server on 0.0.0.0:%s", servicePort)
+	srv := &http.Server{
+		Addr:    ":" + servicePort,
 		Handler: rtr,
-	})
-
-	var start func() error
-	if config.Service.Scheme == "https" {
-		sslSpec := config.Service.GetSSLSpec()
-		start = func() error { return server.ListenAndServeTLS(sslSpec.CertFile, sslSpec.KeyFile) }
-	} else {
-		start = func() error { return server.ListenAndServe() }
-	}
-	if err := start(); err != nil {
-		logger.Fatal(err)
 	}
 
-	hakkenClient.Publish(&config.Service)
-
-	// Wait for SIGINT (Ctrl+C) or SIGTERM to stop the service
-	sigc := make(chan os.Signal, 1)
-	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
+	// Initializing the server in a goroutine so that
+	// it won't block the graceful shutdown handling below
 	go func() {
-		for {
-			<-sigc
-			store.Close()
-			server.Close()
-			done <- true
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatalf("listen: %s\n", err)
 		}
 	}()
 
-	<-done
+	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 5 seconds.
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logger.Println("Shutting down server...")
+
+	// The context is used to inform the server it has 5 seconds to finish
+	// the request it is currently handling
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Fatal("Server forced to shutdown:", err)
+	}
+
+	logger.Println("Server exiting")
 
 }

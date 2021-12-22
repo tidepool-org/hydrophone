@@ -1,8 +1,9 @@
 package clients
 
 import (
-	"log"
 	"net/smtp"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type (

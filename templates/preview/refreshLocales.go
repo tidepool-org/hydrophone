@@ -1,6 +1,8 @@
 package main
 
-import "log"
+import (
+	log "github.com/sirupsen/logrus"
+)
 
 // Used to interact with a remote localization service such as Crowdin
 type LocaleManager interface {

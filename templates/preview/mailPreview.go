@@ -2,15 +2,16 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"path"
 	"syscall"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/gorilla/mux"
-	common "github.com/tidepool-org/go-common"
+	common "github.com/mdblp/go-common"
 
 	"github.com/mdblp/hydrophone/localize"
 	"github.com/mdblp/hydrophone/templates"

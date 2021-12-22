@@ -1,10 +1,11 @@
 package api
 
 import (
-	"log"
 	"net/http"
 
-	"github.com/tidepool-org/go-common/clients/status"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/mdblp/go-common/clients/status"
 )
 
 const (

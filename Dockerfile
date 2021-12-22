@@ -1,5 +1,7 @@
 # Development
-FROM golang:1.15-alpine AS development
+FROM golang:1.17-alpine AS development
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION}
 ENV GO111MODULE=on
 
 WORKDIR /go/src/github.com/tidepool-org/hydrophone

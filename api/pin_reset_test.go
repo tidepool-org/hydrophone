@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/mdblp/go-common/clients/portal"
 	"github.com/mdblp/hydrophone/templates"
-	"github.com/tidepool-org/go-common/clients/portal"
 )
 
 type (
@@ -153,11 +153,11 @@ func TestPinResetResponds(t *testing.T) {
 		//testing when there is nothing to return from the store
 		if pinResetTest.test.returnNone {
 			mockStoreEmpty.CounterLatestConfirmations = pinResetTest.test.counterLatestConfirmations
-			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
+			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates, logger)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
 			mockStore.CounterLatestConfirmations = pinResetTest.test.counterLatestConfirmations
-			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
+			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates, logger)
 			hydrophone.SetHandlers("", testRtr)
 		}
 

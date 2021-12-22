@@ -26,6 +26,7 @@ func initTestingRouterNoPerms() *mux.Router {
 		mockSeagull,
 		mockPortal,
 		mockTemplates,
+		logger,
 	)
 	hydrophone.SetHandlers("", testRtr)
 	return testRtr
@@ -264,6 +265,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		mockSeagull,
 		mockPortal,
 		mockTemplates,
+		logger,
 	)
 	if returnNone {
 		hydrophone = InitApi(
@@ -275,6 +277,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 			mockSeagull,
 			mockPortal,
 			mockTemplates,
+			logger,
 		)
 
 	}
@@ -1076,6 +1079,7 @@ func TestCaregiverInvite(t *testing.T) {
 			mockSeagull,
 			mockPortal,
 			mockTemplates,
+			logger,
 		)
 
 		//testing when there is nothing to return from the store
@@ -1089,6 +1093,7 @@ func TestCaregiverInvite(t *testing.T) {
 				mockSeagull,
 				mockPortal,
 				mockTemplates,
+				logger,
 			)
 		}
 		// testing when returning errors
@@ -1102,6 +1107,7 @@ func TestCaregiverInvite(t *testing.T) {
 				mockSeagull,
 				mockPortal,
 				mockTemplates,
+				logger,
 			)
 		}
 
@@ -1377,6 +1383,7 @@ func TestAcceptTeamInvite(t *testing.T) {
 			mockSeagull,
 			mockPortal,
 			mockTemplates,
+			logger,
 		)
 
 		//testing when there is nothing to return from the store
@@ -1390,6 +1397,7 @@ func TestAcceptTeamInvite(t *testing.T) {
 				mockSeagull,
 				mockPortal,
 				mockTemplates,
+				logger,
 			)
 		}
 		// testing when returning errors
@@ -1403,6 +1411,7 @@ func TestAcceptTeamInvite(t *testing.T) {
 				mockSeagull,
 				mockPortal,
 				mockTemplates,
+				logger,
 			)
 		}
 

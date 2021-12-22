@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	goComMgo "github.com/mdblp/go-common/clients/mongo"
 	"github.com/mdblp/hydrophone/models"
-	goComMgo "github.com/tidepool-org/go-common/clients/mongo"
 )
 
 type StoreClient interface {

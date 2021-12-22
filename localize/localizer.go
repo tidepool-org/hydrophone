@@ -5,9 +5,10 @@ package localize
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"

@@ -13,15 +13,16 @@ import (
 	"github.com/gorilla/mux"
 
 	crewClient "github.com/mdblp/crew/client"
+	"github.com/mdblp/go-common/clients/portal"
+	"github.com/mdblp/go-common/clients/seagull"
+	"github.com/mdblp/go-common/clients/version"
 	"github.com/mdblp/hydrophone/clients"
 	"github.com/mdblp/hydrophone/localize"
 	"github.com/mdblp/hydrophone/models"
 	"github.com/mdblp/shoreline/clients/shoreline"
 	"github.com/mdblp/shoreline/schema"
 	"github.com/mdblp/shoreline/token"
-	commonClients "github.com/tidepool-org/go-common/clients"
-	"github.com/tidepool-org/go-common/clients/portal"
-	"github.com/tidepool-org/go-common/clients/version"
+	"github.com/sirupsen/logrus/hooks/test"
 )
 
 const (
@@ -61,12 +62,13 @@ var (
 	mockShoreline = shoreline.NewMock(testing_token)
 	mockPerms     = crewClient.NewMock()
 
-	mockSeagull = commonClients.NewSeagullMock()
+	mockSeagull = seagull.NewSeagullMock()
 
 	mockPortal = portal.NewMock()
 
 	mockTemplates = models.Templates{}
 
+	logger, _ = test.NewNullLogger()
 	/*
 	 * stores
 	 */
@@ -80,7 +82,7 @@ var (
 	mock_uid1Shoreline = newtestingShorelingMock(testing_uid1)
 	mock_uid2Shoreline = newtestingShorelingMock(testing_uid2)
 
-	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
+	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates, logger)
 
 	mockLocalizer, _ = localize.NewI18nLocalizer("../templates/locales")
 )
@@ -170,7 +172,7 @@ func TestGetStatus_StatusOk(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
-	hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
+	hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates, logger)
 	hydrophone.SetHandlers("", rtr)
 
 	hydrophone.GetStatus(response, request)
@@ -195,7 +197,7 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
-	hydrophoneFails := InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates)
+	hydrophoneFails := InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates, logger)
 	hydrophoneFails.SetHandlers("", rtr)
 
 	hydrophoneFails.GetStatus(response, request)

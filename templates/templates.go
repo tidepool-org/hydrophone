@@ -7,8 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/mdblp/hydrophone/localize"
 	"github.com/mdblp/hydrophone/models"
