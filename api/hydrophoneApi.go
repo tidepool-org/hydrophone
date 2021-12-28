@@ -13,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	crewClient "github.com/mdblp/crew/client"
@@ -94,6 +95,12 @@ const (
 	STATUS_NOT_ADMIN           = STATUS_UNAUTHORIZED
 	STATUS_OK                  = "OK"
 )
+
+var bmPolicy = bluemonday.StrictPolicy()
+
+func sanitize(el string) string {
+	return bmPolicy.Sanitize(el)
+}
 
 func InitApi(
 	cfg Config,

@@ -1,7 +1,6 @@
 deploy/
 dist/
 docs/
-.vscode/launch.json
 vendor/
 
 artifact_go.sh

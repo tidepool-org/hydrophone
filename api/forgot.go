@@ -221,7 +221,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		if rb.Key != "" {
 			resetCnf = &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset, Status: models.StatusPending}
 		} else {
-			log.Printf("acceptPassword: No key provided for %s\n", rb.Email)
+			log.Printf("acceptPassword: No key provided for %s\n", sanitize(rb.Email))
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_FINDING_CONFIRMATION)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 			return

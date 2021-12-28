@@ -1,8 +1,10 @@
 package hydrophone
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,6 +19,8 @@ import (
 type (
 	ClientInterface interface {
 		GetPendingInvitations(userID string, authToken string) ([]models.Confirmation, error)
+		GetPendingSignup(userID string, authToken string) (*models.Confirmation, error)
+		CancelSignup(confirm models.Confirmation, authToken string) error
 	}
 
 	Client struct {
@@ -77,23 +81,46 @@ func (client *Client) getHost() (*url.URL, error) {
 	}
 	theURL, err := url.Parse(client.host)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse urlString[%s]", client.host)
+		return nil, fmt.Errorf("unable to parse urlString[%s]", client.host)
 	}
 	return theURL, nil
 }
 
 func (client *Client) GetPendingInvitations(userID string, authToken string) ([]models.Confirmation, error) {
+	return client.GetPendingInviteOrSignup(userID, authToken, models.TypeCareteamInvite)
+}
+
+func (client *Client) GetPendingSignup(userID string, authToken string) (*models.Confirmation, error) {
+	res, err := client.GetPendingInviteOrSignup(userID, authToken, models.TypeSignUp)
+
+	if err != nil {
+		return nil, err
+	} else if len(res) > 1 {
+		return nil, fmt.Errorf("more than one signup found for %s", userID)
+	} else if len(res) == 1 {
+		return &res[0], err
+	} else {
+		return nil, nil
+	}
+}
+
+func (client *Client) GetPendingInviteOrSignup(userID string, authToken string, confirmType models.Type) ([]models.Confirmation, error) {
 	host, err := client.getHost()
 	if err != nil {
 		return nil, errors.New("No known hydrophone hosts")
 	}
-	host.Path = path.Join(host.Path, "invite", userID)
+
+	if confirmType == models.TypeSignUp {
+		host.Path = path.Join(host.Path, "signup", userID)
+	} else {
+		host.Path = path.Join(host.Path, "invite", userID)
+	}
 	req, _ := http.NewRequest("GET", host.String(), nil)
 	req.Header.Add("x-tidepool-session-token", authToken)
 
 	res, err := client.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failure to get pending invites")
+		return nil, errors.Wrap(err, "Failure to get pending confirm")
 	}
 	defer res.Body.Close()
 
@@ -110,6 +137,40 @@ func (client *Client) GetPendingInvitations(userID string, authToken string) ([]
 		return []models.Confirmation{}, nil
 	default:
 		return nil, &status.StatusError{
+			Status: status.NewStatusf(res.StatusCode, "Unknown response code from service[%s]", req.URL),
+		}
+	}
+}
+
+func (client *Client) CancelSignup(confirm models.Confirmation, authToken string) error {
+	host, err := client.getHost()
+	if err != nil {
+		return errors.New("No known hydrophone hosts")
+	}
+
+	host.Path = path.Join(host.Path, "signup", confirm.UserId)
+
+	req, _ := http.NewRequest("PUT", host.String(), nil)
+	req.Header.Add("x-tidepool-session-token", authToken)
+
+	data, err := json.Marshal(confirm)
+	if err != nil {
+		return errors.Wrap(err, "Failure to marshal confirmation")
+	}
+
+	req.Body = ioutil.NopCloser(bytes.NewReader(data))
+
+	res, err := client.httpClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "Failure to cancel signup")
+	}
+	defer res.Body.Close()
+
+	switch res.StatusCode {
+	case http.StatusOK:
+		return nil
+	default:
+		return &status.StatusError{
 			Status: status.NewStatusf(res.StatusCode, "Unknown response code from service[%s]", req.URL),
 		}
 	}

@@ -521,6 +521,7 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 // @Accept  json
 // @Produce  json
 // @Param userid path string true "user id"
+// @Param confirmation body models.Confirmation true "confirmation details"
 // @Success 200 {string} string "OK"
 // @Failure 400 {object} status.Status "userid was not provided, or the payload is malformed (attributes missing or invalid). Return detailed error "
 // @Failure 404 {object} status.Status "Cannot find a signup confirmation based on the provided key, return \"No matching signup confirmation was found\" "

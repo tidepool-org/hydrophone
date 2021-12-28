@@ -25,7 +25,7 @@
                 "TIDEPOOL_STORE_DEFAULT_TIMEOUT":"2",
                 "TIDEPOOL_STORE_WAIT_CONNECTION_INTERVAL":"5",
                 "TIDEPOOL_STORE_MAX_CONNECTION_ATTEMPTS":"0",
-                "REGION": "eu-west-1"
+                "REGION": "eu-west-1",
                // Use this below to override local AWS credentials. Otherwise local credentials will be used so the user/profile needs to have rights for sending emails
                // "AWS_PROFILE":"${NON_DEFAULT_PROFILE}" for using a .aws/credentials non default profile
                // OR
