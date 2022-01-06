@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
+	clinics "github.com/tidepool-org/clinic/client"
+	"io"
 	"log"
 	"net/http"
 	"regexp"
@@ -122,9 +124,32 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
+		var upsertCustodialSignUpInvite UpsertCustodialSignUpInvite
+		if err := json.NewDecoder(req.Body).Decode(&upsertCustodialSignUpInvite); err != nil && err != io.EOF {
+			a.sendModelAsResWithStatus(res, status.StatusError{Status:status.NewStatus(http.StatusBadRequest, "error decoding payload")}, http.StatusBadRequest)
+			return
+		}
+
 		if usrDetails, err := a.sl.GetUser(userId, a.sl.TokenProvide()); err != nil {
 			log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
+			return
+		} else if len(usrDetails.Emails) == 0 {
+			// Delete existing any existing invites if the email address is empty
+			existing, err := a.Store.FindConfirmation(req.Context(), &models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
+			if err != nil {
+				log.Printf("sendSignUp: error finding old invite [%s]", err.Error())
+				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+				return
+			}
+			if existing != nil {
+				if err := a.Store.RemoveConfirmation(req.Context(), existing); err != nil {
+					log.Printf("sendSignUp: error deleting old [%s]", err.Error())
+					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+					return
+				}
+			}
+			res.WriteHeader(http.StatusOK)
 			return
 		} else {
 
@@ -137,12 +162,19 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			} else if newSignUp == nil {
 				var templateName models.TemplateName
 				var creatorID string
+				var clinicId string
 
 				if usrDetails.IsClinic() {
 					templateName = models.TemplateNameSignupClinic
 				} else if usrDetails.IsCustodial() {
 					if token.IsServer {
-						templateName = models.TemplateNameSignupCustodial
+						if upsertCustodialSignUpInvite.ClinicId != "" {
+							templateName = models.TemplateNameSignupCustodialNewClinicExperience
+							creatorID = upsertCustodialSignUpInvite.InvitedBy
+							clinicId = upsertCustodialSignUpInvite.ClinicId
+						} else {
+							templateName = models.TemplateNameSignupCustodial
+						}
 					} else {
 						tokenUserDetails, err := a.sl.GetUser(token.UserID, a.sl.TokenProvide())
 						if err != nil {
@@ -166,6 +198,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, templateName, creatorID)
 				newSignUp.UserId = usrDetails.UserID
 				newSignUp.Email = usrDetails.Emails[0]
+				newSignUp.ClinicId = clinicId
 			} else if newSignUp.Email != usrDetails.Emails[0] {
 				if err := a.Store.RemoveConfirmation(req.Context(), newSignUp); err != nil {
 					log.Printf("sendSignUp: error deleting old [%s]", err.Error())
@@ -180,6 +213,10 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 				}
 
 				newSignUp.Email = usrDetails.Emails[0]
+				if upsertCustodialSignUpInvite.ClinicId != "" {
+					newSignUp.ClinicId = upsertCustodialSignUpInvite.ClinicId
+					newSignUp.CreatorId = upsertCustodialSignUpInvite.InvitedBy
+				}
 			} else {
 				log.Printf("sendSignUp %s", STATUS_EXISTING_SIGNUP)
 				a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusForbidden, STATUS_EXISTING_SIGNUP), http.StatusForbidden)
@@ -189,37 +226,54 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			if a.addOrUpdateConfirmation(req.Context(), newSignUp, res) {
 				a.logMetric("signup confirmation created", req)
 
+				clinicName := "Diabetes Clinic"
+				creatorName := "Clinician"
+
+				if newSignUp.ClinicId != "" {
+					resp, err := a.clinics.GetClinicWithResponse(req.Context(), clinics.ClinicId(newSignUp.ClinicId))
+					if err != nil {
+						a.sendError(res, http.StatusInternalServerError, "unable to fetch clinic")
+						return
+					}
+					if resp.StatusCode() == http.StatusOK && resp.JSON200.Name != "" {
+						clinicName = resp.JSON200.Name
+					}
+				}
+
 				if err := a.addProfile(newSignUp); err != nil {
 					log.Printf("sendSignUp: error when adding profile [%s]", err.Error())
 					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 					return
+				}
+				if newSignUp.Creator.Profile != nil && newSignUp.Creator.Profile.FullName != "" {
+					creatorName = newSignUp.Creator.Profile.FullName
+				}
+
+				profile := &models.Profile{}
+				if err := a.seagull.GetCollection(newSignUp.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
+					a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "sendSignUp: error getting user profile: ", err.Error())
+					return
+				}
+
+				log.Printf("Sending email confirmation to %s with key %s", newSignUp.Email, newSignUp.Key)
+
+				emailContent := map[string]interface{}{
+					"Key":      newSignUp.Key,
+					"Email":    newSignUp.Email,
+					"FullName": profile.FullName,
+					"CreatorName": creatorName,
+				}
+				if newSignUp.ClinicId != "" {
+					emailContent["ClinicName"] = clinicName
+				}
+
+				if a.createAndSendNotification(req, newSignUp, emailContent) {
+					a.logMetricAsServer("signup confirmation sent")
+					res.WriteHeader(http.StatusOK)
+					return
 				} else {
-					profile := &models.Profile{}
-					if err := a.seagull.GetCollection(newSignUp.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
-						a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "sendSignUp: error getting user profile: ", err.Error())
-						return
-					}
-
-					log.Printf("Sending email confirmation to %s with key %s", newSignUp.Email, newSignUp.Key)
-
-					emailContent := map[string]interface{}{
-						"Key":      newSignUp.Key,
-						"Email":    newSignUp.Email,
-						"FullName": profile.FullName,
-					}
-
-					if newSignUp.Creator.Profile != nil {
-						emailContent["CreatorName"] = newSignUp.Creator.Profile.FullName
-					}
-
-					if a.createAndSendNotification(req, newSignUp, emailContent) {
-						a.logMetricAsServer("signup confirmation sent")
-						res.WriteHeader(http.StatusOK)
-						return
-					} else {
-						a.logMetric("signup confirmation failed to be sent", req)
-						log.Print("Something happened generating a signup email")
-					}
+					a.logMetric("signup confirmation failed to be sent", req)
+					log.Print("Something happened generating a signup email")
 				}
 			}
 		}
@@ -458,4 +512,9 @@ func IsValidPassword(password string) bool {
 func IsValidDate(date string) bool {
 	_, err := time.Parse("2006-01-02", date)
 	return err == nil
+}
+
+type UpsertCustodialSignUpInvite struct {
+	ClinicId  string `json:"clinicId"`
+	InvitedBy string `json:"invitedBy"`
 }

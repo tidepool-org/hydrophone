@@ -3,6 +3,9 @@ package api
 import (
 	"errors"
 	"fmt"
+	"github.com/golang/mock/gomock"
+	clinicsClient "github.com/tidepool-org/clinic/client"
+	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -41,6 +44,15 @@ var (
 		return commonClients.NewSeagullMock()
 	}))
 
+	MockClinicsModule = fx.Options(
+		fx.Provide(func(t *testing.T) *gomock.Controller {
+			return gomock.NewController(t)
+		}),
+		fx.Provide(func(ctrl *gomock.Controller) clinicsClient.ClientWithResponsesInterface {
+			return clinicsClient.NewMockClientWithResponsesInterface(ctrl)
+		}),
+	)
+
 	// MockTemplates
 	MockTemplatesModule = fx.Options(fx.Supply(models.Templates{}))
 
@@ -78,6 +90,9 @@ func TestGetStatus_StatusOk(t *testing.T) {
 		clients.MockStoreModule,
 		MockGatekeeperModule,
 		BaseModule,
+		MockClinicsModule,
+		fx.Supply(t),
+		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&api),
 	)
 
@@ -97,6 +112,9 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 		clients.MockStoreFailsModule,
 		MockGatekeeperModule,
 		BaseModule,
+		MockClinicsModule,
+		fx.Supply(t),
+		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&api),
 	)
 
@@ -192,6 +210,9 @@ func Test_TokenUserHasRequestedPermissions_GatekeeperError(t *testing.T) {
 	var gk commonClients.Gatekeeper
 	fx.New(
 		ResponableModule,
+		MockClinicsModule,
+		fx.Supply(t),
+		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&responsableHydrophone),
 		fx.Populate(&gk),
 	)
@@ -219,6 +240,9 @@ func Test_TokenUserHasRequestedPermissions_CompleteMismatch(t *testing.T) {
 	var gk commonClients.Gatekeeper
 	fx.New(
 		ResponableModule,
+		MockClinicsModule,
+		fx.Supply(t),
+		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&responsableHydrophone),
 		fx.Populate(&gk),
 	)
@@ -243,6 +267,9 @@ func Test_TokenUserHasRequestedPermissions_PartialMismatch(t *testing.T) {
 	var gk commonClients.Gatekeeper
 	fx.New(
 		ResponableModule,
+		MockClinicsModule,
+		fx.Supply(t),
+		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&responsableHydrophone),
 		fx.Populate(&gk),
 	)
@@ -267,6 +294,9 @@ func Test_TokenUserHasRequestedPermissions_FullMatch(t *testing.T) {
 	var gk commonClients.Gatekeeper
 	fx.New(
 		ResponableModule,
+		MockClinicsModule,
+		fx.Supply(t),
+		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&responsableHydrophone),
 		fx.Populate(&gk),
 	)

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	clinicsClient "github.com/tidepool-org/clinic/client"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"time"
@@ -35,6 +37,7 @@ type (
 		PermissionClientAddress string `split_words:"true" required:"true"`
 		MetricsClientAddress    string `split_words:"true" required:"true"`
 		SeagullClientAddress    string `split_words:"true" required:"true"`
+		ClinicClientAddress     string `split_words:"true" required:"true"`
 	}
 
 	//InboundConfig describes how to receive inbound communication
@@ -50,7 +53,7 @@ func shorelineProvider(config OutboundConfig, httpClient *http.Client) shoreline
 	return shoreline.NewShorelineClientBuilder().
 		WithHostGetter(disc.NewStaticHostGetterFromString(config.AuthClientAddress)).
 		WithHttpClient(httpClient).
-		WithName("shoreline").
+		WithName("hydrophone").
 		WithSecret(config.ServerSecret).
 		WithTokenRefreshInterval(time.Hour).
 		Build()
@@ -79,6 +82,14 @@ func seagullProvider(config OutboundConfig, httpClient *http.Client) clients.Sea
 		WithHostGetter(disc.NewStaticHostGetterFromString(config.SeagullClientAddress)).
 		WithHttpClient(httpClient).
 		Build()
+}
+
+func clinicProvider(config OutboundConfig, shoreline shoreline.Client) (clinicsClient.ClientWithResponsesInterface, error) {
+	opts := clinicsClient.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
+		req.Header.Add(api.TP_SESSION_TOKEN, shoreline.TokenProvide())
+		return nil
+	})
+	return clinicsClient.NewClientWithResponses(config.ClinicClientAddress, opts)
 }
 
 func configProvider() (OutboundConfig, error) {
@@ -134,6 +145,17 @@ func faultTolerantConsumerProvider(config *ev.CloudEventsConfig, handler ev.Even
 	}
 	consumer.RegisterHandler(handler)
 	return consumer, nil
+}
+
+func loggerProvider() (*zap.SugaredLogger, error) {
+	config := zap.NewProductionConfig()
+	config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	config.EncoderConfig.FunctionKey = "function"
+	logger, err := config.Build()
+	if err != nil {
+		return nil, err
+	}
+	return logger.Sugar(), nil
 }
 
 //InvocationParams are the parameters need to kick off a service
@@ -227,6 +249,8 @@ func main() {
 			httpClientProvider,
 			emailTemplateProvider,
 			serverProvider,
+			clinicProvider,
+			loggerProvider,
 			api.NewApi,
 		),
 		fx.Invoke(startShoreline),

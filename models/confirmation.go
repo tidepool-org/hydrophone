@@ -14,21 +14,24 @@ type (
 		Key       string          `json:"key" bson:"_id"`
 		Type      Type            `json:"type" bson:"type"`
 		Email     string          `json:"email" bson:"email"`
+		ClinicId  string          `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
 		CreatorId string          `json:"creatorId" bson:"creatorId"`
 		Creator   Creator         `json:"creator" bson:"creator"`
 		Context   json.RawMessage `json:"context" bson:"context,omitempty"`
 		Created   time.Time       `json:"created" bson:"created"`
+		Modified  time.Time       `json:"modified" bson:"modified"`
 		Status    Status          `json:"status" bson:"status"`
 
 		TemplateName TemplateName `json:"-" bson:"templateName"`
 		UserId       string       `json:"-" bson:"userId"`
-		Modified     time.Time    `json:"-" bson:"modified"`
 	}
 
 	//basic details for the creator of the confirmation
 	Creator struct {
-		*Profile `json:"profile" bson:"-"`
-		UserId   string `json:"userid" bson:"-"` //for compatability with blip
+		*Profile   `json:"profile" bson:"-"`
+		UserId     string `json:"userid" bson:"-"` //for compatability with blip
+		ClinicId   string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
+		ClinicName string `json:"clinicName,omitempty" bson:"clinicName,omitempty"`
 	}
 	Patient struct {
 		Birthday      string `json:"birthday"`
@@ -60,10 +63,11 @@ const (
 	StatusCanceled  Status = "canceled"
 	StatusDeclined  Status = "declined"
 	//Available Type's
-	TypePasswordReset  Type = "password_reset"
-	TypeCareteamInvite Type = "careteam_invitation"
-	TypeSignUp         Type = "signup_confirmation"
-	TypeNoAccount      Type = "no_account"
+	TypePasswordReset   Type = "password_reset"
+	TypeCareteamInvite  Type = "careteam_invitation"
+	TypeClinicianInvite Type = "clinician_invitation"
+	TypeSignUp          Type = "signup_confirmation"
+	TypeNoAccount       Type = "no_account"
 )
 
 var (
@@ -150,11 +154,39 @@ func (c *Confirmation) ValidateUserID(expectedUserID string, validationErrors *[
 	return c
 }
 
+func (c *Confirmation) ValidateClinicID(expectedClinicID string, validationErrors *[]error) *Confirmation {
+	if expectedClinicID != c.ClinicId {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("confirmation expected ClinicId of `%s` but had `%s`", expectedClinicID, c.UserId),
+		)
+	}
+	return c
+}
+
 func (c *Confirmation) ValidateStatus(expectedStatus Status, validationErrors *[]error) *Confirmation {
 	if expectedStatus != c.Status {
 		*validationErrors = append(
 			*validationErrors,
 			fmt.Errorf("Confirmation expected Status of `%s` but had `%s`", expectedStatus, c.Status),
+		)
+	}
+	return c
+}
+
+func (c *Confirmation) ValidateStatusIn(expectedStatuses []Status, validationErrors *[]error) *Confirmation {
+	isValid := false
+	for _, status := range expectedStatuses {
+		if status == c.Status {
+			isValid = true
+			break
+		}
+	}
+
+	if !isValid {
+		*validationErrors = append(
+			*validationErrors,
+			fmt.Errorf("Confirmation expected Status in `%v` but had `%s`", expectedStatuses, c.Status),
 		)
 	}
 	return c

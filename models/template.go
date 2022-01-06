@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"strconv"
+	textTemplate "text/template"
 )
 
 type TemplateName string
@@ -15,14 +16,17 @@ func (t TemplateName) String() string {
 }
 
 const (
-	TemplateNameCareteamInvite        TemplateName = "careteam_invitation"
-	TemplateNameNoAccount             TemplateName = "no_account"
-	TemplateNamePasswordReset         TemplateName = "password_reset"
-	TemplateNameSignup                TemplateName = "signup_confirmation"
-	TemplateNameSignupClinic          TemplateName = "signup_clinic_confirmation"
-	TemplateNameSignupCustodial       TemplateName = "signup_custodial_confirmation"
-	TemplateNameSignupCustodialClinic TemplateName = "signup_custodial_clinic_confirmation"
-	TemplateNameUndefined             TemplateName = ""
+	TemplateNamePatientClinicInvite                TemplateName = "patient_clinic_invitation"
+	TemplateNameCareteamInvite                     TemplateName = "careteam_invitation"
+	TemplateNameClinicianInvite                    TemplateName = "clinician_invitation"
+	TemplateNameNoAccount                          TemplateName = "no_account"
+	TemplateNamePasswordReset                      TemplateName = "password_reset"
+	TemplateNameSignup                             TemplateName = "signup_confirmation"
+	TemplateNameSignupClinic                       TemplateName = "signup_clinic_confirmation"
+	TemplateNameSignupCustodial                    TemplateName = "signup_custodial_confirmation"
+	TemplateNameSignupCustodialClinic              TemplateName = "signup_custodial_clinic_confirmation"
+	TemplateNameSignupCustodialNewClinicExperience TemplateName = "signup_custodial_new_clinic_experience_confirmation"
+	TemplateNameUndefined                          TemplateName = ""
 )
 
 type Template interface {
@@ -34,7 +38,7 @@ type Templates map[TemplateName]Template
 
 type PrecompiledTemplate struct {
 	name               TemplateName
-	precompiledSubject *template.Template
+	precompiledSubject *textTemplate.Template
 	precompiledBody    *template.Template
 }
 
@@ -49,7 +53,7 @@ func NewPrecompiledTemplate(name TemplateName, subjectTemplate string, bodyTempl
 		return nil, errors.New("models: body template is missing")
 	}
 
-	precompiledSubject, err := template.New(name.String()).Parse(subjectTemplate)
+	precompiledSubject, err := textTemplate.New(name.String()).Parse(subjectTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("models: failure to precompile subject template: %s", err)
 	}

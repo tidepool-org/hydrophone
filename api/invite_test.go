@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,6 +16,7 @@ func initTestingRouterNoPerms() *mux.Router {
 	testRtr := mux.NewRouter()
 	hydrophone := NewApi(
 		FAKE_CONFIG,
+		nil,
 		mockStore,
 		mockNotifier,
 		mock_uid1Shoreline,
@@ -22,6 +24,7 @@ func initTestingRouterNoPerms() *mux.Router {
 		mockMetrics,
 		mockSeagull,
 		mockTemplates,
+		zap.NewNop().Sugar(),
 	)
 	hydrophone.SetHandlers("", testRtr)
 	return testRtr
@@ -241,6 +244,7 @@ func TestInviteResponds(t *testing.T) {
 		//default flow, fully authorized
 		hydrophone := NewApi(
 			FAKE_CONFIG,
+			nil,
 			mockStore,
 			mockNotifier,
 			mockShoreline,
@@ -248,12 +252,14 @@ func TestInviteResponds(t *testing.T) {
 			mockMetrics,
 			mockSeagull,
 			mockTemplates,
+			zap.NewNop().Sugar(),
 		)
 
 		//testing when there is nothing to return from the store
 		if inviteTest.returnNone {
 			hydrophone = NewApi(
 				FAKE_CONFIG,
+				nil,
 				mockStoreEmpty,
 				mockNotifier,
 				mockShoreline,
@@ -261,6 +267,7 @@ func TestInviteResponds(t *testing.T) {
 				mockMetrics,
 				mockSeagull,
 				mockTemplates,
+				zap.NewNop().Sugar(),
 			)
 		}
 

@@ -137,6 +137,9 @@ func (c *MongoStoreClient) FindConfirmation(ctx context.Context, confirmation *m
 	if confirmation.UserId != "" {
 		query["userId"] = confirmation.UserId
 	}
+	if confirmation.ClinicId != "" {
+		query["clinicId"] = confirmation.ClinicId
+	}
 
 	opts := options.FindOne().SetSort(bson.D{{Key: "created", Value: -1}})
 
@@ -171,6 +174,9 @@ func (c *MongoStoreClient) FindConfirmations(ctx context.Context, confirmation *
 	if confirmation.UserId != "" {
 		query["userId"] = confirmation.UserId
 	}
+	if confirmation.ClinicId != "" {
+		query["clinicId"] = confirmation.ClinicId
+	}
 
 	if len(statuses) > 0 {
 		query["status"] = bson.M{"$in": statuses}
@@ -201,8 +207,23 @@ func (c *MongoStoreClient) RemoveConfirmation(ctx context.Context, confirmation 
 func (c *MongoStoreClient) RemoveConfirmationsForUser(ctx context.Context, userId string) error {
 	selector := bson.M{
 		"$or": []bson.M{
-			{"userId": userId},
-			{"creatorId": userId},
+			{
+				// Only delete clinic confirmations when the user is the receiver of the invite
+				"$and": []bson.M{
+					{"userId": userId},
+					{"clinicId": bson.M{"$exists": true}},
+				},
+			},
+			{
+				// Delete non-clinic confirmation if the user is the sender or the receiver of the invite
+				"$and": []bson.M{
+					{"clinicId": nil},
+					{"$or": []bson.M{
+						{"userId": userId},
+						{"creatorId": userId},
+					}},
+				},
+			},
 		},
 	}
 	_, err := confirmationsCollection(c).DeleteMany(ctx, selector)
