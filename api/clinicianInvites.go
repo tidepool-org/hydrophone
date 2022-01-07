@@ -21,11 +21,6 @@ type ClinicianInvite struct {
 // Send an invite to become a clinic member
 func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		if !a.Config.ClinicServiceEnabled {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
-			return
-		}
-
 		ctx := req.Context()
 		clinicId := vars["clinicId"]
 
@@ -91,11 +86,6 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 // Resend an invite to become a clinic member
 func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		if !a.Config.ClinicServiceEnabled {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
-			return
-		}
-
 		ctx := req.Context()
 		clinicId := vars["clinicId"]
 		inviteId := vars["inviteId"]
@@ -163,11 +153,6 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 // Get an invite to become a clinic member
 func (a *Api) GetClinicianInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		if !a.Config.ClinicServiceEnabled {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
-			return
-		}
-
 		ctx := req.Context()
 		clinicId := vars["clinicId"]
 		inviteId := vars["inviteId"]
@@ -214,11 +199,6 @@ func (a *Api) GetClinicianInvite(res http.ResponseWriter, req *http.Request, var
 // Get the still-pending invitations for a clinician
 func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		if !a.Config.ClinicServiceEnabled {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
-			return
-		}
-
 		ctx := req.Context()
 		userId := vars["userId"]
 
@@ -245,11 +225,6 @@ func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request
 // Accept the given invite
 func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		if !a.Config.ClinicServiceEnabled {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
-			return
-		}
-
 		ctx := req.Context()
 		userId := vars["userId"]
 		inviteId := vars["inviteId"]
@@ -302,11 +277,6 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 // Dismiss invite
 func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		if !a.Config.ClinicServiceEnabled {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
-			return
-		}
-
 		ctx := req.Context()
 		userId := vars["userId"]
 		inviteId := vars["inviteId"]
@@ -339,11 +309,6 @@ func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request,
 // Cancel invite
 func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		if !a.Config.ClinicServiceEnabled {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
-			return
-		}
-
 		ctx := req.Context()
 		clinicId := vars["clinicId"]
 		inviteId := vars["inviteId"]
