@@ -28,11 +28,6 @@ type ClinicInvite struct {
 // status: 400
 func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		if !a.Config.ClinicServiceEnabled {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
-			return
-		}
-
 		ctx := req.Context()
 		inviterID := vars["userId"]
 
