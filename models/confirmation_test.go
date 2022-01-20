@@ -74,6 +74,11 @@ func Test_NewConfirmation(t *testing.T) {
 		t.Fail()
 	}
 
+	if confirmation.IsExpired() {
+		t.Logf("the confirmation is not expired")
+		t.Fail()
+	}
+
 	confirmation.UpdateStatus(StatusCompleted)
 
 	if confirmation.Status != StatusCompleted {
@@ -135,6 +140,11 @@ func Test_NewPatientPasswordResetConfirmation(t *testing.T) {
 
 	if confirmation.Creator.UserId != "" {
 		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
+		t.Fail()
+	}
+
+	if confirmation.GetReadableDuration() != "1" {
+		t.Logf("expected `1` actual [%s]", confirmation.GetReadableDuration())
 		t.Fail()
 	}
 
@@ -392,6 +402,263 @@ func TestConfirmationTeam(t *testing.T) {
 
 	if confirmation.Creator.UserId != "" {
 		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
+		t.Fail()
+	}
+	if confirmation.GetReadableDuration() != "7" {
+		t.Logf("expected `7` actual [%s]", confirmation.GetReadableDuration())
+		t.Fail()
+	}
+
+}
+
+func TestConfirmationMemberTeam(t *testing.T) {
+
+	confirmation, _ := NewConfirmation(TypeMedicalTeamInvite, TemplateNameMedicalteamInvite, USERID)
+
+	if confirmation.Status != StatusPending {
+		t.Fatalf("Status should be [%s] but is [%s]", StatusPending, confirmation.Status)
+	}
+
+	if confirmation.Key == "" {
+		t.Fatal("There should be a generated key")
+	}
+
+	if confirmation.Created.IsZero() {
+		t.Fatal("The created time should be set")
+	}
+
+	if confirmation.Modified.IsZero() == false {
+		t.Fatal("The modified time should NOT be set")
+	}
+
+	if confirmation.Type != TypeMedicalTeamInvite {
+		t.Fatalf("The type should be [%s] but is [%s]", TypeMedicalTeamInvite, confirmation.Type)
+	}
+
+	if confirmation.TemplateName != TemplateNameMedicalteamInvite {
+		t.Fatalf("The template type should be [%s] but is [%s]", TemplateNameMedicalteamInvite, confirmation.TemplateName)
+	}
+
+	if confirmation.UserId != "" {
+		t.Logf("expected '' actual [%s]", confirmation.UserId)
+		t.Fail()
+	}
+
+	if confirmation.CreatorId != USERID {
+		t.Logf("expected [%s] actual [%s]", USERID, confirmation.CreatorId)
+		t.Fail()
+	}
+
+	if confirmation.Creator.Profile != nil {
+		t.Logf("expected `nil` actual [%v]", confirmation.Creator.Profile)
+		t.Fail()
+	}
+
+	if confirmation.Creator.UserId != "" {
+		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
+		t.Fail()
+	}
+	if confirmation.GetReadableDuration() != "7" {
+		t.Logf("expected `7` actual [%s]", confirmation.GetReadableDuration())
+		t.Fail()
+	}
+}
+
+func TestConfirmationTeamDoAdmin(t *testing.T) {
+
+	confirmation, _ := NewConfirmation(TypeMedicalTeamDoAdmin, TemplateNameMedicalteamDoAdmin, USERID)
+
+	if confirmation.Status != StatusPending {
+		t.Fatalf("Status should be [%s] but is [%s]", StatusPending, confirmation.Status)
+	}
+
+	if confirmation.Key == "" {
+		t.Fatal("There should be a generated key")
+	}
+
+	if confirmation.Created.IsZero() {
+		t.Fatal("The created time should be set")
+	}
+
+	if confirmation.Modified.IsZero() == false {
+		t.Fatal("The modified time should NOT be set")
+	}
+
+	if confirmation.Type != TypeMedicalTeamDoAdmin {
+		t.Fatalf("The type should be [%s] but is [%s]", TypeMedicalTeamDoAdmin, confirmation.Type)
+	}
+
+	if confirmation.TemplateName != TemplateNameMedicalteamDoAdmin {
+		t.Fatalf("The template type should be [%s] but is [%s]", TemplateNameMedicalteamDoAdmin, confirmation.TemplateName)
+	}
+
+	if confirmation.UserId != "" {
+		t.Logf("expected '' actual [%s]", confirmation.UserId)
+		t.Fail()
+	}
+
+	if confirmation.CreatorId != USERID {
+		t.Logf("expected [%s] actual [%s]", USERID, confirmation.CreatorId)
+		t.Fail()
+	}
+
+	if confirmation.Creator.Profile != nil {
+		t.Logf("expected `nil` actual [%v]", confirmation.Creator.Profile)
+		t.Fail()
+	}
+
+	if confirmation.Creator.UserId != "" {
+		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
+		t.Fail()
+	}
+}
+
+func TestConfirmationCareteamInvite(t *testing.T) {
+
+	confirmation, _ := NewConfirmation(TypeCareteamInvite, TemplateNameMedicalteamInvite, USERID)
+
+	if confirmation.Status != StatusPending {
+		t.Fatalf("Status should be [%s] but is [%s]", StatusPending, confirmation.Status)
+	}
+
+	if confirmation.Created.IsZero() {
+		t.Fatal("The created time should be set")
+	}
+
+	if confirmation.Modified.IsZero() == false {
+		t.Fatal("The modified time should NOT be set")
+	}
+
+	if confirmation.Type != TypeCareteamInvite {
+		t.Fatalf("The type should be [%s] but is [%s]", TypeCareteamInvite, confirmation.Type)
+	}
+
+	if confirmation.TemplateName != TemplateNameMedicalteamInvite {
+		t.Fatalf("The template type should be [%s] but is [%s]", TemplateNameMedicalteamInvite, confirmation.TemplateName)
+	}
+
+	if confirmation.UserId != "" {
+		t.Logf("expected '' actual [%s]", confirmation.UserId)
+		t.Fail()
+	}
+
+	if confirmation.CreatorId != USERID {
+		t.Logf("expected [%s] actual [%s]", USERID, confirmation.CreatorId)
+		t.Fail()
+	}
+
+	if confirmation.Creator.Profile != nil {
+		t.Logf("expected `nil` actual [%v]", confirmation.Creator.Profile)
+		t.Fail()
+	}
+
+	if confirmation.Creator.UserId != "" {
+		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
+		t.Fail()
+	}
+	if confirmation.GetReadableDuration() != "7" {
+		t.Logf("expected `7` actual [%s]", confirmation.GetReadableDuration())
+		t.Fail()
+	}
+}
+
+func TestConfirmationClinicSignup(t *testing.T) {
+
+	confirmation, _ := NewConfirmation(TypeSignUp, TemplateNameSignupClinic, USERID)
+
+	if confirmation.Status != StatusPending {
+		t.Fatalf("Status should be [%s] but is [%s]", StatusPending, confirmation.Status)
+	}
+
+	if confirmation.Created.IsZero() {
+		t.Fatal("The created time should be set")
+	}
+
+	if confirmation.Modified.IsZero() == false {
+		t.Fatal("The modified time should NOT be set")
+	}
+
+	if confirmation.Type != TypeSignUp {
+		t.Fatalf("The type should be [%s] but is [%s]", TypeSignUp, confirmation.Type)
+	}
+
+	if confirmation.TemplateName != TemplateNameSignupClinic {
+		t.Fatalf("The template type should be [%s] but is [%s]", TemplateNameSignupClinic, confirmation.TemplateName)
+	}
+
+	if confirmation.UserId != "" {
+		t.Logf("expected '' actual [%s]", confirmation.UserId)
+		t.Fail()
+	}
+
+	if confirmation.CreatorId != USERID {
+		t.Logf("expected [%s] actual [%s]", USERID, confirmation.CreatorId)
+		t.Fail()
+	}
+
+	if confirmation.Creator.Profile != nil {
+		t.Logf("expected `nil` actual [%v]", confirmation.Creator.Profile)
+		t.Fail()
+	}
+
+	if confirmation.Creator.UserId != "" {
+		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
+		t.Fail()
+	}
+	confirmationDuration := "31"
+	if confirmation.GetReadableDuration() != confirmationDuration {
+		t.Logf("expected `%s` actual [%s]", confirmationDuration, confirmation.GetReadableDuration())
+		t.Fail()
+	}
+
+}
+
+func TestConfirmationSignup(t *testing.T) {
+
+	confirmation, _ := NewConfirmation(TypeSignUp, TemplateNameSignup, USERID)
+
+	if confirmation.Status != StatusPending {
+		t.Fatalf("Status should be [%s] but is [%s]", StatusPending, confirmation.Status)
+	}
+
+	if confirmation.Created.IsZero() {
+		t.Fatal("The created time should be set")
+	}
+
+	if confirmation.Modified.IsZero() == false {
+		t.Fatal("The modified time should NOT be set")
+	}
+
+	if confirmation.Type != TypeSignUp {
+		t.Fatalf("The type should be [%s] but is [%s]", TypeSignUp, confirmation.Type)
+	}
+
+	if confirmation.TemplateName != TemplateNameSignup {
+		t.Fatalf("The template type should be [%s] but is [%s]", TemplateNameSignup, confirmation.TemplateName)
+	}
+
+	if confirmation.UserId != "" {
+		t.Logf("expected '' actual [%s]", confirmation.UserId)
+		t.Fail()
+	}
+
+	if confirmation.CreatorId != USERID {
+		t.Logf("expected [%s] actual [%s]", USERID, confirmation.CreatorId)
+		t.Fail()
+	}
+
+	if confirmation.Creator.Profile != nil {
+		t.Logf("expected `nil` actual [%v]", confirmation.Creator.Profile)
+		t.Fail()
+	}
+
+	if confirmation.Creator.UserId != "" {
+		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
+		t.Fail()
+	}
+	confirmationDuration := "31"
+	if confirmation.GetReadableDuration() != confirmationDuration {
+		t.Logf("expected `%s` actual [%s]", confirmationDuration, confirmation.GetReadableDuration())
 		t.Fail()
 	}
 

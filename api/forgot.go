@@ -144,6 +144,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 			"Key":      resetCnf.Key,
 			"Email":    resetCnf.Email,
 			"ShortKey": resetCnf.ShortKey,
+			"Duration": resetCnf.GetReadableDuration(),
 		}
 
 		if a.createAndSendNotification(req, resetCnf, emailContent, resetterLanguage) {

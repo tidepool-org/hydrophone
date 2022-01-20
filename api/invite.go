@@ -1034,6 +1034,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						"PatientName": fullName,
 						"Email":       invite.Email,
 						"WebPath":     webPath,
+						"Duration":    invite.GetReadableDuration(),
 					}
 
 					if a.createAndSendNotification(req, invite, emailContent, inviteeLanguage) {
@@ -1179,6 +1180,7 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 					"CreatorName":              invite.Creator.Profile.FullName,
 					"Email":                    invite.Email,
 					"WebPath":                  webPath,
+					"Duration":                 invite.GetReadableDuration(),
 				}
 
 				if a.createAndSendNotification(req, invite, emailContent, inviteeLanguage) {

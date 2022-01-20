@@ -62,7 +62,11 @@ type (
 		Birthday string `json:"birthday"`
 	}
 
-	TypeDurations map[Type]time.Duration
+	ConfirmationDuration struct {
+		Unit  string
+		Value time.Duration
+	}
+	TypeDurations map[Type]ConfirmationDuration
 )
 
 const (
@@ -90,12 +94,12 @@ const (
 
 var (
 	Timeouts TypeDurations = TypeDurations{
-		TypeCareteamInvite:           7 * 24 * time.Hour,
-		TypePasswordReset:            7 * 24 * time.Hour,
-		TypeSignUp:                   31 * 24 * time.Hour,
-		TypePatientPasswordReset:     1 * time.Hour,
-		TypeMedicalTeamInvite:        7 * 24 * time.Hour,
-		TypeMedicalTeamPatientInvite: 7 * 24 * time.Hour,
+		TypeCareteamInvite:           ConfirmationDuration{"day", 7 * 24 * time.Hour},
+		TypePasswordReset:            ConfirmationDuration{"day", 7 * 24 * time.Hour},
+		TypeSignUp:                   ConfirmationDuration{"day", 31 * 24 * time.Hour},
+		TypePatientPasswordReset:     ConfirmationDuration{"hour", 1 * time.Hour},
+		TypeMedicalTeamInvite:        ConfirmationDuration{"day", 7 * 24 * time.Hour},
+		TypeMedicalTeamPatientInvite: ConfirmationDuration{"day", 7 * 24 * time.Hour},
 	}
 )
 
@@ -237,13 +241,24 @@ func (c *Confirmation) ValidateType(expectedTypes []Type, validationErrors *[]er
 }
 
 func (c *Confirmation) IsExpired() bool {
-	timeout, ok := Timeouts[c.Type]
+	timeoutObj, ok := Timeouts[c.Type]
 	if !ok {
 		log.Printf("[%s] does not exist", c.Type)
 		return false
 	}
+	return time.Now().After(c.Created.Add(timeoutObj.Value))
+}
 
-	return time.Now().After(c.Created.Add(timeout))
+func (c *Confirmation) GetReadableDuration() string {
+	timeoutObj, ok := c.getDuration()
+	var value float64
+	if ok {
+		value = (timeoutObj.Value).Hours()
+		if timeoutObj.Unit == "day" {
+			value = value / 24
+		}
+	}
+	return fmt.Sprintf("%.0f", value)
 }
 
 func (c *Confirmation) ResetKey() error {
@@ -290,4 +305,15 @@ func generateShortKey(length int) (string, error) {
 		bytes[i] = letterBytes[b%byte(len(letterBytes))]
 	}
 	return string(bytes), nil
+}
+
+func (c *Confirmation) getDuration() (ConfirmationDuration, bool) {
+	var timeoutObj ConfirmationDuration
+	var ok = false
+	timeoutObj, ok = Timeouts[c.Type]
+	if !ok {
+		log.Printf("[%s] does not exist", c.Type)
+		return timeoutObj, false
+	}
+	return timeoutObj, true
 }

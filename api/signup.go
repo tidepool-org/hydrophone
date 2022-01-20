@@ -265,6 +265,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 						"Key":      newSignUp.Key,
 						"Email":    newSignUp.Email,
 						"FullName": profile.FullName,
+						"Duration": newSignUp.GetReadableDuration(),
 					}
 
 					if newSignUp.Creator.Profile != nil {

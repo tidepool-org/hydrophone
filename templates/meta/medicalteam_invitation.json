@@ -9,6 +9,7 @@
         "MedicalTeamInviteBody2",
         "MedicalTeamInviteWarning",
         "MedicalTeamInviteInfo",
+        "EmailExpirationDays",
         "RespondToInvite",
         "FooterGetSupport"
     ],
@@ -16,6 +17,7 @@
         "MedicalteamName",
         "MedicalteamAddress",
         "MedicalteamIentification",
-        "CreatorName"
+        "CreatorName",
+        "Duration"
     ]
 }

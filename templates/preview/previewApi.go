@@ -184,6 +184,7 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 		"PatientName":              "John Doe",
 		"WebPath":                  "login",
 		"ShortKey":                 "12345678",
+		"Duration":                 "1",
 		"OTP":                      "165236984",
 		"SupportEmail":             a.Config.SupportURL,
 		"MedicalteamName":          "Team CHU",

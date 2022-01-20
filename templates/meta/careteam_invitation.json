@@ -8,9 +8,11 @@
         "CareTeamInviteBody",
         "CareTeamInviteBody2",
         "RespondToInvite",
+        "EmailExpirationDays",
         "FooterGetSupport"
     ],
     "escapeContentParts":[
-        "PatientName"
+        "PatientName",
+        "Duration"
     ]
 }

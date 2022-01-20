@@ -10,7 +10,7 @@ cat test-report.txt
 cat test-report.txt | go-junit-report  > test-report.xml
 
 if [ $testPass -eq 1 ]; then
-  echo "Test failled"
+  echo "Test failed"
 fi
 
 gocover-cobertura < coverage.out > coverage.xml

@@ -11,6 +11,7 @@
         "MedicalTeamPatientInviteInfo",
         "ReadDataPrivacy",
         "RespondToInvite",
+        "EmailExpirationDays",
         "FooterGetSupport"
     ],
     "escapeContentParts":[
@@ -20,6 +21,7 @@
         "MedicalteamIentification",
         "CreatorName",
         "AssetURL",
-        "Language"
+        "Language",
+        "Duration"
     ]
 }
