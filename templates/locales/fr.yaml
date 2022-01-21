@@ -27,7 +27,7 @@ PatientPasswordResetBody2: "Cette clé est valable une heure. En cas d'expiratio
 PatientPasswordInfoSubject: "Réinitialisation du mot de passe"
 PatientPasswordInfoHeadline: "Vous avez demandé la réinitialisation de votre mot de passe depuis l’application YourLoops. Pour des raisons de sécurité, vous devez réaliser cette demande depuis votre DBL."
 PatientPasswordInfoBody: "Allez à Paramètres > YourLoops et suivez les instructions de votre DBL."
-PatientPasswordInfoBody2: "Si vous n’êtes pas à l’origine de cette demande, merci de contacter notre <a href='{{ .SupportEmail }}'>support</a>."
+PatientPasswordInfoBody2: "Si vous n’êtes pas à l’origine de cette demande, merci de contacter notre <a style='text-decoration:none;color:#00a3e2;' href='{{ .SupportEmail }}'>support</a>."
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Invitation patient"
@@ -102,6 +102,6 @@ MedicalTeamPatientInviteWarning: "Veuillez vérifier que les informations ci-des
 MedicalTeamPatientInviteWarning2: "En cas de doute, n'acceptez pas l'invitation et prenez contact avec votre professionnel de santé."
 MedicalTeamPatientInviteInfo: "En ajoutant cette équipe, vous acceptez de partager vos données personnelles (dont certaines données de santé) avec ses membres, qui sont des professionnels de santé inscrits sur YourLoops."
 #Shared
-ReadDataPrivacy: "Veuillez consulter notre <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>politique de confidentialité</a> pour plus d'informations."
+ReadDataPrivacy: "Veuillez consulter notre <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>politique de confidentialité</a> pour plus d'informations."
 RespondToInvite: "Répondre à l'invitation"
 ConfirmationSubject: "Vérification de votre adresse email"

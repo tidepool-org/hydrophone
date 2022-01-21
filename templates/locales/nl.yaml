@@ -27,7 +27,7 @@ PatientPasswordResetBody2: "De code is 1 uur geldig. Als deze is verlopen, vraag
 PatientPasswordInfoSubject: "Wachtwoord resetten"
 PatientPasswordInfoHeadline: "Je hebt gevraagd om je YourLoops-wachtwoord opnieuw in te stellen bij YourLoops. Om veiligheidsredenen moet je de wijziging echter aanvragen bij je DBL."
 PatientPasswordInfoBody: "Ga naar Instellingen > YourLoops en volg de instructies op je DBL."
-PatientPasswordInfoBody2: "Als je deze e-mail ten onrechte ontvangt, neem dan contact op met onze <a href='{{ .SupportEmail }}'>klantenservice</a>."
+PatientPasswordInfoBody2: "Als je deze e-mail ten onrechte ontvangt, neem dan contact op met onze <a style='text-decoration:none;color:#00a3e2;' href='{{ .SupportEmail }}'>klantenservice</a>."
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Uitnodiging voor de patiënt"
@@ -102,6 +102,6 @@ MedicalTeamPatientInviteWarning: "Controleer of de bovenstaande gegevens overeen
 MedicalTeamPatientInviteWarning2: "Neem bij twijfel contact op met je zorgverlener en accepteer deze uitnodiging niet."
 MedicalTeamPatientInviteInfo: "Door dit team toe te voegen, stem je ermee in om je persoonlijke gegevens (inclusief gezondheidsgegevens) te delen met de leden van het team, die geautoriseerde zorgverleners zijn die geregistreerd zijn op YourLoops."
 #Shared
-ReadDataPrivacy: "Lees ons <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
+ReadDataPrivacy: "Lees ons <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
 RespondToInvite: "Reageren op uitnodiging"
 ConfirmationSubject: "Verifieer je e-mailadres"

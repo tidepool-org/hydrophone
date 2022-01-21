@@ -27,7 +27,7 @@ PatientPasswordResetBody2: "La chiave è valida per 1 ora. Se è scaduta, richie
 PatientPasswordInfoSubject: "Reimpostazione password"
 PatientPasswordInfoHeadline: "Hai richiesto di reimpostare la password di YourLoops da YourLoops. Tuttavia, per motivi di sicurezza, è necessario richiedere la modifica dal DBL."
 PatientPasswordInfoBody: "Vai a Impostazioni > YourLoops e segui le istruzioni visualizzate sul DBL."
-PatientPasswordInfoBody2: "Se questa e-mail ti è arrivata per errore, contatta il nostro <a href='{{ .SupportEmail }}'>servizio assistenza</a>."
+PatientPasswordInfoBody2: "Se questa e-mail ti è arrivata per errore, contatta il nostro <a style='text-decoration:none;color:#00a3e2;' href='{{ .SupportEmail }}'>servizio assistenza</a>."
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Invito per paziente"
@@ -102,6 +102,6 @@ MedicalTeamPatientInviteWarning: "Prima di rispondere all’invito, verifichi ch
 MedicalTeamPatientInviteWarning2: "Se non è sicuro, si metta in contatto con l’operatore sanitario e non accetti l’invito."
 MedicalTeamPatientInviteInfo: "Aggiungendo questo team, lei acconsente a condividere i suoi dati personali (compresi i dati sanitari) con i membri del team, che sono operatori sanitari autorizzati registrati su YourLoops."
 #Shared
-ReadDataPrivacy: "Per ulteriori informazioni, legga la nostra <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>informativa sulla privacy</a>."
+ReadDataPrivacy: "Per ulteriori informazioni, legga la nostra <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>informativa sulla privacy</a>."
 RespondToInvite: "Rispondi all’invito"
 ConfirmationSubject: "Verifica il tuo indirizzo e-mail"

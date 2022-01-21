@@ -29,7 +29,7 @@ PatientPasswordResetBody2: "The key is valid for 1h. If it has expired, please r
 PatientPasswordInfoSubject: "Password reset"
 PatientPasswordInfoHeadline: "You requested to reset your YourLoops password from YourLoops. However, for safety reasons, you have to request the change from your DBL."
 PatientPasswordInfoBody: "Go to Settings > YourLoops and follow the instructions on your DBL."
-PatientPasswordInfoBody2: "If this email has reached you in error, please contact our <a href='{{ .SupportEmail }}'>customer support</a>."
+PatientPasswordInfoBody2: "If this email has reached you in error, please contact our <a style='text-decoration:none;color:#00a3e2;' href='{{ .SupportEmail }}'>customer support</a>."
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Patient invitation"
@@ -104,6 +104,6 @@ MedicalTeamPatientInviteWarning: "Please verify that the above details match the
 MedicalTeamPatientInviteWarning2: "If you're unsure, get in touch with your healthcare professional and do not accept this invitation."
 MedicalTeamPatientInviteInfo: "By adding this team, you consent to share your personal data (including health data) with its members, who are authorized healthcare professionals registered on YourLoops."
 #Shared
-ReadDataPrivacy: "Read our <a href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacy policy</a> for more information."
+ReadDataPrivacy: "Read our <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacy policy</a> for more information."
 RespondToInvite: "Respond to invitation"
 ConfirmationSubject: "Verify your email address"
