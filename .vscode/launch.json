@@ -1,47 +1,49 @@
 {
-   "version": "0.2.0",
-   "configurations": [
-       {
-           "name": "Launch hydro",
-           "type": "go",
-           "request": "launch",
-           "mode": "debug",
-           "program": "${workspaceRoot}",
-           "env": {
-                "TIDEPOOL_HYDROPHONE_ENV":"{ \"portal\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://api-private:3000\"] } }, \"hakken\": { \"host\": \"fake-hakken\", \"skipHakken\":true } }",
-                "TIDEPOOL_HYDROPHONE_SERVICE":"{ \"service\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"hydrophone\" : { \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"/temaple/path/local", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://xxxx\" }, \"notifierType\": \"null\" }",
-                "SERVICE_NAME":"hydrophone",
-                "SEAGULL_HOST":"http://api-private:3000/metadata",
-                "SHORELINE_HOST":"http://api-private:3000/auth",
-                "CREW_HOST":"http://api-private:3000/crew/v0",
-                "SERVER_SECRET": "shoreline shared server secret",
-                "SHORELINE_TOKEN_REFRESH_INTERVAL":"1h",
-                "SHORELINE_TOKEN_GET_INTERVAL":"5m",
-                "TIDEPOOL_STORE_DATABASE":"confirm",
-                "TIDEPOOL_STORE_USERNAME":"${PERSONAL_ACCOUNT}",
-                "TIDEPOOL_STORE_PASSWORD":"${PERSONAL_PWD}",
-                "TIDEPOOL_STORE_ADDRESSES":"localhost",
-                "TIDEPOOL_STORE_OPT_PARAMS":"authSource=admin",
-                "TIDEPOOL_STORE_DEFAULT_TIMEOUT":"2",
-                "TIDEPOOL_STORE_WAIT_CONNECTION_INTERVAL":"5",
-                "TIDEPOOL_STORE_MAX_CONNECTION_ATTEMPTS":"0",
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch hydro",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}",
+            "env": {
+                "TIDEPOOL_HYDROPHONE_ENV": "{ \"portal\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://api-private:3000\"] } }, \"hakken\": { \"host\": \"fake-hakken\", \"skipHakken\":true } }",
+                "TIDEPOOL_HYDROPHONE_SERVICE": "{ \"service\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"hydrophone\" : { \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"./templates\", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://xxxx\" }, \"notifierType\": \"null\" }",
+                "SERVICE_NAME": "hydrophone",
+                "SEAGULL_HOST": "http://api-private:3000/metadata",
+                "SHORELINE_HOST": "http://api-private:3000/auth",
+                "CREW_HOST": "http://api-private:3000/crew/v0",
+                "PORTAL_HOST": "http://api-private:3000",
+                "SERVER_SECRET": "This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy",
+                "SHORELINE_TOKEN_REFRESH_INTERVAL": "1h",
+                "SHORELINE_TOKEN_GET_INTERVAL": "5m",
+                "TIDEPOOL_STORE_DATABASE": "confirm",
+                "TIDEPOOL_STORE_USERNAME": "personal",
+                "TIDEPOOL_STORE_PASSWORD": "password",
+                "TIDEPOOL_STORE_ADDRESSES": "localhost:27017",
+                "TIDEPOOL_STORE_OPT_PARAMS": "authSource=admin",
+                "TIDEPOOL_STORE_DEFAULT_TIMEOUT": "2",
+                "TIDEPOOL_STORE_WAIT_CONNECTION_INTERVAL": "5",
+                "TIDEPOOL_STORE_MAX_CONNECTION_ATTEMPTS": "0",
                 "REGION": "eu-west-1",
-               // Use this below to override local AWS credentials. Otherwise local credentials will be used so the user/profile needs to have rights for sending emails
-               // "AWS_PROFILE":"${NON_DEFAULT_PROFILE}" for using a .aws/credentials non default profile
-               // OR
-               "AWS_ACCESS_KEY_ID":"xxxxx",
-               "AWS_SECRET_ACCESS_KEY":"xxxxx"
-           },
-           "args": []
-       },
-       {
-        "name": "Launch Mail preview",
-        "type": "go",
-        "request": "launch",
-        "mode": "debug",
-        "program": "${workspaceRoot}/templates/preview/mailPreview.go",
-        "env": {
-            "TIDEPOOL_HYDROPHONE_SERVICE":"{ \"httpaddr\": \"localhost:8088\", \"assetUrl\": \"https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets\", \"serverSecret\": \"secret\", \"webUrl\": \"https://preview.your-loops.dev\", \"patientPasswordResetUrl\": \"https://support.diabeloop.com/hc/articles/360025168234\", \"supportUrl\": \"mailto:yourloops@diabeloop.com\",\"i18nTemplatesPath\": \"../\" }"
+                // Use this below to override local AWS credentials. Otherwise local credentials will be used so the user/profile needs to have rights for sending emails
+                // "AWS_PROFILE":"${NON_DEFAULT_PROFILE}" for using a .aws/credentials non default profile
+                // OR
+                "AWS_ACCESS_KEY_ID": "xxxxx",
+                "AWS_SECRET_ACCESS_KEY": "xxxxx"
+            },
+            "args": []
+        },
+        {
+            "name": "Launch Mail preview",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/templates/preview/mailPreview.go",
+            "env": {
+                "TIDEPOOL_HYDROPHONE_SERVICE": "{ \"httpaddr\": \"localhost:8088\", \"assetUrl\": \"https://s3-eu-west-1.amazonaws.com/com.diabeloop.public-assets\", \"serverSecret\": \"secret\", \"webUrl\": \"https://preview.your-loops.dev\", \"patientPasswordResetUrl\": \"https://support.diabeloop.com/hc/articles/360025168234\", \"supportUrl\": \"mailto:yourloops@diabeloop.com\",\"i18nTemplatesPath\": \"../\" }"
+            }
         }
-   ]
+    ]
 }
