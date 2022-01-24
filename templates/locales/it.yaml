@@ -2,9 +2,11 @@
 #Footer
 #(for all emails)
 FooterGetSupport: "SUPPORTO"
+EmailExpirationHours: "Questo messaggio è valido {{ .Duration }} ora(e)."
+EmailExpirationDays: "Questo messaggio è valido {{ .Duration }} giorno(i)."
 #FooterSincerely: "Sincerely,"
 #FooterSignature: "The Diabeloop Team"
-#No account
+#No accounts
 #(email for those that requested password reset but did not create their account before)
 NoAccountSubject: "Indirizzo e-mail sconosciuto"
 NoAccountHeadline: "Hai richiesto di reimpostare la password YourLoops, ma non è stato ancora creato un account con questo indirizzo e-mail."
