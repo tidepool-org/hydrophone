@@ -41,11 +41,13 @@ CareTeamInviteBody2: "{{ .PatientName }} ha scelto di condividere i propri dati 
 #(email to ask patient for verification of email)
 SignupHeadline: "Verifica il tuo indirizzo e-mail per attivare l’account YourLoops."
 SignupBody: "Hai creato un account su YourLoops. Per confermare la tua identità, fai clic sul link sottostante."
+SignupDeletionWarning: "Se l'account non viene attivato entro questo periodo, la registrazione dell'account verrà eliminata."
 SignupVerify: "Attiva il mio account"
 #Signup Clinic
 #(email to ask clinician for verification of email)
 SignupClinicHeadline: "Verifica il tuo indirizzo e-mail per attivare l’account YourLoops."
 SignupClinicBody: "Hai creato un account per medico curante su YourLoops. Per confermare la tua identità e completare il tuo profilo, fai clic sul link sottostante."
+SignupClinicDeletionWarning: "Se l'account non viene attivato entro questo periodo, la registrazione dell'account verrà eliminata."
 SignupClinicVerify: "Attiva il mio account"
 #Signup Custodial => SUPPRIMER
 #(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
