@@ -6,6 +6,7 @@
     "contentParts":[
         "SignupHeadline",
         "SignupBody",
+        "SignupDeletionWarning",
         "SignupVerify",
         "EmailExpirationDays",
         "FooterGetSupport"

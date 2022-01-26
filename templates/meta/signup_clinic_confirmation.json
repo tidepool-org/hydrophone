@@ -6,6 +6,7 @@
     "contentParts":[
         "SignupClinicHeadline",
         "SignupClinicBody",
+        "SignupClinicDeletionWarning",
         "SignupClinicVerify",
         "EmailExpirationDays",
         "FooterGetSupport"
