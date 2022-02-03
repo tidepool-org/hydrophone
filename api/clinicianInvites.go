@@ -74,6 +74,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 		statusErr := a.sendClinicianConfirmation(req, confirmation)
 		if statusErr != nil {
 			a.sendError(res, statusErr.Code, statusErr.Reason, statusErr.Error())
+			return
 		}
 
 		res.Header().Set("content-type", "application/json")
@@ -343,17 +344,18 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.Confirmation) *status.StatusError {
 	ctx := req.Context()
 
-	confirmation.Modified = time.Now()
-	if err := a.Store.UpsertConfirmation(ctx, confirmation); err != nil {
-		return  &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
-	}
-
-	a.logMetric("clinician_invite_created", req)
-
 	if err := a.addProfile(confirmation); err != nil {
 		a.logger.Errorw("error adding profile information to confirmation", zap.Error(err))
 		return &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 	}
+
+	confirmation.Modified = time.Now()
+	if err := a.Store.UpsertConfirmation(ctx, confirmation); err != nil {
+		a.logger.Errorw("error upserting clinician confirmation confirmation", zap.Error(err))
+		return  &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+	}
+
+	a.logMetric("clinician_invite_created", req)
 
 	fullName := confirmation.Creator.Profile.FullName
 
