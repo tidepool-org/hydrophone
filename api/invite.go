@@ -486,7 +486,12 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 		if invite == nil || invite.ClinicId != "" {
-			a.logger.Warn("confirmation not found")
+			if invite.ClinicId != "" {
+				a.logger.Warn("cannot resend clinic invite using care team invite endpoint")
+			} else {
+				a.logger.Warn("cannot resend confirmation, because it doesn't exist")
+			}
+
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
 			return
