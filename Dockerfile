@@ -1,5 +1,5 @@
 # Development
-FROM golang:1.17-alpine AS development
+FROM --platform=$BUILDPLATFORM golang:1.17-alpine AS development
 ARG APP_VERSION
 ENV APP_VERSION=${APP_VERSION}
 ENV GO111MODULE=on
@@ -15,12 +15,14 @@ RUN apk --no-cache update && \
     
 RUN git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 
-RUN  ./build.sh
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+RUN  ./build.sh $TARGETPLATFORM
 
 CMD ["./dist/hydrophone"]
 
 # Production
-FROM alpine:latest AS production
+FROM --platform=$BUILDPLATFORM alpine:latest AS production
 WORKDIR /home/tidepool
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \

@@ -3,7 +3,11 @@ type: golang
 runTests: false
 testCommand: go test -race -v
 docker: true
-dockerBuildCommand: docker build --build-arg APP_VERSION=$version --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+dockerBuild: 
+  platform: 'linux/arm64,linux/amd64'
+  buildArgs:
+  - 'APP_VERSION=$version'
+  - 'GITHUB_TOKEN=${GITHUB_TOKEN}'
 dockerPushToProduction : true
 publishNpm: false
 publishS3: false

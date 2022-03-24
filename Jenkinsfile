@@ -1,5 +1,6 @@
 @Library('mdblp-library') _
 def builderImage
+def ciConfig
 pipeline {
     agent any
     stages {
@@ -20,6 +21,7 @@ pipeline {
                     }
                     env.APP_VERSION = env.version
                     env.buildImage = "docker.ci.diabeloop.eu/go-build:1.17"
+                    ciConfig = utils.getConfig()
                 }
             }
         }
@@ -64,9 +66,12 @@ pipeline {
         }
         stage('Package') {
             steps {
-                withCredentials ([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
-                    pack()
-                    sh 'docker build -f Dockerfile.hydromail --build-arg APP_VERSION=$version --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} -t hydromail:${GIT_COMMIT} .'
+                script {
+                    withCredentials ([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                        pack()
+                        buildCommand = utils.getDockerBuildCommand(ciConfig, 'hydromail:${GIT_COMMIT}', false)
+                        sh "${buildCommand}"
+                    }
                 }
             }
         }
@@ -80,10 +85,19 @@ pipeline {
         stage('Publish') {
             when { branch "dblp" }
             steps {
-                publish()
-                withCredentials([usernamePassword(credentialsId: 'nexus-jenkins', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PWD')]) {
-                    pushDocker("${utils.diabeloopRegistry}", "${NEXUS_USER}", "${NEXUS_PWD}", "hydromail:${GIT_COMMIT}", "${version}")
+                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                    publish()
+                    withCredentials([usernamePassword(credentialsId: 'nexus-jenkins', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PWD')]) {
+                        pushDocker("${utils.diabeloopRegistry}", "${NEXUS_USER}", "${NEXUS_PWD}", "hydromail:${GIT_COMMIT}", "${version}", false, [:])
+                    }
                 }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                utils.closePipeline()
             }
         }
     }
