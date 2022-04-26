@@ -9,7 +9,7 @@
             "program": "${workspaceRoot}",
             "env": {
                 "TIDEPOOL_HYDROPHONE_ENV": "{ \"portal\": { \"serviceSpec\": { \"type\": \"static\", \"hosts\": [\"http://api-private:3000\"] } }, \"hakken\": { \"host\": \"fake-hakken\", \"skipHakken\":true } }",
-                "TIDEPOOL_HYDROPHONE_SERVICE": "{ \"service\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"hydrophone\" : { \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"./templates\", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://xxxx\" }, \"notifierType\": \"null\" }",
+                "TIDEPOOL_HYDROPHONE_SERVICE": "{ \"service\": { \"service\": \"hydrophone\", \"protocol\": \"http\", \"host\": \"localhost:9157\", \"keyFile\": \"config/key.pem\", \"certFile\": \"config/cert.pem\" }, \"hydrophone\" : { \"webUrl\": \"http://localhost:3000\", \"supportUrl\": \"mailto:<<email_to_support>>\", \"assetUrl\": \"<<url_to_s3_for_images>>\", \"i18nTemplatesPath\": \"./templates\", \"allowPatientResetPassword\": false, \"patientPasswordResetUrl\": \"https://xxxx\" }, \"sesEmail\": { \"fromAddress\": \"test@diabeloop.fr\",\"serverEndpoint\": \"http://api-private:3000/mockserver\", \"configurationSet\": \"\",\"defaultTags\": {\"environment\": \"local\", \"service\": \"hydrophone\"}} }",
                 "SERVICE_NAME": "hydrophone",
                 "SEAGULL_HOST": "http://api-private:3000/metadata",
                 "SHORELINE_HOST": "http://api-private:3000/auth",
