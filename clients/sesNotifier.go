@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
+	"github.com/k3a/html2text"
 )
 
 const (
@@ -98,6 +99,8 @@ func (c *SesNotifier) getSesTags(tags map[string]string) []*ses.MessageTag {
 
 // Send a message to a list of recipients with a given subject
 func (c *SesNotifier) Send(to []string, subject string, msg string, tags map[string]string) (int, string) {
+	simpleText := html2text.HTML2Text(msg)
+
 	var toAwsAddress = make([]*string, len(to))
 	for i, x := range to {
 		toAwsAddress[i] = aws.String(x)
@@ -122,7 +125,7 @@ func (c *SesNotifier) Send(to []string, subject string, msg string, tags map[str
 				},
 				Text: &ses.Content{
 					Charset: aws.String(CharSet),
-					Data:    aws.String(DefaultTextMessage),
+					Data:    aws.String(simpleText),
 				},
 			},
 			Subject: &ses.Content{
