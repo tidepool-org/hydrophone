@@ -70,7 +70,7 @@ pipeline {
                     withCredentials ([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                         pack()
                         buildCommand = utils.getDockerBuildCommand(ciConfig, 'hydromail:${GIT_COMMIT}', false)
-                        sh "${buildCommand}"
+                        sh "docker buildx build -f Dockerfile.hydromail --load --build-arg APP_VERSION=$version --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} -t hydromail:${GIT_COMMIT} ."
                     }
                 }
             }
