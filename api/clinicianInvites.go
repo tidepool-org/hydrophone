@@ -74,6 +74,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 		statusErr := a.sendClinicianConfirmation(req, confirmation)
 		if statusErr != nil {
 			a.sendError(res, statusErr.Code, statusErr.Reason, statusErr.Error())
+			return
 		}
 
 		res.Header().Set("content-type", "application/json")
@@ -295,14 +296,8 @@ func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request,
 			Type:   models.TypeClinicianInvite,
 			Status: models.StatusPending,
 		}
-		conf, err := a.findExistingConfirmation(ctx, filter, res)
-		if err != nil {
-			a.logger.Errorw("error while finding confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-			return
-		}
-
-		a.cancelClinicianInviteWithStatus(res, req, conf, models.StatusDeclined)
+		conf, _ := a.findExistingConfirmation(ctx, filter, res)
+		a.cancelClinicianInviteWithStatus(res, req, filter, conf, models.StatusDeclined)
 	}
 }
 
@@ -324,36 +319,26 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			Type:     models.TypeClinicianInvite,
 			Status:   models.StatusPending,
 		}
-		conf, err := a.findExistingConfirmation(ctx, filter, res)
-		if err != nil {
-			a.logger.Errorw("error while finding confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-			return
-		}
-		if conf == nil {
-			a.logger.Warn("confirmation not found")
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-			return
-		}
-		a.cancelClinicianInviteWithStatus(res, req, conf, models.StatusCanceled)
+		conf, _ := a.findExistingConfirmation(ctx, filter, res)
+		a.cancelClinicianInviteWithStatus(res, req, filter, conf, models.StatusCanceled)
 	}
 }
 
 func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.Confirmation) *status.StatusError {
 	ctx := req.Context()
 
-	confirmation.Modified = time.Now()
-	if err := a.Store.UpsertConfirmation(ctx, confirmation); err != nil {
-		return  &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
-	}
-
-	a.logMetric("clinician_invite_created", req)
-
 	if err := a.addProfile(confirmation); err != nil {
 		a.logger.Errorw("error adding profile information to confirmation", zap.Error(err))
 		return &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 	}
+
+	confirmation.Modified = time.Now()
+	if err := a.Store.UpsertConfirmation(ctx, confirmation); err != nil {
+		a.logger.Errorw("error upserting clinician confirmation confirmation", zap.Error(err))
+		return  &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+	}
+
+	a.logMetric("clinician_invite_created", req)
 
 	fullName := confirmation.Creator.Profile.FullName
 
@@ -379,21 +364,23 @@ func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.
 	return nil
 }
 
-func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http.Request, conf *models.Confirmation, statusUpdate models.Status) {
+func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http.Request, filter, conf *models.Confirmation, statusUpdate models.Status) {
 	ctx := req.Context()
-	response, err := a.clinics.DeleteInvitedClinicianWithResponse(ctx, clinics.ClinicId(conf.ClinicId), clinics.InviteId(conf.Key))
+	response, err := a.clinics.DeleteInvitedClinicianWithResponse(ctx, clinics.ClinicId(filter.ClinicId), clinics.InviteId(filter.Key))
 	if err != nil || (response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusNotFound) {
 		a.logger.Errorw("error while finding confirmation", zap.Error(err))
 		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
 		return
 	}
 
-	conf.UpdateStatus(statusUpdate)
-	if !a.addOrUpdateConfirmation(ctx, conf, res) {
-		a.logger.Warn("error adding or updating confirmation")
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-		return
+	if conf != nil {
+		conf.UpdateStatus(statusUpdate)
+		if !a.addOrUpdateConfirmation(ctx, conf, res) {
+			a.logger.Warn("error adding or updating confirmation")
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	a.logMetric("dismiss_clinician_invite", req)

@@ -358,7 +358,13 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 	}
 
 	if status, details := a.notifier.Send(addresses, subject, body); status != http.StatusOK {
-		log.Printf("Issue sending email: Status [%d] Message [%s]", status, details)
+		a.logger.Errorw(
+			"error sending email",
+			"email", addresses,
+			"subject", subject,
+			"status", status,
+			"message", details,
+		)
 		return false
 	}
 	return true
