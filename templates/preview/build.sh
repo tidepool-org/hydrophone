@@ -15,7 +15,8 @@ VERSION_FULL_COMMIT=$(git rev-parse HEAD)
 GO_COMMON_PATH="github.com/mdblp/go-common"
 	
 echo "Build hydromail $VERSION_BASE+$VERSION_FULL_COMMIT"
-go mod tidy
+# let's stuck on 1.17
+go mod tidy -compat=1.17
 go build -o dist/hydromail
 
 cp start.sh dist/

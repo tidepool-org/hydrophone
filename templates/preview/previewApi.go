@@ -120,6 +120,8 @@ func (a *Api) buildPreview(res http.ResponseWriter, req *http.Request, vars map[
 		templateName = models.TemplateNameCareteamInvite
 	case "medicalteam_patient_invitation":
 		templateName = models.TemplateNameMedicalteamPatientInvite
+	case "medicalteam_monitoring_invitation":
+		templateName = models.TemplateNameMedicalteamMonitoringInvite
 	case "medicalteam_invitation":
 		templateName = models.TemplateNameMedicalteamInvite
 	case "medicalteam_do_admin":

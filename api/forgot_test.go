@@ -227,6 +227,7 @@ func TestForgotResponds(t *testing.T) {
 		mockSeagull.SetMockNextCollectionCall("patient@myemail.com"+"preferences", `{"Something":"anit no thing"}`, nil)
 		mockSeagull.SetMockNextCollectionCall("clinic@myemail.com"+"preferences", `{"Something":"anit no thing"}`, nil)
 		mockSeagull.SetMockNextCollectionCall("expires@myemail.com"+"preferences", `{"Something":"anit no thing"}`, nil)
+		mockShoreline.On("TokenProvide").Return(testing_token)
 
 		if test.returnNone {
 			mockStoreEmpty.CounterLatestConfirmations = test.counterLatestConfirmations

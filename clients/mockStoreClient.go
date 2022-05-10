@@ -171,6 +171,21 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 		notification.Type = "medicalteam_remove"
 		notification.UserId = "UID123"
 	}
+	if notification.Type == models.TypeMedicalTeamMonitoringInvite {
+		if notification.Team.ID == "123456" || notification.Team.ID == "dismiss.team" {
+			notification.Status = models.StatusPending
+		}
+		if notification.Team.ID == "completed" {
+			notification.Status = models.StatusCompleted
+		}
+		if notification.Team.ID == "declined" {
+			notification.Status = models.StatusDeclined
+		}
+		if notification.Team.ID == "not.found" {
+			return nil, nil
+		}
+
+	}
 	return notification, nil
 }
 

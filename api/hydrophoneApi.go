@@ -78,12 +78,14 @@ const (
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
 	STATUS_ERR_FINDING_TEAM          = "Error finding the team"
+	STATUS_ERR_PATIENT_NOT_MBR       = "Error finding the patient in the team"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
 	STATUS_ERR_FINDING_VALIDATION    = "Error finding the account validation"
 	STATUS_ERR_DECODING_INVITE       = "Error decoding the invitation"
 	STATUS_ERR_MISSING_DATA_INVITE   = "Error missing data in the invitation"
 	STATUS_ERR_INVALID_DATA          = "Error invalid data in the invitation"
+	STATUS_ERR_DECODING_BODY         = "Error decoding the message body"
 
 	//returned status messages
 	STATUS_NOT_FOUND           = "Nothing found"
@@ -93,6 +95,7 @@ const (
 	STATUS_ROLE_ALRDY_ASSIGNED = "Role already assigned to user"
 	STATUS_NOT_MEMBER          = "User is not a member"
 	STATUS_NOT_ADMIN           = STATUS_UNAUTHORIZED
+	STATUS_NOT_TEAM_MONITORING = "Not a monitoring team"
 	STATUS_OK                  = "OK"
 )
 
@@ -150,6 +153,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
 	// POST /confirm/send/team/invite
 	send.Handle("/team/invite", varsHandler(a.SendTeamInvite)).Methods("POST")
+	// POST /confirm/send/team/monitoring/{teamid}/{userid}
+	send.Handle("/team/monitoring/{teamid}/{userid}", varsHandler(a.SendMonitoringTeamInvite)).Methods("POST")
 	// POST /confirm/send/team/role/:userid - add or remove admin role to userid
 	send.Handle("/team/role/{userid}", varsHandler(a.UpdateTeamRole)).Methods("PUT")
 	// DELETE /confirm/send/team/leave/:userid - delete member
@@ -171,6 +176,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	accept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
 	// PUT /confirm/accept/team/invite
 	accept.Handle("/team/invite", varsHandler(a.AcceptTeamNotifs)).Methods("PUT")
+	// PUT /confirm/accept/team/monitoring/{teamid}/{userid}
+	accept.Handle("/team/monitoring/{teamid}/{userid}", varsHandler(a.AcceptMonitoringInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid
@@ -189,6 +196,9 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 		varsHandler(a.dismissSignUp)).Methods("PUT")
 	// PUT /confirm/dismiss/team/invite/{teamid}
 	dismiss.Handle("/team/invite/{teamid}", varsHandler(a.DismissTeamInvite)).Methods("PUT")
+	// PUT /confirm/dismiss/team/monitoring/{teamid}/{userid}
+	dismiss.Handle("/team/monitoring/{teamid}/{userid}", varsHandler(a.DismissMonitoringInvite)).Methods("PUT")
+
 	rtr.Handle("/cancel/invite", varsHandler(a.CancelAnyInvite)).Methods("POST")
 	if a.Config.EnableTestRoutes {
 		rtr.Handle("/cancel/all/{email}", varsHandler(a.CancelAllInvites)).Methods("POST")
@@ -307,6 +317,8 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 			templateName = models.TemplateNameMedicalteamInvite
 		case models.TypeMedicalTeamPatientInvite:
 			templateName = models.TemplateNameMedicalteamPatientInvite
+		case models.TypeMedicalTeamMonitoringInvite:
+			templateName = models.TemplateNameMedicalteamMonitoringInvite
 		case models.TypeMedicalTeamDoAdmin:
 			templateName = models.TemplateNameMedicalteamDoAdmin
 		case models.TypeMedicalTeamRemove:

@@ -38,11 +38,15 @@ const (
 	testing_uid2       = "UID999"
 
 	testing_token_hcp       = "a.fake.token.for.hcp"
+	testing_token_hcp2      = "a.2nd.fake.token.for.hcp"
 	testing_token_caregiver = "a.fake.token.for.caregiver"
 
-	testing_uid3 = "UID002"
-	testing_uid4 = "UID004"
-	testing_uid5 = "UID005"
+	testing_uid3         = "UID002"
+	testing_uid4         = "UID004"
+	testing_uid5         = "UID005"
+	testing_uid_patient1 = "PATIENT001"
+	testing_uid_patient2 = "PATIENT002"
+	testing_uid_patient3 = "PATIENT003"
 )
 
 var (
@@ -121,10 +125,19 @@ func (m *testingShorelingMock) GetUser(userID, token string) (*schema.UserData, 
 	if userID == "doesnotexist@myemail.com" {
 		return nil, nil
 	}
+	if userID == "PATIENT001" {
+		return &schema.UserData{UserID: userID, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org", Roles: []string{"patient"}}, nil
+	}
 
 	return &schema.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org", Roles: []string{"hcp"}}, nil
 }
 func (m *testingShorelingMock) UpdateUser(userID string, userUpdate schema.UserUpdate, token string) error {
+	return nil
+}
+func (m *testingShorelingMock) GetUnverifiedUsers() ([]schema.UserData, error) {
+	return []schema.UserData{}, nil
+}
+func (m *testingShorelingMock) DeleteUser(userID string) error {
 	return nil
 }
 func (m *testingShorelingMock) CheckToken(chkToken string) *token.TokenData {
@@ -133,6 +146,9 @@ func (m *testingShorelingMock) CheckToken(chkToken string) *token.TokenData {
 	}
 	if chkToken == testing_token_caregiver {
 		return &token.TokenData{UserId: m.userid, IsServer: false, Role: "caregiver"}
+	}
+	if chkToken == testing_token_hcp2 {
+		return &token.TokenData{UserId: testing_token_hcp2, IsServer: false, Role: "hcp"}
 	}
 	return &token.TokenData{UserId: m.userid, IsServer: false, Role: "patient"}
 }
