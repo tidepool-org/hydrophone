@@ -66,6 +66,8 @@ github.com/mailru/easyjson v0.7.6 h1:8yTIVnZgCoiM1TgqoeTl+LfU5Jg6/xL3QhGQnimLYnA
 github.com/mailru/easyjson v0.7.6/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=
 github.com/mdblp/crew v1.1.0 h1:RCxoXshQzyxBenaOa6kxk/tKAB8Af2WiZqYDsivJBrA=
 github.com/mdblp/crew v1.1.0/go.mod h1:Ya4s1NVVTqdu32+I6GrNnOq7CwlvZdyKYurPJaaTaGA=
+github.com/mdblp/crew v1.1.1 h1:lW4YVyxwS5313kT5yp8EN653wy/bblqs0YsPYbE3JDo=
+github.com/mdblp/crew v1.1.1/go.mod h1:Ya4s1NVVTqdu32+I6GrNnOq7CwlvZdyKYurPJaaTaGA=
 github.com/mdblp/go-common v1.2.0 h1:Us8qlAob77JBWmAmpYLNnEb2Mp92ZUsgLHzk8iDAPb8=
 github.com/mdblp/go-common v1.2.0/go.mod h1:2wzi36N7JwmpOPaqSDqFIcWx+9h2hA7SId5GA3+MRNA=
 github.com/mdblp/shoreline v1.9.2 h1:J5hlsjBbz+kZAMOr27O2FlenQB1Ii/P4dMkCbMePvsY=

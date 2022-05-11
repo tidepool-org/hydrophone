@@ -75,6 +75,7 @@ const (
 	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
 	STATUS_ERR_CLINICAL_USR          = "Cannot send an information to clinical"
 	STATUS_ERR_TOO_MANY_ATTEMPTS     = "Cannot send confirmation, too many attempts"
+	STATUS_ERR_RESET_PWD_FORBIDEN    = "Cannot send reset password to non patients users"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
 	STATUS_ERR_FINDING_TEAM          = "Error finding the team"

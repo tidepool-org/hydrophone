@@ -16,6 +16,12 @@ func TestForgotResponds(t *testing.T) {
 
 	tests := []toTest{
 		{
+			// return 400 if the email is not provided
+			method:   "POST",
+			url:      "/send/forgot/",
+			respCode: 404,
+		},
+		{
 			// always returns a 200 if properly formed
 			// no language header -> default to EN
 			method:       "POST",
@@ -115,18 +121,16 @@ func TestForgotResponds(t *testing.T) {
 			respCode: 200,
 		},
 		{
-			// always returns a 200 for clinician
-			// without shortKey
+			// returns a 403 for clinician
 			method:   "POST",
 			url:      "/send/forgot/clinic@myemail.com",
-			respCode: 200,
+			respCode: 403,
 		},
 		{
-			// always returns a 200 for clinician
-			// without shortKey
+			// returns a 403 for caregivers
 			method:   "POST",
-			url:      "/send/forgot/clinic@myemail.com?info=ok",
-			respCode: 200,
+			url:      "/send/forgot/caregiver@myemail.com",
+			respCode: 403,
 		},
 		{
 			// always returns a 200 if properly formed
@@ -138,14 +142,14 @@ func TestForgotResponds(t *testing.T) {
 		{
 			// testing too many forgot email sent
 			method:                     "POST",
-			url:                        "/send/forgot/clinic@myemail.com",
+			url:                        "/send/forgot/patient@myemail.com",
 			respCode:                   403,
 			counterLatestConfirmations: 11,
 		},
 		{
 			method:   "PUT",
 			url:      "/accept/forgot",
-			respCode: 200,
+			respCode: 400,
 			body: testJSONObject{
 				"key":      "1234_aK3yxxx123",
 				"email":    "me@myemail.com",
@@ -159,6 +163,17 @@ func TestForgotResponds(t *testing.T) {
 			body: testJSONObject{
 				"shortkey": "12345678",
 				"email":    "patient@myemail.com",
+				"password": "myN3wpa55w0rd",
+			},
+		},
+		// returns a 403 for caregivers
+		{
+			method:   "PUT",
+			url:      "/accept/forgot",
+			respCode: 403,
+			body: testJSONObject{
+				"shortkey": "12345678",
+				"email":    "caregiver@myemail.com",
 				"password": "myN3wpa55w0rd",
 			},
 		},
@@ -195,7 +210,7 @@ func TestForgotResponds(t *testing.T) {
 			url:        "/accept/forgot",
 			respCode:   404,
 			body: testJSONObject{
-				"key":      "1234_no_match",
+				"shortkey": "1234_no_match",
 				"email":    "me@myemail.com",
 				"password": "myN3wpa55w0rd",
 			},

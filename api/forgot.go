@@ -31,7 +31,7 @@ type (
 	}
 )
 
-// @Summary Create a lost password request
+// @Summary Create a lost password request for patients
 // @Description  If the request is correctly formed, always returns a 200.
 // @Description  If the email address is found in the system, this will:
 // @Description     - Create a confirm record and a random key
@@ -46,6 +46,7 @@ type (
 // @Param Accept-Language header string false "Browser defined languages as array of languages such as fr-FR"
 // @Success 200 {string} string "OK"
 // @Failure 400 {object} status.Status "useremail was not provided"
+// @failure 403 {object} status.Status "Cannot send reset password to non patients users, Cannot send confirmation, too many attempts"
 // @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
 // @Failure 500 {object} status.Status "Error finding the user, message returned:\"Error finding the user\" "
 // @Router /send/forgot/{useremail} [post]
@@ -76,9 +77,10 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 	// if the resetter is already registered we can use his preferences
 	if resetUsr := a.findExistingUser(email, a.sl.TokenProvide()); resetUsr != nil {
-		if !resetUsr.HasRole("patient") || a.Config.AllowPatientResetPassword {
-			resetCnf, _ = models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
-			info = nil
+		// Only patients can request a patient reset: YLP-1521
+		if !resetUsr.HasRole("patient") {
+			a.sendModelAsResWithStatus(res, STATUS_ERR_RESET_PWD_FORBIDEN, http.StatusForbidden)
+			return
 		} else {
 			// patient
 			log.Print(statusResetPatient)
@@ -92,7 +94,6 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 		resetCnf.Email = email
 		resetCnf.UserId = resetUsr.UserID
-
 		sendOk, _, err := a.verifySendAttempts(req.Context(), resetCnf.Type, "", "", resetCnf.UserId)
 		if err != nil {
 			log.Printf("passwordReset - %s err[%s]", STATUS_ERR_COUNTING_CONF, err.Error())
@@ -100,7 +101,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 			return
 		}
 		if !sendOk {
-			log.Printf("passwordReset - Too many attempts for pin reset on account [%v]", resetCnf.UserId)
+			log.Printf("passwordReset - Too many attempts for password reset on account [%v]", resetCnf.UserId)
 			a.sendModelAsResWithStatus(res, STATUS_ERR_TOO_MANY_ATTEMPTS, http.StatusForbidden)
 			return
 		}
@@ -119,23 +120,8 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 			resetterLanguage = resetterPreferences.DisplayLanguage
 		}
 	} else {
-		log.Print(statusResetNoAccount)
-		log.Printf("email used [%s]", email)
-		resetCnf, _ = models.NewConfirmation(models.TypeNoAccount, models.TemplateNameNoAccount, "")
-		resetCnf.Email = email
-		//there is nothing more to do other than notify the user
-		resetCnf.UpdateStatus(models.StatusCompleted)
-		sendOk, _, err := a.verifySendAttempts(req.Context(), resetCnf.Type, "", resetCnf.Email, "")
-		if err != nil {
-			log.Printf("passwordReset - %s err[%s]", STATUS_ERR_COUNTING_CONF, err.Error())
-			a.sendModelAsResWithStatus(res, STATUS_ERR_COUNTING_CONF, http.StatusInternalServerError)
-			return
-		}
-		if !sendOk {
-			log.Printf("passwordReset - Too many attempts for pin reset on account [%v]", resetCnf.Email)
-			a.sendModelAsResWithStatus(res, STATUS_ERR_TOO_MANY_ATTEMPTS, http.StatusForbidden)
-			return
-		}
+		a.sendModelAsResWithStatus(res, STATUS_ERR_RESET_PWD_FORBIDEN, http.StatusForbidden)
+		return
 	}
 
 	if resetCnf != nil && (info != nil || a.addOrUpdateConfirmation(req.Context(), resetCnf, res)) {
@@ -200,6 +186,7 @@ func (a *Api) findResetConfirmation(ctx context.Context, conf *models.Confirmati
 // @Success 200 {string} string "OK"
 // @Failure 400 {object} status.Status "Error while decoding the confirmation or while resetting password or missing key in the payload"
 // @Failure 401 {object} status.Status "Password reset confirmation has expired"
+// @failure 403 {object} status.Status "Cannot send reset password to non patients users"
 // @Failure 404 {object} status.Status "No matching reset confirmation was found"
 // @Failure 500 {object} status.Status "Internal error while searching the confirmation"
 // @Router /accept/forgot [put]
@@ -219,14 +206,10 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		// patient reset
 		resetCnf = &models.Confirmation{Email: rb.Email, Type: models.TypePatientPasswordReset, ShortKey: rb.ShortKey, Status: models.StatusPending}
 	} else {
-		if rb.Key != "" {
-			resetCnf = &models.Confirmation{Key: rb.Key, Email: rb.Email, Type: models.TypePasswordReset, Status: models.StatusPending}
-		} else {
-			log.Printf("acceptPassword: No key provided for %s\n", sanitize(rb.Email))
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_FINDING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-			return
-		}
+		log.Printf("acceptPassword: No key provided for %s\n", sanitize(rb.Email))
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_FINDING_CONFIRMATION)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		return
 	}
 
 	if conf := a.findResetConfirmation(req.Context(), resetCnf, res); conf != nil {
@@ -234,6 +217,11 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		token := a.sl.TokenProvide()
 
 		if usr := a.findExistingUser(rb.Email, token); usr != nil {
+
+			if !usr.HasRole("patient") {
+				a.sendModelAsResWithStatus(res, STATUS_ERR_RESET_PWD_FORBIDEN, http.StatusForbidden)
+				return
+			}
 
 			if err := a.sl.UpdateUser(usr.UserID, schema.UserUpdate{Password: &rb.Password}, token); err != nil {
 				log.Printf("acceptPassword: error updating password as part of password reset [%v]", err)

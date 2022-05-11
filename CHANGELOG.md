@@ -3,9 +3,15 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
-## Unreleased
+## 1.10.0-RC0 - 2022-05-11
 ### Added
-- YLP-1428 Implement a new notification/acceptance type on hydrophone 
+- YLP-1428 Implement a new notification/acceptance type on hydrophone
+
+### Changed
+- YLP-1521 Modify the behaviour of the "forgot password" logic to reject non-patient users
+
+### Engineering
+- Bump the version of Crew client to use the routes contracts
 
 ## 1.9.4 - 2022-04-26
 - Send a simple text version of the message instead of the default warning. Useful for tests and for simple mail clients.
