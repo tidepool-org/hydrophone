@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mdblp/crew/store"
 	"github.com/mdblp/hydrophone/templates"
+	"github.com/stretchr/testify/mock"
 )
 
 func initTestingRouterNoPerms() *mux.Router {
@@ -120,7 +121,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		Description: "Fake Team",
 		Members:     membersAlready,
 		ID:          "teamAlreadyMember",
-		RemotePatientMonitoring: &store.RemoteMonitoring{
+		RemotePatientMonitoring: &store.TeamMonitoring{
 			Enabled: &remoteMonitored,
 		},
 	}
@@ -217,7 +218,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		Description: "team monitoring",
 		Members:     membersMonitoringTeam,
 		ID:          "teamMonitoring",
-		RemotePatientMonitoring: &store.RemoteMonitoring{
+		RemotePatientMonitoring: &store.TeamMonitoring{
 			Enabled: &remoteMonitored,
 		},
 	}
@@ -236,7 +237,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		Description: "team monitoring",
 		Members:     membersMonitoringTeamNotAdmin,
 		ID:          "teamMonitoring",
-		RemotePatientMonitoring: &store.RemoteMonitoring{
+		RemotePatientMonitoring: &store.TeamMonitoring{
 			Enabled: &remoteMonitored,
 		},
 	}
@@ -246,7 +247,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		Description: "team monitoring",
 		Members:     membersMonitoringTeam,
 		ID:          "teamMonitoring",
-		RemotePatientMonitoring: &store.RemoteMonitoring{
+		RemotePatientMonitoring: &store.TeamMonitoring{
 			Enabled: &notRemoteMonitored,
 		},
 	}
@@ -265,7 +266,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		Description: "teamMonitoringNotMember",
 		Members:     membersMonitoringTeamNotMember,
 		ID:          "teamMonitoringNotMember",
-		RemotePatientMonitoring: &store.RemoteMonitoring{
+		RemotePatientMonitoring: &store.TeamMonitoring{
 			Enabled: &remoteMonitored,
 		},
 	}
@@ -332,6 +333,14 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamDismissInvitePatient", &teamDismissInvitePatient, nil)
 
 	mockPerms.SetMockNextCall("AddPatient"+testing_token_uid1+testing_uid4, &patient_uid4, nil)
+
+	mockPerms.On(
+		"UpdatePatientMonitoringWithContext", mock.Anything, mock.Anything, mock.Anything,
+	).Return(nil, nil)
+	mockPerms.On(
+		"GetPatientMonitoring", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+	).Return(&store.Patient{}, nil)
+	mockShoreline.On("TokenProvide").Return("ok")
 
 	mockSeagull.SetMockNextCollectionCall(testing_uid1+"profile", `{"Something":"anit no thing"}`, nil)
 	mockSeagull.SetMockNextCollectionCall("patient.team@myemail.com"+"profile", `{"Something":"anit no thing"}`, nil)
@@ -1820,13 +1829,6 @@ func TestDismissMonitoringInvite(t *testing.T) {
 		},
 		// Forbidden request on user not a member
 		{
-			desc:     "forbidden request to dismiss a monitoring invite",
-			method:   http.MethodPut,
-			url:      "/dismiss/team/monitoring/not.member/" + testing_uid1,
-			token:    testing_token_uid1,
-			respCode: http.StatusInternalServerError,
-		},
-		{
 			desc:     "valid request to dismiss a monitoring invite from team admin",
 			method:   http.MethodPut,
 			url:      "/dismiss/team/monitoring/dismiss.team/" + testing_uid1,
@@ -1896,6 +1898,13 @@ func TestDismissMonitoringInvite(t *testing.T) {
 	mockPerms.SetMockNextCall(testing_token_uid1+"dismiss.team", &patient, nil)
 	mockPerms.SetMockNextCall(testing_token_hcp2+"dismiss.team", &team, nil)
 	mockPerms.SetMockNextCall(testing_token_hcp2+"dismiss.team.not.admin", &teamNotAdmin, nil)
+
+	mockPerms.On(
+		"UpdatePatientMonitoringWithContext", mock.Anything, mock.Anything, mock.Anything,
+	).Return(nil, nil)
+	mockPerms.On(
+		"GetPatientMonitoring", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+	).Return(&store.Patient{}, nil)
 
 	for idx, inviteTest := range inviteTests {
 		// don't run a test if it says to skip it

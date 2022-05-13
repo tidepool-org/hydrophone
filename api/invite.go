@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -682,11 +683,30 @@ func (a *Api) AcceptMonitoringInvite(res http.ResponseWriter, req *http.Request,
 		return
 	}
 
+	patientMonitored, err := a.perms.GetPatientMonitoring(req.Context(), a.sl.TokenProvide(), conf.UserId, conf.Team.ID)
+	if err != nil {
+		log.Printf("%s error getting monitord patient [%v]\n", action, err)
+		a.sendModelAsResWithStatus(
+			res,
+			&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_MONITORED_PATIENT)},
+			http.StatusInternalServerError,
+		)
+		return
+	}
+	monitoredEnd := time.Now().Add(90 * 24 * time.Hour)
+	if patientMonitored != nil && patientMonitored.TeamID == conf.Team.ID &&
+		patientMonitored.Monitoring != nil && patientMonitored.Monitoring.MonitoringEnd != nil {
+		monitoredEnd = *patientMonitored.Monitoring.MonitoringEnd
+	}
 	var patient = store.Patient{
 		UserID: conf.UserId,
 		TeamID: conf.Team.ID,
+		Monitoring: &store.PatientMonitoring{
+			MonitoringEnd: &monitoredEnd,
+			Status:        "accepted",
+		},
 	}
-	_, err = a.perms.UpdatePatientMonitoring(req.Header.Get(TP_SESSION_TOKEN), patient)
+	_, err = a.perms.UpdatePatientMonitoringWithContext(req.Context(), a.sl.TokenProvide(), patient)
 	if err != nil {
 		log.Printf("%s error setting permissions [%v]\n", action, err)
 		a.sendModelAsResWithStatus(
@@ -1060,6 +1080,33 @@ func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars m
 				a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 				return
 			}
+		case models.TypeMedicalTeamMonitoringInvite:
+			if requestorIsAdmin, _, err := a.getTeamForUser(tokenValue, conf.Team.ID, token.UserId, res); err != nil {
+				statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_CANCELING_MONITORING)}
+				a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+				return
+			} else if !requestorIsAdmin {
+				res.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			var patient = store.Patient{
+				UserID: conf.UserId,
+				TeamID: conf.Team.ID,
+				Monitoring: &store.PatientMonitoring{
+					MonitoringEnd: nil,
+					Status:        "deleted",
+				},
+			}
+			_, err = a.perms.UpdatePatientMonitoringWithContext(req.Context(), a.sl.TokenProvide(), patient)
+			if err != nil {
+				log.Printf("Error updating patient monitoring [%v]\n", err)
+				a.sendModelAsResWithStatus(
+					res,
+					&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, err.Error())},
+					http.StatusInternalServerError,
+				)
+				return
+			}
 		default:
 			res.WriteHeader(http.StatusBadRequest)
 			return
@@ -1126,7 +1173,8 @@ func (a *Api) DismissMonitoringInvite(res http.ResponseWriter, req *http.Request
 		Status: models.StatusPending,
 	}
 
-	// Not needed as it is checked by the UpdatePatientMonitoring call
+	// Needed as the UpdatePatientMonitoringWithContext call will use server token
+	//(and because as a patient this route is forbidden)
 	if userid != patientid {
 		// by default you can just act on your records
 		if isAdmin, _, err := a.getTeamForUser(tokenValue, teamid, token.UserId, res); !isAdmin || err != nil {
@@ -1143,15 +1191,17 @@ func (a *Api) DismissMonitoringInvite(res http.ResponseWriter, req *http.Request
 		return
 	} else if conf != nil {
 		// the pending confirmation exists
-		monitored := false
 		var patient = store.Patient{
-			UserID:     conf.UserId,
-			TeamID:     teamid,
-			Monitoring: &store.RemoteMonitoring{Enabled: &monitored},
+			UserID: conf.UserId,
+			TeamID: teamid,
+			Monitoring: &store.PatientMonitoring{
+				MonitoringEnd: nil,
+				Status:        "rejected",
+			},
 		}
 
 		// this one will check permissions and memberships
-		_, err = a.perms.UpdatePatientMonitoring(tokenValue, patient)
+		_, err = a.perms.UpdatePatientMonitoringWithContext(req.Context(), a.sl.TokenProvide(), patient)
 		if err != nil {
 			log.Printf("DismissMonitoring error setting permissions [%v]\n", err)
 			a.sendModelAsResWithStatus(
@@ -1558,6 +1608,7 @@ func (a *Api) SendMonitoringTeamInvite(res http.ResponseWriter, req *http.Reques
 		invite.Team = &models.Team{ID: teamid, Name: team.Name}
 		invite.Status = models.StatusPending
 		invite.UserId = invitedUsr.UserID
+		invite.Email = invitedUsr.Username
 		inviteeLanguage := a.getUserLanguage(invite.UserId, res)
 
 		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
@@ -1585,6 +1636,29 @@ func (a *Api) SendMonitoringTeamInvite(res http.ResponseWriter, req *http.Reques
 					return
 				}
 			}
+
+			// Updating crew patient monitoring
+			// Default prescription for 90 days
+			monitoringEnd := time.Now().UTC().Add(90 * 24 * time.Hour)
+			crewPatient := store.Patient{
+				UserID: invitedUsr.UserID,
+				TeamID: teamid,
+				Monitoring: &store.PatientMonitoring{
+					MonitoringEnd: &monitoringEnd,
+					Status:        "pending",
+				},
+			}
+			_, err := a.perms.UpdatePatientMonitoringWithContext(req.Context(), a.sl.TokenProvide(), crewPatient)
+			if err != nil {
+				log.Printf("error updating crew patient [%v]\n", err)
+				a.sendModelAsResWithStatus(
+					res,
+					&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_MONITORED_PATIENT)},
+					http.StatusInternalServerError,
+				)
+				return
+			}
+
 			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
 			return
 		}
