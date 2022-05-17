@@ -6,7 +6,7 @@ require (
 	github.com/aws/aws-sdk-go v1.42.25
 	github.com/gorilla/mux v1.8.0
 	github.com/k3a/html2text v1.0.8
-	github.com/mdblp/crew v1.2.0
+	github.com/mdblp/crew v1.2.1
 	github.com/mdblp/go-common v1.2.0
 	github.com/mdblp/shoreline v1.9.2
 	github.com/microcosm-cc/bluemonday v1.0.16
