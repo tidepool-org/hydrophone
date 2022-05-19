@@ -28,6 +28,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/mdblp/go-common/clients/auth"
 	"github.com/mdblp/go-common/clients/portal"
 	"github.com/mdblp/go-common/clients/seagull"
 	"github.com/mdblp/go-common/clients/version"
@@ -100,6 +101,12 @@ func main() {
 	if found {
 		config.Api.ServerSecret = serverSecret
 	}
+	authApiSecret, found := os.LookupEnv("AUTH_SECRET")
+	if !found {
+		logger.Panic("AUTH_SECRET env var is not found")
+	}
+
+	authClient, _ := auth.NewClient(authApiSecret)
 
 	protocol, found := os.LookupEnv("PROTOCOL")
 	if found {
@@ -200,7 +207,7 @@ func main() {
 	}
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, permsClient, seagull, portal, emailTemplates, logger)
+	api := api.InitApi(config.Api, store, mail, shoreline, permsClient, authClient, seagull, portal, emailTemplates, logger)
 	api.SetHandlers("", rtr)
 
 	/*

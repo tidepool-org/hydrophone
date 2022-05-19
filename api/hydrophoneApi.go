@@ -17,6 +17,7 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	crewClient "github.com/mdblp/crew/client"
+	"github.com/mdblp/go-common/clients/auth"
 	"github.com/mdblp/go-common/clients/portal"
 	"github.com/mdblp/go-common/clients/seagull"
 	"github.com/mdblp/go-common/clients/status"
@@ -34,6 +35,7 @@ type (
 		templates      models.Templates
 		sl             shoreline.ClientInterface
 		perms          crewClient.Crew
+		auth           auth.ClientInterface
 		seagull        seagull.API
 		portal         portal.API
 		Config         Config
@@ -113,6 +115,7 @@ func InitApi(
 	ntf clients.Notifier,
 	sl shoreline.ClientInterface,
 	perms crewClient.Crew,
+	auth auth.ClientInterface,
 	seagull seagull.API,
 	portal portal.API,
 	templates models.Templates,
@@ -124,6 +127,7 @@ func InitApi(
 		notifier:       ntf,
 		sl:             sl,
 		perms:          perms,
+		auth:           auth,
 		seagull:        seagull,
 		portal:         portal,
 		templates:      templates,
@@ -381,22 +385,15 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 
 //find and validate the token
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *token.TokenData {
-	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
-		log.Printf("Found token in request header %s", token)
-		td := a.sl.CheckToken(token)
+	td := a.auth.Authenticate(req)
 
-		if td == nil {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
-			log.Printf("token %v err[%v] ", token, statusErr)
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
-			return nil
-		}
-		//all good!
-		return td
+	if td == nil {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
+		return nil
 	}
-	statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
-	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
-	return nil
+	//all good!
+	return td
 }
 
 // logAudit Variatic log for audit trails

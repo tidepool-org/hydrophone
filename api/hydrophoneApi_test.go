@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 
 	crewClient "github.com/mdblp/crew/client"
+	"github.com/mdblp/go-common/clients/auth"
 	"github.com/mdblp/go-common/clients/portal"
 	"github.com/mdblp/go-common/clients/seagull"
 	"github.com/mdblp/go-common/clients/version"
@@ -65,6 +66,7 @@ var (
 	mockNotifier  = clients.NewMockNotifier()
 	mockShoreline = shoreline.NewMock(testing_token)
 	mockPerms     = crewClient.NewMock()
+	mockAuth      = auth.NewMock(false)
 
 	mockSeagull = seagull.NewSeagullMock()
 
@@ -86,7 +88,7 @@ var (
 	mock_uid1Shoreline = newtestingShorelingMock(testing_uid1)
 	mock_uid2Shoreline = newtestingShorelingMock(testing_uid2)
 
-	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates, logger)
+	responsableHydrophone = InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, mockPortal, mockTemplates, logger)
 
 	mockLocalizer, _ = localize.NewI18nLocalizer("../templates/locales")
 )
@@ -188,7 +190,7 @@ func TestGetStatus_StatusOk(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
-	hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates, logger)
+	hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, mockPortal, mockTemplates, logger)
 	hydrophone.SetHandlers("", rtr)
 
 	hydrophone.GetStatus(response, request)
@@ -213,7 +215,7 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/status", nil)
 	response := httptest.NewRecorder()
 
-	hydrophoneFails := InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockPerms, mockSeagull, mockPortal, mockTemplates, logger)
+	hydrophoneFails := InitApi(FAKE_CONFIG, mockStoreFails, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, mockPortal, mockTemplates, logger)
 	hydrophoneFails.SetHandlers("", rtr)
 
 	hydrophoneFails.GetStatus(response, request)

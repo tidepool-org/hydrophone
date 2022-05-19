@@ -31,7 +31,9 @@
                 // "AWS_PROFILE":"${NON_DEFAULT_PROFILE}" for using a .aws/credentials non default profile
                 // OR
                 "AWS_ACCESS_KEY_ID": "xxxxx",
-                "AWS_SECRET_ACCESS_KEY": "xxxxx"
+                "AWS_SECRET_ACCESS_KEY": "xxxxx",
+                "AUTH_SECRET": "This is a local API secret for everyone. ",
+                "AUTH0_DOMAIN": "xxxxx.eu.auth0.com",
             },
             "args": []
         },
