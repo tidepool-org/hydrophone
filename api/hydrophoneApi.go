@@ -101,6 +101,22 @@ const (
 	STATUS_NOT_ADMIN           = STATUS_UNAUTHORIZED
 	STATUS_NOT_TEAM_MONITORING = "Not a monitoring team"
 	STATUS_OK                  = "OK"
+
+	STATUS_SIGNUP_NO_ID             = "Required userid is missing"
+	STATUS_ERR_FINDING_USR          = "Error finding user"
+	STATUS_ERR_UPDATING_USR         = "Error updating user"
+	STATUS_ERR_UPDATING_TEAM        = "Error updating team"
+	STATUS_ERR_COUNTING_CONF        = "Error counting existing confirmations"
+	STATUS_NO_PASSWORD              = "User does not have a password"
+	STATUS_MISSING_PASSWORD         = "Password is missing"
+	STATUS_INVALID_PASSWORD         = "Password specified is invalid"
+	STATUS_MISSING_BIRTHDAY         = "Birthday is missing"
+	STATUS_INVALID_BIRTHDAY         = "Birthday specified is invalid"
+	STATUS_MISMATCH_BIRTHDAY        = "Birthday specified does not match patient birthday"
+	STATUS_PATIENT_NOT_AUTH         = "Patient cannot be member of care team"
+	STATUS_MEMBER_NOT_AUTH          = "Non patient users cannot be a patient of care team"
+	STATUS_PATIENT_NOT_CAREGIVER    = "Patient cannot be added as caregiver"
+	STATUS_ERR_CANCELING_MONITORING = "Error cancelling monitoring"
 )
 
 var bmPolicy = bluemonday.StrictPolicy()
@@ -150,11 +166,9 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	rtr.Handle("/sanity_check/{userid}", varsHandler(a.sendSanityCheckEmail)).Methods("POST")
 
-	// POST /confirm/send/signup/:userid
 	// POST /confirm/send/forgot/:useremail
 	// POST /confirm/send/invite/:userid
 	send := rtr.PathPrefix("/send").Subrouter()
-	send.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
 	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
 	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
 	// POST /confirm/send/team/invite
@@ -170,14 +184,9 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	send.Handle("/inform/{userid}", varsHandler(a.sendSignUpInformation)).Methods("POST")
 	send.Handle("/pin-reset/{userid}", varsHandler(a.SendPinReset)).Methods("POST")
 
-	// POST /confirm/resend/signup/:useremail
-	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
-
-	// PUT /confirm/accept/signup/:confirmationID
 	// PUT /confirm/accept/forgot/
 	// PUT /confirm/accept/invite/:userid/:invited_by
 	accept := rtr.PathPrefix("/accept").Subrouter()
-	accept.Handle("/signup/{confirmationid}", varsHandler(a.acceptSignUp)).Methods("PUT")
 	accept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
 	accept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
 	// PUT /confirm/accept/team/invite
@@ -185,21 +194,16 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// PUT /confirm/accept/team/monitoring/{teamid}/{userid}
 	accept.Handle("/team/monitoring/{teamid}/{userid}", varsHandler(a.AcceptMonitoringInvite)).Methods("PUT")
 
-	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid
-	rtr.Handle("/signup/{userid}", varsHandler(a.getSignUp)).Methods("GET")
 	rtr.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
 	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
 
 	// PUT /confirm/dismiss/invite/:userid/:invited_by
-	// PUT /confirm/dismiss/signup/:userid
 	dismiss := rtr.PathPrefix("/dismiss").Subrouter()
 	dismiss.Handle("/invite/{userid}/{invitedby}",
 		varsHandler(a.DismissInvite)).Methods("PUT")
-	dismiss.Handle("/signup/{userid}",
-		varsHandler(a.dismissSignUp)).Methods("PUT")
 	// PUT /confirm/dismiss/team/invite/{teamid}
 	dismiss.Handle("/team/invite/{teamid}", varsHandler(a.DismissTeamInvite)).Methods("PUT")
 	// PUT /confirm/dismiss/team/monitoring/{teamid}/{userid}
@@ -211,9 +215,7 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	}
 
 	// PUT /confirm/:userid/invited/:invited_address
-	// PUT /confirm/signup/:userid
 	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
-	rtr.Handle("/signup/{userid}", varsHandler(a.cancelSignUp)).Methods("PUT")
 }
 
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {

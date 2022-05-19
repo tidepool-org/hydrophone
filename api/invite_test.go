@@ -196,6 +196,7 @@ func TestSendInvite_NoPerms(t *testing.T) {
 		t.Logf("expected %d actual %d", http.StatusUnauthorized, response.Code)
 		t.Fail()
 	}
+	mockAuth.Unauthorized = false
 }
 
 func TestSendInvite_ToAnother_Patient_Should_Respond_MethodNotAllowed(t *testing.T) {

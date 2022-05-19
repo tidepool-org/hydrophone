@@ -256,6 +256,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 	}
 }
 
+//Accept the an invite to access patient data
 //Accept an invite to access patient data
 //
 // http.StatusOK when accepted

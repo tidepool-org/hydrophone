@@ -3,7 +3,7 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
-## 1.10.0-RC3 - 2022-05-18
+## 1.10.0 - 2022-05-18
 ### Added
 - YLP-1428 Implement a new notification/acceptance type on hydrophone
 
@@ -11,6 +11,7 @@ This API sends notifications to users for things like forgotten passwords, initi
 - YLP-1521 Modify the behaviour of the "forgot password" logic to reject non-patient users
 - YLP-1528 Monitored patient invitation should update monitored patient
 - YLP-1540 Manage new token for authentication
+- YLP-1520 Remove signup route as it is now handled by Auth0 sas
 
 ### Engineering
 - Bump the version of Crew client to use the routes contracts
