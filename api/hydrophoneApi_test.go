@@ -66,7 +66,7 @@ var (
 	mockNotifier  = clients.NewMockNotifier()
 	mockShoreline = shoreline.NewMock(testing_token)
 	mockPerms     = crewClient.NewMock()
-	mockAuth      = auth.NewMock(false)
+	mockAuth      = auth.NewMock()
 
 	mockSeagull = seagull.NewSeagullMock()
 

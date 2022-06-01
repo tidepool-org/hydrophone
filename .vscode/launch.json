@@ -33,7 +33,7 @@
                 "AWS_ACCESS_KEY_ID": "xxxxx",
                 "AWS_SECRET_ACCESS_KEY": "xxxxx",
                 "AUTH_SECRET": "This is a local API secret for everyone. ",
-                "AUTH0_DOMAIN": "xxxxx.eu.auth0.com",
+                "AUTH0_URL": "https://xxxxx.eu.auth0.com",
             },
             "args": []
         },

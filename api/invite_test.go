@@ -196,7 +196,6 @@ func TestSendInvite_NoPerms(t *testing.T) {
 		t.Logf("expected %d actual %d", http.StatusUnauthorized, response.Code)
 		t.Fail()
 	}
-	mockAuth.Unauthorized = false
 }
 
 func TestSendInvite_ToAnother_Patient_Should_Respond_MethodNotAllowed(t *testing.T) {
@@ -414,7 +413,7 @@ func TestCaregiverInvite(t *testing.T) {
 		mockSeagull.SetMockNextCollectionCall(testing_uid2+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
 		mockSeagull.SetMockNextCollectionCall(testing_uid2+"hcp@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
 		mockShoreline.On("TokenProvide").Return(testing_token)
-		mockAuth = auth.NewMock(false)
+		mockAuth = auth.NewMock()
 
 		teams1 := []store.Team{}
 		membersAccepted := store.Member{
