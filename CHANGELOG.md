@@ -3,6 +3,10 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
+## Unreleased
+### Engineering
+- Update dependencies
+
 ## 1.10.2 - 2022-06-01
 ### Engineering
 - Update crew and go-common dependencies
