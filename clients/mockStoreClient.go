@@ -181,6 +181,10 @@ func (d *MockStoreClient) FindConfirmation(ctx context.Context, notification *mo
 		if notification.Team.ID == "declined" {
 			notification.Status = models.StatusDeclined
 		}
+		if notification.Team.ID == "expired" {
+			notification.Status = models.StatusPending
+			notification.Created = time.Now().Add(-24 * 8 * time.Hour)
+		}
 		if notification.Team.ID == "not.found" {
 			return nil, nil
 		}

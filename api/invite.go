@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -22,6 +23,7 @@ const (
 	statusInviteCanceledMessage  = "Invite has been canceled"
 	statusInviteNotActiveMessage = "Invite already canceled"
 	statusForbiddenMessage       = "Forbidden to perform requested operation"
+	statusExpiredMessage         = "Invite has expired"
 )
 
 type (
@@ -30,6 +32,10 @@ type (
 		Email  string `json:"email"`
 		TeamID string `json:"teamId"`
 		Role   string `json:"role"`
+	}
+	//Invite details for generating a new patient monitoring invite
+	inviteMonitoringBody struct {
+		MonitoringEnd time.Time `json:"monitoringEnd"`
 	}
 )
 
@@ -125,7 +131,7 @@ func (a *Api) getUserLanguage(userid string, res http.ResponseWriter) string {
 // @Accept  json
 // @Produce  json
 // @Param userid path string true "user id"
-// @Success 200 {string} string "OK"
+// @Success 200 {array} models.Confirmation
 // @Failure 400 {object} status.Status "usereid was not provided"
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
 // @Failure 403 {object} status.Status "Authorization token is invalid"
@@ -508,6 +514,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 // @ID hydrophone-api-cancelAnyInvite
 // @Accept  json
 // @Produce  json
+// @Param payload body models.Confirmation true "invitation details"
 // @Success 200 {string} string "OK"
 // @Failure 400 {object} status.Status "payload is missing or malformed"
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provide sufficient privileges"
@@ -552,7 +559,7 @@ func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars m
 		case models.TypeMedicalTeamPatientInvite:
 			err = a.perms.RemovePatient(tokenValue, conf.Team.ID, conf.UserId)
 		case models.TypeMedicalTeamInvite:
-			if requestorIsAdmin, _, err := a.getTeamForUser(tokenValue, cancel.Team.ID, token.UserId, res); err != nil {
+			if requestorIsAdmin, _, err := a.getTeamForUser(nil, tokenValue, cancel.Team.ID, token.UserId, res); err != nil {
 				statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
 				a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
 				return
@@ -570,7 +577,7 @@ func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars m
 				return
 			}
 		case models.TypeMedicalTeamMonitoringInvite:
-			if requestorIsAdmin, _, err := a.getTeamForUser(tokenValue, conf.Team.ID, token.UserId, res); err != nil {
+			if requestorIsAdmin, _, err := a.getTeamForUser(nil, tokenValue, conf.Team.ID, token.UserId, res); err != nil {
 				statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_CANCELING_MONITORING)}
 				a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
 				return
@@ -670,6 +677,7 @@ func (a *Api) CancelAllInvites(res http.ResponseWriter, req *http.Request, vars 
 // @Accept  json
 // @Produce  json
 // @Param userid path string true "invitor user id"
+// @Param payload body inviteBody true "invitation details"
 // @Success 200 {object} models.Confirmation "invite details"
 // @Failure 400 {object} status.Status "userId was not provided or the payload is missing/malformed"
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"

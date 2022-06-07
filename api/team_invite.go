@@ -89,20 +89,18 @@ func (a *Api) checkForDuplicateTeamInvite(ctx context.Context, inviteeEmail, inv
 }
 
 // return the user and its status in the team, true it can be invited for monitor, otherwise it returns false
-func (a *Api) checkForMonitoringTeamInviteById(ctx context.Context, inviteeID, invitorID, token string, team store.Team, invite models.Type, res http.ResponseWriter) (bool, *schema.UserData) {
-
+func (a *Api) checkForMonitoringTeamInviteById(ctx context.Context, inviteeID, invitorID, token string, team store.Team, res http.ResponseWriter) (bool, *schema.UserData) {
 	confirmation := &models.Confirmation{
 		UserId: inviteeID,
 		Team: &models.Team{
 			ID: team.ID,
-		},
-		Type: invite}
+		}}
 	//already has invite from this user?
 	invites, _ := a.Store.FindConfirmations(
 		ctx,
 		confirmation,
-		[]models.Status{},
-		[]models.Type{},
+		[]models.Status{models.StatusPending},
+		[]models.Type{models.TypeMedicalTeamMonitoringInvite},
 	)
 	if len(invites) > 0 {
 		//rule is we cannot send if the invite is not yet expired
@@ -265,6 +263,7 @@ func (a *Api) AcceptTeamNotifs(res http.ResponseWriter, req *http.Request, vars 
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
 // @Failure 403 {object} status.Status "Operation is forbiden. The invitation cannot be accepted for this given user"
 // @Failure 404 {object} status.Status "invitation not found"
+// @Failure 409 {object} status.Status "invitation is expired"
 // @Failure 500 {object} status.Status "Error (internal) while processing the data"
 // @Router /accept/team/monitoring/{teamid}/{userid} [put]
 // @security TidepoolAuth
@@ -310,6 +309,12 @@ func (a *Api) AcceptMonitoringInvite(res http.ResponseWriter, req *http.Request,
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
 		log.Printf("%s: [%s] ", action, statusErr.Error())
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		return
+	}
+	if conf.IsExpired() {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExpiredMessage)}
+		log.Printf("%s: [%s] ", action, statusErr.Error())
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 		return
 	}
 
@@ -434,6 +439,7 @@ func (a *Api) acceptTeamInvite(res http.ResponseWriter, req *http.Request, conf 
 // @Accept  json
 // @Produce  json
 // @Param teamid path string true "Team ID"
+// @Param payload body models.Confirmation true "invitation details"
 // @Success 200 {string} string "OK"
 // @NotModified 304 {string} "not modified"
 // @Failure 400 {object} status.Status "inviteeid or/and the payload is missing or malformed"
@@ -478,7 +484,7 @@ func (a *Api) DismissTeamInvite(res http.ResponseWriter, req *http.Request, vars
 	dismiss.UserId = userID
 	dismiss.Team = &models.Team{ID: teamID}
 
-	if isAdmin, _, err := a.getTeamForUser(tokenValue, teamID, token.UserId, res); isAdmin && err == nil {
+	if isAdmin, _, err := a.getTeamForUser(nil, tokenValue, teamID, token.UserId, res); isAdmin && err == nil {
 		// as team admin you can act on behalf of members
 		// for any invitation for the given team
 		dismiss.UserId = ""
@@ -580,10 +586,10 @@ func (a *Api) DismissMonitoringInvite(res http.ResponseWriter, req *http.Request
 	//(and because as a patient this route is forbidden)
 	if userid != patientid {
 		// by default you can just act on your records
-		if isAdmin, _, err := a.getTeamForUser(tokenValue, teamid, token.UserId, res); !isAdmin || err != nil {
+		if isAdmin, _, err := a.getTeamForUser(nil, tokenValue, teamid, token.UserId, res); !isAdmin || err != nil {
 			// you are not a team admin for the given team
 			log.Printf("DismissMonitoring: [%s] not authorized for [%s]", token.UserId, teamid)
-			a.sendModelAsResWithStatus(res, &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusForbidden)
+			a.sendModelAsResWithStatus(res, &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
 	}
@@ -640,6 +646,7 @@ func (a *Api) DismissMonitoringInvite(res http.ResponseWriter, req *http.Request
 // @ID hydrophone-api-SendTeamInvite
 // @Accept  json
 // @Produce  json
+// @Param payload body inviteBody true "invitation details"
 // @Success 200 {object} models.Confirmation "invite details"
 // @Failure 400 {object} status.Status "userId, teamId and isAdmin were not provided or the payload is missing/malformed"
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provide sufficient privileges"
@@ -693,7 +700,7 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 		ib.Role = "member"
 	}
 
-	auth, team, _ := a.getTeamForUser(tokenValue, ib.TeamID, token.UserId, res)
+	auth, team, _ := a.getTeamForUser(nil, tokenValue, ib.TeamID, token.UserId, res)
 
 	// only for team management
 	if !auth && !managePatients {
@@ -786,6 +793,7 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 // @Produce  json
 // @Param teamid path string true "Team ID"
 // @Param userid path string true "invited user id"
+// @Param monitoringInfo body inviteMonitoringBody true "Monitoring info i.e end of monitoring period"
 // @Success 200 {object} models.Confirmation "invite details"
 // @Failure 400 {object} status.Status "teamId is not found, team is not a monitoring team"
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provide sufficient privileges, requesting user is not an admin of the team"
@@ -808,13 +816,25 @@ func (a *Api) SendMonitoringTeamInvite(res http.ResponseWriter, req *http.Reques
 		return
 	}
 
+	var ib = &inviteMonitoringBody{}
+	if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
+		log.Printf("SendMonitoringTeamInvite: error decoding invite to detail %v\n", err)
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_INVITE)}
+		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+		return
+	}
+	if ib.MonitoringEnd.IsZero() {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_INVITE)}
+		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+		return
+	}
+
 	patientid := sanitize(vars["userid"])
 	teamid := sanitize(vars["teamid"])
 
 	// check requesting user is admin of the team
-	isTeamAdmin, team, _ := a.getTeamForUser(tokenValue, teamid, token.UserId, res)
+	isTeamAdmin, team, _ := a.getTeamForUser(req.Context(), tokenValue, teamid, token.UserId, res)
 	if team.ID == "" {
-		// not a member of the team
 		return
 	}
 	if !isTeamAdmin {
@@ -831,7 +851,7 @@ func (a *Api) SendMonitoringTeamInvite(res http.ResponseWriter, req *http.Reques
 	}
 
 	// check the patient is already a invite and if user is already a patient
-	if canBeInvited, invitedUsr := a.checkForMonitoringTeamInviteById(req.Context(), patientid, invitorID, tokenValue, team, models.TypeMedicalTeamMonitoringInvite, res); !canBeInvited {
+	if canBeInvited, invitedUsr := a.checkForMonitoringTeamInviteById(req.Context(), patientid, invitorID, tokenValue, team, res); !canBeInvited {
 		log.Printf("SendMonitoringInvite: invited user [%s] cannot be invited", patientid)
 		return
 	} else if invitedUsr != nil {
@@ -875,12 +895,11 @@ func (a *Api) SendMonitoringTeamInvite(res http.ResponseWriter, req *http.Reques
 
 			// Updating crew patient monitoring
 			// Default prescription for 90 days
-			monitoringEnd := time.Now().UTC().Add(90 * 24 * time.Hour)
 			crewPatient := store.Patient{
 				UserID: invitedUsr.UserID,
 				TeamID: teamid,
 				Monitoring: &store.PatientMonitoring{
-					MonitoringEnd: &monitoringEnd,
+					MonitoringEnd: &ib.MonitoringEnd,
 					Status:        "pending",
 				},
 			}
@@ -946,6 +965,7 @@ func (a *Api) inviteHcp(invitedUsr *schema.UserData, member store.Member, token 
 // @Accept  json
 // @Produce  json
 // @Param userid path string true "user id"
+// @Param payload body inviteBody true "invitation details"
 // @Success 200 {object} models.Confirmation "invite details"
 // @Failure 400 {object} status.Status "userId, teamId and isAdmin were not provided or the payload is missing/malformed"
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provide sufficient privileges"
@@ -1001,7 +1021,7 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 		return
 	}
 
-	_, team, err := a.getTeamForUser(tokenValue, ib.TeamID, invitorID, res)
+	_, team, err := a.getTeamForUser(nil, tokenValue, ib.TeamID, invitorID, res)
 	if err != nil {
 		return
 	}
@@ -1077,6 +1097,7 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 // @Accept  json
 // @Produce  json
 // @Param userid path string true "user id"
+// @Param payload body inviteBody true "invitation details"
 // @Success 200 {object} models.Confirmation "delete member"
 // @Failure 400 {object} status.Status "userId, teamId and isAdmin were not provided or the payload is missing/malformed"
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provide sufficient privileges"
@@ -1123,7 +1144,7 @@ func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars 
 		return
 	}
 
-	_, team, err := a.getTeamForUser(tokenValue, ib.TeamID, token.UserId, res)
+	_, team, err := a.getTeamForUser(nil, tokenValue, ib.TeamID, token.UserId, res)
 	if err != nil {
 		return
 	}
@@ -1208,9 +1229,16 @@ func (a *Api) isTeamMember(userID string, team store.Team, all bool) bool {
 // it returns the Team object corresponding to the team
 // if any error occurs during the search, it returns an error with the
 // related code
-func (a *Api) getTeamForUser(token, teamID, userID string, res http.ResponseWriter) (bool, store.Team, error) {
+func (a *Api) getTeamForUser(ctx context.Context, token, teamID, userID string, res http.ResponseWriter) (bool, store.Team, error) {
 	var auth = false
-	team, err := a.perms.GetTeam(token, teamID)
+	var team *store.Team
+	var err error
+	if ctx == nil {
+		team, err = a.perms.GetTeam(token, teamID)
+	} else {
+		team, err = a.perms.GetTeamWithContext(ctx, token, teamID)
+	}
+
 	if err != nil {
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_FINDING_TEAM)}
 		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
