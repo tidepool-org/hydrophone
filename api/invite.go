@@ -141,7 +141,6 @@ func (a *Api) getUserLanguage(userid string, res http.ResponseWriter) string {
 // @security TidepoolAuth
 func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-		tokenValue := req.Header.Get(TP_SESSION_TOKEN)
 		inviteeID := vars["userid"]
 
 		if inviteeID == "" {
@@ -155,7 +154,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			return
 		}
 
-		invitedUsr := a.findExistingUser(inviteeID, req.Header.Get(TP_SESSION_TOKEN))
+		invitedUsr := a.findExistingUser(inviteeID, a.sl.TokenProvide())
 
 		types := []models.Type{}
 		// Show invites relevant for the type of user
@@ -196,7 +195,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			log.Printf("GetReceivedInvitations: error [%v] when finding pending invites ", err)
 		}
 
-		if invites := a.checkFoundConfirmations(tokenValue, res, found, err); invites != nil {
+		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(req.Context(), inviteeID, invites)
 			log.Printf("GetReceivedInvitations: found and have checked [%d] invites ", len(invites))
 			a.logAudit(req, "get received invites")
@@ -225,8 +224,6 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 	if token == nil {
 		return
 	}
-
-	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
 	invitorID := vars["userid"]
 
 	if invitorID == "" {
@@ -255,7 +252,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			models.TypeMedicalTeamMonitoringInvite,
 		},
 	)
-	if invitations := a.checkFoundConfirmations(tokenValue, res, found, err); invitations != nil {
+	if invitations := a.checkFoundConfirmations(res, found, err); invitations != nil {
 		a.logAudit(req, "get sent invites")
 		a.sendModelAsResWithStatus(res, invitations, http.StatusOK)
 		return
@@ -528,7 +525,7 @@ func (a *Api) CancelAnyInvite(res http.ResponseWriter, req *http.Request, vars m
 	if token == nil {
 		return
 	}
-	tokenValue := req.Header.Get(TP_SESSION_TOKEN)
+	tokenValue := getSessionToken(req)
 
 	cancel := &models.Confirmation{}
 	if err := json.NewDecoder(req.Body).Decode(cancel); err != nil {
@@ -719,7 +716,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if existingInvite, invitedUsr := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, req.Header.Get(TP_SESSION_TOKEN), res); existingInvite == true {
+		if existingInvite, invitedUsr := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, getSessionToken(req), res); existingInvite == true {
 			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
 			return
 		} else {

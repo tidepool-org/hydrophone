@@ -95,7 +95,7 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 	var patientConfig *portal.PatientConfig
 
 	// actual token value is needed to call portal client: we know it does exist and is a user one
-	if patientConfig, err = a.portal.GetPatientConfig(req.Header.Get(TP_SESSION_TOKEN)); err != nil {
+	if patientConfig, err = a.portal.GetPatientConfig(getSessionToken(req)); err != nil {
 		a.sendError(res, http.StatusInternalServerError, statusPinResetErr, "error getting patient config: ", err.Error())
 		return
 	}

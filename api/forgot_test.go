@@ -9,7 +9,10 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/mdblp/go-common/clients/auth"
 	"github.com/mdblp/hydrophone/templates"
+	"github.com/mdblp/shoreline/token"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestForgotResponds(t *testing.T) {
@@ -232,6 +235,7 @@ func TestForgotResponds(t *testing.T) {
 		FAKE_CONFIG.I18nTemplatesPath = templatesPath
 	}
 	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath, mockLocalizer)
+	mockAuth.On("Authenticate", mock.Anything).Return(&token.TokenData{IsServer: false})
 
 	for idx, test := range tests {
 
@@ -297,4 +301,5 @@ func TestForgotResponds(t *testing.T) {
 			}
 		}
 	}
+	mockAuth = auth.NewMock()
 }

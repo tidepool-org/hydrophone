@@ -506,37 +506,26 @@ func initTests() []toTest {
 				"role":   "member",
 			},
 		},
-		// returns a 200 when everything goes well to delete a member
+		// returns a 200 when everything is set to delete a member
 		{
 			method:   "DELETE",
-			url:      fmt.Sprintf("/send/team/leave/%s", testing_uid3),
+			url:      fmt.Sprintf("/send/team/leave/teamAlreadyMember/%s?email=me2@myemail.com", testing_uid3),
 			respCode: 200,
 			token:    testing_token_uid1,
-			body: testJSONObject{
-				"email":  "me2@myemail.com",
-				"teamId": "teamAlreadyMember",
-			},
 		},
-		// returns a 400 when body is not well formed to delete a member
+		// returns a 200 when user can be rettrived from shoreline to delete a member
 		{
 			method:   "DELETE",
-			url:      fmt.Sprintf("/send/team/leave/%s", testing_uid3),
-			respCode: 400,
+			url:      fmt.Sprintf("/send/team/leave/teamAlreadyMember/%s", testing_uid3),
+			respCode: 200,
 			token:    testing_token_uid1,
-			body: testJSONObject{
-				"email": "me2@myemail.com",
-			},
 		},
-
-		// returns a 400 when body is not well formed to delete a member
+		// returns a 400 when username can't be found to delete a member
 		{
 			method:   "DELETE",
-			url:      fmt.Sprintf("/send/team/leave/%s", testing_uid3),
+			url:      "/send/team/leave/teamAlreadyMember/NotFound",
 			respCode: 400,
 			token:    testing_token_uid1,
-			body: testJSONObject{
-				"teamId": "teamAlreadyMember",
-			},
 		},
 		// returns a 200 when dismiss a team invite for yourself
 		{
@@ -908,10 +897,6 @@ func sendTeamInvite(method, path string, t *testing.T) {
 
 func TestSendTeamInvite_WrongBody(t *testing.T) {
 	sendTeamInvite("POST", "/send/team/invite", t)
-}
-
-func TestDeleteTeamInvite_WrongBody(t *testing.T) {
-	sendTeamInvite("DELETE", "/send/team/leave/UID0000", t)
 }
 
 func TestUpdateTeamRole_WrongBody(t *testing.T) {

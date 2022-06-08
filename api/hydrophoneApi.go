@@ -177,8 +177,8 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	send.Handle("/team/monitoring/{teamid}/{userid}", varsHandler(a.SendMonitoringTeamInvite)).Methods("POST")
 	// POST /confirm/send/team/role/:userid - add or remove admin role to userid
 	send.Handle("/team/role/{userid}", varsHandler(a.UpdateTeamRole)).Methods("PUT")
-	// DELETE /confirm/send/team/leave/:userid - delete member
-	send.Handle("/team/leave/{userid}", varsHandler(a.DeleteTeamMember)).Methods("DELETE")
+	// DELETE /confirm/send/team/leave/:teamid/:userid - delete member
+	send.Handle("/team/leave/{teamid}/{userid}", varsHandler(a.DeleteTeamMember)).Methods("DELETE")
 
 	// POST /confirm/send/inform/:userid
 	send.Handle("/inform/{userid}", varsHandler(a.sendSignUpInformation)).Methods("POST")
@@ -221,6 +221,20 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	h(res, req, vars)
+}
+
+func getSessionToken(req *http.Request) string {
+	// time:= c.Params.ByName("time")
+	sessionToken := req.Header.Get(token.TP_SESSION_TOKEN)
+	if sessionToken != "" {
+		return sessionToken
+	}
+	sessionToken = strings.Trim(req.Header.Get("Authorization"), " ")
+	if sessionToken != "" && strings.HasPrefix(sessionToken, "Bearer ") {
+		tokenParts := strings.Split(sessionToken, " ")
+		sessionToken = tokenParts[1]
+	}
+	return sessionToken
 }
 
 // @Summary Get the api status
@@ -283,7 +297,7 @@ func (a *Api) addProfile(conf *models.Confirmation) error {
 
 //Find these confirmations
 //write error if fails or write no-content if it doesn't exist
-func (a *Api) checkFoundConfirmations(token string, res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
+func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
 	if err != nil {
 		log.Println("Error finding confirmations ", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
@@ -401,13 +415,10 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *token.TokenData
 // logAudit Variatic log for audit trails
 func (a *Api) logAudit(req *http.Request, format string, args ...interface{}) {
 	var prefix string
-	var isServer bool = false
 
 	// Get token from request
-	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
-		td := a.sl.CheckToken(token)
-		isServer = td != nil && td.IsServer
-	}
+	td := a.auth.Authenticate(req)
+	isServer := td != nil && td.IsServer
 
 	if req.RemoteAddr != "" {
 		prefix = fmt.Sprintf("remoteAddr{%s}, ", req.RemoteAddr)
