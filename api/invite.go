@@ -35,7 +35,8 @@ type (
 	}
 	//Invite details for generating a new patient monitoring invite
 	inviteMonitoringBody struct {
-		MonitoringEnd time.Time `json:"monitoringEnd"`
+		MonitoringEnd   time.Time `json:"monitoringEnd"`
+		ReferringDoctor *string   `json:"referringDoctor,omitempty"`
 	}
 )
 

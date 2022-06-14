@@ -338,6 +338,25 @@ func (a *Api) AcceptMonitoringInvite(res http.ResponseWriter, req *http.Request,
 		return
 	}
 
+	monitoring := make(map[string]interface{})
+	monitoring["acceptanceTimestamp"] = time.Now().UTC().Format(time.RFC3339)
+	monitoring["isAccepted"] = true
+	patientMonitoringConsent := make(map[string]interface{})
+	patientMonitoringConsent["monitoring"] = monitoring
+
+	profileUpdate := make(map[string]interface{})
+	profileUpdate["patient"] = patientMonitoringConsent
+
+	err = a.seagull.SetCollection(conf.UserId, "profile", a.sl.TokenProvide(), profileUpdate)
+	if err != nil {
+		log.Printf("%s error getting monitord patient [%v]\n", action, err)
+		a.sendModelAsResWithStatus(
+			res,
+			&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_MONITORED_PATIENT)},
+			http.StatusInternalServerError,
+		)
+		return
+	}
 	patientMonitored, err := a.perms.GetPatientMonitoring(req.Context(), a.sl.TokenProvide(), conf.UserId, conf.Team.ID)
 	if err != nil {
 		log.Printf("%s error getting monitord patient [%v]\n", action, err)
@@ -892,7 +911,25 @@ func (a *Api) SendMonitoringTeamInvite(res http.ResponseWriter, req *http.Reques
 					return
 				}
 			}
+			// Updating patient profile with referring doctor
+			if ib.ReferringDoctor != nil {
+				patientProfile := make(map[string]interface{})
+				patientProfile["referringDoctor"] = *ib.ReferringDoctor
+				profileUpdate := make(map[string]interface{})
+				profileUpdate["patient"] = patientProfile
 
+				err := a.seagull.SetCollection(invitedUsr.UserID, "profile", a.sl.TokenProvide(), profileUpdate)
+				if err != nil {
+					log.Printf("error updating patient profile [%v]\n", err)
+					a.sendModelAsResWithStatus(
+						res,
+						&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_MONITORED_PATIENT)},
+						http.StatusInternalServerError,
+					)
+					return
+				}
+
+			}
 			// Updating crew patient monitoring
 			// Default prescription for 90 days
 			crewPatient := store.Patient{
