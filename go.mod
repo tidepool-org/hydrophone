@@ -7,7 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/k3a/html2text v1.0.8
 	github.com/mdblp/crew v1.3.2
-	github.com/mdblp/go-common v1.4.0
+	github.com/mdblp/go-common v1.4.1
 	github.com/mdblp/shoreline v1.9.3
 	github.com/microcosm-cc/bluemonday v1.0.18
 	github.com/nicksnyder/go-i18n/v2 v2.2.0
