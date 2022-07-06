@@ -2,7 +2,9 @@
 def builderImage
 def ciConfig
 pipeline {
-    agent any
+    agent {
+        label 'blp'
+    }
     stages {
         stage('Initialization') {
             steps {
