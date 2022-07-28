@@ -3,6 +3,10 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
+## 1.11.0 - 2022-07-28
+### Engineering
+- Bump crew client and bluemonday dependency 
+
 ## 1.10.6 - 2022-07-04
 ### Engineering
 - YLP-1644: Use a new env var to load a custom CA for SSL connections to mocked services
