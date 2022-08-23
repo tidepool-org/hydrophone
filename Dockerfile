@@ -1,12 +1,13 @@
 # Development
-FROM golang:1.15.2-alpine AS development
+FROM golang:1.17-alpine AS development
 WORKDIR /go/src/github.com/tidepool-org/hydrophone
 RUN adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/hydrophone
 USER tidepool
+RUN go install github.com/cosmtrek/air@latest
 COPY --chown=tidepool . .
 RUN ./build.sh
-CMD ["./dist/hydrophone"]
+CMD ["air"]
 
 # Production
 FROM alpine:latest AS production
