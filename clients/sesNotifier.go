@@ -29,8 +29,9 @@ type (
 	// SesNotifierConfig contains the static configuration for the Amazon SES service
 	// Credentials come from the environment and are not passed in via configuration variables.
 	SesNotifierConfig struct {
-		FromAddress string `split_words:"true" default:"Tidepool <noreply@tidepool.org>"`
-		Region      string `default:"us-west-2"`
+		UseMockNotifier bool   `envconfig:"HYDROPHONE_USE_MOCK_NOTIFIER" default:"false"`
+		FromAddress     string `split_words:"true" default:"Tidepool <noreply@tidepool.org>"`
+		Region          string `default:"us-west-2"`
 	}
 )
 
@@ -44,17 +45,20 @@ func notifierConfigProvider() (SesNotifierConfig, error) {
 }
 
 func sesNotifierProvider(config SesNotifierConfig) (Notifier, error) {
+	if config.UseMockNotifier {
+		return NewMockNotifier(), nil
+	}
 	mail, err := NewSesNotifier(&config)
 	return mail, err
 }
 
-//SesModule is a fx module for this component
+// SesModule is a fx module for this component
 var SesModule = fx.Options(
 	fx.Provide(sesNotifierProvider),
 	fx.Provide(notifierConfigProvider),
 )
 
-//NewSesNotifier creates a new Amazon SES notifier
+// NewSesNotifier creates a new Amazon SES notifier
 func NewSesNotifier(cfg *SesNotifierConfig) (*SesNotifier, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(cfg.Region)},
