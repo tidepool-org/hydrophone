@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 type ClinicianInvite struct {
@@ -335,7 +336,7 @@ func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.
 	confirmation.Modified = time.Now()
 	if err := a.Store.UpsertConfirmation(ctx, confirmation); err != nil {
 		a.logger.Errorw("error upserting clinician confirmation confirmation", zap.Error(err))
-		return  &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
+		return &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
 	}
 
 	a.logMetric("clinician_invite_created", req)
@@ -366,11 +367,14 @@ func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.
 
 func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http.Request, filter, conf *models.Confirmation, statusUpdate models.Status) {
 	ctx := req.Context()
-	response, err := a.clinics.DeleteInvitedClinicianWithResponse(ctx, clinics.ClinicId(filter.ClinicId), clinics.InviteId(filter.Key))
-	if err != nil || (response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusNotFound) {
-		a.logger.Errorw("error while finding confirmation", zap.Error(err))
-		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-		return
+
+	if filter.ClinicId != "" {
+		response, err := a.clinics.DeleteInvitedClinicianWithResponse(ctx, clinics.ClinicId(filter.ClinicId), clinics.InviteId(filter.Key))
+		if err != nil || (response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusNotFound) {
+			a.logger.Errorw("error while finding confirmation", zap.Error(err))
+			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	if conf != nil {
