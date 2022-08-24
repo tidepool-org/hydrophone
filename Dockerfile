@@ -1,5 +1,5 @@
 # Development
-FROM golang:1.17-alpine AS development
+FROM golang:1.19-alpine AS development
 WORKDIR /go/src/github.com/tidepool-org/hydrophone
 RUN adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/hydrophone
