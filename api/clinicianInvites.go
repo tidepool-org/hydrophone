@@ -298,6 +298,11 @@ func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request,
 			Status: models.StatusPending,
 		}
 		conf, _ := a.findExistingConfirmation(ctx, filter, res)
+
+		if conf != nil {
+			filter.ClinicId = conf.ClinicId
+		}
+
 		a.cancelClinicianInviteWithStatus(res, req, filter, conf, models.StatusDeclined)
 	}
 }
@@ -368,13 +373,11 @@ func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.
 func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http.Request, filter, conf *models.Confirmation, statusUpdate models.Status) {
 	ctx := req.Context()
 
-	if filter.ClinicId != "" {
-		response, err := a.clinics.DeleteInvitedClinicianWithResponse(ctx, clinics.ClinicId(filter.ClinicId), clinics.InviteId(filter.Key))
-		if err != nil || (response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusNotFound) {
-			a.logger.Errorw("error while finding confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-			return
-		}
+	response, err := a.clinics.DeleteInvitedClinicianWithResponse(ctx, clinics.ClinicId(filter.ClinicId), clinics.InviteId(filter.Key))
+	if err != nil || (response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusNotFound) {
+		a.logger.Errorw("error while finding confirmation", zap.Error(err))
+		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		return
 	}
 
 	if conf != nil {
