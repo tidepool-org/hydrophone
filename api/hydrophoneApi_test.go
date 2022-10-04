@@ -15,11 +15,11 @@ import (
 	crewClient "github.com/mdblp/crew/client"
 	"github.com/mdblp/go-common/clients/auth"
 	"github.com/mdblp/go-common/clients/portal"
-	"github.com/mdblp/go-common/clients/seagull"
 	"github.com/mdblp/go-common/clients/version"
 	"github.com/mdblp/hydrophone/clients"
 	"github.com/mdblp/hydrophone/localize"
 	"github.com/mdblp/hydrophone/models"
+	seagull "github.com/mdblp/seagull/client"
 	"github.com/mdblp/shoreline/clients/shoreline"
 	"github.com/mdblp/shoreline/schema"
 	"github.com/mdblp/shoreline/token"
@@ -68,7 +68,7 @@ var (
 	mockPerms     = crewClient.NewMock()
 	mockAuth      = auth.NewMock()
 
-	mockSeagull = seagull.NewSeagullMock()
+	mockSeagull = &seagull.SeagullMock{}
 
 	mockPortal = portal.NewMock()
 

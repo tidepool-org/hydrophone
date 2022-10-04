@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -19,10 +20,12 @@ import (
 	crewClient "github.com/mdblp/crew/client"
 	"github.com/mdblp/go-common/clients/auth"
 	"github.com/mdblp/go-common/clients/portal"
-	"github.com/mdblp/go-common/clients/seagull"
 	"github.com/mdblp/go-common/clients/status"
+	muxMiddleware "github.com/mdblp/go-routers/mux"
 	"github.com/mdblp/hydrophone/clients"
 	"github.com/mdblp/hydrophone/models"
+	seagullClient "github.com/mdblp/seagull/client"
+	metaData "github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/clients/shoreline"
 	"github.com/mdblp/shoreline/schema"
 	"github.com/mdblp/shoreline/token"
@@ -36,7 +39,7 @@ type (
 		sl             shoreline.ClientInterface
 		perms          crewClient.Crew
 		auth           auth.ClientInterface
-		seagull        seagull.API
+		seagull        seagullClient.API
 		portal         portal.API
 		Config         Config
 		LanguageBundle *i18n.Bundle
@@ -56,9 +59,6 @@ type (
 		ConfirmationAttemptsTimeWindow time.Duration
 	}
 
-	group struct {
-		Members []string
-	}
 	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
 )
@@ -83,6 +83,7 @@ const (
 	STATUS_ERR_FINDING_TEAM          = "Error finding the team"
 	STATUS_ERR_PATIENT_NOT_MBR       = "Error finding the patient in the team"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
+	STATUS_ERR_DECODING_NOTIFICATION = "Error decoding the notification payload"
 	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
 	STATUS_ERR_FINDING_VALIDATION    = "Error finding the account validation"
 	STATUS_ERR_DECODING_INVITE       = "Error decoding the invitation"
@@ -132,7 +133,7 @@ func InitApi(
 	sl shoreline.ClientInterface,
 	perms crewClient.Crew,
 	auth auth.ClientInterface,
-	seagull seagull.API,
+	seagull seagullClient.API,
 	portal portal.API,
 	templates models.Templates,
 	logger *log.Logger,
@@ -216,6 +217,10 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	// PUT /confirm/:userid/invited/:invited_address
 	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
+
+	// POST /confirm/notifications/:topic_label
+	rtr.Handle("/notifications/{topic}", varsHandler(a.CreateNotification)).Methods("POST")
+	rtr.Use(muxMiddleware.NativeTraceSessionMiddleware)
 }
 
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
@@ -283,21 +288,52 @@ func (a *Api) findExistingConfirmation(ctx context.Context, conf *models.Confirm
 
 //Find this confirmation
 //write error if it fails
-func (a *Api) addProfile(conf *models.Confirmation) error {
+func (a *Api) addProfile(ctx context.Context, conf *models.Confirmation) error {
 	if conf.CreatorId != "" {
-		if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &conf.Creator.Profile); err != nil {
+		doc, err := a.seagull.GetCollections(ctx, conf.CreatorId, []string{"profile"}, a.sl.TokenProvide())
+		if err != nil {
 			log.Printf("error getting the creators profile [%v] ", err)
 			return err
 		}
-
+		if doc.Profile == nil {
+			err := errors.New("profile is empty")
+			log.Printf("error getting the creators profile [%v] ", err)
+			return err
+		}
+		conf.Creator.Profile = &models.Profile{FullName: doc.Profile.FullName}
 		conf.Creator.UserId = conf.CreatorId
 	}
 	return nil
 }
 
+func (a *Api) getUserPreferences(userid string, req *http.Request, res http.ResponseWriter) *metaData.Preferences {
+	if resetterSeagull, err := a.seagull.GetCollections(req.Context(), userid, []string{"preferences"}, a.sl.TokenProvide()); err != nil {
+		a.sendError(
+			res,
+			http.StatusInternalServerError,
+			STATUS_ERR_FINDING_USR,
+			"send invitation: error getting invitee user preferences: ",
+			err.Error())
+		return nil
+	} else {
+		return resetterSeagull.Preferences
+	}
+}
+
+func (a *Api) getUserLanguage(userid string, req *http.Request, res http.ResponseWriter) string {
+	// let's get the invitee user preferences
+	inviteePreferences := a.getUserPreferences(userid, req, res)
+	// does the invitee have a preferred language?
+	if inviteePreferences != nil && inviteePreferences.DisplayLanguageCode != "" {
+		return inviteePreferences.DisplayLanguageCode
+	} else {
+		return GetUserChosenLanguage(req)
+	}
+}
+
 //Find these confirmations
 //write error if fails or write no-content if it doesn't exist
-func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
+func (a *Api) checkFoundConfirmations(ctx context.Context, res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
 	if err != nil {
 		log.Println("Error finding confirmations ", err)
 		statusErr := &status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
@@ -310,7 +346,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 		return nil
 	} else {
 		for i := range results {
-			if err = a.addProfile(results[i]); err != nil {
+			if err = a.addProfile(ctx, results[i]); err != nil {
 				//report and move on
 				log.Println("Error getting profile", err.Error())
 			}

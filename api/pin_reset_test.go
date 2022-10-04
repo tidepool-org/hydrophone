@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mdblp/go-common/clients/portal"
 	"github.com/mdblp/hydrophone/templates"
+	. "github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/token"
 	"github.com/stretchr/testify/mock"
 )
@@ -158,7 +159,7 @@ func TestPinResetResponds(t *testing.T) {
 		if pinResetTest.patientConfig != nil {
 			mockPortal.SetMockPatientConfig(pinResetTest.test.token, pinResetTest.patientConfig, nil)
 		}
-		mockSeagull.SetMockNextCollectionCall(testing_uid1+"preferences", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.On("GetCollections", testing_uid1, []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
 
 		//testing when there is nothing to return from the store
 		if pinResetTest.test.returnNone {

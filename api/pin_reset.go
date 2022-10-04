@@ -120,17 +120,7 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 	var totp otp.TOTP = gen.Now()
 	var re = regexp.MustCompile(`^(...)(...)(...)$`)
 
-	// let's get the user preferences
-	userPreferences := &models.Preferences{}
-	if err := a.seagull.GetCollection(userID, "preferences", a.sl.TokenProvide(), userPreferences); err != nil {
-		a.sendError(res, http.StatusInternalServerError, statusPinResetErr, "error getting user preferences: ", err.Error())
-		return
-	}
-
-	// does the user have a preferred language?
-	if userPreferences.DisplayLanguage != "" {
-		userLanguage = userPreferences.DisplayLanguage
-	}
+	userLanguage = a.getUserLanguage(userID, req, res)
 
 	var templateName = models.TemplateNamePatientPinReset
 

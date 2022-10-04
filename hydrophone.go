@@ -30,8 +30,8 @@ import (
 
 	"github.com/mdblp/go-common/clients/auth"
 	"github.com/mdblp/go-common/clients/portal"
-	"github.com/mdblp/go-common/clients/seagull"
 	"github.com/mdblp/go-common/clients/version"
+	seagullClient "github.com/mdblp/seagull/client"
 
 	"github.com/gorilla/mux"
 
@@ -149,7 +149,7 @@ func main() {
 	logger.Print("Shoreline client started")
 
 	permsClient := crewClient.NewCrewApiClientFromEnv(httpClient)
-	seagull, err := seagull.NewClientFromEnv(httpClient)
+	seagull, err := seagullClient.NewClientFromEnv(httpClient)
 	if err != nil {
 		logger.Fatal(err)
 	}

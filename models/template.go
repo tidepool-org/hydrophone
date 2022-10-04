@@ -18,6 +18,7 @@ func (t TemplateName) String() string {
 }
 
 const (
+	TemplateNameAppPrescription             TemplateName = "app_prescription"
 	TemplateNameCareteamInvite              TemplateName = "careteam_invitation"
 	TemplateNameMedicalteamInvite           TemplateName = "medicalteam_invitation"
 	TemplateNameMedicalteamPatientInvite    TemplateName = "medicalteam_patient_invitation"

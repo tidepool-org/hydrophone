@@ -21,6 +21,7 @@ type (
 		GetPendingInvitations(userID string, authToken string) ([]models.Confirmation, error)
 		GetPendingSignup(userID string, authToken string) (*models.Confirmation, error)
 		CancelSignup(confirm models.Confirmation, authToken string) error
+		SendNotification(topic string, notif interface{}, authToken string) error
 	}
 
 	Client struct {
@@ -163,6 +164,40 @@ func (client *Client) CancelSignup(confirm models.Confirmation, authToken string
 	res, err := client.httpClient.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "Failure to cancel signup")
+	}
+	defer res.Body.Close()
+
+	switch res.StatusCode {
+	case http.StatusOK:
+		return nil
+	default:
+		return &status.StatusError{
+			Status: status.NewStatusf(res.StatusCode, "Unknown response code from service[%s]", req.URL),
+		}
+	}
+}
+
+func (h *Client) SendNotification(topic string, notif interface{}, authToken string) error {
+	host, err := h.getHost()
+	if err != nil {
+		return errors.New("No known hydrophone hosts")
+	}
+
+	host.Path = path.Join(host.Path, "notifications", topic)
+
+	req, _ := http.NewRequest("POST", host.String(), nil)
+	req.Header.Add("x-tidepool-session-token", authToken)
+
+	data, err := json.Marshal(notif)
+	if err != nil {
+		return errors.Wrap(err, "Failure to marshal notification")
+	}
+
+	req.Body = ioutil.NopCloser(bytes.NewReader(data))
+
+	res, err := h.httpClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "Failure to send notification to hydrophone")
 	}
 	defer res.Body.Close()
 

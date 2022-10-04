@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mdblp/crew/store"
 	"github.com/mdblp/hydrophone/templates"
+	. "github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/token"
 	"github.com/stretchr/testify/mock"
 )
@@ -348,12 +349,12 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 
 	mockShoreline.On("TokenProvide").Return("ok")
 
-	mockSeagull.SetMockNextCollectionCall(testing_uid1+"profile", `{"Something":"anit no thing"}`, nil)
-	mockSeagull.SetMockNextCollectionCall("patient.team@myemail.com"+"profile", `{"Something":"anit no thing"}`, nil)
-	mockSeagull.SetMockNextCollectionCall(testing_uid1+"preferences", `{"Something":"anit no thing"}`, nil)
-	mockSeagull.SetMockNextCollectionCall(testing_uid3+"preferences", `{"Something":"anit no thing"}`, nil)
-	mockSeagull.SetMockNextCollectionCall(testing_uid4+"preferences", `{"Something":"anit no thing"}`, nil)
-	mockSeagull.SetMockNextCollectionCall(testing_uid_patient1+"preferences", `{"Something":"anit no thing"}`, nil)
+	mockSeagull.On("GetCollections", testing_uid1, []string{"profile"}).Return(&SeagullDocument{Profile: &Profile{}}, nil)
+	mockSeagull.On("GetCollections", "patient.team@myemail.com", []string{"profile"}).Return(&SeagullDocument{Profile: &Profile{}}, nil)
+	mockSeagull.On("GetCollections", testing_uid1, []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
+	mockSeagull.On("GetCollections", testing_uid3, []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
+	mockSeagull.On("GetCollections", testing_uid4, []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
+	mockSeagull.On("GetCollections", testing_uid_patient1, []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
 
 	hydrophone := InitApi(
 		FAKE_CONFIG,
@@ -1105,8 +1106,8 @@ func TestAcceptTeamInvite(t *testing.T) {
 		}
 		var testRtr = mux.NewRouter()
 
-		mockSeagull.SetMockNextCollectionCall(testing_uid1+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
-		mockSeagull.SetMockNextCollectionCall(testing_uid2+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.On("GetCollections", testing_uid1+"@email.org", []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
+		mockSeagull.On("GetCollections", testing_uid2+"@email.org", []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
 
 		teams1 := []store.Team{}
 		membersAccepted := store.Member{
@@ -1215,6 +1216,7 @@ func TestAcceptTeamInvite(t *testing.T) {
 
 func TestAcceptMonitoringInvite(t *testing.T) {
 
+	mockSeagull.On("SetCollection", testing_uid1, "profile", map[string]interface{}{"patient": map[string]interface{}{"monitoring": map[string]interface{}{"acceptanceTimestamp": time.Now().UTC().Format(time.RFC3339), "isAccepted": true}}}).Return(nil)
 	inviteTests := []toTest{
 		{
 			desc:     "valid request to accept a monitoring invite",
@@ -1297,6 +1299,9 @@ func TestAcceptMonitoringInvite(t *testing.T) {
 	mockPerms.On(
 		"GetPatientMonitoring", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
 	).Return(&store.Patient{}, nil)
+	mockPerms.On(
+		"UpdatePatientMonitoringWithContext", mock.Anything, mock.Anything, mock.Anything,
+	).Return(nil, nil)
 
 	for idx, inviteTest := range inviteTests {
 		// don't run a test if it says to skip it

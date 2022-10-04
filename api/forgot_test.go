@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mdblp/go-common/clients/auth"
 	"github.com/mdblp/hydrophone/templates"
+	"github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/token"
 	"github.com/stretchr/testify/mock"
 )
@@ -242,10 +243,10 @@ func TestForgotResponds(t *testing.T) {
 		//fresh each time
 		var testRtr = mux.NewRouter()
 
-		mockSeagull.SetMockNextCollectionCall("me@myemail.com"+"preferences", `{"Something":"anit no thing"}`, nil)
-		mockSeagull.SetMockNextCollectionCall("patient@myemail.com"+"preferences", `{"Something":"anit no thing"}`, nil)
-		mockSeagull.SetMockNextCollectionCall("clinic@myemail.com"+"preferences", `{"Something":"anit no thing"}`, nil)
-		mockSeagull.SetMockNextCollectionCall("expires@myemail.com"+"preferences", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.On("GetCollections", "me@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{}, nil)
+		mockSeagull.On("GetCollections", "patient@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{}, nil)
+		mockSeagull.On("GetCollections", "clinic@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{}, nil)
+		mockSeagull.On("GetCollections", "expires@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{}, nil)
 		mockShoreline.On("TokenProvide").Return(testing_token)
 
 		if test.returnNone {

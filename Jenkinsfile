@@ -31,6 +31,7 @@ pipeline {
             agent {
                 docker {
                     image env.buildImage
+                    label 'blp'
                 }
             }
             steps {

@@ -101,31 +101,6 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 	return false, nil
 }
 
-func (a *Api) getUserPreferences(userid string, res http.ResponseWriter) *models.Preferences {
-	// let's get the invitee user preferences
-	inviteePreferences := &models.Preferences{}
-	if err := a.seagull.GetCollection(userid, "preferences", a.sl.TokenProvide(), inviteePreferences); err != nil {
-		a.sendError(
-			res,
-			http.StatusInternalServerError,
-			STATUS_ERR_FINDING_USR,
-			"send invitation: error getting invitee user preferences: ",
-			err.Error())
-	}
-	return inviteePreferences
-}
-
-func (a *Api) getUserLanguage(userid string, res http.ResponseWriter) string {
-	// let's get the invitee user preferences
-	language := "en"
-	inviteePreferences := a.getUserPreferences(userid, res)
-	// does the invitee have a preferred language?
-	if inviteePreferences.DisplayLanguage != "" {
-		language = inviteePreferences.DisplayLanguage
-	}
-	return language
-}
-
 // @Summary Get list of received invitations for logged-in user
 // @Description  Get list of received invitations that have been sent to this user but not yet acted upon.
 // @ID hydrophone-api-GetReceivedInvitations
@@ -196,7 +171,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 			log.Printf("GetReceivedInvitations: error [%v] when finding pending invites ", err)
 		}
 
-		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
+		if invites := a.checkFoundConfirmations(req.Context(), res, found, err); invites != nil {
 			a.ensureIdSet(req.Context(), inviteeID, invites)
 			log.Printf("GetReceivedInvitations: found and have checked [%d] invites ", len(invites))
 			a.logAudit(req, "get received invites")
@@ -253,7 +228,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 			models.TypeMedicalTeamMonitoringInvite,
 		},
 	)
-	if invitations := a.checkFoundConfirmations(res, found, err); invitations != nil {
+	if invitations := a.checkFoundConfirmations(req.Context(), res, found, err); invitations != nil {
 		a.logAudit(req, "get sent invites")
 		a.sendModelAsResWithStatus(res, invitations, http.StatusOK)
 		return
@@ -737,29 +712,17 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 				invite.UserId = invitedUsr.UserID
 
 				// let's get the invitee user preferences
-				inviteePreferences := &models.Preferences{}
-				if err := a.seagull.GetCollection(invite.UserId, "preferences", a.sl.TokenProvide(), inviteePreferences); err != nil {
-					a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "send invitation: error getting invitee user preferences: ", err.Error())
-					return
-				}
-				// does the invitee have a preferred language?
-				if inviteePreferences.DisplayLanguage != "" {
-					inviteeLanguage = inviteePreferences.DisplayLanguage
-				}
+				inviteeLanguage = a.getUserLanguage(invite.UserId, req, res)
 			}
 
 			if a.addOrUpdateConfirmation(req.Context(), invite, res) {
 				a.logAudit(req, "invite created")
 
-				if err := a.addProfile(invite); err != nil {
+				if err := a.addProfile(req.Context(), invite); err != nil {
 					log.Println("SendInvite: ", err.Error())
 				} else {
 
 					fullName := invite.Creator.Profile.FullName
-
-					if invite.Creator.Profile.Patient.IsOtherPerson {
-						fullName = invite.Creator.Profile.Patient.FullName
-					}
 
 					var webPath = "signup"
 

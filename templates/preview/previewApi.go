@@ -148,6 +148,8 @@ func (a *Api) buildPreview(res http.ResponseWriter, req *http.Request, vars map[
 		templateName = models.TemplateNameSignupCustodial
 	case "signup_custodial_clinic_confirmation":
 		templateName = models.TemplateNameSignupCustodialClinic
+	case "app_prescription":
+		templateName = models.TemplateNameAppPrescription
 	default:
 		log.Printf("Unknown template %s", vars["template"])
 		s := status.NewApiStatus(400, "Incorrect template name")
@@ -195,6 +197,9 @@ func (a *Api) generateEmail(templateName models.TemplateName, lang string) (stri
 		"MedicalteamIentification": "123-456-789",
 		"CreatorName":              "John Doe",
 		"Language":                 "en",
+		"Product":                  "DBLG2",
+		"PrescriptionCode":         "123456789",
+		"Invitor":                  "John Doe",
 	}
 	// Content collection is here to replace placeholders in template body/content
 	content["WebURL"] = a.Config.WebURL

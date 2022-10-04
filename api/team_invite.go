@@ -347,7 +347,7 @@ func (a *Api) AcceptMonitoringInvite(res http.ResponseWriter, req *http.Request,
 	profileUpdate := make(map[string]interface{})
 	profileUpdate["patient"] = patientMonitoringConsent
 
-	err = a.seagull.SetCollection(conf.UserId, "profile", a.sl.TokenProvide(), profileUpdate)
+	err = a.seagull.SetCollection(req.Context(), conf.UserId, "profile", a.sl.TokenProvide(), profileUpdate)
 	if err != nil {
 		log.Printf("%s error getting monitord patient [%v]\n", action, err)
 		a.sendModelAsResWithStatus(
@@ -764,12 +764,12 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 		invite.Role = ib.Role
 		if invitedUsr != nil {
 			invite.UserId = invitedUsr.UserID
-			inviteeLanguage = a.getUserLanguage(invite.UserId, res)
+			inviteeLanguage = a.getUserLanguage(invite.UserId, req, res)
 		}
 		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
 			a.logAudit(req, "invite created")
 
-			if err := a.addProfile(invite); err != nil {
+			if err := a.addProfile(req.Context(), invite); err != nil {
 				log.Println("SendInvite: ", err.Error())
 			} else {
 				var webPath = ""
@@ -884,12 +884,12 @@ func (a *Api) SendMonitoringTeamInvite(res http.ResponseWriter, req *http.Reques
 		invite.Status = models.StatusPending
 		invite.UserId = invitedUsr.UserID
 		invite.Email = invitedUsr.Username
-		inviteeLanguage := a.getUserLanguage(invite.UserId, res)
+		inviteeLanguage := a.getUserLanguage(invite.UserId, req, res)
 
 		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
 			a.logAudit(req, "monitoring invite created")
 
-			if err := a.addProfile(invite); err != nil {
+			if err := a.addProfile(req.Context(), invite); err != nil {
 				log.Println("SendMonitoringInvite: ", err.Error())
 			} else {
 				emailContent := map[string]string{
@@ -918,7 +918,7 @@ func (a *Api) SendMonitoringTeamInvite(res http.ResponseWriter, req *http.Reques
 				profileUpdate := make(map[string]interface{})
 				profileUpdate["patient"] = patientProfile
 
-				err := a.seagull.SetCollection(invitedUsr.UserID, "profile", a.sl.TokenProvide(), profileUpdate)
+				err := a.seagull.SetCollection(req.Context(), invitedUsr.UserID, "profile", a.sl.TokenProvide(), profileUpdate)
 				if err != nil {
 					log.Printf("error updating patient profile [%v]\n", err)
 					a.sendModelAsResWithStatus(
@@ -1101,11 +1101,11 @@ func (a *Api) UpdateTeamRole(res http.ResponseWriter, req *http.Request, vars ma
 		invite.Status = models.StatusPending
 		invite.UserId = inviteeID
 		// does the invitee have a preferred language?
-		inviteeLanguage = a.getUserLanguage(invite.UserId, res)
+		inviteeLanguage = a.getUserLanguage(invite.UserId, req, res)
 		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
 			a.logAudit(req, "invite created")
 
-			if err := a.addProfile(invite); err != nil {
+			if err := a.addProfile(req.Context(), invite); err != nil {
 				log.Println("SendInvite: ", err.Error())
 			} else {
 
@@ -1215,7 +1215,7 @@ func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars 
 	invite.Role = teamMember.Role
 	invite.UserId = inviteeID
 	// does the invitee have a preferred language?
-	inviteeLanguage = a.getUserLanguage(invite.UserId, res)
+	inviteeLanguage = a.getUserLanguage(invite.UserId, req, res)
 
 	if err := a.perms.RemoveTeamMember(tokenValue, teamID, invite.UserId); err != nil {
 		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_UPDATING_TEAM)}
@@ -1226,7 +1226,7 @@ func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars 
 	if a.addOrUpdateConfirmation(req.Context(), invite, res) {
 		a.logAudit(req, "invite created")
 
-		if err := a.addProfile(invite); err != nil {
+		if err := a.addProfile(req.Context(), invite); err != nil {
 			log.Println("SendInvite: ", err.Error())
 		} else {
 

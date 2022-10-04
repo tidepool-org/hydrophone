@@ -123,6 +123,12 @@ func New(templatesPath string, localizer localize.Localizer) (models.Templates, 
 		templates[template.Name()] = template
 	}
 
+	if template, err := newTemplate(templatesPath, models.TemplateNameAppPrescription, localizer); err != nil {
+		return nil, fmt.Errorf("templates: failure to create App prescription template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
 	return templates, nil
 }
 

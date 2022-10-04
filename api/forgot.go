@@ -107,17 +107,14 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		}
 
 		// let's get the resetter user preferences
-		resetterPreferences := &models.Preferences{}
-		if err := a.seagull.GetCollection(resetCnf.UserId, "preferences", a.sl.TokenProvide(), resetterPreferences); err != nil {
+		if resetterSeagull, err := a.seagull.GetCollections(req.Context(), resetCnf.UserId, []string{"preferences"}, a.sl.TokenProvide()); err != nil {
 			a.sendError(res, http.StatusInternalServerError,
 				STATUS_ERR_FINDING_USR,
 				"forgot password: error getting resetter user preferences: ",
 				err.Error())
 			return
-		}
-		// if resetter has a profile and a language we override the previously set language (browser's or "en")
-		if resetterPreferences.DisplayLanguage != "" {
-			resetterLanguage = resetterPreferences.DisplayLanguage
+		} else if resetterSeagull.Preferences != nil && resetterSeagull.Preferences.DisplayLanguageCode != "" {
+			resetterLanguage = resetterSeagull.Preferences.DisplayLanguageCode
 		}
 	} else {
 		a.sendModelAsResWithStatus(res, STATUS_ERR_RESET_PWD_FORBIDEN, http.StatusForbidden)

@@ -13,6 +13,7 @@ import (
 	"github.com/mdblp/crew/store"
 	"github.com/mdblp/go-common/clients/auth"
 	"github.com/mdblp/hydrophone/templates"
+	"github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/token"
 	"github.com/stretchr/testify/mock"
 )
@@ -114,8 +115,18 @@ func TestInvitesLocales(t *testing.T) {
 
 	for idx, test := range tests {
 		var testRtr = initTestingTeamRouter(test.returnNone)
-		mockSeagull.SetMockNextCollectionCall(testing_uid1+"preferences", `{"displayLanguageCode":"fr"}`, nil)
-		mockSeagull.SetMockNextCollectionCall(testing_uid2+"preferences", `{"displayLanguageCode":"es"}`, nil)
+		mockSeagull.ExpectedCalls = nil
+		mockSeagull.On("GetCollections", testing_uid1, []string{"preferences"}).Return(
+			&schema.SeagullDocument{
+				Preferences: &schema.Preferences{DisplayLanguageCode: "fr"},
+			}, nil,
+		)
+		mockSeagull.On("GetCollections", testing_uid2, []string{"preferences"}).Return(
+			&schema.SeagullDocument{
+				Preferences: &schema.Preferences{DisplayLanguageCode: "es"},
+			}, nil,
+		)
+		mockSeagull.On("GetCollections", testing_uid1, []string{"profile"}).Return(&schema.SeagullDocument{Profile: &schema.Profile{}}, nil)
 		// mock user preference:
 		// mockSeagull.SetMockNextCollectionCall(testing_uid2+"@email.org"+"preferences", `{"DisplayLanguage": "de"}`, nil)
 		teams1 := []store.Team{}
@@ -150,8 +161,6 @@ func TestInvitesLocales(t *testing.T) {
 			t.Fatalf("Test %d url: '%s'\nNon-expected status code %d (expected %d):\n\tbody: %v",
 				idx, test.url, response.Code, test.respCode, response.Body)
 		}
-		t.Logf("Test %d url: '%s'\nExpected status code %d (expected %d):\n\tbody: %v",
-			idx, test.url, response.Code, test.respCode, response.Body)
 
 		if response.Body.Len() != 0 && len(test.response) != 0 {
 			// compare bodies by comparing the unmarshalled JSON results
@@ -406,12 +415,13 @@ func TestCaregiverInvite(t *testing.T) {
 		if inviteTest.skip {
 			continue
 		}
+		mockSeagull.ExpectedCalls = nil
 		var testRtr = mux.NewRouter()
-
-		mockSeagull.SetMockNextCollectionCall("personToInvite@email.com"+"preferences", `{"Something":"anit no thing"}`, nil)
-		mockSeagull.SetMockNextCollectionCall(testing_uid1+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
-		mockSeagull.SetMockNextCollectionCall(testing_uid2+"@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
-		mockSeagull.SetMockNextCollectionCall(testing_uid2+"hcp@email.org"+"preferences", `{"Something":"anit no thing"}`, nil)
+		mockSeagull.On("GetCollections", testing_uid2, []string{"profile"}).Return(&schema.SeagullDocument{Profile: &schema.Profile{FullName: "test toto"}}, nil)
+		mockSeagull.On("GetCollections", "personToInvite@email.com", []string{"preferences"}).Return(&schema.SeagullDocument{Preferences: &schema.Preferences{}}, nil)
+		mockSeagull.On("GetCollections", testing_uid1+"@email.org", []string{"preferences"}).Return(&schema.SeagullDocument{Preferences: &schema.Preferences{}}, nil)
+		mockSeagull.On("GetCollections", testing_uid2+"@email.org", []string{"preferences"}).Return(&schema.SeagullDocument{Preferences: &schema.Preferences{}}, nil)
+		mockSeagull.On("GetCollections", testing_uid2+"hcp@email.org", []string{"preferences"}).Return(&schema.SeagullDocument{Preferences: &schema.Preferences{}}, nil)
 		mockShoreline.On("TokenProvide").Return(testing_token)
 		mockAuth = auth.NewMock()
 
@@ -472,6 +482,7 @@ func TestCaregiverInvite(t *testing.T) {
 		mockAuth.On("Authenticate", mock.Anything).Return(&token.TokenData{UserId: testing_uid1, IsServer: true})
 		hydrophone.SetHandlers("", testRtr)
 
+		t.Logf("Execute test `%d` `%s`", idx, inviteTest.desc)
 		var body = &bytes.Buffer{}
 		// build the body only if there is one defined in the test
 		if len(inviteTest.body) != 0 {
