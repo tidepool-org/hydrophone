@@ -108,11 +108,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 		// let's get the resetter user preferences
 		if resetterSeagull, err := a.seagull.GetCollections(req.Context(), resetCnf.UserId, []string{"preferences"}, a.sl.TokenProvide()); err != nil {
-			a.sendError(res, http.StatusInternalServerError,
-				STATUS_ERR_FINDING_USR,
-				"forgot password: error getting resetter user preferences: ",
-				err.Error())
-			return
+			a.logger.Errorf("Preferences not availlable for user %s. Email will be sent in %s.", resetCnf.UserId, resetterLanguage)
 		} else if resetterSeagull.Preferences != nil && resetterSeagull.Preferences.DisplayLanguageCode != "" {
 			resetterLanguage = resetterSeagull.Preferences.DisplayLanguageCode
 		}

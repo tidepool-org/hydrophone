@@ -25,7 +25,6 @@ import (
 	"github.com/mdblp/hydrophone/clients"
 	"github.com/mdblp/hydrophone/models"
 	seagullClient "github.com/mdblp/seagull/client"
-	metaData "github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/clients/shoreline"
 	"github.com/mdblp/shoreline/schema"
 	"github.com/mdblp/shoreline/token"
@@ -306,29 +305,14 @@ func (a *Api) addProfile(ctx context.Context, conf *models.Confirmation) error {
 	return nil
 }
 
-func (a *Api) getUserPreferences(userid string, req *http.Request, res http.ResponseWriter) *metaData.Preferences {
-	if resetterSeagull, err := a.seagull.GetCollections(req.Context(), userid, []string{"preferences"}, a.sl.TokenProvide()); err != nil {
-		a.sendError(
-			res,
-			http.StatusInternalServerError,
-			STATUS_ERR_FINDING_USR,
-			"send invitation: error getting invitee user preferences: ",
-			err.Error())
-		return nil
-	} else {
-		return resetterSeagull.Preferences
-	}
-}
-
 func (a *Api) getUserLanguage(userid string, req *http.Request, res http.ResponseWriter) string {
 	// let's get the invitee user preferences
-	inviteePreferences := a.getUserPreferences(userid, req, res)
-	// does the invitee have a preferred language?
-	if inviteePreferences != nil && inviteePreferences.DisplayLanguageCode != "" {
-		return inviteePreferences.DisplayLanguageCode
-	} else {
-		return GetUserChosenLanguage(req)
+	if seagulDoc, err := a.seagull.GetCollections(req.Context(), userid, []string{"preferences"}, a.sl.TokenProvide()); err != nil {
+		a.logger.Errorf("Preferences not availlable for user %s. Email will be sent using default language.", userid)
+	} else if seagulDoc.Preferences != nil && seagulDoc.Preferences.DisplayLanguageCode != "" {
+		return seagulDoc.Preferences.DisplayLanguageCode
 	}
+	return GetUserChosenLanguage(req)
 }
 
 //Find these confirmations
