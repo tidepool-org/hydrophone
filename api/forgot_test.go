@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -122,6 +123,20 @@ func TestForgotResponds(t *testing.T) {
 			// with info
 			method:   "POST",
 			url:      "/send/forgot/patient@myemail.com?info=ok",
+			respCode: 200,
+		},
+		{
+			// always returns a 200 for patient
+			// with shortKey
+			method:   "POST",
+			url:      "/send/forgot/patientfr@myemail.com",
+			respCode: 200,
+		},
+		{
+			// always returns a 200 for patient
+			// with shortKey
+			method:   "POST",
+			url:      "/send/forgot/patientNoPrefs@myemail.com",
 			respCode: 200,
 		},
 		{
@@ -245,6 +260,8 @@ func TestForgotResponds(t *testing.T) {
 
 		mockSeagull.On("GetCollections", "me@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{}, nil)
 		mockSeagull.On("GetCollections", "patient@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{}, nil)
+		mockSeagull.On("GetCollections", "patientfr@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{Preferences: &schema.Preferences{DisplayLanguageCode: "fr"}}, nil)
+		mockSeagull.On("GetCollections", "patientNoPrefs@myemail.com", []string{"preferences"}).Return(nil, errors.New("No data"))
 		mockSeagull.On("GetCollections", "clinic@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{}, nil)
 		mockSeagull.On("GetCollections", "expires@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{}, nil)
 		mockShoreline.On("TokenProvide").Return(testing_token)
