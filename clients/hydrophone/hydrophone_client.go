@@ -2,16 +2,20 @@ package hydrophone
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/mdblp/hydrophone/api"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/mdblp/go-common/clients/status"
+	appContext "github.com/mdblp/go-common/context"
 	"github.com/mdblp/go-common/errors"
 	"github.com/mdblp/hydrophone/models"
 )
@@ -22,6 +26,7 @@ type (
 		GetPendingSignup(userID string, authToken string) (*models.Confirmation, error)
 		CancelSignup(confirm models.Confirmation, authToken string) error
 		SendNotification(topic string, notif interface{}, authToken string) error
+		InviteHcp(ctx context.Context, teamId string, inviteeEmail string, role string, authToken string) (*models.Confirmation, error)
 	}
 
 	Client struct {
@@ -91,6 +96,35 @@ func (client *Client) GetPendingInvitations(userID string, authToken string) ([]
 	return client.GetPendingInviteOrSignup(userID, authToken, models.TypeCareteamInvite)
 }
 
+func (client *Client) InviteHcp(ctx context.Context, teamId string, inviteeEmail string, role string, authToken string) (*models.Confirmation, error) {
+	logger := appContext.GetLogger(ctx)
+	invitationBody := api.InviteBody{
+		Email:  inviteeEmail,
+		TeamID: teamId,
+		Role:   role,
+	}
+	req, err := client.getFullRequestWithContext(ctx, "POST", authToken, invitationBody, map[string]string{}, "send", "team", "invite")
+	if err != nil {
+		return nil, errors.Wrap(err, "SendTeamInviteHCP: error formatting request")
+	}
+
+	res, err := client.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == 200 {
+		var retVal models.Confirmation
+		if err := json.NewDecoder(res.Body).Decode(&retVal); err != nil {
+			logger.Error(err)
+			return nil, fmt.Errorf("error parsing JSON results: %v", err)
+		}
+		return &retVal, nil
+	}
+	return nil, handleErrors(res, req)
+}
+
 func (client *Client) GetPendingSignup(userID string, authToken string) (*models.Confirmation, error) {
 	res, err := client.GetPendingInviteOrSignup(userID, authToken, models.TypeSignUp)
 
@@ -140,6 +174,55 @@ func (client *Client) GetPendingInviteOrSignup(userID string, authToken string, 
 		return nil, &status.StatusError{
 			Status: status.NewStatusf(res.StatusCode, "Unknown response code from service[%s]", req.URL),
 		}
+	}
+}
+
+func (client *Client) getFullRequestWithContext(ctx context.Context, method string, authToken string, payload interface{}, queryParams map[string]string, pathParams ...string) (*http.Request, error) {
+	logger := appContext.GetLogger(ctx)
+	host, err := client.getHost()
+	if err != nil {
+		return nil, err
+	}
+	pathFragments := append([]string{host.Path}, pathParams...)
+	host.Path = path.Join(pathFragments...)
+	logger.Debug(host.Path)
+	q := host.Query()
+	for key, value := range queryParams {
+		if value != "" {
+			q.Set(key, value)
+		}
+	}
+	host.RawQuery = q.Encode()
+	body, err := json.Marshal(payload)
+	req, err := http.NewRequestWithContext(ctx, method, host.String(), bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+	/*eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9 is the default shoreline token header*/
+	client.setAuthHeader(req, authToken)
+	if traceSessionId, ok := appContext.GetTraceSessionIdCtx(ctx); ok {
+		req.Header.Set("x-tidepool-trace-session", traceSessionId)
+	}
+
+	return req, nil
+}
+
+// Set the correct auth header based on the client configuration
+func (client *Client) setAuthHeader(req *http.Request, authToken string) {
+	/*eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9 is the default shoreline token header*/
+	if strings.Index(authToken, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9") == 0 {
+		req.Header.Add("x-tidepool-session-token", authToken)
+	} else {
+		req.Header.Add("Authorization", "Bearer "+authToken)
+	}
+}
+
+// Handle various error codes
+func handleErrors(res *http.Response, req *http.Request) error {
+	if res.StatusCode == 401 {
+		return fmt.Errorf("access to Hydrophone is not authorized")
+	} else {
+		return fmt.Errorf("unknown response code from service[%s], code %v", req.URL, res.StatusCode)
 	}
 }
 
