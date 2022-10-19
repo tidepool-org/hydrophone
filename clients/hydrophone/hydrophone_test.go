@@ -1,7 +1,10 @@
 package hydrophone
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/mdblp/hydrophone/api"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -17,7 +20,7 @@ func buildServer(t *testing.T, userID string, testToken string, confirmType stri
 		if strings.HasPrefix(urlPath, "/"+confirmType+"/") {
 			if req.Method != "GET" && req.Method != "PUT" {
 				t.Errorf("Incorrect HTTP Method [%s]", req.Method)
-			} else if req.Header.Get("x-tidepool-session-token") != testToken {
+			} else if req.Header.Get("x-tidepool-session-token") != testToken && req.Header.Get("Authorization") != "Bearer "+testToken {
 				res.WriteHeader(http.StatusUnauthorized)
 			} else {
 				userID = strings.TrimPrefix(urlPath, "/"+confirmType+"/")
@@ -78,6 +81,66 @@ func TestGetPendingInvitations(t *testing.T) {
 	testWrongToken(t, hydrophoneClient, "invite")
 	testEmptyData(t, hydrophoneClient, testToken, "invite")
 	testError(t, hydrophoneClient, testToken, "invite")
+}
+
+func TestGetSentInvitations(t *testing.T) {
+	testToken := "a.b.c"
+	var userID string
+	srvr := buildServer(t, userID, testToken, "invite")
+	defer srvr.Close()
+
+	hydrophoneClient := NewHydrophoneClientBuilder().
+		WithHost(srvr.URL).
+		Build()
+
+	confirms, err := hydrophoneClient.GetSentInvitations(context.Background(), "authorizedWithData", testToken)
+	if err != nil {
+		t.Errorf("Failed GetSentInvitations with error[%v]", err)
+	}
+	if len(confirms) != 2 {
+		t.Errorf("Failed GetSentInvitations returned %v elements expected %v", len(confirms), 2)
+	}
+	if confirms[0].Key != "key1" && confirms[0].Type != "medicalteam_invitation" {
+		t.Errorf("Failed GetSentInvitations wrong data returned, first element: %v", confirms[0])
+	}
+	if confirms[1].Key != "key2" && confirms[0].Type != "medicalteam_do_admin" {
+		t.Errorf("Failed GetSentInvitations wrong data returned, second element: %v", confirms[1])
+	}
+}
+
+func TestInviteHcp(t *testing.T) {
+	testToken := "a.b.c"
+	srvr := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		if req.Method != "POST" {
+			t.Errorf("Incorrect HTTP Method [%s]", req.Method)
+		}
+		if req.Header.Get("Authorization") != "Bearer "+testToken {
+			t.Errorf("auth token not correctly set")
+		}
+		switch req.URL.Path {
+		case "/send/team/invite":
+			var body *api.InviteBody
+			if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+				t.Errorf("Error parsing request [%s]", err)
+			}
+			if body.TeamID != "teamId" || body.Email != "inviteeEmail" || body.Role != "role" {
+				t.Errorf("Body is missing some parameters")
+			}
+			res.WriteHeader(http.StatusOK)
+
+			fmt.Fprint(res, `{}`)
+		default:
+			t.Errorf("Unknown path[%s]", req.URL.Path)
+		}
+	}))
+	defer srvr.Close()
+
+	hydrophoneClient := NewHydrophoneClientBuilder().WithHost(srvr.URL).Build()
+
+	_, err := hydrophoneClient.InviteHcp(context.Background(), "teamId", "inviteeEmail", "role", testToken)
+	if err != nil {
+		t.Errorf("Failed InviteHcp with error[%v]", err)
+	}
 }
 
 func TestGetPendingSignup(t *testing.T) {
