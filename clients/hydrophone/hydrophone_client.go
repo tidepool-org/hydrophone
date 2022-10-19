@@ -23,6 +23,7 @@ import (
 type (
 	ClientInterface interface {
 		GetPendingInvitations(userID string, authToken string) ([]models.Confirmation, error)
+		GetSentInvitations(ctx context.Context, userID string, authToken string) ([]models.Confirmation, error)
 		GetPendingSignup(userID string, authToken string) (*models.Confirmation, error)
 		CancelSignup(confirm models.Confirmation, authToken string) error
 		SendNotification(topic string, notif interface{}, authToken string) error
@@ -125,6 +126,30 @@ func (client *Client) InviteHcp(ctx context.Context, teamId string, inviteeEmail
 	return nil, handleErrors(res, req)
 }
 
+func (client *Client) GetSentInvitations(ctx context.Context, userID string, authToken string) ([]models.Confirmation, error) {
+	logger := appContext.GetLogger(ctx)
+	req, err := client.getFullRequestWithContext(ctx, "GET", authToken, nil, map[string]string{}, "invite", userID)
+	if err != nil {
+		return nil, errors.Wrap(err, "SendTeamInviteHCP: error formatting request")
+	}
+
+	res, err := client.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == 200 {
+		var retVal []models.Confirmation
+		if err := json.NewDecoder(res.Body).Decode(&retVal); err != nil {
+			logger.Error(err)
+			return nil, fmt.Errorf("error parsing JSON results: %v", err)
+		}
+		return retVal, nil
+	}
+	return nil, handleErrors(res, req)
+}
+
 func (client *Client) GetPendingSignup(userID string, authToken string) (*models.Confirmation, error) {
 	res, err := client.GetPendingInviteOrSignup(userID, authToken, models.TypeSignUp)
 
@@ -193,8 +218,17 @@ func (client *Client) getFullRequestWithContext(ctx context.Context, method stri
 		}
 	}
 	host.RawQuery = q.Encode()
-	body, err := json.Marshal(payload)
-	req, err := http.NewRequestWithContext(ctx, method, host.String(), bytes.NewBuffer(body))
+	var req *http.Request
+	if payload != nil {
+		body, err := json.Marshal(payload)
+		if err != nil {
+			return nil, err
+		}
+		req, err = http.NewRequestWithContext(ctx, method, host.String(), bytes.NewBuffer(body))
+	} else {
+
+		req, err = http.NewRequestWithContext(ctx, method, host.String(), nil)
+	}
 	if err != nil {
 		return nil, err
 	}
