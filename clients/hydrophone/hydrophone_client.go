@@ -147,6 +147,9 @@ func (client *Client) GetSentInvitations(ctx context.Context, userID string, aut
 		}
 		return retVal, nil
 	}
+	if res.StatusCode == 404 {
+		return make([]models.Confirmation, 0), nil
+	}
 	return nil, handleErrors(res, req)
 }
 
