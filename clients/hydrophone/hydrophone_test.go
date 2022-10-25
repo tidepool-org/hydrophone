@@ -106,6 +106,14 @@ func TestGetSentInvitations(t *testing.T) {
 	if confirms[1].Key != "key2" && confirms[0].Type != "medicalteam_do_admin" {
 		t.Errorf("Failed GetSentInvitations wrong data returned, second element: %v", confirms[1])
 	}
+
+	confirms, err = hydrophoneClient.GetSentInvitations(context.Background(), "authorizedWithoutData", testToken)
+	if err != nil {
+		t.Errorf("Failed GetSentInvitations with error[%v]", err)
+	}
+	if len(confirms) > 0 {
+		t.Errorf("Failed GetSentInvitations returned %v elements expected empty array", len(confirms))
+	}
 }
 
 func TestInviteHcp(t *testing.T) {
