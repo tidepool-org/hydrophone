@@ -33,8 +33,13 @@ func buildServer(t *testing.T, userID string, testToken string, confirmType stri
 						} else {
 							fmt.Fprint(res, `[{"key":"key3","type":"signup_confirmation"}]`)
 						}
+					case "authorizedWithWrongData":
+						res.WriteHeader(http.StatusOK)
+						fmt.Fprint(res, `{"key":"key1"}`)
 					case "authorizedWithoutData":
 						res.WriteHeader(http.StatusNotFound)
+					case "unrecognizedResponseCode":
+						res.WriteHeader(http.StatusNoContent)
 					case "error":
 						res.WriteHeader(http.StatusInternalServerError)
 					}
@@ -113,6 +118,21 @@ func TestGetSentInvitations(t *testing.T) {
 	}
 	if len(confirms) > 0 {
 		t.Errorf("Failed GetSentInvitations returned %v elements expected empty array", len(confirms))
+	}
+
+	confirms, err = hydrophoneClient.GetSentInvitations(context.Background(), "authorizedWithWrongData", testToken)
+	if err == nil {
+		t.Errorf("Failed GetSentInvitations should have thrown a JSON parsing error but did not")
+	}
+
+	confirms, err = hydrophoneClient.GetSentInvitations(nil, "error", testToken)
+	if err == nil || err.Error() != "GetSentInvitations: error formatting request: net/http: nil Context" {
+		t.Errorf("Failed GetSentInvitations should have thrown a formatting request error but did not")
+	}
+
+	confirms, err = hydrophoneClient.GetSentInvitations(context.Background(), "unrecognizedResponseCode", testToken)
+	if err == nil || !strings.Contains(err.Error(), "unknown response code from service") {
+		t.Errorf("Failed GetSentInvitations should have thrown an unknown response code error but did not")
 	}
 }
 

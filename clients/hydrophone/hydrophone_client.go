@@ -130,7 +130,7 @@ func (client *Client) GetSentInvitations(ctx context.Context, userID string, aut
 	logger := appContext.GetLogger(ctx)
 	req, err := client.getFullRequestWithContext(ctx, "GET", authToken, nil, map[string]string{}, "invite", userID)
 	if err != nil {
-		return nil, errors.Wrap(err, "SendTeamInviteHCP: error formatting request")
+		return nil, errors.Wrap(err, "GetSentInvitations: error formatting request")
 	}
 
 	res, err := client.httpClient.Do(req)
@@ -206,14 +206,12 @@ func (client *Client) GetPendingInviteOrSignup(userID string, authToken string, 
 }
 
 func (client *Client) getFullRequestWithContext(ctx context.Context, method string, authToken string, payload interface{}, queryParams map[string]string, pathParams ...string) (*http.Request, error) {
-	logger := appContext.GetLogger(ctx)
 	host, err := client.getHost()
 	if err != nil {
 		return nil, err
 	}
 	pathFragments := append([]string{host.Path}, pathParams...)
 	host.Path = path.Join(pathFragments...)
-	logger.Debug(host.Path)
 	q := host.Query()
 	for key, value := range queryParams {
 		if value != "" {
@@ -229,7 +227,6 @@ func (client *Client) getFullRequestWithContext(ctx context.Context, method stri
 		}
 		req, err = http.NewRequestWithContext(ctx, method, host.String(), bytes.NewBuffer(body))
 	} else {
-
 		req, err = http.NewRequestWithContext(ctx, method, host.String(), nil)
 	}
 	if err != nil {
