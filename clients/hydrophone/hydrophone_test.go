@@ -151,12 +151,23 @@ func TestInviteHcp(t *testing.T) {
 			if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 				t.Errorf("Error parsing request [%s]", err)
 			}
-			if body.TeamID != "teamId" || body.Email != "inviteeEmail" || body.Role != "role" {
-				t.Errorf("Body is missing some parameters")
+			switch body.TeamID {
+			case "authorizedWithData":
+				if body.Email != "inviteeEmail" || body.Role != "role" {
+					t.Errorf("Body is missing some parameters")
+				}
+				res.WriteHeader(http.StatusOK)
+				fmt.Fprint(res, `{}`)
+			case "authorizedWithWrongData":
+				res.WriteHeader(http.StatusOK)
+				fmt.Fprint(res, `[{}]`)
+			case "authorizedWithoutData":
+				res.WriteHeader(http.StatusNotFound)
+			case "unrecognizedResponseCode":
+				res.WriteHeader(http.StatusNoContent)
+			case "error":
+				res.WriteHeader(http.StatusInternalServerError)
 			}
-			res.WriteHeader(http.StatusOK)
-
-			fmt.Fprint(res, `{}`)
 		default:
 			t.Errorf("Unknown path[%s]", req.URL.Path)
 		}
@@ -165,9 +176,24 @@ func TestInviteHcp(t *testing.T) {
 
 	hydrophoneClient := NewHydrophoneClientBuilder().WithHost(srvr.URL).Build()
 
-	_, err := hydrophoneClient.InviteHcp(context.Background(), "teamId", "inviteeEmail", "role", testToken)
+	_, err := hydrophoneClient.InviteHcp(context.Background(), "authorizedWithData", "inviteeEmail", "role", testToken)
 	if err != nil {
 		t.Errorf("Failed InviteHcp with error[%v]", err)
+	}
+
+	_, err = hydrophoneClient.InviteHcp(context.Background(), "authorizedWithWrongData", "inviteeEmail", "role", testToken)
+	if err == nil || !strings.Contains(err.Error(), "error parsing JSON results") {
+		t.Errorf("Failed InviteHcp should have thrown a JSON parsing error but did not")
+	}
+
+	_, err = hydrophoneClient.InviteHcp(context.Background(), "unrecognizedResponseCode", "inviteeEmail", "role", testToken)
+	if err == nil || !strings.Contains(err.Error(), "unknown response code from service") {
+		t.Errorf("Failed InviteHcp should have thrown an unknown response code error but did not")
+	}
+
+	_, err = hydrophoneClient.InviteHcp(nil, "authorizedWithData", "inviteeEmail", "role", testToken)
+	if err == nil || !strings.Contains(err.Error(), "SendTeamInviteHCP: error formatting request") {
+		t.Errorf("Failed InviteHcp should have thrown formatting request error")
 	}
 }
 

@@ -98,7 +98,6 @@ func (client *Client) GetPendingInvitations(userID string, authToken string) ([]
 }
 
 func (client *Client) InviteHcp(ctx context.Context, teamId string, inviteeEmail string, role string, authToken string) (*models.Confirmation, error) {
-	logger := appContext.GetLogger(ctx)
 	invitationBody := api.InviteBody{
 		Email:  inviteeEmail,
 		TeamID: teamId,
@@ -118,7 +117,6 @@ func (client *Client) InviteHcp(ctx context.Context, teamId string, inviteeEmail
 	if res.StatusCode == 200 {
 		var retVal models.Confirmation
 		if err := json.NewDecoder(res.Body).Decode(&retVal); err != nil {
-			logger.Error(err)
 			return nil, fmt.Errorf("error parsing JSON results: %v", err)
 		}
 		return &retVal, nil
@@ -226,11 +224,14 @@ func (client *Client) getFullRequestWithContext(ctx context.Context, method stri
 			return nil, err
 		}
 		req, err = http.NewRequestWithContext(ctx, method, host.String(), bytes.NewBuffer(body))
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		req, err = http.NewRequestWithContext(ctx, method, host.String(), nil)
-	}
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 	}
 	/*eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9 is the default shoreline token header*/
 	client.setAuthHeader(req, authToken)
