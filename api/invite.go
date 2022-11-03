@@ -28,7 +28,7 @@ const (
 
 type (
 	//Invite details for generating a new invite
-	inviteBody struct {
+	InviteBody struct {
 		Email  string `json:"email"`
 		TeamID string `json:"teamId"`
 		Role   string `json:"role"`
@@ -46,8 +46,8 @@ func handlerGood(s string) string {
 	return escapedString
 }
 
-func checkInviteBody(ib *inviteBody) *inviteBody {
-	var out = &inviteBody{
+func checkInviteBody(ib *InviteBody) *InviteBody {
+	var out = &InviteBody{
 		Email:  handlerGood(ib.Email),
 		Role:   handlerGood(ib.Role),
 		TeamID: handlerGood(ib.TeamID),
@@ -650,7 +650,7 @@ func (a *Api) CancelAllInvites(res http.ResponseWriter, req *http.Request, vars 
 // @Accept  json
 // @Produce  json
 // @Param userid path string true "invitor user id"
-// @Param payload body inviteBody true "invitation details"
+// @Param payload body InviteBody true "invitation details"
 // @Success 200 {object} models.Confirmation "invite details"
 // @Failure 400 {object} status.Status "userId was not provided or the payload is missing/malformed"
 // @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
@@ -679,7 +679,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		}
 
 		defer req.Body.Close()
-		var ib = &inviteBody{}
+		var ib = &InviteBody{}
 		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
 			log.Printf("SendInvite: error decoding invite to detail %v\n", err)
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	goComMgo "github.com/mdblp/go-common/clients/mongo"
+	goComMgo "github.com/mdblp/go-db/mongo"
 	"github.com/mdblp/hydrophone/models"
 	"github.com/sirupsen/logrus/hooks/test"
 )

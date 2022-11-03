@@ -12,3 +12,5 @@ test-report.txt
 coverage.out
 coverage.html
 coverage.xml
+
+.idea/

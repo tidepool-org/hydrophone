@@ -37,7 +37,7 @@ import (
 
 	crewClient "github.com/mdblp/crew/client"
 	common "github.com/mdblp/go-common"
-	"github.com/mdblp/go-common/clients/mongo"
+	"github.com/mdblp/go-db/mongo"
 	"github.com/mdblp/hydrophone/api"
 	sc "github.com/mdblp/hydrophone/clients"
 	"github.com/mdblp/hydrophone/localize"

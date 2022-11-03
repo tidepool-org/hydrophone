@@ -1,7 +1,10 @@
 package hydrophone
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/mdblp/hydrophone/api"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -17,7 +20,7 @@ func buildServer(t *testing.T, userID string, testToken string, confirmType stri
 		if strings.HasPrefix(urlPath, "/"+confirmType+"/") {
 			if req.Method != "GET" && req.Method != "PUT" {
 				t.Errorf("Incorrect HTTP Method [%s]", req.Method)
-			} else if req.Header.Get("x-tidepool-session-token") != testToken {
+			} else if req.Header.Get("x-tidepool-session-token") != testToken && req.Header.Get("Authorization") != "Bearer "+testToken {
 				res.WriteHeader(http.StatusUnauthorized)
 			} else {
 				userID = strings.TrimPrefix(urlPath, "/"+confirmType+"/")
@@ -30,8 +33,13 @@ func buildServer(t *testing.T, userID string, testToken string, confirmType stri
 						} else {
 							fmt.Fprint(res, `[{"key":"key3","type":"signup_confirmation"}]`)
 						}
+					case "authorizedWithWrongData":
+						res.WriteHeader(http.StatusOK)
+						fmt.Fprint(res, `{"key":"key1"}`)
 					case "authorizedWithoutData":
 						res.WriteHeader(http.StatusNotFound)
+					case "unrecognizedResponseCode":
+						res.WriteHeader(http.StatusNoContent)
 					case "error":
 						res.WriteHeader(http.StatusInternalServerError)
 					}
@@ -78,6 +86,115 @@ func TestGetPendingInvitations(t *testing.T) {
 	testWrongToken(t, hydrophoneClient, "invite")
 	testEmptyData(t, hydrophoneClient, testToken, "invite")
 	testError(t, hydrophoneClient, testToken, "invite")
+}
+
+func TestGetSentInvitations(t *testing.T) {
+	testToken := "a.b.c"
+	var userID string
+	srvr := buildServer(t, userID, testToken, "invite")
+	defer srvr.Close()
+
+	hydrophoneClient := NewHydrophoneClientBuilder().
+		WithHost(srvr.URL).
+		Build()
+
+	confirms, err := hydrophoneClient.GetSentInvitations(context.Background(), "authorizedWithData", testToken)
+	if err != nil {
+		t.Errorf("Failed GetSentInvitations with error[%v]", err)
+	}
+	if len(confirms) != 2 {
+		t.Errorf("Failed GetSentInvitations returned %v elements expected %v", len(confirms), 2)
+	}
+	if confirms[0].Key != "key1" && confirms[0].Type != "medicalteam_invitation" {
+		t.Errorf("Failed GetSentInvitations wrong data returned, first element: %v", confirms[0])
+	}
+	if confirms[1].Key != "key2" && confirms[0].Type != "medicalteam_do_admin" {
+		t.Errorf("Failed GetSentInvitations wrong data returned, second element: %v", confirms[1])
+	}
+
+	confirms, err = hydrophoneClient.GetSentInvitations(context.Background(), "authorizedWithoutData", testToken)
+	if err != nil {
+		t.Errorf("Failed GetSentInvitations with error[%v]", err)
+	}
+	if len(confirms) > 0 {
+		t.Errorf("Failed GetSentInvitations returned %v elements expected empty array", len(confirms))
+	}
+
+	confirms, err = hydrophoneClient.GetSentInvitations(context.Background(), "authorizedWithWrongData", testToken)
+	if err == nil {
+		t.Errorf("Failed GetSentInvitations should have thrown a JSON parsing error but did not")
+	}
+
+	confirms, err = hydrophoneClient.GetSentInvitations(nil, "error", testToken)
+	if err == nil || err.Error() != "GetSentInvitations: error formatting request: net/http: nil Context" {
+		t.Errorf("Failed GetSentInvitations should have thrown a formatting request error but did not")
+	}
+
+	confirms, err = hydrophoneClient.GetSentInvitations(context.Background(), "unrecognizedResponseCode", testToken)
+	if err == nil || !strings.Contains(err.Error(), "unknown response code from service") {
+		t.Errorf("Failed GetSentInvitations should have thrown an unknown response code error but did not")
+	}
+}
+
+func TestInviteHcp(t *testing.T) {
+	testToken := "a.b.c"
+	srvr := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		if req.Method != "POST" {
+			t.Errorf("Incorrect HTTP Method [%s]", req.Method)
+		}
+		if req.Header.Get("Authorization") != "Bearer "+testToken {
+			t.Errorf("auth token not correctly set")
+		}
+		switch req.URL.Path {
+		case "/send/team/invite":
+			var body *api.InviteBody
+			if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+				t.Errorf("Error parsing request [%s]", err)
+			}
+			switch body.TeamID {
+			case "authorizedWithData":
+				if body.Email != "inviteeEmail" || body.Role != "role" {
+					t.Errorf("Body is missing some parameters")
+				}
+				res.WriteHeader(http.StatusOK)
+				fmt.Fprint(res, `{}`)
+			case "authorizedWithWrongData":
+				res.WriteHeader(http.StatusOK)
+				fmt.Fprint(res, `[{}]`)
+			case "authorizedWithoutData":
+				res.WriteHeader(http.StatusNotFound)
+			case "unrecognizedResponseCode":
+				res.WriteHeader(http.StatusNoContent)
+			case "error":
+				res.WriteHeader(http.StatusInternalServerError)
+			}
+		default:
+			t.Errorf("Unknown path[%s]", req.URL.Path)
+		}
+	}))
+	defer srvr.Close()
+
+	hydrophoneClient := NewHydrophoneClientBuilder().WithHost(srvr.URL).Build()
+
+	_, err := hydrophoneClient.InviteHcp(context.Background(), "authorizedWithData", "inviteeEmail", "role", testToken)
+	if err != nil {
+		t.Errorf("Failed InviteHcp with error[%v]", err)
+	}
+
+	_, err = hydrophoneClient.InviteHcp(context.Background(), "authorizedWithWrongData", "inviteeEmail", "role", testToken)
+	if err == nil || !strings.Contains(err.Error(), "error parsing JSON results") {
+		t.Errorf("Failed InviteHcp should have thrown a JSON parsing error but did not")
+	}
+
+	_, err = hydrophoneClient.InviteHcp(context.Background(), "unrecognizedResponseCode", "inviteeEmail", "role", testToken)
+	if err == nil || !strings.Contains(err.Error(), "unknown response code from service") {
+		t.Errorf("Failed InviteHcp should have thrown an unknown response code error but did not")
+	}
+
+	_, err = hydrophoneClient.InviteHcp(nil, "authorizedWithData", "inviteeEmail", "role", testToken)
+	if err == nil || !strings.Contains(err.Error(), "SendTeamInviteHCP: error formatting request") {
+		t.Errorf("Failed InviteHcp should have thrown formatting request error")
+	}
 }
 
 func TestGetPendingSignup(t *testing.T) {
