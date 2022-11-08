@@ -12,7 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/mdblp/go-common/clients/status"
+	"github.com/mdblp/go-common/v2/clients/status"
 	"github.com/mdblp/hydrophone/localize"
 	"github.com/mdblp/hydrophone/models"
 	"github.com/mdblp/hydrophone/templates"

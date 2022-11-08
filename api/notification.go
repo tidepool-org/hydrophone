@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/mdblp/go-common/clients/status"
+	"github.com/mdblp/go-common/v2/clients/status"
 	"github.com/mdblp/hydrophone/models"
 	log "github.com/sirupsen/logrus"
 )

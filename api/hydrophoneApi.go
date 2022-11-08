@@ -18,9 +18,9 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	crewClient "github.com/mdblp/crew/client"
-	"github.com/mdblp/go-common/clients/auth"
-	"github.com/mdblp/go-common/clients/portal"
-	"github.com/mdblp/go-common/clients/status"
+	"github.com/mdblp/go-common/v2/clients/auth"
+	"github.com/mdblp/go-common/v2/clients/portal"
+	"github.com/mdblp/go-common/v2/clients/status"
 	muxMiddleware "github.com/mdblp/go-routers/mux"
 	"github.com/mdblp/hydrophone/clients"
 	"github.com/mdblp/hydrophone/models"

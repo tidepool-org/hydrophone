@@ -28,9 +28,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/mdblp/go-common/clients/auth"
-	"github.com/mdblp/go-common/clients/portal"
-	"github.com/mdblp/go-common/clients/version"
+	"github.com/mdblp/go-common/v2/clients/auth"
+	"github.com/mdblp/go-common/v2/clients/portal"
+	"github.com/mdblp/go-common/v2/clients/version"
 	seagullClient "github.com/mdblp/seagull/client"
 
 	"github.com/gorilla/mux"

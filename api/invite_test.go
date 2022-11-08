@@ -11,7 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mdblp/crew/store"
-	"github.com/mdblp/go-common/clients/auth"
+	"github.com/mdblp/go-common/v2/clients/auth"
 	"github.com/mdblp/hydrophone/templates"
 	"github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/token"

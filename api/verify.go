@@ -5,7 +5,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/mdblp/go-common/clients/status"
+	"github.com/mdblp/go-common/v2/clients/status"
 )
 
 const (

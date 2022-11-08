@@ -13,9 +13,9 @@ import (
 	"github.com/gorilla/mux"
 
 	crewClient "github.com/mdblp/crew/client"
-	"github.com/mdblp/go-common/clients/auth"
-	"github.com/mdblp/go-common/clients/portal"
-	"github.com/mdblp/go-common/clients/version"
+	"github.com/mdblp/go-common/v2/clients/auth"
+	"github.com/mdblp/go-common/v2/clients/portal"
+	"github.com/mdblp/go-common/v2/clients/version"
 	"github.com/mdblp/hydrophone/clients"
 	"github.com/mdblp/hydrophone/localize"
 	"github.com/mdblp/hydrophone/models"
@@ -201,7 +201,7 @@ func TestGetStatus_StatusOk(t *testing.T) {
 
 	body, _ := ioutil.ReadAll(response.Body)
 
-	if string(body) != `{"status":{"code":200,"reason":"OK"},"version":"1.2.3+e0c73b95646559e9a3696d41711e918398d557fb"}` {
+	if string(body) != `{"status":{"code":200,"reason":"OK"},"version":"N/A+N/A"}` {
 		t.Fatalf("Message given [%s] expected [%s] ", string(body), "OK")
 	}
 
@@ -226,7 +226,7 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 
 	body, _ := ioutil.ReadAll(response.Body)
 
-	if string(body) != `{"status":{"code":500,"reason":"Session failure"},"version":"1.2.3+e0c73b95646559e9a3696d41711e918398d557fb"}` {
+	if string(body) != `{"status":{"code":500,"reason":"Session failure"},"version":"N/A+N/A"}` {
 		t.Fatalf("Message given [%s] expected [%s] ", string(body), "Session failure")
 	}
 }
