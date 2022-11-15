@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	orcaSchema "github.com/mdblp/orca/schema"
+	"github.com/mdblp/tide-whisperer-v2/v2/client/tidewhisperer"
+	tide "github.com/mdblp/tide-whisperer-v2/v2/schema"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/mdblp/go-common/v2/clients/portal"
 	"github.com/mdblp/hydrophone/templates"
 	. "github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/token"
@@ -19,9 +21,9 @@ import (
 
 type (
 	pinResetTest struct {
-		test          toTest
-		patientConfig *portal.PatientConfig
-		portalErr     bool // bools are false by default
+		test            toTest
+		patientSettings *tide.SettingsResult
+		portalErr       bool // bools are false by default
 	}
 )
 
@@ -89,9 +91,13 @@ func TestPinResetResponds(t *testing.T) {
 				token:      testing_token_uid1,
 				respCode:   500,
 			},
-			patientConfig: &portal.PatientConfig{
-				Device: &portal.PatientConfigDevice{
-					IMEI: "",
+			patientSettings: &tide.SettingsResult{
+				TimedCurrentSettings: orcaSchema.TimedCurrentSettings{
+					CurrentSettings: orcaSchema.CurrentSettings{
+						Device: &orcaSchema.Device{
+							Imei: "",
+						},
+					},
 				},
 			},
 		},
@@ -114,9 +120,13 @@ func TestPinResetResponds(t *testing.T) {
 				token:      testing_token_uid1,
 				respCode:   200,
 			},
-			patientConfig: &portal.PatientConfig{
-				Device: &portal.PatientConfigDevice{
-					IMEI: "123456789012345",
+			patientSettings: &tide.SettingsResult{
+				TimedCurrentSettings: orcaSchema.TimedCurrentSettings{
+					CurrentSettings: orcaSchema.CurrentSettings{
+						Device: &orcaSchema.Device{
+							Imei: "123456789012345",
+						},
+					},
 				},
 			},
 		},
@@ -131,6 +141,8 @@ func TestPinResetResponds(t *testing.T) {
 	beforeTests()
 
 	for idx, pinResetTest := range pinResetTests {
+		medicalDataMock = tidewhisperer.NewMock()
+
 		// don't run a test if it says to skip it
 		if pinResetTest.test.skip {
 			continue
@@ -152,23 +164,23 @@ func TestPinResetResponds(t *testing.T) {
 
 		// Mock an error from portal if need be
 		if pinResetTest.portalErr == true {
-			mockPortal.SetMockPatientConfig(pinResetTest.test.token, &portal.PatientConfig{}, errors.New("fatal error"))
+			medicalDataMock.On("GetSettings", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("fatal error"))
 		}
 
 		// Mock a fake Patient config in portal if need be
-		if pinResetTest.patientConfig != nil {
-			mockPortal.SetMockPatientConfig(pinResetTest.test.token, pinResetTest.patientConfig, nil)
+		if pinResetTest.patientSettings != nil {
+			medicalDataMock.On("GetSettings", mock.Anything, mock.Anything, mock.Anything).Return(pinResetTest.patientSettings, nil)
 		}
 		mockSeagull.On("GetCollections", testing_uid1, []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
 
 		//testing when there is nothing to return from the store
 		if pinResetTest.test.returnNone {
 			mockStoreEmpty.CounterLatestConfirmations = pinResetTest.test.counterLatestConfirmations
-			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, mockPortal, mockTemplates, logger)
+			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
 			mockStore.CounterLatestConfirmations = pinResetTest.test.counterLatestConfirmations
-			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, mockPortal, mockTemplates, logger)
+			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger)
 			hydrophone.SetHandlers("", testRtr)
 		}
 

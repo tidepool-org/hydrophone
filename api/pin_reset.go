@@ -1,6 +1,7 @@
 package api
 
 import (
+	tide "github.com/mdblp/tide-whisperer-v2/v2/schema"
 	"net/http"
 	"regexp"
 
@@ -8,7 +9,6 @@ import (
 
 	"github.com/mdblp/shoreline/schema"
 
-	"github.com/mdblp/go-common/v2/clients/portal"
 	"github.com/mdblp/go-common/v2/clients/status"
 	"github.com/mdblp/hydrophone/models"
 	otp "github.com/mdblp/hydrophone/utils/otp"
@@ -92,15 +92,14 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 	// send PIN Reset OTP to patient
 	// the secret for the TOTP is the concatenation of userID + IMEI + userID
 	// first get the IMEI of the patient's handset
-	var patientConfig *portal.PatientConfig
+	var patientConfig *tide.SettingsResult
 
-	// actual token value is needed to call portal client: we know it does exist and is a user one
-	if patientConfig, err = a.portal.GetPatientConfig(getSessionToken(req)); err != nil {
+	if patientConfig, err = a.medicalData.GetSettings(req.Context(), usrDetails.UserID, getSessionToken(req), false); err != nil {
 		a.sendError(res, http.StatusInternalServerError, statusPinResetErr, "error getting patient config: ", err.Error())
 		return
 	}
 
-	if patientConfig.Device.IMEI == "" {
+	if patientConfig.Device.Imei == "" {
 		a.sendError(res, http.StatusInternalServerError, statusPinResetErr, "error getting patient config")
 		return
 	}
@@ -113,7 +112,7 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 	var gen = otp.TOTPGenerator{
 		TimeStep:  timeStep,
 		StartTime: startTime,
-		Secret:    userID + patientConfig.Device.IMEI + userID,
+		Secret:    userID + patientConfig.Device.Imei + userID,
 		Digit:     digits,
 	}
 

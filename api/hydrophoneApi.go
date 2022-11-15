@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mdblp/tide-whisperer-v2/v2/client/tidewhisperer"
 	"net/http"
 	"net/url"
 	"runtime"
@@ -19,7 +20,6 @@ import (
 
 	crewClient "github.com/mdblp/crew/client"
 	"github.com/mdblp/go-common/v2/clients/auth"
-	"github.com/mdblp/go-common/v2/clients/portal"
 	"github.com/mdblp/go-common/v2/clients/status"
 	muxMiddleware "github.com/mdblp/go-routers/mux"
 	"github.com/mdblp/hydrophone/clients"
@@ -39,7 +39,7 @@ type (
 		perms          crewClient.Crew
 		auth           auth.ClientInterface
 		seagull        seagullClient.API
-		portal         portal.API
+		medicalData    tidewhisperer.ClientInterface
 		Config         Config
 		LanguageBundle *i18n.Bundle
 		logger         *log.Logger
@@ -133,7 +133,7 @@ func InitApi(
 	perms crewClient.Crew,
 	auth auth.ClientInterface,
 	seagull seagullClient.API,
-	portal portal.API,
+	medicalData tidewhisperer.ClientInterface,
 	templates models.Templates,
 	logger *log.Logger,
 ) *Api {
@@ -145,7 +145,7 @@ func InitApi(
 		perms:          perms,
 		auth:           auth,
 		seagull:        seagull,
-		portal:         portal,
+		medicalData:    medicalData,
 		templates:      templates,
 		LanguageBundle: nil,
 		logger:         logger,

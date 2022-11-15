@@ -29,7 +29,7 @@ func initTestingRouterNoPerms() *mux.Router {
 		mockPerms,
 		mockAuth,
 		mockSeagull,
-		mockPortal,
+		medicalDataMock,
 		mockTemplates,
 		logger,
 	)
@@ -444,7 +444,7 @@ func TestCaregiverInvite(t *testing.T) {
 			mockPerms,
 			mockAuth,
 			mockSeagull,
-			mockPortal,
+			medicalDataMock,
 			mockTemplates,
 			logger,
 		)
@@ -459,7 +459,7 @@ func TestCaregiverInvite(t *testing.T) {
 				mockPerms,
 				mockAuth,
 				mockSeagull,
-				mockPortal,
+				medicalDataMock,
 				mockTemplates,
 				logger,
 			)
@@ -474,7 +474,7 @@ func TestCaregiverInvite(t *testing.T) {
 				mockPerms,
 				mockAuth,
 				mockSeagull,
-				mockPortal,
+				medicalDataMock,
 				mockTemplates,
 				logger,
 			)

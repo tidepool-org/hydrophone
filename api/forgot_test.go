@@ -268,11 +268,11 @@ func TestForgotResponds(t *testing.T) {
 
 		if test.returnNone {
 			mockStoreEmpty.CounterLatestConfirmations = test.counterLatestConfirmations
-			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, mockPortal, mockTemplates, logger)
+			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
 			mockStore.CounterLatestConfirmations = test.counterLatestConfirmations
-			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, mockPortal, mockTemplates, logger)
+			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger)
 			hydrophone.SetHandlers("", testRtr)
 		}
 

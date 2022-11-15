@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	tideV2Client "github.com/mdblp/tide-whisperer-v2/v2/client/tidewhisperer"
 	"net/http"
 	"os"
 	"os/signal"
@@ -29,14 +30,13 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/mdblp/go-common/v2/clients/auth"
-	"github.com/mdblp/go-common/v2/clients/portal"
 	"github.com/mdblp/go-common/v2/clients/version"
 	seagullClient "github.com/mdblp/seagull/client"
 
 	"github.com/gorilla/mux"
 
 	crewClient "github.com/mdblp/crew/client"
-	common "github.com/mdblp/go-common"
+	"github.com/mdblp/go-common"
 	"github.com/mdblp/go-db/mongo"
 	"github.com/mdblp/hydrophone/api"
 	sc "github.com/mdblp/hydrophone/clients"
@@ -154,10 +154,8 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	portal, err := portal.NewClientFromEnv(httpClient)
-	if err != nil {
-		logger.Fatal(err)
-	}
+	tideV2Client := tideV2Client.NewTideWhispererClientFromEnv(httpClient)
+
 	/*
 	* hydrophone setup
 	 */
@@ -207,7 +205,7 @@ func main() {
 	}
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, permsClient, authClient, seagull, portal, emailTemplates, logger)
+	api := api.InitApi(config.Api, store, mail, shoreline, permsClient, authClient, seagull, tideV2Client, emailTemplates, logger)
 	api.SetHandlers("", rtr)
 
 	/*

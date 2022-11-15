@@ -364,7 +364,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		mockPerms,
 		mockAuth,
 		mockSeagull,
-		mockPortal,
+		medicalDataMock,
 		mockTemplates,
 		logger,
 	)
@@ -377,7 +377,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 			mockPerms,
 			mockAuth,
 			mockSeagull,
-			mockPortal,
+			medicalDataMock,
 			mockTemplates,
 			logger,
 		)
@@ -1140,7 +1140,7 @@ func TestAcceptTeamInvite(t *testing.T) {
 			mockPerms,
 			mockAuth,
 			mockSeagull,
-			mockPortal,
+			medicalDataMock,
 			mockTemplates,
 			logger,
 		)
@@ -1155,7 +1155,7 @@ func TestAcceptTeamInvite(t *testing.T) {
 				mockPerms,
 				mockAuth,
 				mockSeagull,
-				mockPortal,
+				medicalDataMock,
 				mockTemplates,
 				logger,
 			)
@@ -1170,7 +1170,7 @@ func TestAcceptTeamInvite(t *testing.T) {
 				mockPerms,
 				mockAuth,
 				mockSeagull,
-				mockPortal,
+				medicalDataMock,
 				mockTemplates,
 				logger,
 			)
@@ -1319,7 +1319,7 @@ func TestAcceptMonitoringInvite(t *testing.T) {
 			mockPerms,
 			mockAuth,
 			mockSeagull,
-			mockPortal,
+			medicalDataMock,
 			mockTemplates,
 			logger,
 		)
@@ -1334,7 +1334,7 @@ func TestAcceptMonitoringInvite(t *testing.T) {
 				mockPerms,
 				mockAuth,
 				mockSeagull,
-				mockPortal,
+				medicalDataMock,
 				mockTemplates,
 				logger,
 			)
@@ -1349,7 +1349,7 @@ func TestAcceptMonitoringInvite(t *testing.T) {
 				mockPerms,
 				mockAuth,
 				mockSeagull,
-				mockPortal,
+				medicalDataMock,
 				mockTemplates,
 				logger,
 			)
@@ -1511,7 +1511,7 @@ func TestDismissMonitoringInvite(t *testing.T) {
 			mockPerms,
 			mockAuth,
 			mockSeagull,
-			mockPortal,
+			medicalDataMock,
 			mockTemplates,
 			logger,
 		)
@@ -1526,7 +1526,7 @@ func TestDismissMonitoringInvite(t *testing.T) {
 				mockPerms,
 				mockAuth,
 				mockSeagull,
-				mockPortal,
+				medicalDataMock,
 				mockTemplates,
 				logger,
 			)
@@ -1541,7 +1541,7 @@ func TestDismissMonitoringInvite(t *testing.T) {
 				mockPerms,
 				mockAuth,
 				mockSeagull,
-				mockPortal,
+				medicalDataMock,
 				mockTemplates,
 				logger,
 			)
