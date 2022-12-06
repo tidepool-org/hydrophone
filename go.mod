@@ -4,12 +4,15 @@ go 1.16
 
 require (
 	github.com/aws/aws-sdk-go v1.34.22
+	github.com/deepmap/oapi-codegen v1.10.0
+	github.com/getkin/kin-openapi v0.94.0
 	github.com/gobuffalo/genny v0.1.1 // indirect
 	github.com/gobuffalo/gogen v0.1.1 // indirect
 	github.com/golang/mock v1.5.0
 	github.com/gorilla/mux v1.8.0
 	github.com/karrick/godirwalk v1.10.3 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/labstack/echo/v4 v4.7.2
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2 // indirect

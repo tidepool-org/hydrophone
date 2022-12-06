@@ -1,0 +1,572 @@
+openapi: 3.0.0
+info:
+  title: Confirmation API
+  version: '1.0'
+  description: |-
+    ![Tidepool Logo](https://github.com/tidepool-org/TidepoolApi/blob/master/assets/images/Tidepool_Logo_Light_Large.png)
+
+    The Tidepool API is an HTTP REST API used by Tidepool clients use to communicate with the Tidepool Platform.
+
+    For more information, see the [Getting Started](../docs/quick-start.md) section.
+  termsOfService: 'https://developer.tidepool.org/terms-of-use/'
+  contact:
+    name: API Support
+    url: 'https://support.tidepool.org/'
+    email: support@tidepool.org
+  license:
+    name: BSD-2-Clause
+    url: 'https://github.com/tidepool-org/hydrophone/blob/master/LICENSE'
+  x-logo:
+    url: 'https://github.com/tidepool-org/TidepoolApi/blob/master/assets/images/Tidepool_Logo_Light_Large.png'
+    altText: Tidepool Logo
+  x-tidepool-service: 'https://github.com/tidepool-org/hydrophone'
+servers:
+  - url: 'http://localhost:8080'
+    description: local development
+  - url: 'https://dev1.dev.tidepool.org'
+    description: dev1
+  - url: 'https://qa1.development.tidepool.org'
+    description: qa1
+  - url: 'https://qa2.development.tidepool.org'
+    description: qa2
+  - url: 'https://external.integration.tidepool.org'
+    description: integration
+  - url: 'https://api.tidepool.org'
+    description: production
+tags:
+  - name: Confirm
+    description: 'Manage confirmations for account creation, sharing invites, etc.'
+paths:
+  '/confirm/send/signup/{userId}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    post:
+      operationId: SendAccountSignupConfirmation
+      summary: Send Account Signup Confirmation
+      description: Sends account signup confirmation email.
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationSuccess'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '401':
+          $ref: '#/components/responses/ConfirmationError'
+        '403':
+          $ref: '#/components/responses/ConfirmationError'
+        '500':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+      security:
+        - sessionToken: []
+  '/confirm/resend/signup/{email}':
+    parameters:
+      - $ref: '#/components/parameters/email'
+    post:
+      operationId: ResendAccountSignup
+      summary: Resend account signup confirmation email
+      description: 'If a user didn''t receive the confirmation email and logs in, they''re directed to the confirmation-required page which can offer to resend the confirmation email.'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationSuccess'
+        '404':
+          $ref: '#/components/responses/ConfirmationError'
+        '500':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+  '/confirm/accept/signup/{key}':
+    parameters:
+      - $ref: '#/components/parameters/key'
+    put:
+      operationId: ConfirmAccountSignup
+      summary: Accept Account Signup
+      description: Marks the account as having been verified. This would be PUT by the web page at the link in the signup email.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Acceptance'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationSuccess'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '409':
+          $ref: '#/components/responses/ConfirmationError'
+        '500':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+  '/confirm/dismiss/signup/{userId}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    put:
+      operationId: DismissAccountSignup
+      summary: Dismiss Account Signup
+      description: 'In the event that someone uses the wrong email address, the receiver could explicitly dismiss a signup'
+      requestBody:
+        $ref: '#/components/requestBodies/ConfirmationLookup'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationSuccess'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '404':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+  '/confirm/signup/{userId}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    get:
+      operationId: GetAccountSignupConfirmation
+      summary: Get Account Signup Confirmation
+      description: This endpoint is provided for completeness. We don't expect to need it in the actual user flow.
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationList'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '401':
+          $ref: '#/components/responses/ConfirmationError'
+        '404':
+          $ref: '#/components/responses/ConfirmationError'
+        '500':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+      security:
+        - sessionToken: []
+    put:
+      operationId: CancelAccountSignupConfirmation
+      summary: Cancel Account Signup
+      description: Cancels the account signup.
+      requestBody:
+        $ref: '#/components/requestBodies/ConfirmationLookup'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationSuccess'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '401':
+          $ref: '#/components/responses/ConfirmationError'
+        '403':
+          $ref: '#/components/responses/ConfirmationError'
+        '404':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+  '/confirm/forgot/{email}':
+    parameters:
+      - $ref: '#/components/parameters/email'
+    post:
+      operationId: SendPasswordReset
+      summary: Send Password Reset Email
+      description: |-
+        If the request is correctly formed, always returns a 200, even if the email address was not found (this way it can't be used to validate email addresses).
+        If the email address is found in the Tidepool system, this will:
+          - Create a confirm record and a random key
+          - Send an email with a link containing the key
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationSuccess'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+  /confirm/accept/forgot:
+    put:
+      operationId: AcceptPasswordChange
+      summary: Accept password change
+      description: |-
+        Accept the password change
+        This endpoint will be invoked by the lost password screen with the key that was included in the URL of the lost password screen.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Password'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationError'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '401':
+          $ref: '#/components/responses/ConfirmationError'
+        '404':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+  '/confirm/send/invite/{userId}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    post:
+      operationId: SendCareTeamInvite
+      summary: Send Invitation to Join Care Team
+      description: Sends an invitation to join the care team of the user identified by `userId`.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: Care Team Invitation
+              type: object
+              properties:
+                email:
+                  $ref: '#/components/schemas/EmailAddress'
+                permissions:
+                  type: object
+                  properties:
+                    note:
+                      type: object
+                    upload:
+                      type: object
+                    view:
+                      type: object
+                  example:
+                    note: {}
+                    upload: {}
+                    view: {}
+              required:
+                - email
+                - permissions
+      responses:
+        '200':
+          $ref: '#/components/responses/Confirmation'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '401':
+          $ref: '#/components/responses/ConfirmationError'
+        '500':
+          $ref: '#/components/responses/ConfirmationError'
+      security:
+        - sessionToken: []
+      tags:
+        - Confirm
+  '/confirm/accept/invite/{userId}/{invitedBy}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+      - $ref: '#/components/parameters/invitedByUser'
+    put:
+      operationId: AcceptCareTeamInvite
+      summary: Accept Invitation to Join Care Team
+      description: Accepts the invitation to join a care team.
+      requestBody:
+        $ref: '#/components/requestBodies/ConfirmationLookup'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationSuccess'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '403':
+          $ref: '#/components/responses/ConfirmationError'
+        '404':
+          $ref: '#/components/responses/ConfirmationError'
+        '500':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+  '/confirm/invite/{userId}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    get:
+      operationId: GetSentInvitations
+      summary: Get Pending Care Team Invitations
+      description: |-
+        Returns the still-pending invitations for an account you own or are an admin of.
+        These are the invitations you have sent that have not been accepted. There is no way to tell if an invitation has been ignored.
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationList'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '401':
+          $ref: '#/components/responses/ConfirmationError'
+        '500':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+      security:
+        - sessionToken: []
+  '/confirm/invitations/{userId}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    get:
+      operationId: GetReceivedInvitations
+      summary: Get Received Care Team Invitations
+      description: Get list of received invitations for logged in user. These are invitations that have been sent to this user but not yet acted upon.
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationList'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '401':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+      security:
+        - sessionToken: []
+  '/confirm/dismiss/invite/{userId}/{invitedBy}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+      - $ref: '#/components/parameters/invitedByUser'
+    put:
+      operationId: DismissInvite
+      summary: Dismiss Care Team Invitation
+      description: Declines the invitation to join a care team.
+      requestBody:
+        $ref: '#/components/requestBodies/ConfirmationLookup'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationSuccess'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '401':
+          $ref: '#/components/responses/ConfirmationError'
+        '404':
+          $ref: '#/components/responses/ConfirmationError'
+        '500':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+      security:
+        - sessionToken: []
+  '/confirm/{userId}/invited/{invitedBy}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+      - $ref: '#/components/parameters/invitedByEmail'
+    put:
+      operationId: CancelInvite
+      summary: Cancel Care Team Invitation
+      description: Cancels an invitation that has been sent to an email address.
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfirmationSuccess'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '401':
+          $ref: '#/components/responses/ConfirmationError'
+        '500':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+      security:
+        - sessionToken: []
+components:
+  schemas:
+    Acceptance:
+      title: Confirmation Acceptance
+      type: object
+      properties:
+        password:
+          $ref: '#/components/schemas/Password'
+        birthday:
+          $ref: '#/components/schemas/Birthday'
+      required:
+        - password
+        - birthday
+    TidepoolUserId:
+      type: string
+      title: Tidepool User ID
+      pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
+      description: 'String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))'
+      readOnly: true
+      x-go-type: string
+    EmailAddress:
+      title: Email Address
+      description: 'An email address, as specified by [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322).'
+      type: string
+      format: email
+      minLength: 6
+      example: example@tidepool.org
+      x-go-type: string
+    Key:
+      title: Confirmation key that uniquely identifies each confirmation
+      type: string
+      minLength: 32
+      maxLength: 32
+      example: Sds2PHMALZrmt++JyD5mIjLkZruJldiM
+    Password:
+      title: Password
+      type: string
+      format: password
+      description: Password
+      minLength: 8
+      maxLength: 72
+      pattern: '^\S{8,72}$'
+      example: correctbatteryhorsestaple
+      x-go-type: string
+    Birthday:
+      title: Birthday
+      type: string
+      format: date
+      example: '2012-08-30'
+      x-go-type: string
+    Confirmation:
+      title: Confirmation
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/Key'
+        type:
+          title: Confirmation Type
+          type: string
+          enum:
+            - password_reset
+            - careteam_invitation
+            - signup_confirmation
+            - no_account
+        email:
+          $ref: '#/components/schemas/EmailAddress'
+        creatorId:
+          $ref: '#/components/schemas/TidepoolUserId'
+        created:
+          title: Date/Time
+          description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
+          type: string
+          format: date-time
+          example: '2017-02-06T02:37:46Z'
+          x-go-type: string
+        modified:
+          title: Date/Time
+          description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
+          type: string
+          format: date-time
+          example: '2017-02-06T02:37:46Z'
+          x-go-type: string
+        creator:
+          title: Creator
+          type: object
+          properties:
+            userid:
+              $ref: '#/components/schemas/TidepoolUserId'
+            profile:
+              title: Creator user profile
+              type: object
+              properties:
+                fullName:
+                  type: string
+                patient:
+                  title: Patient User Profile
+                  type: object
+                  properties:
+                    birthday:
+                      $ref: '#/components/schemas/Birthday'
+                    diagnosisDate:
+                      title: Diagnosis Date
+                      type: string
+                      format: date
+                      pattern: '^\d{4}-\d{2}-\d{2}$'
+                      example: '2013-05-09'
+                      x-go-type: string
+                    isOtherPerson:
+                      type: boolean
+                      example: false
+                    fullName:
+                      type: string
+                      example: James Jellyfish
+              required:
+                - fullName
+                - patient
+          required:
+            - userid
+            - profile
+        context:
+          type: string
+      required:
+        - key
+        - type
+        - email
+        - creatorId
+        - created
+  parameters:
+    userId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TidepoolUserId'
+    email:
+      description: Confirmation Email
+      name: email
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/EmailAddress'
+    key:
+      description: Confirmation Key
+      name: key
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Key'
+    invitedByUser:
+      description: Invited by User ID
+      name: invitedBy
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TidepoolUserId'
+    invitedByEmail:
+      description: Invited by Email Address
+      name: invitedBy
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/EmailAddress'
+  securitySchemes:
+    sessionToken:
+      description: Tidepool Session Token
+      type: apiKey
+      name: X-Tidepool-Session-Token
+      in: header
+  requestBodies:
+    ConfirmationLookup:
+      content:
+        application/json:
+          schema:
+            title: Confirmation Lookup
+            type: object
+            properties:
+              key:
+                $ref: '#/components/schemas/Key'
+            required:
+              - key
+  responses:
+    Confirmation:
+      description: Single confirmation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Confirmation'
+    ConfirmationList:
+      description: List of confirmations
+      content:
+        application/json:
+          schema:
+            title: Confirmation list
+            type: array
+            items:
+              $ref: '#/components/schemas/Confirmation'
+    ConfirmationSuccess:
+      description: Success
+    ConfirmationError:
+      description: Error
+      content:
+        application/json:
+          schema:
+            type: object
+            title: Confirmation Error
+            description: Error response.
+            required:
+              - code
+              - reason
+            properties:
+              code:
+                type: integer
+                format: int32
+                minimum: 100
+              error:
+                type: integer
+              reason:
+                type: string
