@@ -6,3 +6,6 @@ generate:
 	oapi-codegen -package=api -generate=types spec/confirm.v1.yaml > client/types.go
 	oapi-codegen -package=api -generate=client spec/confirm.v1.yaml > client/client.go
 	cd client && go generate ./...
+
+test:
+	GOWORK=off ./test.sh
