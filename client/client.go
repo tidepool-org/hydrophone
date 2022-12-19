@@ -138,6 +138,9 @@ type ClientInterface interface {
 	// GetAccountSignupConfirmation request
 	GetAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UpsertAccountSignupConfirmation request
+	UpsertAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CancelAccountSignupConfirmation request with any body
 	CancelAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -353,6 +356,18 @@ func (c *Client) SendAccountSignupConfirmation(ctx context.Context, userId UserI
 
 func (c *Client) GetAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetAccountSignupConfirmationRequest(c.Server, userId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpsertAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertAccountSignupConfirmationRequest(c.Server, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -892,6 +907,40 @@ func NewGetAccountSignupConfirmationRequest(server string, userId UserId) (*http
 	return req, nil
 }
 
+// NewUpsertAccountSignupConfirmationRequest generates requests for UpsertAccountSignupConfirmation
+func NewUpsertAccountSignupConfirmationRequest(server string, userId UserId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "userId", runtime.ParamLocationPath, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/confirm/signup/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewCancelAccountSignupConfirmationRequest calls the generic CancelAccountSignupConfirmation builder with application/json body
 func NewCancelAccountSignupConfirmationRequest(server string, userId UserId, body CancelAccountSignupConfirmationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -1070,6 +1119,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetAccountSignupConfirmation request
 	GetAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*GetAccountSignupConfirmationResponse, error)
+
+	// UpsertAccountSignupConfirmation request
+	UpsertAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error)
 
 	// CancelAccountSignupConfirmation request with any body
 	CancelAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelAccountSignupConfirmationResponse, error)
@@ -1477,7 +1529,7 @@ func (r SendAccountSignupConfirmationResponse) StatusCode() int {
 type GetAccountSignupConfirmationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]Confirmation
+	JSON200      *Confirmation
 	JSON400      *struct {
 		Code   int32  `json:"code"`
 		Error  *int   `json:"error,omitempty"`
@@ -1510,6 +1562,48 @@ func (r GetAccountSignupConfirmationResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetAccountSignupConfirmationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpsertAccountSignupConfirmationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Confirmation
+	JSON400      *struct {
+		Code   int32  `json:"code"`
+		Error  *int   `json:"error,omitempty"`
+		Reason string `json:"reason"`
+	}
+	JSON403 *struct {
+		Code   int32  `json:"code"`
+		Error  *int   `json:"error,omitempty"`
+		Reason string `json:"reason"`
+	}
+	JSON404 *struct {
+		Code   int32  `json:"code"`
+		Error  *int   `json:"error,omitempty"`
+		Reason string `json:"reason"`
+	}
+	JSON500 *struct {
+		Code   int32  `json:"code"`
+		Error  *int   `json:"error,omitempty"`
+		Reason string `json:"reason"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r UpsertAccountSignupConfirmationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpsertAccountSignupConfirmationResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1747,6 +1841,15 @@ func (c *ClientWithResponses) GetAccountSignupConfirmationWithResponse(ctx conte
 		return nil, err
 	}
 	return ParseGetAccountSignupConfirmationResponse(rsp)
+}
+
+// UpsertAccountSignupConfirmationWithResponse request returning *UpsertAccountSignupConfirmationResponse
+func (c *ClientWithResponses) UpsertAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error) {
+	rsp, err := c.UpsertAccountSignupConfirmation(ctx, userId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpsertAccountSignupConfirmationResponse(rsp)
 }
 
 // CancelAccountSignupConfirmationWithBodyWithResponse request with arbitrary body returning *CancelAccountSignupConfirmationResponse
@@ -2372,7 +2475,7 @@ func ParseGetAccountSignupConfirmationResponse(rsp *http.Response) (*GetAccountS
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []Confirmation
+		var dest Confirmation
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2399,6 +2502,76 @@ func ParseGetAccountSignupConfirmationResponse(rsp *http.Response) (*GetAccountS
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest struct {
+			Code   int32  `json:"code"`
+			Error  *int   `json:"error,omitempty"`
+			Reason string `json:"reason"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest struct {
+			Code   int32  `json:"code"`
+			Error  *int   `json:"error,omitempty"`
+			Reason string `json:"reason"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpsertAccountSignupConfirmationResponse parses an HTTP response from a UpsertAccountSignupConfirmationWithResponse call
+func ParseUpsertAccountSignupConfirmationResponse(rsp *http.Response) (*UpsertAccountSignupConfirmationResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpsertAccountSignupConfirmationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Confirmation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest struct {
+			Code   int32  `json:"code"`
+			Error  *int   `json:"error,omitempty"`
+			Reason string `json:"reason"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest struct {
+			Code   int32  `json:"code"`
+			Error  *int   `json:"error,omitempty"`
+			Reason string `json:"reason"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest struct {

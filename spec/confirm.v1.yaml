@@ -122,13 +122,32 @@ paths:
     get:
       operationId: GetAccountSignupConfirmation
       summary: Get Account Signup Confirmation
-      description: This endpoint is provided for completeness. We don't expect to need it in the actual user flow.
+      description: Fetch latest account signup confirmation for the provided userId
       responses:
         '200':
-          $ref: '#/components/responses/ConfirmationList'
+          $ref: '#/components/responses/Confirmation'
         '400':
           $ref: '#/components/responses/ConfirmationError'
         '401':
+          $ref: '#/components/responses/ConfirmationError'
+        '404':
+          $ref: '#/components/responses/ConfirmationError'
+        '500':
+          $ref: '#/components/responses/ConfirmationError'
+      tags:
+        - Confirm
+      security:
+        - sessionToken: []
+    post:
+      operationId: UpsertAccountSignupConfirmation
+      summary: Upsert Account Signup Confirmation
+      description: Add or refresh an account signup confirmation for the provided userId
+      responses:
+        '200':
+          $ref: '#/components/responses/Confirmation'
+        '400':
+          $ref: '#/components/responses/ConfirmationError'
+        '403':
           $ref: '#/components/responses/ConfirmationError'
         '404':
           $ref: '#/components/responses/ConfirmationError'

@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	clinicsClient "github.com/tidepool-org/clinic/client"
-	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"reflect"
 	"runtime"
 	"strings"
+
+	clinicsClient "github.com/tidepool-org/clinic/client"
+	"go.uber.org/zap"
 
 	"github.com/gorilla/mux"
 	"github.com/kelseyhightower/envconfig"
@@ -38,10 +39,10 @@ type (
 		Config     Config
 	}
 	Config struct {
-		ServerSecret         string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
-		WebUrl               string `split_words:"true" required:"true"`
-		AssetUrl             string `split_words:"true" required:"true"`
-		Protocol             string `default:"http"`
+		ServerSecret string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
+		WebUrl       string `split_words:"true" required:"true"`
+		AssetUrl     string `split_words:"true" required:"true"`
+		Protocol     string `default:"http"`
 	}
 
 	// this just makes it easier to bind a handler for the Handle function
@@ -119,7 +120,7 @@ func routerProvider(api *Api) *mux.Router {
 	return rtr
 }
 
-//RouterModule build a router
+// RouterModule build a router
 var RouterModule = fx.Options(fx.Provide(routerProvider, apiConfigProvider))
 
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
@@ -158,7 +159,6 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
 	rtr.Handle("/resend/invite/{inviteId}", varsHandler(a.ResendInvite)).Methods("PATCH")
 
-
 	// PUT /confirm/accept/signup/:confirmationID
 	// PUT /confirm/accept/forgot/
 	// PUT /confirm/accept/invite/:userid/:invited_by
@@ -194,6 +194,9 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	dismiss := rtr.PathPrefix("/dismiss").Subrouter()
 	dismiss.Handle("/invite/{userid}/{invitedby}", varsHandler(a.DismissInvite)).Methods("PUT")
 	dismiss.Handle("/signup/{userid}", varsHandler(a.dismissSignUp)).Methods("PUT")
+
+	// POST /confirm/signup/:userid
+	c.Handle("/signup/{userid}", varsHandler(a.createSignUp)).Methods("POST")
 
 	// PUT /confirm/:userid/invited/:invited_address
 	// PUT /confirm/signup/:userid
@@ -253,8 +256,8 @@ func (a *Api) IsAlive(res http.ResponseWriter, req *http.Request) {
 	res.Write([]byte(STATUS_OK))
 }
 
-//Save this confirmation or
-//write an error if it all goes wrong
+// Save this confirmation or
+// write an error if it all goes wrong
 func (a *Api) addOrUpdateConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) bool {
 	if err := a.Store.UpsertConfirmation(ctx, conf); err != nil {
 		log.Printf("Error saving the confirmation [%v]", err)
@@ -265,8 +268,8 @@ func (a *Api) addOrUpdateConfirmation(ctx context.Context, conf *models.Confirma
 	return true
 }
 
-//Find this confirmation
-//write error if it fails
+// Find this confirmation
+// write error if it fails
 func (a *Api) findExistingConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
 	if found, err := a.Store.FindConfirmation(ctx, conf); err != nil {
 		log.Printf("findExistingConfirmation: [%v]", err)
@@ -277,8 +280,8 @@ func (a *Api) findExistingConfirmation(ctx context.Context, conf *models.Confirm
 	}
 }
 
-//Find this confirmation
-//write error if it fails
+// Find this confirmation
+// write error if it fails
 func (a *Api) addProfile(conf *models.Confirmation) error {
 	if conf.CreatorId != "" {
 		if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &conf.Creator.Profile); err != nil {
@@ -291,8 +294,8 @@ func (a *Api) addProfile(conf *models.Confirmation) error {
 	return nil
 }
 
-//Find these confirmations
-//write error if fails or write no-content if it doesn't exist
+// Find these confirmations
+// write error if fails or write no-content if it doesn't exist
 func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
 	if err != nil {
 		log.Println("Error finding confirmations ", err)
@@ -315,7 +318,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 	}
 }
 
-//Generate a notification from the given confirmation,write the error if it fails
+// Generate a notification from the given confirmation,write the error if it fails
 func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}, recipients ...string) bool {
 	templateName := conf.TemplateName
 	if templateName == models.TemplateNameUndefined {
@@ -370,7 +373,7 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 	return true
 }
 
-//find and validate the token
+// find and validate the token
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
 		td := a.sl.CheckToken(token)
@@ -389,22 +392,22 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 	return nil
 }
 
-//send metric
+// send metric
 func (a *Api) logMetric(name string, req *http.Request) {
 	token := req.Header.Get(TP_SESSION_TOKEN)
 	emptyParams := make(map[string]string)
 	a.metrics.PostThisUser(name, token, emptyParams)
 }
 
-//send metric
+// send metric
 func (a *Api) logMetricAsServer(name string) {
 	token := a.sl.TokenProvide()
 	emptyParams := make(map[string]string)
 	a.metrics.PostServer(name, token, emptyParams)
 }
 
-//Find existing user based on the given indentifier
-//The indentifier could be either an id or email address
+// Find existing user based on the given indentifier
+// The indentifier could be either an id or email address
 func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
 	if usr, err := a.sl.GetUser(indentifier, token); err != nil {
 		log.Printf("Error [%s] trying to get existing users details", err.Error())
@@ -414,7 +417,7 @@ func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
 	}
 }
 
-//Makesure we have set the userId on these confirmations
+// Makesure we have set the userId on these confirmations
 func (a *Api) ensureIdSet(ctx context.Context, userId string, confirmations []*models.Confirmation) {
 
 	if len(confirmations) < 1 {
