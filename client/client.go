@@ -132,8 +132,10 @@ type ClientInterface interface {
 
 	SendCareTeamInvite(ctx context.Context, userId UserId, body SendCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SendAccountSignupConfirmation request
-	SendAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SendAccountSignupConfirmation request with any body
+	SendAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SendAccountSignupConfirmation(ctx context.Context, userId UserId, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAccountSignupConfirmation request
 	GetAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -342,8 +344,20 @@ func (c *Client) SendCareTeamInvite(ctx context.Context, userId UserId, body Sen
 	return c.Client.Do(req)
 }
 
-func (c *Client) SendAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSendAccountSignupConfirmationRequest(c.Server, userId)
+func (c *Client) SendAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSendAccountSignupConfirmationRequestWithBody(c.Server, userId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SendAccountSignupConfirmation(ctx context.Context, userId UserId, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSendAccountSignupConfirmationRequest(c.Server, userId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -839,8 +853,19 @@ func NewSendCareTeamInviteRequestWithBody(server string, userId UserId, contentT
 	return req, nil
 }
 
-// NewSendAccountSignupConfirmationRequest generates requests for SendAccountSignupConfirmation
-func NewSendAccountSignupConfirmationRequest(server string, userId UserId) (*http.Request, error) {
+// NewSendAccountSignupConfirmationRequest calls the generic SendAccountSignupConfirmation builder with application/json body
+func NewSendAccountSignupConfirmationRequest(server string, userId UserId, body SendAccountSignupConfirmationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSendAccountSignupConfirmationRequestWithBody(server, userId, "application/json", bodyReader)
+}
+
+// NewSendAccountSignupConfirmationRequestWithBody generates requests for SendAccountSignupConfirmation with any type of body
+func NewSendAccountSignupConfirmationRequestWithBody(server string, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -865,10 +890,12 @@ func NewSendAccountSignupConfirmationRequest(server string, userId UserId) (*htt
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1114,8 +1141,10 @@ type ClientWithResponsesInterface interface {
 
 	SendCareTeamInviteWithResponse(ctx context.Context, userId UserId, body SendCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*SendCareTeamInviteResponse, error)
 
-	// SendAccountSignupConfirmation request
-	SendAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error)
+	// SendAccountSignupConfirmation request with any body
+	SendAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error)
+
+	SendAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error)
 
 	// GetAccountSignupConfirmation request
 	GetAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*GetAccountSignupConfirmationResponse, error)
@@ -1825,9 +1854,17 @@ func (c *ClientWithResponses) SendCareTeamInviteWithResponse(ctx context.Context
 	return ParseSendCareTeamInviteResponse(rsp)
 }
 
-// SendAccountSignupConfirmationWithResponse request returning *SendAccountSignupConfirmationResponse
-func (c *ClientWithResponses) SendAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error) {
-	rsp, err := c.SendAccountSignupConfirmation(ctx, userId, reqEditors...)
+// SendAccountSignupConfirmationWithBodyWithResponse request with arbitrary body returning *SendAccountSignupConfirmationResponse
+func (c *ClientWithResponses) SendAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error) {
+	rsp, err := c.SendAccountSignupConfirmationWithBody(ctx, userId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSendAccountSignupConfirmationResponse(rsp)
+}
+
+func (c *ClientWithResponses) SendAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error) {
+	rsp, err := c.SendAccountSignupConfirmation(ctx, userId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

@@ -44,6 +44,8 @@ paths:
       operationId: SendAccountSignupConfirmation
       summary: Send Account Signup Confirmation
       description: Sends account signup confirmation email.
+      requestBody:
+        $ref: '#/components/requestBodies/ConfirmationUpsert'
       responses:
         '200':
           $ref: '#/components/responses/ConfirmationSuccess'
@@ -391,6 +393,14 @@ components:
       description: 'String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))'
       readOnly: true
       x-go-type: string
+    ClinicId:
+      title: Clinic ID
+      description: Clinic identifier.
+      type: string
+      minLength: 24
+      maxLength: 24
+      pattern: '^[a-f0-9]{24}$'
+      readOnly: true
     EmailAddress:
       title: Email Address
       description: 'An email address, as specified by [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322).'
@@ -549,6 +559,17 @@ components:
                 $ref: '#/components/schemas/Key'
             required:
               - key
+    ConfirmationUpsert:
+      content:
+        application/json:
+          schema:
+            title: Confirmation Lookup
+            type: object
+            properties:
+              clinicId:
+                $ref: '#/components/schemas/ClinicId'
+              invitedBy:
+                $ref: '#/components/schemas/TidepoolUserId'
   responses:
     Confirmation:
       description: Single confirmation
