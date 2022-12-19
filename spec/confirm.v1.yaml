@@ -144,6 +144,8 @@ paths:
       operationId: UpsertAccountSignupConfirmation
       summary: Upsert Account Signup Confirmation
       description: Add or refresh an account signup confirmation for the provided userId
+      requestBody:
+        $ref: '#/components/requestBodies/ConfirmationUpsert'
       responses:
         '200':
           $ref: '#/components/responses/Confirmation'

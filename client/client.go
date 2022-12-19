@@ -140,8 +140,10 @@ type ClientInterface interface {
 	// GetAccountSignupConfirmation request
 	GetAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// UpsertAccountSignupConfirmation request
-	UpsertAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// UpsertAccountSignupConfirmation request with any body
+	UpsertAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpsertAccountSignupConfirmation(ctx context.Context, userId UserId, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CancelAccountSignupConfirmation request with any body
 	CancelAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -380,8 +382,20 @@ func (c *Client) GetAccountSignupConfirmation(ctx context.Context, userId UserId
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpsertAccountSignupConfirmationRequest(c.Server, userId)
+func (c *Client) UpsertAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertAccountSignupConfirmationRequestWithBody(c.Server, userId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpsertAccountSignupConfirmation(ctx context.Context, userId UserId, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertAccountSignupConfirmationRequest(c.Server, userId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -934,8 +948,19 @@ func NewGetAccountSignupConfirmationRequest(server string, userId UserId) (*http
 	return req, nil
 }
 
-// NewUpsertAccountSignupConfirmationRequest generates requests for UpsertAccountSignupConfirmation
-func NewUpsertAccountSignupConfirmationRequest(server string, userId UserId) (*http.Request, error) {
+// NewUpsertAccountSignupConfirmationRequest calls the generic UpsertAccountSignupConfirmation builder with application/json body
+func NewUpsertAccountSignupConfirmationRequest(server string, userId UserId, body UpsertAccountSignupConfirmationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpsertAccountSignupConfirmationRequestWithBody(server, userId, "application/json", bodyReader)
+}
+
+// NewUpsertAccountSignupConfirmationRequestWithBody generates requests for UpsertAccountSignupConfirmation with any type of body
+func NewUpsertAccountSignupConfirmationRequestWithBody(server string, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -960,10 +985,12 @@ func NewUpsertAccountSignupConfirmationRequest(server string, userId UserId) (*h
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1149,8 +1176,10 @@ type ClientWithResponsesInterface interface {
 	// GetAccountSignupConfirmation request
 	GetAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*GetAccountSignupConfirmationResponse, error)
 
-	// UpsertAccountSignupConfirmation request
-	UpsertAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error)
+	// UpsertAccountSignupConfirmation request with any body
+	UpsertAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error)
+
+	UpsertAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error)
 
 	// CancelAccountSignupConfirmation request with any body
 	CancelAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelAccountSignupConfirmationResponse, error)
@@ -1880,9 +1909,17 @@ func (c *ClientWithResponses) GetAccountSignupConfirmationWithResponse(ctx conte
 	return ParseGetAccountSignupConfirmationResponse(rsp)
 }
 
-// UpsertAccountSignupConfirmationWithResponse request returning *UpsertAccountSignupConfirmationResponse
-func (c *ClientWithResponses) UpsertAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error) {
-	rsp, err := c.UpsertAccountSignupConfirmation(ctx, userId, reqEditors...)
+// UpsertAccountSignupConfirmationWithBodyWithResponse request with arbitrary body returning *UpsertAccountSignupConfirmationResponse
+func (c *ClientWithResponses) UpsertAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error) {
+	rsp, err := c.UpsertAccountSignupConfirmationWithBody(ctx, userId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpsertAccountSignupConfirmationResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpsertAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error) {
+	rsp, err := c.UpsertAccountSignupConfirmation(ctx, userId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

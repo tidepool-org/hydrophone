@@ -157,6 +157,9 @@ type SendCareTeamInviteJSONRequestBody SendCareTeamInviteJSONBody
 // SendAccountSignupConfirmationJSONRequestBody defines body for SendAccountSignupConfirmation for application/json ContentType.
 type SendAccountSignupConfirmationJSONRequestBody ConfirmationUpsert
 
+// UpsertAccountSignupConfirmationJSONRequestBody defines body for UpsertAccountSignupConfirmation for application/json ContentType.
+type UpsertAccountSignupConfirmationJSONRequestBody ConfirmationUpsert
+
 // CancelAccountSignupConfirmationJSONRequestBody defines body for CancelAccountSignupConfirmation for application/json ContentType.
 type CancelAccountSignupConfirmationJSONRequestBody ConfirmationLookup
 
