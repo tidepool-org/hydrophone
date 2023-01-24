@@ -22,5 +22,5 @@ services:
 
 script:
   - ./build.sh
-  - ./test.sh
+  - make test
   - ./artifact.sh
