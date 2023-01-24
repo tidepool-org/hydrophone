@@ -415,7 +415,7 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 
 		if usrDetails, err := a.sl.GetUser(userId, a.sl.TokenProvide()); err != nil {
 			log.Printf("upsertSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
-			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
+			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusNotFound, STATUS_ERR_FINDING_USER)}, http.StatusNotFound)
 			return nil
 		} else if len(usrDetails.Emails) == 0 {
 			// Delete existing any existing invites if the email address is empty
