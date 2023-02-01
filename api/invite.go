@@ -235,7 +235,6 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 	}
 }
 
-//Accept the an invite to access patient data
 //Accept an invite to access patient data
 //
 // http.StatusOK when accepted
@@ -644,7 +643,7 @@ func (a *Api) CancelAllInvites(res http.ResponseWriter, req *http.Request, vars 
 	res.WriteHeader(http.StatusOK)
 }
 
-// @Summary Send a invite to join a patient's team
+// @Summary Send an invite to join a patient's team
 // @Description  Send a invite to new or existing users to join the patient's team
 // @ID hydrophone-api-SendInvite
 // @Accept  json

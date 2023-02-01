@@ -131,7 +131,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		} else {
 			a.logAudit(req, "reset confirmation failed to be sent")
 			log.Print("Something happened generating a passwordReset email")
-			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
