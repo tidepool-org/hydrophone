@@ -1,9 +1,11 @@
 # github.com/Shopify/sarama v1.27.0
+## explicit; go 1.13
 github.com/Shopify/sarama
 # github.com/avast/retry-go v3.0.0+incompatible
+## explicit
 github.com/avast/retry-go
 # github.com/aws/aws-sdk-go v1.34.22
-## explicit
+## explicit; go 1.11
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/awserr
 github.com/aws/aws-sdk-go/aws/awsutil
@@ -41,8 +43,10 @@ github.com/aws/aws-sdk-go/service/ses
 github.com/aws/aws-sdk-go/service/sts
 github.com/aws/aws-sdk-go/service/sts/stsiface
 # github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.2.0
+## explicit; go 1.13
 github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2
 # github.com/cloudevents/sdk-go/v2 v2.2.0
+## explicit; go 1.13
 github.com/cloudevents/sdk-go/v2
 github.com/cloudevents/sdk-go/v2/binding
 github.com/cloudevents/sdk-go/v2/binding/format
@@ -60,46 +64,58 @@ github.com/cloudevents/sdk-go/v2/protocol
 github.com/cloudevents/sdk-go/v2/protocol/http
 github.com/cloudevents/sdk-go/v2/types
 # github.com/davecgh/go-spew v1.1.1
+## explicit
 github.com/davecgh/go-spew/spew
 # github.com/deepmap/oapi-codegen v1.10.0
-## explicit
+## explicit; go 1.16
 github.com/deepmap/oapi-codegen/pkg/runtime
 github.com/deepmap/oapi-codegen/pkg/types
 # github.com/eapache/go-resiliency v1.2.0
+## explicit
 github.com/eapache/go-resiliency/breaker
 # github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21
+## explicit
 github.com/eapache/go-xerial-snappy
 # github.com/eapache/queue v1.1.0
+## explicit
 github.com/eapache/queue
 # github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
+## explicit
 github.com/globalsign/mgo
 github.com/globalsign/mgo/bson
 github.com/globalsign/mgo/internal/json
 github.com/globalsign/mgo/internal/sasl
 github.com/globalsign/mgo/internal/scram
 # github.com/golang/mock v1.5.0
-## explicit
+## explicit; go 1.11
 github.com/golang/mock/gomock
 # github.com/golang/snappy v0.0.1
+## explicit
 github.com/golang/snappy
 # github.com/google/uuid v1.3.0
+## explicit
 github.com/google/uuid
 # github.com/gorilla/mux v1.8.0
-## explicit
+## explicit; go 1.12
 github.com/gorilla/mux
 # github.com/hashicorp/go-uuid v1.0.2
+## explicit
 github.com/hashicorp/go-uuid
 # github.com/hashicorp/golang-lru v0.5.3
+## explicit; go 1.12
 github.com/hashicorp/golang-lru/simplelru
 # github.com/jcmturner/gofork v1.0.0
+## explicit
 github.com/jcmturner/gofork/encoding/asn1
 github.com/jcmturner/gofork/x/crypto/pbkdf2
 # github.com/jmespath/go-jmespath v0.3.0
+## explicit; go 1.14
 github.com/jmespath/go-jmespath
 # github.com/kelseyhightower/envconfig v1.4.0
 ## explicit
 github.com/kelseyhightower/envconfig
 # github.com/klauspost/compress v1.13.6
+## explicit; go 1.15
 github.com/klauspost/compress
 github.com/klauspost/compress/fse
 github.com/klauspost/compress/huff0
@@ -107,23 +123,27 @@ github.com/klauspost/compress/internal/snapref
 github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
 # github.com/lightstep/tracecontext.go v0.0.0-20181129014701-1757c391b1ac
+## explicit
 github.com/lightstep/tracecontext.go/traceparent
 github.com/lightstep/tracecontext.go/tracestate
 # github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe
+## explicit
 github.com/montanaflynn/stats
 # github.com/pierrec/lz4 v2.5.2+incompatible
+## explicit
 github.com/pierrec/lz4
 github.com/pierrec/lz4/internal/xxh32
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
 # github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
+## explicit
 github.com/rcrowley/go-metrics
 # github.com/tidepool-org/clinic/client v0.0.0-20211118205743-020bf46ac989
-## explicit
+## explicit; go 1.16
 github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/go-common v0.8.2
-## explicit
+## explicit; go 1.14
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc
 github.com/tidepool-org/go-common/clients/hakken
@@ -135,19 +155,25 @@ github.com/tidepool-org/go-common/errors
 github.com/tidepool-org/go-common/events
 github.com/tidepool-org/go-common/jepson
 # github.com/xdg-go/pbkdf2 v1.0.0
+## explicit; go 1.9
 github.com/xdg-go/pbkdf2
 # github.com/xdg-go/scram v1.1.1
+## explicit; go 1.11
 github.com/xdg-go/scram
 # github.com/xdg-go/stringprep v1.0.3
+## explicit; go 1.11
 github.com/xdg-go/stringprep
 # github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c
+## explicit
 github.com/xdg/scram
 # github.com/xdg/stringprep v1.0.0
+## explicit
 github.com/xdg/stringprep
 # github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d
+## explicit
 github.com/youmark/pkcs8
 # go.mongodb.org/mongo-driver v1.11.1
-## explicit
+## explicit; go 1.13
 go.mongodb.org/mongo-driver/bson
 go.mongodb.org/mongo-driver/bson/bsoncodec
 go.mongodb.org/mongo-driver/bson/bsonoptions
@@ -184,6 +210,7 @@ go.mongodb.org/mongo-driver/x/mongo/driver/session
 go.mongodb.org/mongo-driver/x/mongo/driver/topology
 go.mongodb.org/mongo-driver/x/mongo/driver/wiremessage
 # go.opencensus.io v0.22.0
+## explicit
 go.opencensus.io
 go.opencensus.io/internal
 go.opencensus.io/internal/tagencoding
@@ -202,21 +229,24 @@ go.opencensus.io/trace/internal
 go.opencensus.io/trace/propagation
 go.opencensus.io/trace/tracestate
 # go.uber.org/atomic v1.6.0
+## explicit; go 1.13
 go.uber.org/atomic
 # go.uber.org/dig v1.10.0
+## explicit; go 1.13
 go.uber.org/dig
 go.uber.org/dig/internal/digreflect
 go.uber.org/dig/internal/dot
 # go.uber.org/fx v1.13.1
-## explicit
+## explicit; go 1.13
 go.uber.org/fx
 go.uber.org/fx/internal/fxlog
 go.uber.org/fx/internal/fxreflect
 go.uber.org/fx/internal/lifecycle
 # go.uber.org/multierr v1.5.0
+## explicit; go 1.12
 go.uber.org/multierr
 # go.uber.org/zap v1.16.0
-## explicit
+## explicit; go 1.13
 go.uber.org/zap
 go.uber.org/zap/buffer
 go.uber.org/zap/internal/bufferpool
@@ -224,22 +254,29 @@ go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
 # golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
+## explicit; go 1.17
 golang.org/x/crypto/md4
 golang.org/x/crypto/ocsp
 golang.org/x/crypto/pbkdf2
 # golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
+## explicit; go 1.17
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+## explicit
 golang.org/x/sync/errgroup
 # golang.org/x/text v0.3.7
+## explicit; go 1.17
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
 # gopkg.in/jcmturner/aescts.v1 v1.0.1
+## explicit
 gopkg.in/jcmturner/aescts.v1
 # gopkg.in/jcmturner/dnsutils.v1 v1.0.1
+## explicit
 gopkg.in/jcmturner/dnsutils.v1
 # gopkg.in/jcmturner/gokrb5.v7 v7.5.0
+## explicit
 gopkg.in/jcmturner/gokrb5.v7/asn1tools
 gopkg.in/jcmturner/gokrb5.v7/client
 gopkg.in/jcmturner/gokrb5.v7/config
@@ -271,5 +308,6 @@ gopkg.in/jcmturner/gokrb5.v7/messages
 gopkg.in/jcmturner/gokrb5.v7/pac
 gopkg.in/jcmturner/gokrb5.v7/types
 # gopkg.in/jcmturner/rpc.v1 v1.1.0
+## explicit
 gopkg.in/jcmturner/rpc.v1/mstypes
 gopkg.in/jcmturner/rpc.v1/ndr
