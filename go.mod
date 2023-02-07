@@ -1,6 +1,6 @@
 module github.com/tidepool-org/hydrophone
 
-go 1.16
+go 1.19
 
 require (
 	github.com/aws/aws-sdk-go v1.34.22
@@ -11,7 +11,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/tidepool-org/clinic/client v0.0.0-20211118205743-020bf46ac989
 	github.com/tidepool-org/go-common v0.8.2
-	go.mongodb.org/mongo-driver v1.8.2
+	go.mongodb.org/mongo-driver v1.11.1
 	go.uber.org/fx v1.13.1
 	go.uber.org/zap v1.16.0
 )
