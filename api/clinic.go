@@ -3,13 +3,14 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"log"
+	"net/http"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
 	"go.uber.org/zap"
-	"log"
-	"net/http"
 )
 
 const CLINIC_ADMIN_ROLE = "CLINIC_ADMIN"
@@ -19,7 +20,7 @@ type ClinicInvite struct {
 	Permissions commonClients.Permissions `json:"permissions"`
 }
 
-//Send a invite to join my team
+// Send a invite to join my team
 //
 // status: 200 models.Confirmation
 // status: 409 statusExistingInviteMessage - user already has a pending or declined invite
@@ -27,6 +28,11 @@ type ClinicInvite struct {
 // status: 409 statusExistingPatientMessage - user is already patient of the clinic
 // status: 400
 func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	var resetterLanguage string
+	if resetterLanguage = GetUserChosenLanguage(req); resetterLanguage == "" {
+		resetterLanguage = "en"
+	}
+
 	if token := a.token(res, req); token != nil {
 		ctx := req.Context()
 		inviterID := vars["userId"]
@@ -97,8 +103,8 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		maxClinicians := clinics.Limit(100)
 		role := clinics.Role(CLINIC_ADMIN_ROLE)
 		params := &clinics.ListCliniciansParams{
-			Role: &role,
-			Limit:  &maxClinicians,
+			Role:  &role,
+			Limit: &maxClinicians,
 		}
 		listResponse, err := a.clinics.ListCliniciansWithResponse(req.Context(), clinics.ClinicId(clinicId), params)
 		if err != nil || response.StatusCode() != http.StatusOK {
@@ -128,14 +134,13 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 					fullName = invite.Creator.Profile.Patient.FullName
 				}
 
-
 				emailContent := map[string]interface{}{
 					"CareteamName": fullName,
 					"ClinicName":   clinic.Name,
 					"WebPath":      "login",
 				}
 
-				if a.createAndSendNotification(req, invite, emailContent, recipients...) {
+				if a.createAndSendNotification(req, invite, emailContent, resetterLanguage, recipients...) {
 					a.logMetric("invite sent", req)
 				}
 			}
@@ -146,8 +151,8 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 	}
 }
 
-//Checks do they have an existing invite or are they already a team member
-//Or are they an existing user and already in the group?
+// Checks do they have an existing invite or are they already a team member
+// Or are they an existing user and already in the group?
 func (a *Api) checkForDuplicateClinicInvite(ctx context.Context, clinicId, invitorID string, res http.ResponseWriter) bool {
 
 	//already has invite from this user?

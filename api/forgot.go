@@ -28,11 +28,11 @@ type (
 	}
 )
 
-//Create a lost password request
+// Create a lost password request
 //
-//If the request is correctly formed, always returns a 200, even if the email address was not found (this way it can't be used to validate email addresses).
+// If the request is correctly formed, always returns a 200, even if the email address was not found (this way it can't be used to validate email addresses).
 //
-//If the email address is found in the Tidepool system, this will:
+// If the email address is found in the Tidepool system, this will:
 // - Create a confirm record and a random key
 // - Send an email with a link containing the key
 //
@@ -42,7 +42,17 @@ type (
 // status: 200
 // status: 400 no email given
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	var resetterLanguage string
 
+	// on the "forgot password" page in Blip, the preferred language is now selected by listbox
+	// even if not selected there is one by default so we should normally always end up with
+	// a value in GetUserChosenLanguage()
+	// however, just to play it safe, we can continue taking the browser preferred language
+	// or ENglish as default values
+	// In case the resetter is found a known user and has a language set, the language will be overridden in a later step
+	if resetterLanguage = GetUserChosenLanguage(req); resetterLanguage == "" {
+		resetterLanguage = "en"
+	}
 	email := vars["useremail"]
 	if email == "" {
 		res.WriteHeader(http.StatusBadRequest)
@@ -71,7 +81,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 			"Email": resetCnf.Email,
 		}
 
-		if a.createAndSendNotification(req, resetCnf, emailContent) {
+		if a.createAndSendNotification(req, resetCnf, emailContent, resetterLanguage) {
 			a.logMetricAsServer("reset confirmation sent")
 		} else {
 			a.logMetricAsServer("reset confirmation failed to be sent")
@@ -82,7 +92,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	res.WriteHeader(http.StatusOK)
 }
 
-//find the reset confirmation if it exists and hasn't expired
+// find the reset confirmation if it exists and hasn't expired
 func (a *Api) findResetConfirmation(conf *models.Confirmation, ctx context.Context, res http.ResponseWriter) *models.Confirmation {
 
 	log.Printf("findResetConfirmation: finding [%v]", conf)
@@ -108,10 +118,10 @@ func (a *Api) findResetConfirmation(conf *models.Confirmation, ctx context.Conte
 	return found
 }
 
-//Accept the password change
+// Accept the password change
 //
-//This call will be invoked by the lost password screen with the key that was included in the URL of the lost password screen.
-//For additional safety, the user will be required to manually enter the email address on the account as part of the UI,
+// This call will be invoked by the lost password screen with the key that was included in the URL of the lost password screen.
+// For additional safety, the user will be required to manually enter the email address on the account as part of the UI,
 // and also to enter a new password which will replace the password on the account.
 //
 // If this call is completed without error, the lost password request is marked as accepted.

@@ -1,0 +1,15 @@
+{
+    "name": "patient_information",
+    "description": "email to send information to patient",
+    "templateFilename": "patient_information.html",
+    "subject": "PatientInfoSubject",
+    "contentParts":[
+        "PatientInfoHeadline",
+        "PatientInfoBody",
+        "PatientInfoBody2",
+        "PatientInfoBody3",
+        "PatientInfoLogin",
+        "FooterGetSupport"
+    ],
+    "escapeContentParts":[]
+}

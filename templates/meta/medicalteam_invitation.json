@@ -1,0 +1,22 @@
+{
+    "name": "medicalteam_invitation",
+    "description": "email for those that invited a hcp to join medical crew",
+    "templateFilename": "medicalteam_invitation.html",
+    "subject": "MedicalTeamInvitationSubject",
+    "contentParts":[
+        "MedicalTeamInviteHeadline",
+        "MedicalTeamInviteBody1",
+        "MedicalTeamInviteBody2",
+        "MedicalTeamInviteWarning",
+        "MedicalTeamInviteInfo",
+        "RespondToInvite",
+        "FooterGetSupport"
+    ],
+    "escapeContentParts":[
+        "MedicalteamName",
+        "MedicalteamAddress",
+        "MedicalteamIentification",
+        "CreatorName",
+        "Duration"
+    ]
+}

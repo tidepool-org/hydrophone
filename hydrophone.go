@@ -3,14 +3,18 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	clinicsClient "github.com/tidepool-org/clinic/client"
-	"go.uber.org/zap"
+	"encoding/json"
 	"log"
 	"net/http"
+	"path"
 	"time"
+
+	clinicsClient "github.com/tidepool-org/clinic/client"
+	"go.uber.org/zap"
 
 	ev "github.com/tidepool-org/go-common/events"
 	"github.com/tidepool-org/hydrophone/events"
+	"github.com/tidepool-org/hydrophone/localize"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
@@ -46,6 +50,16 @@ type (
 		SslKeyFile    string `split_words:"true" default:""`
 		SslCertFile   string `split_words:"true" default:""`
 		ListenAddress string `split_words:"true" required:"true"`
+	}
+
+	HydrophoneService struct {
+		Hydrophone string `envconfig:"hydrophone_service"`
+	}
+
+	Service struct {
+		Hydrophone struct {
+			I18nTemplatesPath string `json:"i18nTemplatesPath"`
+		} `json:"hydrophone,omitempty"`
 	}
 )
 
@@ -118,8 +132,27 @@ func httpClientProvider() *http.Client {
 	return &http.Client{Transport: tr}
 }
 
+// func emailTemplateProvider() (models.Templates, error) {
+//	emailTemplates, err := templates.New()
+//	return emailTemplates, err
+//}
+
 func emailTemplateProvider() (models.Templates, error) {
-	emailTemplates, err := templates.New()
+	// Create a localizer to be used by the templates
+	var s HydrophoneService
+	err := envconfig.Process("tidepool", &s)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	var sr Service
+	json.Unmarshal([]byte(s.Hydrophone), &sr)
+
+	localizer, err := localize.NewI18nLocalizer(path.Join(sr.Hydrophone.I18nTemplatesPath, "locales"))
+	if err != nil {
+		log.Fatalf("Problem creating i18n localizer %s", err)
+	}
+	emailTemplates, err := templates.New(sr.Hydrophone.I18nTemplatesPath, localizer)
 	return emailTemplates, err
 }
 
@@ -158,7 +191,7 @@ func loggerProvider() (*zap.SugaredLogger, error) {
 	return logger.Sugar(), nil
 }
 
-//InvocationParams are the parameters need to kick off a service
+// InvocationParams are the parameters need to kick off a service
 type InvocationParams struct {
 	fx.In
 	Lifecycle  fx.Lifecycle

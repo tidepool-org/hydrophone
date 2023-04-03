@@ -1,0 +1,17 @@
+{
+    "name": "signup_confirmation",
+    "description": "email to ask patient for verification of email",
+    "templateFilename": "signup_confirmation.html",
+    "subject": "ConfirmationSubject",
+    "contentParts":[
+        "SignupHeadline",
+        "SignupBody",
+        "SignupDeletionWarning",
+        "SignupVerify",
+        "EmailExpirationDays",
+        "FooterGetSupport"
+    ],
+    "escapeContentParts":[
+        "Duration"
+    ]
+}

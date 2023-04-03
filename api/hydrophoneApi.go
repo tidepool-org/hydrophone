@@ -15,7 +15,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/microcosm-cc/bluemonday"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -27,22 +29,34 @@ import (
 
 type (
 	Api struct {
-		Store      clients.StoreClient
-		clinics    clinicsClient.ClientWithResponsesInterface
-		notifier   clients.Notifier
-		templates  models.Templates
-		sl         shoreline.Client
-		gatekeeper commonClients.Gatekeeper
-		seagull    commonClients.Seagull
-		metrics    highwater.Client
-		logger     *zap.SugaredLogger
-		Config     Config
+		Store          clients.StoreClient
+		clinics        clinicsClient.ClientWithResponsesInterface
+		notifier       clients.Notifier
+		templates      models.Templates
+		sl             shoreline.Client
+		gatekeeper     commonClients.Gatekeeper
+		seagull        commonClients.Seagull
+		metrics        highwater.Client
+		logger         *zap.SugaredLogger
+		Config         Config
+		LanguageBundle *i18n.Bundle
 	}
 	Config struct {
-		ServerSecret string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
-		WebUrl       string `split_words:"true" required:"true"`
-		AssetUrl     string `split_words:"true" required:"true"`
-		Protocol     string `default:"http"`
+		ServerSecret      string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
+		WebUrl            string `split_words:"true" required:"true"`
+		AssetUrl          string `json:"assetUrl"`
+		Protocol          string `default:"http"`
+		I18nTemplatesPath string `json:"i18nTemplatesPath"` // where are the templates located?
+	}
+
+	HydrophoneService struct {
+		Hydrophone string `envconfig:"hydrophone_service"`
+	}
+
+	Service struct {
+		Hydrophone struct {
+			AssetURL string `json:"assetUrl"`
+		} `json:"hydrophone,omitempty"`
 	}
 
 	// this just makes it easier to bind a handler for the Handle function
@@ -118,6 +132,12 @@ func routerProvider(api *Api) *mux.Router {
 	rtr := mux.NewRouter()
 	api.SetHandlers("", rtr)
 	return rtr
+}
+
+var bmPolicy = bluemonday.StrictPolicy()
+
+func sanitize(el string) string {
+	return bmPolicy.Sanitize(el)
 }
 
 // RouterModule build a router
@@ -319,7 +339,7 @@ func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models
 }
 
 // Generate a notification from the given confirmation,write the error if it fails
-func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}, recipients ...string) bool {
+func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}, lang string, recipients ...string) bool {
 	templateName := conf.TemplateName
 	if templateName == models.TemplateNameUndefined {
 		switch conf.Type {
@@ -338,7 +358,17 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 	}
 
 	content["WebURL"] = a.getWebURL(req)
-	content["AssetURL"] = a.Config.AssetUrl
+
+	var s HydrophoneService
+	err := envconfig.Process("tidepool", &s)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	var sr Service
+	json.Unmarshal([]byte(s.Hydrophone), &sr)
+
+	content["AssetURL"] = sr.Hydrophone.AssetURL
 
 	template, ok := a.templates[templateName]
 	if !ok {
@@ -346,7 +376,9 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 		return false
 	}
 
-	subject, body, err := template.Execute(content)
+	// Email information (subject and body) are retrieved from the "executed" email template
+	// "Execution" adds dynamic content using text/template lib
+	subject, body, err := template.Execute(content, lang)
 	if err != nil {
 		log.Printf("Error executing email template %s", err)
 		return false
@@ -498,4 +530,21 @@ func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, g
 		}
 		return finalPermissions, nil
 	}
+}
+
+func (a *Api) GetUserLanguage(userid string, req *http.Request, res http.ResponseWriter) string {
+	// let's get the invitee user preferences
+	seagulDoc := &struct {
+		Preferences *struct {
+			DisplayLanguageCode string `json:"language"`
+		}
+	}{}
+
+	err := a.seagull.GetCollection(userid, "preferences", a.sl.TokenProvide(), seagulDoc)
+	if err != nil {
+		a.logger.Errorf("Preferences not availlable for user %s. Email will be sent using default language. Error: [%s]", userid, err)
+	} else if seagulDoc.Preferences != nil && seagulDoc.Preferences.DisplayLanguageCode != "" {
+		return seagulDoc.Preferences.DisplayLanguageCode
+	}
+	return GetUserChosenLanguage(req)
 }

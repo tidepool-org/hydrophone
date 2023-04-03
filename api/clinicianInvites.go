@@ -129,6 +129,7 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		if confirmation == nil {
 			confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
 			confirmation.Key = inviteId
+			return
 		}
 
 		confirmation.Email = string(inviteResponse.JSON200.Email)
@@ -331,6 +332,10 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 }
 
 func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.Confirmation) *status.StatusError {
+	var resetterLanguage string
+	if resetterLanguage = GetUserChosenLanguage(req); resetterLanguage == "" {
+		resetterLanguage = "en"
+	}
 	ctx := req.Context()
 
 	if err := a.addProfile(confirmation); err != nil {
@@ -360,7 +365,7 @@ func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.
 		"WebPath":     webPath,
 	}
 
-	if !a.createAndSendNotification(req, confirmation, emailContent) {
+	if !a.createAndSendNotification(req, confirmation, emailContent, resetterLanguage) {
 		return &status.StatusError{
 			Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SENDING_EMAIL),
 		}
@@ -393,7 +398,6 @@ func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http
 	a.logMetric("dismiss_clinician_invite", req)
 	res.WriteHeader(http.StatusOK)
 	res.Write([]byte(STATUS_OK))
-	return
 }
 
 func (a *Api) assertClinicMember(ctx context.Context, clinicId string, token *shoreline.TokenData, res http.ResponseWriter) error {

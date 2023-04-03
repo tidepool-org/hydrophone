@@ -1,0 +1,17 @@
+{
+    "name": "signup_clinic_confirmation",
+    "description": "email to ask clinician for verification of email",
+    "templateFilename": "signup_clinic_confirmation.html",
+    "subject": "ConfirmationSubject",
+    "contentParts":[
+        "SignupClinicHeadline",
+        "SignupClinicBody",
+        "SignupClinicDeletionWarning",
+        "SignupClinicVerify",
+        "EmailExpirationDays",
+        "FooterGetSupport"
+    ],
+    "escapeContentParts":[
+        "Duration"
+    ]
+}

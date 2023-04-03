@@ -1,0 +1,17 @@
+{
+    "name": "careteam_invitation",
+    "description": "email for those that invited someone to join medical crew",
+    "templateFilename": "careteam_invitation.html",
+    "subject": "CareTeamInvitationSubject",
+    "contentParts":[
+        "CareTeamInviteHeadline",
+        "CareTeamInviteBody",
+        "CareTeamInviteBody2",
+        "RespondToInvite",
+        "FooterGetSupport"
+    ],
+    "escapeContentParts":[
+        "PatientName",
+        "Duration"
+    ]
+}

@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap"
 	"log"
 	"net/http"
+
+	"go.uber.org/zap"
 
 	clinics "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
@@ -32,8 +33,8 @@ type (
 	}
 )
 
-//Checks do they have an existing invite or are they already a team member
-//Or are they an existing user and already in the group?
+// Checks do they have an existing invite or are they already a team member
+// Or are they an existing user and already in the group?
 func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID string, res http.ResponseWriter) bool {
 
 	//already has invite from this user?
@@ -84,6 +85,7 @@ func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, 
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 			return true, invitedUsr
 		}
+
 		return false, invitedUsr
 	}
 
@@ -128,9 +130,9 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 	}
 }
 
-//Get the still-pending invitations for a group you own or are an admin of.
-//These are the invitations you have sent that have not been accepted.
-//There is no way to tell if an invitation has been ignored.
+// Get the still-pending invitations for a group you own or are an admin of.
+// These are the invitations you have sent that have not been accepted.
+// There is no way to tell if an invitation has been ignored.
 //
 // status: 200
 // status: 400
@@ -162,7 +164,7 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 	}
 }
 
-//Accept the given invite
+// Accept the given invite
 //
 // http.StatusOK when accepted
 // http.StatusBadRequest when the incoming data is incomplete or incorrect
@@ -372,7 +374,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 	}
 }
 
-//Send a invite to join my team
+// Send a invite to join my team
 //
 // status: 200 models.Confirmation
 // status: 409 statusExistingInviteMessage - user already has a pending or declined invite
@@ -380,6 +382,10 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 // status: 400
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
+		var resetterLanguage string
+		if resetterLanguage = GetUserChosenLanguage(req); resetterLanguage == "" {
+			resetterLanguage = "en"
+		}
 
 		invitorID := vars["userid"]
 
@@ -450,7 +456,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 						"WebPath":      webPath,
 					}
 
-					if a.createAndSendNotification(req, invite, emailContent) {
+					if a.createAndSendNotification(req, invite, emailContent, resetterLanguage) {
 						a.logMetric("invite sent", req)
 					}
 				}
@@ -463,9 +469,14 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 	}
 }
 
-//Resend a care team invite
+// Resend a care team invite
 func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
+		var resetterLanguage string
+		if resetterLanguage = GetUserChosenLanguage(req); resetterLanguage == "" {
+			resetterLanguage = "en"
+		}
+
 		inviteId := vars["inviteId"]
 
 		if inviteId == "" {
@@ -528,7 +539,7 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 					"WebPath":      webPath,
 				}
 
-				if a.createAndSendNotification(req, invite, emailContent) {
+				if a.createAndSendNotification(req, invite, emailContent, resetterLanguage) {
 					a.logMetric("invite resent", req)
 				}
 			}

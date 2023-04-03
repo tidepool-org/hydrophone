@@ -1,0 +1,4 @@
+# Test localization content
+# Please, keep this file in this folder
+TestTemplateSubject: "This email is here for testing purposes."
+TestContentInjection: "This is a test content created by {{ .TestCreatorName }}."

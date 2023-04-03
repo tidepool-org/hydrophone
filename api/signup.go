@@ -113,6 +113,11 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 		clinicName := "Diabetes Clinic"
 		creatorName := "Clinician"
 
+		var resetterLanguage string
+		if resetterLanguage = GetUserChosenLanguage(req); resetterLanguage == "" {
+			resetterLanguage = "en"
+		}
+
 		if newSignUp.ClinicId != "" {
 			resp, err := a.clinics.GetClinicWithResponse(req.Context(), clinics.ClinicId(newSignUp.ClinicId))
 			if err != nil {
@@ -151,7 +156,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			emailContent["ClinicName"] = clinicName
 		}
 
-		if a.createAndSendNotification(req, newSignUp, emailContent) {
+		if a.createAndSendNotification(req, newSignUp, emailContent, resetterLanguage) {
 			a.logMetricAsServer("signup confirmation sent")
 			res.WriteHeader(http.StatusOK)
 			return
@@ -169,6 +174,10 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 // status: 404 STATUS_SIGNUP_EXPIRED
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	email := vars["useremail"]
+	var resetterLanguage string
+	if resetterLanguage = GetUserChosenLanguage(req); resetterLanguage == "" {
+		resetterLanguage = "en"
+	}
 
 	toFind := &models.Confirmation{Email: email, Status: models.StatusPending, Type: models.TypeSignUp}
 
@@ -211,7 +220,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					emailContent["CreatorName"] = found.Creator.Profile.FullName
 				}
 
-				if a.createAndSendNotification(req, found, emailContent) {
+				if a.createAndSendNotification(req, found, emailContent, resetterLanguage) {
 					a.logMetricAsServer("signup confirmation re-sent")
 				} else {
 					a.logMetricAsServer("signup confirmation failed to be sent")

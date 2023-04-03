@@ -1,0 +1,19 @@
+{
+    "name": "Application Prescription",
+    "description": "email for patients who are prescribed a DBL app",
+    "templateFilename": "app_prescription.html",
+    "subject": "AppPrescriptionSubject",
+    "contentParts":[
+        "AppPrescriptionHeadline",
+        "AppPrescriptionBody",
+        "AppPrescriptionBody2",
+        "EmailExpirationDays",
+        "FooterGetSupport"
+    ],
+    "escapeContentParts":[
+        "Invitor",
+        "Product",
+        "PrescriptionCode",
+        "Duration"
+    ]
+}

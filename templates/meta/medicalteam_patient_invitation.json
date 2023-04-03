@@ -1,0 +1,26 @@
+{
+    "name": "medicalteam_patient_invitation",
+    "description": "email for those that invited a patient to join medical crew",
+    "templateFilename": "medicalteam_patient_invitation.html",
+    "subject": "MedicalTeamPatientInvitationSubject",
+    "contentParts":[
+        "MedicalTeamPatientInviteHeadline",
+        "MedicalTeamPatientInviteBody",
+        "MedicalTeamPatientInviteWarning",
+        "MedicalTeamPatientInviteWarning2",
+        "MedicalTeamPatientInviteInfo",
+        "ReadDataPrivacy",
+        "RespondToInvite",
+        "FooterGetSupport"
+    ],
+    "escapeContentParts":[
+        "MedicalteamName",
+        "MedicalteamAddress",
+        "MedicalteamPhone",
+        "MedicalteamIentification",
+        "CreatorName",
+        "AssetURL",
+        "Language",
+        "Duration"
+    ]
+}

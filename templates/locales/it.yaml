@@ -1,0 +1,111 @@
+---
+#Footer
+#(for all emails)
+FooterGetSupport: "SUPPORTO"
+EmailExpirationHours: "Questo messaggio è valido {{ .Duration }} ora(e)."
+EmailExpirationDays: "Questo messaggio è valido {{ .Duration }} giorno(i)."
+#FooterSincerely: "Sincerely,"
+#FooterSignature: "The Diabeloop Team"
+#No accounts
+#(email for those that requested password reset but did not create their account before)
+NoAccountSubject: "Indirizzo e-mail sconosciuto"
+NoAccountHeadline: "Hai richiesto di reimpostare la password YourLoops, ma non è stato ancora creato un account con questo indirizzo e-mail."
+NoAccountBody: "Se utilizzi già un dispositivo Diabeloop, accedi con l’e-mail e la password immesse durante la configurazione di DBL.\nSe sei il medico curante e desideri creare un account, fai clic sul link qui sotto.\n"
+NoAccountSignUp: "Crea account"
+#Password Reset
+#(email for those that requested password reset)
+PasswordResetSubject: "Reimpostazione password"
+PasswordResetHeadline: "Hai richiesto di reimpostare la password di YourLoops."
+PasswordResetBody: "Fai clic sul collegamento sottostante per sceglierne una nuova."
+PasswordResetReset: "Reimposta password"
+#Patient Password Reset
+#(email for patients that requested password reset)
+PatientPasswordResetSubject: "Istruzioni per la reimpostazione della password"
+PatientPasswordResetHeadline: "Hai richiesto di reimpostare la password del tuo account YourLoops."
+PatientPasswordResetBody: "Segui le istruzioni riportate sul DBL e immetti questa chiave:"
+PatientPasswordResetBody2: "La chiave è valida per 1 ora. Se è scaduta, richiedine una nuova sul DBL."
+#Patient Password Reset request from web app
+#(email for patients that requested password reset)
+PatientPasswordInfoSubject: "Reimpostazione password"
+PatientPasswordInfoHeadline: "Hai richiesto di reimpostare la password di YourLoops da YourLoops. Tuttavia, per motivi di sicurezza, è necessario richiedere la modifica dal DBL."
+PatientPasswordInfoBody: "Vai a Impostazioni > YourLoops e segui le istruzioni visualizzate sul DBL."
+PatientPasswordInfoBody2: "Se questa e-mail ti è arrivata per errore, contatta il nostro <a style='text-decoration:none;color:#00a3e2;' href='{{ .SupportEmail }}'>servizio assistenza</a>."
+#CareTeamInvite
+#(email for those that invited someone to join medical crew)
+CareTeamInvitationSubject: "Invito per paziente"
+#CareTeamInviteHello: "Hello,"
+CareTeamInviteHeadline: "{{ .PatientName }} vuole condividere con te i propri dati sul diabete su YourLoops."
+CareTeamInviteBody: "YourLoops è una piattaforma di visualizzazione per la gestione del diabete e la generazione di report. Troverai tutti i dati acquisiti da un DBL visualizzati in grafici e diagrammi."
+CareTeamInviteBody2: "{{ .PatientName }} ha scelto di condividere i propri dati con te. Per rispondere, clicca sul link qui sotto."
+#Signup
+#(email to ask patient for verification of email)
+SignupHeadline: "Verifica il tuo indirizzo e-mail per attivare l’account YourLoops."
+SignupBody: "Hai creato un account su YourLoops. Per confermare la tua identità, fai clic sul link sottostante."
+SignupDeletionWarning: "Se l'account non viene attivato entro questo periodo, la registrazione dell'account verrà eliminata."
+SignupVerify: "Attiva il mio account"
+#Signup Clinic
+#(email to ask clinician for verification of email)
+SignupClinicHeadline: "Verifica il tuo indirizzo e-mail per attivare l’account YourLoops."
+SignupClinicBody: "Hai creato un account per medico curante su YourLoops. Per confermare la tua identità e completare il tuo profilo, fai clic sul link sottostante."
+SignupClinicDeletionWarning: "Se l'account non viene attivato entro questo periodo, la registrazione dell'account verrà eliminata."
+SignupClinicVerify: "Attiva il mio account"
+#Signup Custodial => SUPPRIMER
+#(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
+SignupCustodialConfirmationSubject: "Verify your YourLoops account"
+#SignupCustodialHello: "Hello,"
+SignupCustodialHeadline: "Congrats on creating your YourLoops account!"
+SignupCustodialVerify: "Verify Your Account"
+#Signup Custodial Clinic => SUPPRIMER
+#(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
+SignupCustodialClinicConfirmationSubject: "Diabetes Clinic Follow Up - Claim Your Account"
+SignupCustodialClinicHello: "Hi, {{ .FullName }}!"
+SignupCustodialClinicAccount: "{{ .CreatorName }} created a YourLoops account for your diabetes device data."
+SignupCustodialClinicOwnership: "You can take ownership of your free account to view and upload data from home."
+SignupCustodialClinicClaim: "Claim Your Account"
+#Patient Information
+PatientInfoSubject: "Benvenuto su YourLoops!"
+PatientInfoHeadline: "Accedi per visualizzare i dati del DBL."
+PatientInfoBody: "YourLoops è una piattaforma di visualizzazione per la gestione del diabete."
+PatientInfoBody2: "Troverai tutti i dati acquisiti dal DBL (andamenti della glicemia, uso di insulina, carboidrati registrati...) visualizzati in grafici."
+PatientInfoBody3: "Per accedere, fai clic sul link sottostante e utilizza l’e-mail e la password inserite durante la configurazione del DBL."
+PatientInfoLogin: "Visualizza i miei dati"
+#Pin Reset Request
+#(email for those that requested a one-time password for PIN Reset)
+PatientPinResetSubject: "Istruzioni per la reimpostazione del PIN"
+PatientPinResetHeadline: "Hai richiesto di reimpostare il PIN del DBL."
+PatientPinResetBody: "Ecco il tuo codice temporaneo:"
+PatientPinResetBody2: "Il codice scade tra 30 minuti."
+PatientPinResetBody3: "Se il codice è scaduto, richiedine uno nuovo sul DBL."
+#Medical/Care team invitation
+MedicalTeamInvitationSubject: "Invito a far parte di un team di cura"
+MedicalTeamInviteHeadline: "{{ .CreatorName }} desidera che lei si unisca al suo team di cura su YourLoops."
+MedicalTeamInviteBody1: "YourLoops è una piattaforma per la gestione del diabete progettata per i sistemi a circuito chiuso Diabeloop."
+MedicalTeamInviteBody2: "Entrando a far parte del team {{ .MedicalteamName }}, avrà accesso ai dati dei suoi pazienti e avrà la possibilità di creare rapporti."
+MedicalTeamInviteWarning: "Prima di accettare l’invito, verifichi di conoscere questa persona, confermi di far parte di questo team di cura e controlli i dettagli forniti di seguito."
+MedicalTeamInviteInfo: "Per far parte di un team deve avere un account professionale. Se è già registrato come caregiver, può passare a un account professionale nelle preferenze dell’account. In alternativa, si iscriva utilizzando il link di seguito."
+#Medical/Care team do Admin
+MedicalTeamDoAdminSubject: "Permesso admin concesso"
+MedicalTeamDoAdminHeadline: "Ora è un amministratore del team {{ .MedicalteamName }}"
+MedicalTeamDoAdminBody1: "Uno degli amministratori del team l’ha nominata amministratore del team {{ .MedicalteamName }}."
+MedicalTeamDoAdminBody2: "Adesso può:"
+MedicalTeamDoAdminListItem1: "Invitare/rimuovere i membri del team"
+MedicalTeamDoAdminListItem2: "Modificare le informazioni del team"
+MedicalTeamDoAdminListItem3: "Assegnare o rimuovere i permessi da amministratore"
+MedicalTeamDoAdminAction: "Accedi a YourLoops"
+#Medical/Care team remove member
+MedicalTeamRemoveSubject: "Rimozione da un team di cura"
+MedicalTeamRemoveHeadline: "Non è più un membro del team {{ .MedicalteamName }}"
+MedicalTeamRemoveBody0: "Uno degli amministratori del team l’ha rimossa dal team."
+MedicalTeamRemoveBody1: "Non potrà più accedere ai dati dei pazienti del team {{ .MedicalteamName }}, ma il suo account resterà attivo."
+MedicalTeamRemoveBody2: "Ritiene che sia un errore? Contatti uno degli amministratori del team."
+MedicalTeamRemoveAction: "Accedi a YourLoops"
+#Medical/Care team patient invitation
+MedicalTeamPatientInvitationSubject: "Invito per condividere i dati"
+MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} la invita a condividere i suoi dati con il team {{ .MedicalteamName }}"
+MedicalTeamPatientInviteWarning: "Prima di rispondere all’invito, verifichi che i dettagli precedenti corrispondano alle informazioni fornite dall’operatore sanitario."
+MedicalTeamPatientInviteWarning2: "Se non è sicuro, si metta in contatto con l’operatore sanitario e non accetti l’invito."
+MedicalTeamPatientInviteInfo: "Aggiungendo questo team, lei acconsente a condividere i suoi dati personali (compresi i dati sanitari) con i membri del team, che sono operatori sanitari autorizzati registrati su YourLoops."
+#Shared
+ReadDataPrivacy: "Per ulteriori informazioni, legga la nostra <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>informativa sulla privacy</a>."
+RespondToInvite: "Rispondi all’invito"
+ConfirmationSubject: "Verifica il tuo indirizzo e-mail"
