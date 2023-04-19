@@ -2,7 +2,7 @@ package templates
 
 import "github.com/tidepool-org/hydrophone/models"
 
-const _SignupCustodialNewClinicExperienceSubjectTemplate string = `{{ .ClinicName }} Follow Up - Claim Your Account`
+const _SignupCustodialNewClinicExperienceSubjectTemplate string = `{{ .ClinicName }} Follow Up - Claim your account and get started with Tidepool`
 const _SignupCustodialNewClinicExperienceBodyTemplate string = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -42,12 +42,15 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
               <table width="100%" style="border-spacing:0;color:#333333;">
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                    <p class="h1 content-width" style="color:#281946;font-size:14px;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:18px;font-weight:600;Margin-bottom:32px;Margin-left:auto;Margin-right:auto;max-width:400px;">
-                      Hi, {{ .FullName }}!
-                    </p>
                     <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:14px;font-weight:600;Margin-bottom:28px;Margin-left:auto;Margin-right:auto;max-width:400px;">
-                      {{ .CreatorName }} at {{ .ClinicName }} created a Tidepool account for your diabetes device data.<br /><br />You can take ownership of your free account to view and upload data from home.
+                      {{ .CreatorName }} at {{ .ClinicName }} created a Tidepool account for your diabetes device data. Complete the following 4 steps to view and upload your data from home.
                     </p>
+                    <ol class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:14px;font-weight:600;Margin-left:auto;Margin-right:auto;max-width:400px;text-align:left">
+                      <li style="Margin-bottom:10px">Claim your account. Click <a style="text-decoration:underline" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}">here</a>.</li>
+                      <li style="Margin-bottom:10px">If you’ll be uploading your devices at home, download the <a href="{{ .WebURL }}/download">latest version of Tidepool Uploader</a>.</li>
+                      <li style="Margin-bottom:10px">Find your device on the <a href="{{ .WebURL }}/devices">Tidepool Compatible Devices List<a/>. Follow the instructions to connect your Dexcom account (link) or upload data from your device. You may need a USB cable or cord to upload.</li>
+                      <li>View your device data. Guides and walkthroughs of Tidepool data visualizations can be found in <a href="https://support.tidepool.org/hc/en-us/categories/360001146692-Viewing-your-Data-">Tidepool’s support documentation</a>.</li>
+                    </ol>
                   </td>
                 </tr>
                 <tr>
@@ -69,7 +72,7 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
                 </tr>
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                    <p style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;">Sincerely,<br/>The Tidepool Team</p>
+                    <p style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;">If you have any questions, don’t hesitate to email <a href="mailto:support@tidepool.org">support@tidepool.org</a>. The Tidepool support team is available to help.</p>
                   </td>
                 </tr>
                 <tr>
