@@ -60,7 +60,7 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
                     <tr>
                     <td>
                     <![endif]-->
-                    <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;Margin-bottom:10px;">
+                    <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;">
                       Claim Your Account
                     </a>
                     <!--[if (gte mso 9)|(IE)]>
@@ -72,7 +72,7 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
                 </tr>
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                    <p style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;">If you have any questions, don’t hesitate to email <a href="mailto:support@tidepool.org">support@tidepool.org</a>. The Tidepool support team is available to help.</p>
+                    <p style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin-bottom:10px;Margin-left:auto;Margin-right:auto;max-width:400px;">If you have any questions, don’t hesitate to email <a href="mailto:support@tidepool.org">support@tidepool.org</a>. The Tidepool support team is available to help.</p>
                   </td>
                 </tr>
                 <tr>
