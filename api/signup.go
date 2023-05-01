@@ -210,8 +210,16 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				if found.Creator.Profile != nil {
 					emailContent["CreatorName"] = found.Creator.Profile.FullName
 				}
-				if found.Creator.ClinicName != "" {
-					emailContent["ClinicName"] = found.Creator.ClinicName
+
+				if found.ClinicId != "" {
+					resp, err := a.clinics.GetClinicWithResponse(req.Context(), clinics.ClinicId(found.ClinicId))
+					if err != nil {
+						a.sendError(res, http.StatusInternalServerError, "unable to fetch clinic")
+						return
+					}
+					if resp.StatusCode() == http.StatusOK && resp.JSON200.Name != "" {
+						emailContent["ClinicName"] = resp.JSON200.Name
+					}
 				}
 
 				if a.createAndSendNotification(req, found, emailContent) {
