@@ -210,6 +210,9 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				if found.Creator.Profile != nil {
 					emailContent["CreatorName"] = found.Creator.Profile.FullName
 				}
+				if found.Creator.ClinicName != "" {
+					emailContent["ClinicName"] = found.Creator.ClinicName
+				}
 
 				if a.createAndSendNotification(req, found, emailContent) {
 					a.logMetricAsServer("signup confirmation re-sent")
