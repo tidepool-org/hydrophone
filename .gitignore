@@ -2,3 +2,4 @@ deploy/
 dist/
 hydrophone
 artifact_go.sh
+.DS_Store
