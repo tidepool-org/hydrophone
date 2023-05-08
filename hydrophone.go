@@ -139,12 +139,10 @@ func cloudEventsConfigProvider() (*ev.CloudEventsConfig, error) {
 }
 
 func faultTolerantConsumerProvider(config *ev.CloudEventsConfig, handler ev.EventHandler) (ev.EventConsumer, error) {
-	consumer, err := ev.NewFaultTolerantCloudEventsConsumer(config)
-	if err != nil {
-		return nil, err
-	}
-	consumer.RegisterHandler(handler)
-	return consumer, nil
+	return ev.NewFaultTolerantConsumerGroup(config, func() (ev.MessageConsumer, error) {
+		handlers := []ev.EventHandler{handler}
+		return ev.NewCloudEventsMessageHandler(handlers)
+	})
 }
 
 func loggerProvider() (*zap.SugaredLogger, error) {

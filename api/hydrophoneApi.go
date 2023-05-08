@@ -433,6 +433,54 @@ func (a *Api) ensureIdSet(ctx context.Context, userId string, confirmations []*m
 	}
 }
 
+// Populate restrictions
+func (a *Api) populateRestrictions(ctx context.Context, user shoreline.UserData, confirmations []*models.Confirmation) error {
+	for _, conf := range confirmations {
+		// Only clinic invites can have restrictions
+		if conf.ClinicId != "" {
+			resp, err := a.clinics.ListMembershipRestrictionsWithResponse(ctx, conf.ClinicId)
+			if err != nil {
+				return err
+			}
+			if resp.StatusCode() != http.StatusOK {
+				return fmt.Errorf("unexpected response code %v when fetching membership restrctions from clinic %v", resp.StatusCode(), conf.ClinicId)
+			}
+			// If a clinic has no restrictions the invite can be accepted
+			conf.Restrictions = &models.Restrictions{
+				CanAccept: true,
+			}
+			if resp.JSON200 != nil && resp.JSON200.Restrictions != nil && len(*resp.JSON200.Restrictions) > 0 {
+				// The clinic has configured restrictions, the user must match at least one
+				conf.Restrictions.CanAccept = false
+
+				for _, restriction := range *resp.JSON200.Restrictions {
+					if strings.HasSuffix(conf.Email, fmt.Sprintf("@%s", *restriction.EmailDomain)) {
+						if restriction.RequiredIdp == nil || *restriction.RequiredIdp != "" {
+							// The user's email matches the domain and no required idp is set
+							conf.Restrictions.CanAccept = true
+							break
+						}
+
+						// The user's email matches the domain, it must also match the required IDP
+						if *restriction.RequiredIdp != user.IdentityProvider {
+							// Add the required IDP as a precondition to accepting the invite
+							conf.Restrictions.RequiredIdp = *restriction.RequiredIdp
+						} else {
+							// The invite can be accepted, because the user is already authenticated
+							// against the required IDP
+							conf.Restrictions.CanAccept = true
+						}
+
+						break
+					}
+				}
+			}
+		}
+	}
+	
+	return nil
+}
+
 func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
 	if jsonDetails, err := json.Marshal(model); err != nil {
 		log.Printf("Error [%s] trying to send model [%s]", err.Error(), model)

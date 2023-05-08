@@ -74,7 +74,7 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		clinic := (*response.JSON200)[0]
-		clinicId := string(clinic.Id)
+		clinicId := *clinic.Id
 
 		patientExists, err := a.checkExistingPatientOfClinic(ctx, clinicId, inviterID)
 		if err != nil {
@@ -97,8 +97,8 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		maxClinicians := clinics.Limit(100)
 		role := clinics.Role(CLINIC_ADMIN_ROLE)
 		params := &clinics.ListCliniciansParams{
-			Role: &role,
-			Limit:  &maxClinicians,
+			Role:  &role,
+			Limit: &maxClinicians,
 		}
 		listResponse, err := a.clinics.ListCliniciansWithResponse(req.Context(), clinics.ClinicId(clinicId), params)
 		if err != nil || response.StatusCode() != http.StatusOK {
@@ -127,7 +127,6 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 				if invite.Creator.Profile.Patient.IsOtherPerson {
 					fullName = invite.Creator.Profile.Patient.FullName
 				}
-
 
 				emailContent := map[string]interface{}{
 					"CareteamName": fullName,
