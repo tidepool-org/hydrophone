@@ -58,14 +58,13 @@ type ShorelineClientConfig struct {
 
 // UserData is the data structure returned from a successful Login query.
 type UserData struct {
-	UserID           string   `json:"userid,omitempty"`           // the tidepool-assigned user ID
-	Username         string   `json:"username,omitempty"`         // the user-assigned name for the login (usually an email address)
-	Emails           []string `json:"emails,omitempty"`           // the array of email addresses associated with this account
-	PasswordExists   bool     `json:"passwordExists,omitempty"`   // Does a password exist for the user?
-	Roles            []string `json:"roles,omitempty"`            // User roles
-	EmailVerified    bool     `json:"emailVerified,omitempty"`    // the user has verified the email used as part of signup
-	TermsAccepted    string   `json:"termsAccepted,omitempty"`    // When were the terms accepted
-	IdentityProvider string   `json:"identityProvider,omitempty"` // The identity provider used for authenticating the current user
+	UserID         string   `json:"userid,omitempty"`         // the tidepool-assigned user ID
+	Username       string   `json:"username,omitempty"`       // the user-assigned name for the login (usually an email address)
+	Emails         []string `json:"emails,omitempty"`         // the array of email addresses associated with this account
+	PasswordExists bool     `json:"passwordExists,omitempty"` // Does a password exist for the user?
+	Roles          []string `json:"roles,omitempty"`          // User roles
+	EmailVerified  bool     `json:"emailVerified,omitempty"`  // the user has verified the email used as part of signup
+	TermsAccepted  string   `json:"termsAccepted,omitempty"`  // When were the terms accepted
 }
 
 // UserUpdate is the data structure for updating of a users details
@@ -84,8 +83,9 @@ type CustodialUserData struct {
 
 // TokenData is the data structure returned from a successful CheckToken query.
 type TokenData struct {
-	UserID   string // the UserID stored in the token
-	IsServer bool   // true or false depending on whether the token was a servertoken
+	UserID           string // the UserID stored in the token
+	IsServer         bool   // true or false depending on whether the token was a servertoken
+	IdentityProvider string `json:"identityProvider,omitempty"` // The identity provider used for authenticating the current user
 }
 
 type ShorelineClientBuilder struct {

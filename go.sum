@@ -199,6 +199,8 @@ github.com/tidepool-org/clinic/client v0.0.0-20230504141110-a4a7d8d13b01 h1:QLnh
 github.com/tidepool-org/clinic/client v0.0.0-20230504141110-a4a7d8d13b01/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/go-common v0.10.1-0.20230508183043-7b2503857c30 h1:BxhLvuksfTuvTPnTpEl6/hd/7O5BbA5S4v0kmDDIjCM=
 github.com/tidepool-org/go-common v0.10.1-0.20230508183043-7b2503857c30/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
+github.com/tidepool-org/go-common v0.10.1-0.20230508194719-72b56b95a79a h1:pTkq6PU/+YbW40UgRh9tI0kRGmwxsAwOnzb2nvFG4eg=
+github.com/tidepool-org/go-common v0.10.1-0.20230508194719-72b56b95a79a/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
 github.com/tidwall/pretty v1.0.0 h1:HsD+QiTn7sK6flMKIvNmpqz1qrpP3Ps6jOKIKMooyg4=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=

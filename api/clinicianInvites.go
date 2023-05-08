@@ -222,7 +222,7 @@ func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request
 
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(req.Context(), userId, invites)
-			if err := a.populateRestrictions(ctx, *invitedUsr, invites); err != nil {
+			if err := a.populateRestrictions(ctx, *invitedUsr, *token, invites); err != nil {
 				a.logger.Errorw("error populating restriction in invites for user", "userId", userId, "error", zap.Error(err))
 				a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}, http.StatusInternalServerError)
 				return
@@ -266,7 +266,7 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			return
 		}
 
-		if err := a.populateRestrictions(ctx, *invitedUsr, []*models.Confirmation{conf}); err != nil {
+		if err := a.populateRestrictions(ctx, *invitedUsr, *token, []*models.Confirmation{conf}); err != nil {
 			a.logger.Errorw("error populating restriction in invites for user", "userId", userId, "error", zap.Error(err))
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}, http.StatusInternalServerError)
 			return
