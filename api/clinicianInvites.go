@@ -266,6 +266,17 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			return
 		}
 
+		if err := a.populateRestrictions(ctx, *invitedUsr, []*models.Confirmation{conf}); err != nil {
+			a.logger.Errorw("error populating restriction in invites for user", "userId", userId, "error", zap.Error(err))
+			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}, http.StatusInternalServerError)
+			return
+		}
+
+		if conf.Restrictions != nil && !conf.Restrictions.CanAccept {
+			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_ERR_ACCEPTING_CONFIRMATION)}, http.StatusForbidden)
+			return
+		}
+
 		association := clinics.AssociateClinicianToUserJSONRequestBody{UserId: token.UserID}
 		response, err := a.clinics.AssociateClinicianToUserWithResponse(ctx, clinics.ClinicId(conf.ClinicId), clinics.InviteId(inviteId), association)
 		if err != nil || response.StatusCode() != http.StatusOK {

@@ -53,15 +53,16 @@ const (
 	TP_SESSION_TOKEN = "x-tidepool-session-token"
 
 	//returned error messages
-	STATUS_ERR_SENDING_EMAIL         = "Error sending email"
-	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
-	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
-	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
-	STATUS_ERR_FINDING_USER          = "Error finding the user"
-	STATUS_ERR_FINDING_CLINIC        = "Error finding the clinic"
-	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
-	STATUS_ERR_CREATING_PATIENT      = "Error creating patient"
-	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
+	STATUS_ERR_SENDING_EMAIL          = "Error sending email"
+	STATUS_ERR_SAVING_CONFIRMATION    = "Error saving the confirmation"
+	STATUS_ERR_CREATING_CONFIRMATION  = "Error creating a confirmation"
+	STATUS_ERR_FINDING_CONFIRMATION   = "Error finding the confirmation"
+	STATUS_ERR_ACCEPTING_CONFIRMATION = "Error accepting invitation"
+	STATUS_ERR_FINDING_USER           = "Error finding the user"
+	STATUS_ERR_FINDING_CLINIC         = "Error finding the clinic"
+	STATUS_ERR_DECODING_CONFIRMATION  = "Error decoding the confirmation"
+	STATUS_ERR_CREATING_PATIENT       = "Error creating patient"
+	STATUS_ERR_FINDING_PREVIEW        = "Error finding the invite preview"
 
 	//returned status messages
 	STATUS_NOT_FOUND     = "Nothing found"
@@ -477,7 +478,7 @@ func (a *Api) populateRestrictions(ctx context.Context, user shoreline.UserData,
 			}
 		}
 	}
-	
+
 	return nil
 }
 
