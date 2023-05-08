@@ -456,20 +456,20 @@ func (a *Api) populateRestrictions(ctx context.Context, user shoreline.UserData,
 
 				for _, restriction := range *resp.JSON200.Restrictions {
 					if strings.HasSuffix(user.Username, fmt.Sprintf("@%s", *restriction.EmailDomain)) {
-						if restriction.RequiredIdp == nil || *restriction.RequiredIdp != "" {
+						if restriction.RequiredIdp == nil || *restriction.RequiredIdp == "" {
 							// The user's email matches the domain and no required idp is set
 							conf.Restrictions.CanAccept = true
 							break
 						}
 
 						// The user's email matches the domain, it must also match the required IDP
-						if *restriction.RequiredIdp != td.IdentityProvider {
-							// Add the required IDP as a precondition to accepting the invite
-							conf.Restrictions.RequiredIdp = *restriction.RequiredIdp
-						} else {
+						if *restriction.RequiredIdp == td.IdentityProvider {
 							// The invite can be accepted, because the user is already authenticated
 							// against the required IDP
 							conf.Restrictions.CanAccept = true
+						} else {
+							// Add the required IDP as a precondition to accepting the invite
+							conf.Restrictions.RequiredIdp = *restriction.RequiredIdp
 						}
 
 						break
