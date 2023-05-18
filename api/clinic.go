@@ -3,13 +3,14 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"log"
+	"net/http"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
 	"go.uber.org/zap"
-	"log"
-	"net/http"
 )
 
 const CLINIC_ADMIN_ROLE = "CLINIC_ADMIN"
@@ -19,7 +20,7 @@ type ClinicInvite struct {
 	Permissions commonClients.Permissions `json:"permissions"`
 }
 
-//Send a invite to join my team
+// Send a invite to join my team
 //
 // status: 200 models.Confirmation
 // status: 409 statusExistingInviteMessage - user already has a pending or declined invite
@@ -74,7 +75,7 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		clinic := (*response.JSON200)[0]
-		clinicId := string(clinic.Id)
+		clinicId := string(*clinic.Id)
 
 		patientExists, err := a.checkExistingPatientOfClinic(ctx, clinicId, inviterID)
 		if err != nil {
@@ -93,12 +94,17 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
+		suppressEmail := false
+		if clinic.SuppressedNotifications != nil && clinic.SuppressedNotifications.PatientClinicInvitation != nil {
+			suppressEmail = *clinic.SuppressedNotifications.PatientClinicInvitation
+		}
+
 		// Get the list of clinicians to send a notification to
 		maxClinicians := clinics.Limit(100)
 		role := clinics.Role(CLINIC_ADMIN_ROLE)
 		params := &clinics.ListCliniciansParams{
-			Role: &role,
-			Limit:  &maxClinicians,
+			Role:  &role,
+			Limit: &maxClinicians,
 		}
 		listResponse, err := a.clinics.ListCliniciansWithResponse(req.Context(), clinics.ClinicId(clinicId), params)
 		if err != nil || response.StatusCode() != http.StatusOK {
@@ -121,13 +127,12 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			if err := a.addProfile(invite); err != nil {
 				a.logger.Errorw("error adding profile information to confirmation", zap.Error(err))
 				return
-			} else {
+			} else if !suppressEmail {
 				fullName := invite.Creator.Profile.FullName
 
 				if invite.Creator.Profile.Patient.IsOtherPerson {
 					fullName = invite.Creator.Profile.Patient.FullName
 				}
-
 
 				emailContent := map[string]interface{}{
 					"CareteamName": fullName,
@@ -146,8 +151,8 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 	}
 }
 
-//Checks do they have an existing invite or are they already a team member
-//Or are they an existing user and already in the group?
+// Checks do they have an existing invite or are they already a team member
+// Or are they an existing user and already in the group?
 func (a *Api) checkForDuplicateClinicInvite(ctx context.Context, clinicId, invitorID string, res http.ResponseWriter) bool {
 
 	//already has invite from this user?

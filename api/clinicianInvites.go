@@ -47,8 +47,8 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 
 		confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
 		confirmation.Email = body.Email
-		confirmation.ClinicId = string(clinic.JSON200.Id)
-		confirmation.Creator.ClinicId = string(clinic.JSON200.Id)
+		confirmation.ClinicId = string(*clinic.JSON200.Id)
+		confirmation.Creator.ClinicId = string(*clinic.JSON200.Id)
 		confirmation.Creator.ClinicName = clinic.JSON200.Name
 
 		invitedUsr := a.findExistingUser(body.Email, a.sl.TokenProvide())
@@ -132,8 +132,8 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 
 		confirmation.Email = string(inviteResponse.JSON200.Email)
-		confirmation.ClinicId = string(clinic.JSON200.Id)
-		confirmation.Creator.ClinicId = string(clinic.JSON200.Id)
+		confirmation.ClinicId = string(*clinic.JSON200.Id)
+		confirmation.Creator.ClinicId = string(*clinic.JSON200.Id)
 		confirmation.Creator.ClinicName = clinic.JSON200.Name
 
 		invitedUsr := a.findExistingUser(confirmation.Email, a.sl.TokenProvide())
