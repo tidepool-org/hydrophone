@@ -94,7 +94,7 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		suppressEmail := false
+		var suppressEmail bool
 		if clinic.SuppressedNotifications != nil && clinic.SuppressedNotifications.PatientClinicInvitation != nil {
 			suppressEmail = *clinic.SuppressedNotifications.PatientClinicInvitation
 		}
