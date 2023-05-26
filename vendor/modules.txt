@@ -139,7 +139,7 @@ github.com/pkg/errors
 # github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 ## explicit
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/clinic/client v0.0.0-20211118205743-020bf46ac989
+# github.com/tidepool-org/clinic/client v0.0.0-20230518151524-142d1e4e0ec5
 ## explicit; go 1.16
 github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/go-common v0.8.2
