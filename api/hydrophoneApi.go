@@ -455,7 +455,7 @@ func (a *Api) populateRestrictions(ctx context.Context, user shoreline.UserData,
 				conf.Restrictions.CanAccept = false
 
 				for _, restriction := range *resp.JSON200.Restrictions {
-					if strings.HasSuffix(strings.ToLower(user.Username), strings.ToLower(fmt.Sprintf("@%s", *restriction.EmailDomain))) {
+					if strings.HasSuffix(strings.ToLower(user.Username), strings.ToLower(fmt.Sprintf("@%s", restriction.EmailDomain))) {
 						if restriction.RequiredIdp == nil || *restriction.RequiredIdp == "" {
 							// The user's email matches the domain and no required idp is set
 							conf.Restrictions.CanAccept = true
