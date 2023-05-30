@@ -15,9 +15,9 @@ var (
 	DefaultDelayType = retry.FixedDelay
 )
 
-type FaultTolerantConsumerGroup struct {
+type FaultTolerantConsumer struct {
 	config         *CloudEventsConfig
-	createConsumer ConsumerFactory
+	handlers       []EventHandler
 	m              sync.Mutex
 	delegate       EventConsumer
 	isShuttingDown bool
@@ -26,19 +26,22 @@ type FaultTolerantConsumerGroup struct {
 	delayType      retry.DelayTypeFunc
 }
 
-var _ EventConsumer = &FaultTolerantConsumerGroup{}
+var _ EventConsumer = &FaultTolerantConsumer{}
 
-func NewFaultTolerantConsumerGroup(config *CloudEventsConfig, createConsumer ConsumerFactory) (*FaultTolerantConsumerGroup, error) {
-	return &FaultTolerantConsumerGroup{
-		config:         config,
-		createConsumer: createConsumer,
-		attempts:       DefaultAttempts,
-		delay:          DefaultDelay,
-		delayType:      DefaultDelayType,
+func NewFaultTolerantCloudEventsConsumer(config *CloudEventsConfig) (*FaultTolerantConsumer, error) {
+	return &FaultTolerantConsumer{
+		config:    config,
+		attempts:  DefaultAttempts,
+		delay:     DefaultDelay,
+		delayType: DefaultDelayType,
 	}, nil
 }
 
-func (f *FaultTolerantConsumerGroup) Start() error {
+func (f *FaultTolerantConsumer) RegisterHandler(handler EventHandler) {
+	f.handlers = append(f.handlers, handler)
+}
+
+func (f *FaultTolerantConsumer) Start() error {
 	return retry.Do(
 		f.restart,
 		retry.Attempts(f.attempts),
@@ -47,7 +50,7 @@ func (f *FaultTolerantConsumerGroup) Start() error {
 	)
 }
 
-func (f *FaultTolerantConsumerGroup) restart() error {
+func (f *FaultTolerantConsumer) restart() error {
 	if err := f.recreateConsumer(); err != nil {
 		return err
 	}
@@ -62,7 +65,7 @@ func (f *FaultTolerantConsumerGroup) restart() error {
 	return err
 }
 
-func (f *FaultTolerantConsumerGroup) recreateConsumer() error {
+func (f *FaultTolerantConsumer) recreateConsumer() error {
 	f.m.Lock()
 	defer f.m.Unlock()
 
@@ -71,22 +74,19 @@ func (f *FaultTolerantConsumerGroup) recreateConsumer() error {
 		return retry.Unrecoverable(ErrConsumerStopped)
 	}
 
-	consumer, err := f.createConsumer()
-	if err != nil {
-		return retry.Unrecoverable(err)
-	}
-
-	delegate, err := NewSaramaConsumerGroup(f.config, consumer)
+	delegate, err := NewSaramaCloudEventsConsumer(f.config)
 	if err != nil {
 		return retry.Unrecoverable(err)
 	}
 
 	f.delegate = delegate
-
+	for _, h := range f.handlers {
+		f.delegate.RegisterHandler(h)
+	}
 	return nil
 }
 
-func (f *FaultTolerantConsumerGroup) Stop() error {
+func (f *FaultTolerantConsumer) Stop() error {
 	f.m.Lock()
 	defer f.m.Unlock()
 

@@ -46,6 +46,15 @@ var ErrUnackWCUnsupported = errors.New("transactions do not support unacknowledg
 // ErrSnapshotTransaction is returned if an transaction is started on a snapshot session.
 var ErrSnapshotTransaction = errors.New("transactions are not supported in snapshot sessions")
 
+// Type describes the type of the session
+type Type uint8
+
+// These constants are the valid types for a client session.
+const (
+	Explicit Type = iota
+	Implicit
+)
+
 // TransactionState indicates the state of the transactions FSM.
 type TransactionState uint8
 
@@ -82,7 +91,7 @@ func (s TransactionState) String() string {
 type LoadBalancedTransactionConnection interface {
 	// Functions copied over from driver.Connection.
 	WriteWireMessage(context.Context, []byte) error
-	ReadWireMessage(ctx context.Context) ([]byte, error)
+	ReadWireMessage(ctx context.Context, dst []byte) ([]byte, error)
 	Description() description.Server
 	Close() error
 	ID() string
@@ -104,7 +113,7 @@ type Client struct {
 	ClusterTime    bson.Raw
 	Consistent     bool // causal consistency
 	OperationTime  *primitive.Timestamp
-	IsImplicit     bool
+	SessionType    Type
 	Terminated     bool
 	RetryingCommit bool
 	Committing     bool
@@ -170,27 +179,15 @@ func MaxClusterTime(ct1, ct2 bson.Raw) bson.Raw {
 	return ct1
 }
 
-// NewImplicitClientSession creates a new implicit client-side session.
-func NewImplicitClientSession(pool *Pool, clientID uuid.UUID) *Client {
-	// Server-side session checkout for implicit sessions is deferred until after checking out a
-	// connection, so don't check out a server-side session right now. This will limit the number of
-	// implicit sessions to no greater than an application's maxPoolSize.
-
-	return &Client{
-		pool:       pool,
-		ClientID:   clientID,
-		IsImplicit: true,
-	}
-}
-
-// NewClientSession creates a new explicit client-side session.
-func NewClientSession(pool *Pool, clientID uuid.UUID, opts ...*ClientOptions) (*Client, error) {
-	c := &Client{
-		pool:     pool,
-		ClientID: clientID,
-	}
-
+// NewClientSession creates a Client.
+func NewClientSession(pool *Pool, clientID uuid.UUID, sessionType Type, opts ...*ClientOptions) (*Client, error) {
 	mergedOpts := mergeClientOptions(opts...)
+
+	c := &Client{
+		ClientID:    clientID,
+		SessionType: sessionType,
+		pool:        pool,
+	}
 	if mergedOpts.DefaultReadPreference != nil {
 		c.transactionRp = mergedOpts.DefaultReadPreference
 	}
@@ -207,9 +204,8 @@ func NewClientSession(pool *Pool, clientID uuid.UUID, opts ...*ClientOptions) (*
 		c.Snapshot = *mergedOpts.Snapshot
 	}
 
-	// For explicit sessions, the default for causalConsistency is true, unless Snapshot is
-	// enabled, then it's false. Set the default and then allow any explicit causalConsistency
-	// setting to override it.
+	// The default for causalConsistency is true, unless Snapshot is enabled, then it's false. Set
+	// the default and then allow any explicit causalConsistency setting to override it.
 	c.Consistent = !c.Snapshot
 	if mergedOpts.CausalConsistency != nil {
 		c.Consistent = *mergedOpts.CausalConsistency
@@ -219,8 +215,12 @@ func NewClientSession(pool *Pool, clientID uuid.UUID, opts ...*ClientOptions) (*
 		return nil, errors.New("causal consistency and snapshot cannot both be set for a session")
 	}
 
-	if err := c.SetServer(); err != nil {
-		return nil, err
+	// Server checkout for implicit sessions are deferred until after checking out a connection. This will limit the
+	// number of implicit sessions to no greater than an applications maxPoolSize.
+	if sessionType == Explicit {
+		if err := c.SetServer(); err != nil {
+			return nil, err
+		}
 	}
 
 	return c, nil

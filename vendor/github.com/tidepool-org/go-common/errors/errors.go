@@ -10,10 +10,6 @@ type WrappedError struct {
 	m string
 }
 
-type Serializable struct {
-	Error error
-}
-
 func (err *WrappedError) Error() string {
 	return err.m + ": " + err.error.Error()
 }

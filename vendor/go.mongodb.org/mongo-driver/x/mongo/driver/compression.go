@@ -26,59 +26,19 @@ type CompressionOpts struct {
 	UncompressedSize int32
 }
 
-var zstdEncoders sync.Map // map[zstd.EncoderLevel]*zstd.Encoder
+var zstdEncoders = &sync.Map{}
 
-func getZstdEncoder(level zstd.EncoderLevel) (*zstd.Encoder, error) {
-	if v, ok := zstdEncoders.Load(level); ok {
+func getZstdEncoder(l zstd.EncoderLevel) (*zstd.Encoder, error) {
+	v, ok := zstdEncoders.Load(l)
+	if ok {
 		return v.(*zstd.Encoder), nil
 	}
-	encoder, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(level))
+	encoder, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(l))
 	if err != nil {
 		return nil, err
 	}
-	zstdEncoders.Store(level, encoder)
+	zstdEncoders.Store(l, encoder)
 	return encoder, nil
-}
-
-var zlibEncoders sync.Map // map[int /*level*/]*zlibEncoder
-
-func getZlibEncoder(level int) (*zlibEncoder, error) {
-	if v, ok := zlibEncoders.Load(level); ok {
-		return v.(*zlibEncoder), nil
-	}
-	writer, err := zlib.NewWriterLevel(nil, level)
-	if err != nil {
-		return nil, err
-	}
-	encoder := &zlibEncoder{writer: writer, buf: new(bytes.Buffer)}
-	zlibEncoders.Store(level, encoder)
-
-	return encoder, nil
-}
-
-type zlibEncoder struct {
-	mu     sync.Mutex
-	writer *zlib.Writer
-	buf    *bytes.Buffer
-}
-
-func (e *zlibEncoder) Encode(dst, src []byte) ([]byte, error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	e.buf.Reset()
-	e.writer.Reset(e.buf)
-
-	_, err := e.writer.Write(src)
-	if err != nil {
-		return nil, err
-	}
-	err = e.writer.Close()
-	if err != nil {
-		return nil, err
-	}
-	dst = append(dst[:0], e.buf.Bytes()...)
-	return dst, nil
 }
 
 // CompressPayload takes a byte slice and compresses it according to the options passed
@@ -89,11 +49,20 @@ func CompressPayload(in []byte, opts CompressionOpts) ([]byte, error) {
 	case wiremessage.CompressorSnappy:
 		return snappy.Encode(nil, in), nil
 	case wiremessage.CompressorZLib:
-		encoder, err := getZlibEncoder(opts.ZlibLevel)
+		var b bytes.Buffer
+		w, err := zlib.NewWriterLevel(&b, opts.ZlibLevel)
 		if err != nil {
 			return nil, err
 		}
-		return encoder.Encode(nil, in)
+		_, err = w.Write(in)
+		if err != nil {
+			return nil, err
+		}
+		err = w.Close()
+		if err != nil {
+			return nil, err
+		}
+		return b.Bytes(), nil
 	case wiremessage.CompressorZstd:
 		encoder, err := getZstdEncoder(zstd.EncoderLevelFromZstd(opts.ZstdLevel))
 		if err != nil {
@@ -106,39 +75,36 @@ func CompressPayload(in []byte, opts CompressionOpts) ([]byte, error) {
 }
 
 // DecompressPayload takes a byte slice that has been compressed and undoes it according to the options passed
-func DecompressPayload(in []byte, opts CompressionOpts) (uncompressed []byte, err error) {
+func DecompressPayload(in []byte, opts CompressionOpts) ([]byte, error) {
 	switch opts.Compressor {
 	case wiremessage.CompressorNoOp:
 		return in, nil
 	case wiremessage.CompressorSnappy:
-		uncompressed = make([]byte, opts.UncompressedSize)
+		uncompressed := make([]byte, opts.UncompressedSize)
 		return snappy.Decode(uncompressed, in)
 	case wiremessage.CompressorZLib:
-		r, err := zlib.NewReader(bytes.NewReader(in))
+		decompressor, err := zlib.NewReader(bytes.NewReader(in))
 		if err != nil {
 			return nil, err
 		}
-		defer func() {
-			err = r.Close()
-		}()
-		uncompressed = make([]byte, opts.UncompressedSize)
-		_, err = io.ReadFull(r, uncompressed)
+		uncompressed := make([]byte, opts.UncompressedSize)
+		_, err = io.ReadFull(decompressor, uncompressed)
 		if err != nil {
 			return nil, err
 		}
 		return uncompressed, nil
 	case wiremessage.CompressorZstd:
-		r, err := zstd.NewReader(bytes.NewBuffer(in))
+		w, err := zstd.NewReader(bytes.NewBuffer(in))
 		if err != nil {
 			return nil, err
 		}
-		defer r.Close()
-		uncompressed = make([]byte, opts.UncompressedSize)
-		_, err = io.ReadFull(r, uncompressed)
+		defer w.Close()
+		var b bytes.Buffer
+		_, err = io.Copy(&b, w)
 		if err != nil {
 			return nil, err
 		}
-		return uncompressed, nil
+		return b.Bytes(), nil
 	default:
 		return nil, fmt.Errorf("unknown compressor ID %v", opts.Compressor)
 	}

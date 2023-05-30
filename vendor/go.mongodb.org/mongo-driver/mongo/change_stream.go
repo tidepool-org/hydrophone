@@ -119,7 +119,10 @@ func newChangeStream(ctx context.Context, config changeStreamConfig, pipeline in
 
 	cs.sess = sessionFromContext(ctx)
 	if cs.sess == nil && cs.client.sessionPool != nil {
-		cs.sess = session.NewImplicitClientSession(cs.client.sessionPool, cs.client.id)
+		cs.sess, cs.err = session.NewClientSession(cs.client.sessionPool, cs.client.id, session.Implicit)
+		if cs.err != nil {
+			return nil, cs.Err()
+		}
 	}
 	if cs.err = cs.client.validSession(cs.sess); cs.err != nil {
 		closeImplicitSession(cs.sess)
@@ -428,8 +431,10 @@ func (cs *ChangeStream) createPipelineOptionsDoc() (bsoncore.Document, error) {
 		plDoc = bsoncore.AppendBooleanElement(plDoc, "allChangesForCluster", true)
 	}
 
-	if cs.options.FullDocument != nil && *cs.options.FullDocument != options.Default {
-		plDoc = bsoncore.AppendStringElement(plDoc, "fullDocument", string(*cs.options.FullDocument))
+	if cs.options.FullDocument != nil {
+		if *cs.options.FullDocument != options.Default {
+			plDoc = bsoncore.AppendStringElement(plDoc, "fullDocument", string(*cs.options.FullDocument))
+		}
 	}
 
 	if cs.options.FullDocumentBeforeChange != nil {

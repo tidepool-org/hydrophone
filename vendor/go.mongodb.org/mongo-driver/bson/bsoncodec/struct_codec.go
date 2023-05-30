@@ -326,12 +326,7 @@ func (sc *StructCodec) DecodeValue(r DecodeContext, vr bsonrw.ValueReader, val r
 		}
 		field = field.Addr()
 
-		dctx := DecodeContext{
-			Registry:            r.Registry,
-			Truncate:            fd.truncate || r.Truncate,
-			defaultDocumentType: r.defaultDocumentType,
-		}
-
+		dctx := DecodeContext{Registry: r.Registry, Truncate: fd.truncate || r.Truncate}
 		if fd.decoder == nil {
 			return newDecodeError(fd.name, ErrNoDecoder{Type: field.Elem().Type()})
 		}
