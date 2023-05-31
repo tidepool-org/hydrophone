@@ -1,0 +1,40 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run hydrophone locally" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="hydrophone" />
+    <working_directory value="$PROJECT_DIR$" />
+    <envs>
+      <env name="AUTH0_API_URL" value="https://mockauth0:3043" />
+      <env name="AUTH0_AUDIENCE" value="http://your-loops.com" />
+      <env name="AUTH0_CLIENT_ID" value="HDp2TbUBxOeR6A9dEfII94HfzmUokQK6" />
+      <env name="AUTH0_DOMAIN" value="mockauth0:3043" />
+      <env name="AUTH0_SECRET" value="znEh54AITjIPoe_KI9CLGrlVRoYekd8p1rxeIEoUpOAsF-NR4SYNrOsCa4Nd76Vm" />
+      <env name="AUTH0_URL" value="https://mockauth0:3043" />
+      <env name="AUTH_SECRET" value="This is a local API secret for everyone. " />
+      <env name="CREW_HOST" value="http://api-private:3000/crew/v0" />
+      <env name="PORTAL_HOST" value="http://api-private:3000" />
+      <env name="REGION" value="eu-west-1" />
+      <env name="SEAGULL_HOST" value="http://api-private:3000/metadata" />
+      <env name="SERVER_SECRET" value="This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy" />
+      <env name="SERVICE_NAME" value="hydrophone" />
+      <env name="SHORELINE_HOST" value="http://api-private:3000/auth" />
+      <env name="SHORELINE_TOKEN_GET_INTERVAL" value="5m" />
+      <env name="SHORELINE_TOKEN_REFRESH_INTERVAL" value="1h" />
+      <env name="TIDEPOOL_HYDROPHONE_ENV" value="{ \&quot;portal\&quot;: { \&quot;serviceSpec\&quot;: { \&quot;type\&quot;: \&quot;static\&quot;, \&quot;hosts\&quot;: [\&quot;http://api-private:3000\&quot;] } }, \&quot;hakken\&quot;: { \&quot;host\&quot;: \&quot;fake-hakken\&quot;, \&quot;skipHakken\&quot;:true } }" />
+      <env name="TIDEPOOL_HYDROPHONE_SERVICE" value="{ &quot;service&quot;: { &quot;service&quot;: &quot;hydrophone&quot;, &quot;protocol&quot;: &quot;http&quot;, &quot;host&quot;: &quot;localhost:9157&quot;, &quot;keyFile&quot;: &quot;config/key.pem&quot;, &quot;certFile&quot;: &quot;config/cert.pem&quot; }, &quot;hydrophone&quot; : { &quot;webUrl&quot;: &quot;http://localhost:3000&quot;, &quot;supportUrl&quot;: &quot;mailto:&lt;&lt;email_to_support&gt;&gt;&quot;, &quot;assetUrl&quot;: &quot;&lt;&lt;url_to_s3_for_images&gt;&gt;&quot;, &quot;i18nTemplatesPath&quot;: &quot;./templates&quot;, &quot;allowPatientResetPassword&quot;: false, &quot;patientPasswordResetUrl&quot;: &quot;https://xxxx&quot; }, &quot;sesEmail&quot;: { &quot;fromAddress&quot;: &quot;test@diabeloop.fr&quot;,&quot;serverEndpoint&quot;: &quot;http://api-private:3000/mockserver&quot;, &quot;configurationSet&quot;: &quot;&quot;,&quot;defaultTags&quot;: {&quot;environment&quot;: &quot;local&quot;, &quot;service&quot;: &quot;hydrophone&quot;}} }" />
+      <env name="TIDEPOOL_STORE_ADDRESSES" value="localhost:27017" />
+      <env name="TIDEPOOL_STORE_DATABASE" value="confirm" />
+      <env name="TIDEPOOL_STORE_DEFAULT_TIMEOUT" value="2" />
+      <env name="TIDEPOOL_STORE_MAX_CONNECTION_ATTEMPTS" value="0" />
+      <env name="TIDEPOOL_STORE_OPT_PARAMS" value="authSource=admin" />
+      <env name="TIDEPOOL_STORE_PASSWORD" value="password" />
+      <env name="TIDEPOOL_STORE_USERNAME" value="personal" />
+      <env name="TIDEPOOL_STORE_WAIT_CONNECTION_INTERVAL" value="5" />
+      <env name="TIDEWHISPERERV2_HOST" value="http://api-private:3000/data" />
+    </envs>
+    <kind value="PACKAGE" />
+    <package value="github.com/mdblp/hydrophone" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/hydrophone.go" />
+    <method v="2" />
+  </configuration>
+</component>

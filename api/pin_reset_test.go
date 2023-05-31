@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	orcaSchema "github.com/mdblp/orca/schema"
-	"github.com/mdblp/tide-whisperer-v2/v2/client/tidewhisperer"
-	tide "github.com/mdblp/tide-whisperer-v2/v2/schema"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	orcaSchema "github.com/mdblp/orca/model"
+	"github.com/mdblp/tide-whisperer-v2/v3/client/tidewhisperer"
+	tide "github.com/mdblp/tide-whisperer-v2/v3/schema"
 
 	"github.com/gorilla/mux"
 	"github.com/mdblp/hydrophone/templates"

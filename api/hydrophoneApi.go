@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mdblp/tide-whisperer-v2/v2/client/tidewhisperer"
 	"net/http"
 	"net/url"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/mdblp/tide-whisperer-v2/v3/client/tidewhisperer"
 
 	log "github.com/sirupsen/logrus"
 
@@ -90,6 +91,7 @@ const (
 	STATUS_ERR_INVALID_DATA          = "Error invalid data in the invitation"
 	STATUS_ERR_DECODING_BODY         = "Error decoding the message body"
 	STATUS_ERR_MONITORED_PATIENT     = "Error on monitored patient"
+	STATUS_ERR_FINDING_INVITE        = "Error finding the invite"
 
 	//returned status messages
 	STATUS_NOT_FOUND           = "Nothing found"
@@ -199,6 +201,9 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 
 	// GET /confirm/invitations/:userid
 	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
+
+	// GET /confirm/teams/:teamId/patients/:patientId/invite
+	rtr.Handle("/teams/{teamId}/patients/{patientId}/invite", varsHandler(a.GetPatientTeamPendingInvite)).Methods("GET")
 
 	// PUT /confirm/dismiss/invite/:userid/:invited_by
 	dismiss := rtr.PathPrefix("/dismiss").Subrouter()

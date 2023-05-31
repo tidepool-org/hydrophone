@@ -1,9 +1,10 @@
 package api
 
 import (
-	tide "github.com/mdblp/tide-whisperer-v2/v2/schema"
 	"net/http"
 	"regexp"
+
+	tide "github.com/mdblp/tide-whisperer-v2/v3/schema"
 
 	log "github.com/sirupsen/logrus"
 
@@ -11,7 +12,7 @@ import (
 
 	"github.com/mdblp/go-common/v2/clients/status"
 	"github.com/mdblp/hydrophone/models"
-	otp "github.com/mdblp/hydrophone/utils/otp"
+	"github.com/mdblp/hydrophone/utils/otp"
 )
 
 const (

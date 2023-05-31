@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/mdblp/hydrophone/api"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,6 +12,8 @@ import (
 	"os"
 	"path"
 	"strings"
+
+	"github.com/mdblp/hydrophone/api"
 
 	"github.com/mdblp/go-common/clients/status"
 	appContext "github.com/mdblp/go-common/context"
@@ -24,6 +25,7 @@ type (
 	ClientInterface interface {
 		GetPendingInvitations(userID string, authToken string) ([]models.Confirmation, error)
 		GetSentInvitations(ctx context.Context, userID string, authToken string) ([]models.Confirmation, error)
+		GetPatientTeamPendingInvite(ctx context.Context, teamId string, patientId string, authToken string) (*models.Confirmation, error)
 		GetPendingSignup(userID string, authToken string) (*models.Confirmation, error)
 		CancelSignup(confirm models.Confirmation, authToken string) error
 		SendNotification(topic string, notif interface{}, authToken string) error
@@ -147,6 +149,33 @@ func (client *Client) GetSentInvitations(ctx context.Context, userID string, aut
 	}
 	if res.StatusCode == 404 {
 		return make([]models.Confirmation, 0), nil
+	}
+	return nil, handleErrors(res, req)
+}
+
+func (client *Client) GetPatientTeamPendingInvite(ctx context.Context, teamId string, patientId string, authToken string) (*models.Confirmation, error) {
+	logger := appContext.GetLogger(ctx)
+	req, err := client.getFullRequestWithContext(ctx, "GET", authToken, nil, map[string]string{}, "teams", teamId, "patients", patientId, "invite")
+	if err != nil {
+		return nil, errors.Wrap(err, "GetPatientTeamPendingInvite: error formatting request")
+	}
+
+	res, err := client.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == 200 {
+		var retVal *models.Confirmation
+		if err := json.NewDecoder(res.Body).Decode(&retVal); err != nil {
+			logger.Error(err)
+			return nil, fmt.Errorf("error parsing JSON results: %v", err)
+		}
+		return retVal, nil
+	}
+	if res.StatusCode == 404 {
+		return nil, err
 	}
 	return nil, handleErrors(res, req)
 }

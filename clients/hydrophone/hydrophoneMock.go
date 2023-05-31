@@ -2,6 +2,7 @@ package hydrophone
 
 import (
 	"context"
+
 	"github.com/mdblp/hydrophone/models"
 	"github.com/stretchr/testify/mock"
 )
@@ -51,4 +52,9 @@ func (client *HydrophoneMockClient) InviteHcp(ctx context.Context, teamId string
 func (client *HydrophoneMockClient) GetSentInvitations(ctx context.Context, userID string, authToken string) ([]models.Confirmation, error) {
 	args := client.Called(ctx, userID, authToken)
 	return args.Get(0).([]models.Confirmation), args.Error(1)
+}
+
+func (client *HydrophoneMockClient) GetPatientTeamPendingInvite(ctx context.Context, teamId string, patientId string, authToken string) (*models.Confirmation, error) {
+	args := client.Called(ctx, teamId, patientId, authToken)
+	return args.Get(0).(*models.Confirmation), args.Error(1)
 }

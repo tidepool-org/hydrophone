@@ -3,13 +3,14 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/mdblp/tide-whisperer-v2/v2/client/tidewhisperer"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/mdblp/tide-whisperer-v2/v3/client/tidewhisperer"
 
 	"github.com/gorilla/mux"
 
@@ -201,7 +202,7 @@ func TestGetStatus_StatusOk(t *testing.T) {
 
 	body, _ := ioutil.ReadAll(response.Body)
 
-	if string(body) != `{"status":{"code":200,"reason":"OK"},"version":"N/A+N/A"}` {
+	if string(body) != `{"status":{"code":200,"reason":"OK"},"version":"1.2.3+e0c73b95646559e9a3696d41711e918398d557fb"}` {
 		t.Fatalf("Message given [%s] expected [%s] ", string(body), "OK")
 	}
 
@@ -226,7 +227,7 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 
 	body, _ := ioutil.ReadAll(response.Body)
 
-	if string(body) != `{"status":{"code":500,"reason":"Session failure"},"version":"N/A+N/A"}` {
+	if string(body) != `{"status":{"code":500,"reason":"Session failure"},"version":"1.2.3+e0c73b95646559e9a3696d41711e918398d557fb"}` {
 		t.Fatalf("Message given [%s] expected [%s] ", string(body), "Session failure")
 	}
 }

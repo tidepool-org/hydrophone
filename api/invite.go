@@ -180,6 +180,63 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 	}
 }
 
+// @Summary Get patient pending invite for a given team
+// @Description Get patient pending invite for a given team.
+// @ID hydrophone-api-GetPatientTeamPendingInvite
+// @Accept  json
+// @Produce  json
+// @Param teamId path string true "team id"
+// @Param patientId path string true "patient id"
+// @Success 200 {array} models.Confirmation
+// @Failure 400 {object} status.Status "teamId or patientId was not provided"
+// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
+// @Failure 403 {object} status.Status "Authorization token is invalid"
+// @Failure 404 {object} status.Status "no invitations found for this user"
+// @Failure 500 {object} status.Status "Error while extracting the data"
+// @Router /teams/{teamId}/patients/{patientId}/invite [get]
+// @security TidepoolAuth
+func (a *Api) GetPatientTeamPendingInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	tokenValue := getSessionToken(req)
+	token := a.token(res, req)
+	if token == nil {
+		return
+	}
+
+	teamID := vars["teamId"]
+	patientID := vars["patientId"]
+
+	_, _, err := a.getTeamForUser(req.Context(), tokenValue, teamID, token.UserId, res)
+
+	if err != nil {
+		return
+	}
+
+	inviteToFind := models.Confirmation{
+		Type:   models.TypeMedicalTeamPatientInvite,
+		UserId: patientID,
+		Status: models.StatusPending,
+		Team: &models.Team{
+			ID: teamID,
+		},
+	}
+
+	var pendingInvite *models.Confirmation
+	pendingInvite, err = a.Store.FindConfirmation(req.Context(), &inviteToFind)
+	if err != nil {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_FINDING_INVITE)}
+		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
+		return
+	}
+
+	if pendingInvite == nil {
+		res.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	a.sendModelAsResWithStatus(res, pendingInvite, http.StatusOK)
+	return
+}
+
 // @Summary Get the still-pending invitations for a group you own or are an admin of
 // @Description  Get list of invitations you have sent that have not been accepted.
 // @Description  There is no way to tell if an invitation has been ignored.

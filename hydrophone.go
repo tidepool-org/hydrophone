@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	tideV2Client "github.com/mdblp/tide-whisperer-v2/v2/client/tidewhisperer"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,6 +25,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	tideV2Client "github.com/mdblp/tide-whisperer-v2/v3/client/tidewhisperer"
 
 	log "github.com/sirupsen/logrus"
 
