@@ -53,15 +53,16 @@ const (
 	TP_SESSION_TOKEN = "x-tidepool-session-token"
 
 	//returned error messages
-	STATUS_ERR_SENDING_EMAIL         = "Error sending email"
-	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
-	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
-	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
-	STATUS_ERR_FINDING_USER          = "Error finding the user"
-	STATUS_ERR_FINDING_CLINIC        = "Error finding the clinic"
-	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
-	STATUS_ERR_CREATING_PATIENT      = "Error creating patient"
-	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
+	STATUS_ERR_SENDING_EMAIL          = "Error sending email"
+	STATUS_ERR_SAVING_CONFIRMATION    = "Error saving the confirmation"
+	STATUS_ERR_CREATING_CONFIRMATION  = "Error creating a confirmation"
+	STATUS_ERR_FINDING_CONFIRMATION   = "Error finding the confirmation"
+	STATUS_ERR_ACCEPTING_CONFIRMATION = "Error accepting invitation"
+	STATUS_ERR_FINDING_USER           = "Error finding the user"
+	STATUS_ERR_FINDING_CLINIC         = "Error finding the clinic"
+	STATUS_ERR_DECODING_CONFIRMATION  = "Error decoding the confirmation"
+	STATUS_ERR_CREATING_PATIENT       = "Error creating patient"
+	STATUS_ERR_FINDING_PREVIEW        = "Error finding the invite preview"
 
 	//returned status messages
 	STATUS_NOT_FOUND     = "Nothing found"
@@ -431,6 +432,54 @@ func (a *Api) ensureIdSet(ctx context.Context, userId string, confirmations []*m
 			a.Store.UpsertConfirmation(ctx, confirmations[i])
 		}
 	}
+}
+
+// Populate restrictions
+func (a *Api) populateRestrictions(ctx context.Context, user shoreline.UserData, td shoreline.TokenData, confirmations []*models.Confirmation) error {
+	for _, conf := range confirmations {
+		// Only clinic invites can have restrictions
+		if conf.ClinicId != "" {
+			resp, err := a.clinics.ListMembershipRestrictionsWithResponse(ctx, conf.ClinicId)
+			if err != nil {
+				return err
+			}
+			if resp.StatusCode() != http.StatusOK {
+				return fmt.Errorf("unexpected response code %v when fetching membership restrctions from clinic %v", resp.StatusCode(), conf.ClinicId)
+			}
+			// If a clinic has no restrictions the invite can be accepted
+			conf.Restrictions = &models.Restrictions{
+				CanAccept: true,
+			}
+			if resp.JSON200 != nil && resp.JSON200.Restrictions != nil && len(*resp.JSON200.Restrictions) > 0 {
+				// The clinic has configured restrictions, the user must match at least one
+				conf.Restrictions.CanAccept = false
+
+				for _, restriction := range *resp.JSON200.Restrictions {
+					if strings.HasSuffix(strings.ToLower(user.Username), strings.ToLower(fmt.Sprintf("@%s", restriction.EmailDomain))) {
+						if restriction.RequiredIdp == nil || *restriction.RequiredIdp == "" {
+							// The user's email matches the domain and no required idp is set
+							conf.Restrictions.CanAccept = true
+							break
+						}
+
+						// The user's email matches the domain, it must also match the required IDP
+						if strings.ToLower(*restriction.RequiredIdp) == strings.ToLower(td.IdentityProvider) {
+							// The invite can be accepted, because the user is already authenticated
+							// against the required IDP
+							conf.Restrictions.CanAccept = true
+						} else {
+							// Add the required IDP as a precondition to accepting the invite
+							conf.Restrictions.RequiredIdp = *restriction.RequiredIdp
+						}
+
+						break
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {

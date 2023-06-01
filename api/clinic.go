@@ -75,7 +75,7 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		clinic := (*response.JSON200)[0]
-		clinicId := string(*clinic.Id)
+		clinicId := *clinic.Id
 
 		patientExists, err := a.checkExistingPatientOfClinic(ctx, clinicId, inviterID)
 		if err != nil {

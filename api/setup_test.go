@@ -54,6 +54,14 @@ var (
 // In an effort to mock shoreline so that we can return the token we wish
 type testingShorelingMock struct{ userid string }
 
+func (m *testingShorelingMock) CreateCustodialUserForClinic(clinicId string, userData shoreline.CustodialUserData, token string) (*shoreline.UserData, error) {
+	panic("Not Implemented")
+}
+
+func (m *testingShorelingMock) DeleteUserSessions(userID, token string) error {
+	panic("Not Implemented")
+}
+
 func newtestingShorelingMock(userid string) *testingShorelingMock {
 	return &testingShorelingMock{userid: userid}
 }

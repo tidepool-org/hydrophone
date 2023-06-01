@@ -22,8 +22,9 @@ type (
 		Modified  time.Time       `json:"modified" bson:"modified"`
 		Status    Status          `json:"status" bson:"status"`
 
-		TemplateName TemplateName `json:"-" bson:"templateName"`
-		UserId       string       `json:"-" bson:"userId"`
+		Restrictions *Restrictions `json:"restrictions" bson:"-"`
+		TemplateName TemplateName  `json:"-" bson:"templateName"`
+		UserId       string        `json:"-" bson:"userId"`
 	}
 
 	//basic details for the creator of the confirmation
@@ -42,6 +43,11 @@ type (
 	Profile struct {
 		FullName string  `json:"fullName"`
 		Patient  Patient `json:"patient"`
+	}
+
+	Restrictions struct {
+		CanAccept   bool   `json:"canAccept"`
+		RequiredIdp string `json:"requiredIdp,omitempty"`
 	}
 
 	//Enum type's

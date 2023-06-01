@@ -47,8 +47,8 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 
 		confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
 		confirmation.Email = body.Email
-		confirmation.ClinicId = string(*clinic.JSON200.Id)
-		confirmation.Creator.ClinicId = string(*clinic.JSON200.Id)
+		confirmation.ClinicId = *clinic.JSON200.Id
+		confirmation.Creator.ClinicId = *clinic.JSON200.Id
 		confirmation.Creator.ClinicName = clinic.JSON200.Name
 
 		invitedUsr := a.findExistingUser(body.Email, a.sl.TokenProvide())
@@ -131,9 +131,9 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			confirmation.Key = inviteId
 		}
 
-		confirmation.Email = string(inviteResponse.JSON200.Email)
-		confirmation.ClinicId = string(*clinic.JSON200.Id)
-		confirmation.Creator.ClinicId = string(*clinic.JSON200.Id)
+		confirmation.Email = inviteResponse.JSON200.Email
+		confirmation.ClinicId = *clinic.JSON200.Id
+		confirmation.Creator.ClinicId = *clinic.JSON200.Id
 		confirmation.Creator.ClinicName = clinic.JSON200.Name
 
 		invitedUsr := a.findExistingUser(confirmation.Email, a.sl.TokenProvide())
@@ -207,15 +207,27 @@ func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request
 		invitedUsr := a.findExistingUser(userId, req.Header.Get(TP_SESSION_TOKEN))
 
 		// Tokens only legit when for same userid
-		if userId != token.UserID || invitedUsr == nil {
+		if userId != token.UserID || invitedUsr == nil || invitedUsr.UserID == "" {
 			a.logger.Errorw("token belongs to a different user or user doesn't exist")
 			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
 			return
 		}
 
 		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeClinicianInvite}, models.StatusPending)
+		if err != nil {
+			a.logger.Errorw("error retrieving invites for user", "userId", userId, "error", zap.Error(err))
+			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}, http.StatusInternalServerError)
+			return
+		}
+
 		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
 			a.ensureIdSet(req.Context(), userId, invites)
+			if err := a.populateRestrictions(ctx, *invitedUsr, *token, invites); err != nil {
+				a.logger.Errorw("error populating restriction in invites for user", "userId", userId, "error", zap.Error(err))
+				a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}, http.StatusInternalServerError)
+				return
+			}
+
 			a.logger.Infof("found and checked %v invites", len(invites))
 			a.logMetric("get_clinician_invitations", req)
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
@@ -251,6 +263,17 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		if err != nil {
 			a.logger.Errorw("error while finding confirmation", zap.Error(err))
 			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			return
+		}
+
+		if err := a.populateRestrictions(ctx, *invitedUsr, *token, []*models.Confirmation{conf}); err != nil {
+			a.logger.Errorw("error populating restriction in invites for user", "userId", userId, "error", zap.Error(err))
+			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}, http.StatusInternalServerError)
+			return
+		}
+
+		if conf.Restrictions != nil && !conf.Restrictions.CanAccept {
+			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_ERR_ACCEPTING_CONFIRMATION)}, http.StatusForbidden)
 			return
 		}
 

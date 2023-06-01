@@ -8,8 +8,8 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/clinic/client v0.0.0-20230518151524-142d1e4e0ec5
-	github.com/tidepool-org/go-common v0.8.2
+	github.com/tidepool-org/clinic/client v0.0.0-20230530132534-34c26ecb89ee
+	github.com/tidepool-org/go-common v0.10.1-0.20230508194719-72b56b95a79a
 	go.mongodb.org/mongo-driver v1.11.1
 	go.uber.org/fx v1.13.1
 	go.uber.org/zap v1.16.0
@@ -21,7 +21,7 @@ require (
 	github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.2.0 // indirect
 	github.com/cloudevents/sdk-go/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/deepmap/oapi-codegen v1.10.0 // indirect
+	github.com/deepmap/oapi-codegen v1.11.0 // indirect
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
@@ -48,7 +48,7 @@ require (
 	go.uber.org/dig v1.10.0 // indirect
 	go.uber.org/multierr v1.5.0 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
-	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2 // indirect
+	golang.org/x/net v0.0.0-20220513224357-95641704303c // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/jcmturner/aescts.v1 v1.0.1 // indirect
