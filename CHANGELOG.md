@@ -3,6 +3,10 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
+## 1.15.1 - 2023-08-01
+### Engineering
+- YLP-2553 Update Diabeloop website url in emails footers
+
 ## 1.15.0 - 2023-05-24
 ### Added
 - YLP-2381 As a HCP, I want to manage patient invites made by other members of the teams
