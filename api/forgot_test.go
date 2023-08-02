@@ -50,7 +50,7 @@ func TestForgotResponds(t *testing.T) {
 			// follow standard header -> FR
 			method:       "POST",
 			url:          "/send/forgot/me@myemail.com",
-			emailSubject: "Réinitialisation du mot de passe",
+			emailSubject: "Instructions de réinitialisation du mot de passe",
 			customHeaders: map[string]string{
 				"Accept-Language": "fr",
 			},
@@ -72,7 +72,7 @@ func TestForgotResponds(t *testing.T) {
 			// follow custom header -> FR
 			method:       "POST",
 			url:          "/send/forgot/me@myemail.com",
-			emailSubject: "Réinitialisation du mot de passe",
+			emailSubject: "Instructions de réinitialisation du mot de passe",
 			customHeaders: map[string]string{
 				"x-tidepool-language": "fr",
 			},
@@ -94,7 +94,7 @@ func TestForgotResponds(t *testing.T) {
 			// custom header takes precedence over standard -> FR
 			method:       "POST",
 			url:          "/send/forgot/me@myemail.com",
-			emailSubject: "Réinitialisation du mot de passe",
+			emailSubject: "Instructions de réinitialisation du mot de passe",
 			customHeaders: map[string]string{
 				"Accept-Language": "en", "x-tidepool-language": "fr",
 			},

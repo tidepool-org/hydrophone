@@ -34,6 +34,7 @@
                 "AWS_SECRET_ACCESS_KEY": "xxxxx",
                 "AUTH_SECRET": "This is a local API secret for everyone. ",
                 "AUTH0_URL": "https://xxxxx.eu.auth0.com",
+                "TIDEWHISPERERV2_HOST": "http://api-private:3000",
             },
             "args": []
         },

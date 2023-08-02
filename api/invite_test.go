@@ -41,7 +41,7 @@ func TestInvitesLocales(t *testing.T) {
 	tests := []toTest{
 		//When the invitee is not a member yet:
 		{
-			desc:       "Caregiver invite to a non registered person, expect DE Language",
+			desc:       "Caregiver invite to a non registered person, expect FR Language",
 			returnNone: true,
 			method:     http.MethodPost,
 			url:        fmt.Sprintf("/send/invite/%s", testing_uid1),
@@ -52,12 +52,12 @@ func TestInvitesLocales(t *testing.T) {
 				"permissions": testJSONObject{"view": testJSONObject{}},
 			},
 			customHeaders: map[string]string{
-				"x-tidepool-language": "de",
+				"x-tidepool-language": "fr",
 			},
-			emailSubject: "Einladung Diabetes Care Team",
+			emailSubject: "Invitation patient",
 		},
 		{
-			desc:       "Medical team invite to a non registered person, expect DE Language",
+			desc:       "Medical team invite to a non registered person, expect FR Language",
 			method:     "POST",
 			returnNone: true,
 			url:        "/send/team/invite",
@@ -69,9 +69,9 @@ func TestInvitesLocales(t *testing.T) {
 				"role":   "member",
 			},
 			customHeaders: map[string]string{
-				"x-tidepool-language": "de",
+				"x-tidepool-language": "fr",
 			},
-			emailSubject: "Einladung zur Teilnahme an einem Betreuungsteam",
+			emailSubject: "Invitation à rejoindre une équipe de soin",
 		},
 		// WHen the member is already a user
 		{
@@ -104,7 +104,7 @@ func TestInvitesLocales(t *testing.T) {
 			customHeaders: map[string]string{
 				"x-tidepool-language": "de",
 			},
-			emailSubject: "Invitación para unirse a un equipo de atención",
+			emailSubject: "Invitación para unirse a un equipo de atención médica",
 		},
 	}
 	templatesPath, found := os.LookupEnv("TEMPLATE_PATH")

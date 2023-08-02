@@ -33,7 +33,6 @@ PatientPasswordInfoBody2: "Als je deze e-mail ten onrechte ontvangt, neem dan co
 #CareTeamInvite
 #(email for those that invited someone to join medical crew)
 CareTeamInvitationSubject: "Uitnodiging voor de patiënt"
-#CareTeamInviteHello: "Hello,"
 CareTeamInviteHeadline: "{{ .PatientName }} wil zijn/haar diabetesgegevens met jou delen op YourLoops."
 CareTeamInviteBody: "YourLoops is een visualisatieplatform voor diabetesmanagement en -rapportage. Alle gegevens die door een DBL zijn vastgelegd, worden weergegeven in grafieken en diagrammen."
 CareTeamInviteBody2: "{{ .PatientName }} koos om hun gegevens met u te delen. Om te reageren, klik op de link hieronder."
@@ -51,17 +50,17 @@ SignupClinicDeletionWarning: "Als het account niet binnen deze periode geactivee
 SignupClinicVerify: "Mijn account activeren"
 #Signup Custodial => SUPPRIMER
 #(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialConfirmationSubject: "Verify your YourLoops account"
+SignupCustodialConfirmationSubject: "Controleer je YourLoops account"
 #SignupCustodialHello: "Hello,"
-SignupCustodialHeadline: "Congrats on creating your YourLoops account!"
+SignupCustodialHeadline: "Gefeliciteerd met het aanmaken van je YourLoops account!"
 SignupCustodialVerify: "Verify Your Account"
 #Signup Custodial Clinic => SUPPRIMER
 #(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialClinicConfirmationSubject: "Diabetes Clinic Follow Up - Claim Your Account"
-SignupCustodialClinicHello: "Hi, {{ .FullName }}!"
-SignupCustodialClinicAccount: "{{ .CreatorName }} created a YourLoops account for your diabetes device data."
-SignupCustodialClinicOwnership: "You can take ownership of your free account to view and upload data from home."
-SignupCustodialClinicClaim: "Claim Your Account"
+SignupCustodialClinicConfirmationSubject: "Diabetes Clinic Follow Up - Claim je account"
+SignupCustodialClinicHello: "Hey, {{ .FullName }}!"
+SignupCustodialClinicAccount: "{{ .CreatorName }} heeft een YourLoops account aangemaakt voor je diabetesapparaatgegevens."
+SignupCustodialClinicOwnership: "Je kunt je gratis account gebruiken om thuis gegevens te bekijken en te uploaden."
+SignupCustodialClinicClaim: "Claim je account"
 #Patient Information
 PatientInfoSubject: "Welkom bij YourLoops!"
 PatientInfoHeadline: "Log in om je DBL-gegevens te bekijken."
@@ -105,7 +104,18 @@ MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} nodigt je uit om je gegeve
 MedicalTeamPatientInviteWarning: "Controleer of de bovenstaande gegevens overeenkomen met de informatie die door je zorgverlener is verstrekt voordat je op de uitnodiging reageert."
 MedicalTeamPatientInviteWarning2: "Neem bij twijfel contact op met je zorgverlener en accepteer deze uitnodiging niet."
 MedicalTeamPatientInviteInfo: "Door dit team toe te voegen, stem je ermee in om je persoonlijke gegevens (inclusief gezondheidsgegevens) te delen met de leden van het team, die geautoriseerde zorgverleners zijn die geregistreerd zijn op YourLoops."
+#Medical/Care team patient monitoring invitation
+MedicalTeamMonitoringInvitationSubject: "Invitation to join monitoring program"
+MedicalTeamMonitoringInviteHeadline: "{{ .CreatorName }} invites you to be monitored by {{ .MedicalteamName }}"
+MedicalTeamMonitoringInviteWarning: "Please verify that the above details match the information provided by your healthcare professional before responding to the invitation."
+MedicalTeamMonitoringInviteInfo: "By join this monitoring program, you consent to be contacted by the members of {{ .MedicalteamName }} who are authorized healthcare professionals registered on YourLoops."
 #Shared
 ReadDataPrivacy: "Lees ons <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
 RespondToInvite: "Reageren op uitnodiging"
 ConfirmationSubject: "Verifieer je e-mailadres"
+#AppPrescription Notification
+#(email for patients)
+AppPrescriptionSubject: "Patient medical prescription"
+AppPrescriptionHeadline: "{{ .Invitor }} prescribed the use of {{ .Product }} for you."
+AppPrescriptionBody: "Your diabetologist prescribed a new product {{ .Product }} for you. Here is your secret code: {{ .PrescriptionCode }}"
+AppPrescriptionBody2: "To accept, !!!TODO: Add detailed instructions here!!!, click on the link below."
