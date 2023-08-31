@@ -10,19 +10,18 @@ import (
 	"runtime"
 	"strings"
 
-	clinicsClient "github.com/tidepool-org/clinic/client"
-	"go.uber.org/zap"
-
 	"github.com/gorilla/mux"
 	"github.com/kelseyhightower/envconfig"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
 
+	clinicsClient "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/models"
-	"go.uber.org/fx"
 )
 
 type (

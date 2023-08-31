@@ -81,7 +81,7 @@ func mongoStoreProvider(config tpMongo.Config) (StoreClient, error) {
 	return NewMongoStoreClient(&config)
 }
 
-//MongoModule for dependency injection
+// MongoModule for dependency injection
 var MongoModule = fx.Options(fx.Provide(mongoConfigProvider, mongoStoreProvider))
 
 // wrapper function for consistent access to the collection

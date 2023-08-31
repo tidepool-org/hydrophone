@@ -84,7 +84,7 @@ var (
 	}
 )
 
-//New confirmation with just the basics
+// New confirmation with just the basics
 func NewConfirmation(theType Type, templateName TemplateName, creatorId string) (*Confirmation, error) {
 
 	if key, err := generateKey(); err != nil {
@@ -105,7 +105,7 @@ func NewConfirmation(theType Type, templateName TemplateName, creatorId string) 
 	}
 }
 
-//New confirmation that includes context data
+// New confirmation that includes context data
 func NewConfirmationWithContext(theType Type, templateName TemplateName, creatorId string, data interface{}) (*Confirmation, error) {
 	if conf, err := NewConfirmation(theType, templateName, creatorId); err != nil {
 		return nil, err
@@ -115,14 +115,14 @@ func NewConfirmationWithContext(theType Type, templateName TemplateName, creator
 	}
 }
 
-//Add context data
+// Add context data
 func (c *Confirmation) AddContext(data interface{}) {
 
 	jsonData, _ := json.Marshal(data)
 	c.Context = jsonData
 }
 
-//Decode the context data into the provided type
+// Decode the context data into the provided type
 func (c *Confirmation) DecodeContext(data interface{}) error {
 
 	if c.Context != nil {
@@ -134,7 +134,7 @@ func (c *Confirmation) DecodeContext(data interface{}) error {
 	return nil
 }
 
-//Set a new status and update the modified time
+// Set a new status and update the modified time
 func (c *Confirmation) UpdateStatus(newStatus Status) {
 	c.Status = newStatus
 	c.Modified = time.Now()

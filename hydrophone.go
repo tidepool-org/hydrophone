@@ -3,25 +3,25 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	clinicsClient "github.com/tidepool-org/clinic/client"
-	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"time"
 
-	ev "github.com/tidepool-org/go-common/events"
-	"github.com/tidepool-org/hydrophone/events"
-
 	"github.com/gorilla/mux"
-	"go.uber.org/fx"
-
 	"github.com/kelseyhightower/envconfig"
+
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
+	clinicsClient "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
+	ev "github.com/tidepool-org/go-common/events"
 	"github.com/tidepool-org/hydrophone/api"
 	sc "github.com/tidepool-org/hydrophone/clients"
+	"github.com/tidepool-org/hydrophone/events"
 	"github.com/tidepool-org/hydrophone/models"
 	"github.com/tidepool-org/hydrophone/templates"
 )
@@ -156,7 +156,7 @@ func loggerProvider() (*zap.SugaredLogger, error) {
 	return logger.Sugar(), nil
 }
 
-//InvocationParams are the parameters need to kick off a service
+// InvocationParams are the parameters need to kick off a service
 type InvocationParams struct {
 	fx.In
 	Lifecycle  fx.Lifecycle

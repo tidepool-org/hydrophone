@@ -2,10 +2,11 @@ package events
 
 import (
 	"context"
-	"github.com/tidepool-org/go-common/events"
-	"github.com/tidepool-org/hydrophone/clients"
 	"log"
 	"time"
+
+	"github.com/tidepool-org/go-common/events"
+	"github.com/tidepool-org/hydrophone/clients"
 )
 
 const deleteTimeout = 60 * time.Second
