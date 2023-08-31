@@ -35,7 +35,7 @@ type (
 
 // Checks do they have an existing invite or are they already a team member
 // Or are they an existing user and already in the group?
-func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID string, res http.ResponseWriter) bool {
+func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID string) bool {
 
 	//already has invite from this user?
 	invites, _ := a.Store.FindConfirmations(
@@ -50,8 +50,6 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 		if !invites[0].IsExpired() {
 			log.Println(statusExistingInviteMessage)
 			log.Println("last invite not yet expired")
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 			return true
 		}
 	}
@@ -411,8 +409,12 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		}
 
-		if existingInvite := a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID, res); existingInvite {
+		if a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID) {
 			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
+			statusErr := &status.StatusError{
+				Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage),
+			}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 			return
 		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email, res); alreadyMember {
 			a.logger.Infof("invited [%s] user is already a member of the care team of %v", ib.Email, invitorID)
