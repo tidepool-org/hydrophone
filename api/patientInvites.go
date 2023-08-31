@@ -3,12 +3,15 @@ package api
 import (
 	"context"
 	"fmt"
+	"net/http"
+
+	"go.uber.org/zap"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/status"
+
 	"github.com/tidepool-org/hydrophone/models"
-	"go.uber.org/zap"
-	"net/http"
 )
 
 func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars map[string]string) {

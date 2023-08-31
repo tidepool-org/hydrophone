@@ -6,11 +6,12 @@ import (
 	"log"
 	"net/http"
 
+	"go.uber.org/zap"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
-	"go.uber.org/zap"
 )
 
 const CLINIC_ADMIN_ROLE = "CLINIC_ADMIN"

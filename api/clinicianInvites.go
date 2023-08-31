@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"time"
 
+	"go.uber.org/zap"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
-	"go.uber.org/zap"
 )
 
 type ClinicianInvite struct {

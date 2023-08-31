@@ -3,10 +3,11 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"go.uber.org/zap"
 
 	"github.com/gorilla/mux"
 )

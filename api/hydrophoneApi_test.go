@@ -3,18 +3,18 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/golang/mock/gomock"
-	clinicsClient "github.com/tidepool-org/clinic/client"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 
+	clinicsClient "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
