@@ -70,7 +70,7 @@ func (a *Api) checkExistingPatientOfClinic(ctx context.Context, clinicId, patien
 	return false, fmt.Errorf("unexpected status code %v when checking if user is existing patient", response.StatusCode())
 }
 
-func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, res http.ResponseWriter) (bool, *shoreline.UserData) {
+func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string) (bool, *shoreline.UserData) {
 	//already in the group?
 	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
 
@@ -79,8 +79,6 @@ func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string, 
 			log.Printf("error checking if user is in group [%v]", err)
 		} else if perms != nil {
 			log.Println(statusExistingMemberMessage)
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingMemberMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 			return true, invitedUsr
 		}
 		return false, invitedUsr
@@ -416,8 +414,10 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 			}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 			return
-		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email, res); alreadyMember {
+		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email); alreadyMember {
 			a.logger.Infof("invited [%s] user is already a member of the care team of %v", ib.Email, invitorID)
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingMemberMessage)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 			return
 		} else {
 			//None exist so lets create the invite
