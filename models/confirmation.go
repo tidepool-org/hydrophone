@@ -125,6 +125,16 @@ func (c *Confirmation) AddContext(data interface{}) {
 	c.Context = jsonData
 }
 
+// HasPermissions checks for permissions with the given name.
+func (c *Confirmation) HasPermission(name string) (bool, error) {
+	perms := clients.Permissions{}
+	err := c.DecodeContext(&perms)
+	if err != nil {
+		return false, err
+	}
+	return perms[name] != nil, nil
+}
+
 // Decode the context data into the provided type
 func (c *Confirmation) DecodeContext(data interface{}) error {
 

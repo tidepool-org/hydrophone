@@ -22,6 +22,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/models"
+	"github.com/tidepool-org/platform/alerts"
 )
 
 type (
@@ -34,6 +35,7 @@ type (
 		gatekeeper commonClients.Gatekeeper
 		seagull    commonClients.Seagull
 		metrics    highwater.Client
+		alerts     AlertsClient
 		logger     *zap.SugaredLogger
 		Config     Config
 	}
@@ -47,6 +49,11 @@ type (
 	// this just makes it easier to bind a handler for the Handle function
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
 )
+
+type AlertsClient interface {
+	Upsert(context.Context, *alerts.Config) error
+	Delete(context.Context, *alerts.Config) error
+}
 
 const (
 	TP_SESSION_TOKEN = "x-tidepool-session-token"
@@ -63,6 +70,7 @@ const (
 	STATUS_ERR_DECODING_CONTEXT       = "Error decoding the confirmation context"
 	STATUS_ERR_CREATING_PATIENT       = "Error creating patient"
 	STATUS_ERR_FINDING_PREVIEW        = "Error finding the invite preview"
+	STATUS_ERR_CREATING_ALERTS_CONFIG = "Error creating alerts configuration"
 
 	//returned status messages
 	STATUS_NOT_FOUND     = "Nothing found"
@@ -81,6 +89,7 @@ func NewApi(
 	gatekeeper commonClients.Gatekeeper,
 	metrics highwater.Client,
 	seagull commonClients.Seagull,
+	alerts AlertsClient,
 	templates models.Templates,
 	logger *zap.SugaredLogger,
 ) *Api {
@@ -93,6 +102,7 @@ func NewApi(
 		gatekeeper: gatekeeper,
 		metrics:    metrics,
 		seagull:    seagull,
+		alerts:     alerts,
 		templates:  templates,
 		logger:     logger,
 	}
@@ -328,6 +338,12 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 			templateName = models.TemplateNamePasswordReset
 		case models.TypeCareteamInvite:
 			templateName = models.TemplateNameCareteamInvite
+			has, err := conf.HasPermission("alerting")
+			if err != nil {
+				log.Printf("error checking permissions, will fallback to non-alerting: %s", err)
+			} else if has {
+				templateName = models.TemplateNameCareteamInviteWithAlerting
+			}
 		case models.TypeSignUp:
 			templateName = models.TemplateNameSignup
 		case models.TypeNoAccount:

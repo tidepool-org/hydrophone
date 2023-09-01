@@ -18,20 +18,22 @@ import (
 
 const (
 	//Status message we return from the service
-	statusExistingInviteMessage  = "There is already an existing invite"
-	statusExistingMemberMessage  = "The user is already an existing member"
-	statusExistingPatientMessage = "The user is already a patient of the clinic"
-	statusInviteNotFoundMessage  = "No matching invite was found"
-	statusForbiddenMessage       = "Forbidden to perform requested operation"
+	statusExistingInviteMessage      = "There is already an existing invite"
+	statusExistingMemberMessage      = "The user is already an existing member"
+	statusExistingPatientMessage     = "The user is already a patient of the clinic"
+	statusInviteNotFoundMessage      = "No matching invite was found"
+	statusForbiddenMessage           = "Forbidden to perform requested operation"
+	statusInternalServerErrorMessage = "Internal Server Error"
 )
 
-type (
-	//Invite details for generating a new invite
-	inviteBody struct {
-		Email       string                    `json:"email"`
-		Permissions commonClients.Permissions `json:"permissions"`
-	}
-)
+// Invite details for generating a new invite
+type inviteBody struct {
+	Email string `json:"email"`
+	models.CareTeamContext
+	// UnmarshalJSON prevents inviteBody from inheriting it from
+	// CareTeamContext.
+	UnmarshalJSON struct{} `json:"-"`
+}
 
 // Checks do they have an existing invite or are they already a team member
 // Or are they an existing user and already in the group?
@@ -253,6 +255,15 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 		log.Printf("AcceptInvite: permissions were set as [%v] after an invite was accepted", setPerms)
+		if err := a.alerts.Upsert(req.Context(), ctc.AlertsConfig); err != nil {
+			log.Printf("AcceptInvite: error creating alerting config: %s", err)
+			a.sendModelAsResWithStatus(
+				res,
+				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_CREATING_ALERTS_CONFIG)},
+				http.StatusInternalServerError,
+			)
+			return
+		}
 		conf.UpdateStatus(models.StatusCompleted)
 		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
@@ -380,94 +391,140 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 // status: 409 statusExistingMemberMessage - user is already part of the team
 // status: 400
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if token := a.token(res, req); token != nil {
+	token := a.token(res, req) // a.token writes a response on failure
+	if token == nil {
+		return
+	}
 
-		invitorID := vars["userid"]
+	invitorID := vars["userid"]
+	if invitorID == "" {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-		if invitorID == "" {
-			res.WriteHeader(http.StatusBadRequest)
+	requiredPerms := commonClients.Permissions{
+		"root":      commonClients.Allowed,
+		"custodian": commonClients.Allowed,
+	}
+	permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, requiredPerms)
+	if err != nil {
+		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+		return
+	} else if permissions["root"] == nil && permissions["custodian"] == nil {
+		a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+		return
+	}
+
+	var ib = &inviteBody{}
+	if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
+		log.Printf("SendInvite: error decoding invite to detail %v\n", err)
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		return
+	}
+
+	if ib.Email == "" || ib.Permissions == nil {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID) {
+		log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
+		statusErr := &status.StatusError{
+			Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage),
+		}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
+		return
+	}
+	alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email)
+	if alreadyMember && invitedUsr != nil {
+		// In the past, having an existing relationship would cause this
+		// handler to abort with an error response. With the development of
+		// the Care Team Alerting features, users with existing relationships
+		// should be able to send a new invite that adds alerting
+		// permissions. As a result, this code now checks if the current
+		// invitation would add alerting permissions, and if so, allows it to
+		// continue.
+		perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorID)
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, statusInternalServerErrorMessage)
 			return
 		}
-
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
-			return
-		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
-			return
-		}
-
-		defer req.Body.Close()
-		var ib = &inviteBody{}
-		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-			log.Printf("SendInvite: error decoding invite to detail %v\n", err)
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-			return
-		}
-
-		if ib.Email == "" || ib.Permissions == nil {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID) {
-			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
-			statusErr := &status.StatusError{
-				Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage),
-			}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-			return
-		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email); alreadyMember {
+		if !addsAlertingPermissions(perms, ib.Permissions) {
+			// Since this invitation doesn't add alerting permissions,
+			// maintain the previous handler's behavior, and abort with an
+			// error response.
 			a.logger.Infof("invited [%s] user is already a member of the care team of %v", ib.Email, invitorID)
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingMemberMessage)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 			return
-		} else {
-			//None exist so lets create the invite
-			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
-
-			invite.Email = ib.Email
-			if invitedUsr != nil {
-				invite.UserId = invitedUsr.UserID
-			}
-
-			if a.addOrUpdateConfirmation(req.Context(), invite, res) {
-				a.logMetric("invite created", req)
-
-				if err := a.addProfile(invite); err != nil {
-					log.Println("SendInvite: ", err.Error())
-				} else {
-
-					fullName := invite.Creator.Profile.FullName
-
-					if invite.Creator.Profile.Patient.IsOtherPerson {
-						fullName = invite.Creator.Profile.Patient.FullName
-					}
-
-					var webPath = "signup"
-
-					if invite.UserId != "" {
-						webPath = "login"
-					}
-
-					emailContent := map[string]interface{}{
-						"CareteamName": fullName,
-						"Email":        invite.Email,
-						"WebPath":      webPath,
-					}
-
-					if a.createAndSendNotification(req, invite, emailContent) {
-						a.logMetric("invite sent", req)
-					}
-				}
-
-				a.sendModelAsResWithStatus(res, invite, http.StatusOK)
-				return
-			}
 		}
-
+		for key := range perms {
+			log.Printf("adding permission: %q %+v", key, perms[key])
+			ib.Permissions[key] = perms[key]
+		}
 	}
+
+	templateName := models.TemplateNameCareteamInvite
+	if ib.Permissions["alerting"] != nil {
+		templateName = models.TemplateNameCareteamInviteWithAlerting
+	}
+
+	invite, err := models.NewConfirmationWithContext(models.TypeCareteamInvite, templateName, invitorID, ib.CareTeamContext)
+	if err != nil {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusInternalServerErrorMessage)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+		return
+	}
+
+	invite.Email = ib.Email
+	if invitedUsr != nil {
+		invite.UserId = invitedUsr.UserID
+	}
+
+	if !a.addOrUpdateConfirmation(req.Context(), invite, res) {
+		return
+	}
+	a.logMetric("invite created", req)
+
+	if err := a.addProfile(invite); err != nil {
+		log.Println("SendInvite: ", err.Error())
+		a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+	}
+
+	fullName := "Mickey Mouse"
+	if invite.Creator.Profile == nil {
+		log.Printf("no creator profile for the invite")
+	} else {
+		fullName = invite.Creator.Profile.FullName
+		if invite.Creator.Profile.Patient.IsOtherPerson {
+			fullName = invite.Creator.Profile.Patient.FullName
+		}
+	}
+
+	var webPath = "signup"
+
+	if invite.UserId != "" {
+		webPath = "login"
+	}
+
+	emailContent := map[string]interface{}{
+		"CareteamName": fullName,
+		"Email":        invite.Email,
+		"WebPath":      webPath,
+		"Nickname":     ib.Nickname,
+	}
+
+	if a.createAndSendNotification(req, invite, emailContent) {
+		a.logMetric("invite sent", req)
+	}
+
+	a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+	return
+}
+
+func addsAlertingPermissions(existingPerms, newPerms commonClients.Permissions) bool {
+	return existingPerms["alerting"] == nil && newPerms["alerting"] != nil
 }
 
 // Resend a care team invite

@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"path"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -24,6 +28,7 @@ import (
 	"github.com/tidepool-org/hydrophone/events"
 	"github.com/tidepool-org/hydrophone/models"
 	"github.com/tidepool-org/hydrophone/templates"
+	"github.com/tidepool-org/platform/alerts"
 )
 
 var defaultStopTimeout = 60 * time.Second
@@ -38,6 +43,7 @@ type (
 		MetricsClientAddress    string `split_words:"true" required:"true"`
 		SeagullClientAddress    string `split_words:"true" required:"true"`
 		ClinicClientAddress     string `split_words:"true" required:"true"`
+		DataClientAddress       string `split_words:"true" required:"true"`
 	}
 
 	//InboundConfig describes how to receive inbound communication
@@ -82,6 +88,70 @@ func seagullProvider(config OutboundConfig, httpClient *http.Client) clients.Sea
 		WithHostGetter(disc.NewStaticHostGetterFromString(config.SeagullClientAddress)).
 		WithHttpClient(httpClient).
 		Build()
+}
+
+func alertsProvider(config OutboundConfig, httpClient *http.Client, shorelineClient shoreline.Client) api.AlertsClient {
+	return &alertsClient{
+		client:    httpClient,
+		shoreline: shorelineClient,
+		host:      config.DataClientAddress,
+	}
+}
+
+type alertsClient struct {
+	client    *http.Client
+	host      string
+	shoreline clients.TokenProvider
+}
+
+func (c *alertsClient) Upsert(ctx context.Context, cfg *alerts.Config) error {
+	url := c.urlf("/v1/alerts/%s/%s", cfg.UserID, cfg.FollowedID)
+	body := &bytes.Buffer{}
+	if err := json.NewEncoder(body).Encode(cfg.Alerts); err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
+	if err != nil {
+		return err
+	}
+	token := c.shoreline.TokenProvide()
+	req.Header.Add(api.TP_SESSION_TOKEN, token)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("alerts config upsert: unexpected response code: %s", resp.Status)
+	}
+
+	return nil
+}
+
+func (c *alertsClient) urlf(pathFormat string, args ...interface{}) string {
+	return fmt.Sprintf(c.host+path.Join("/", pathFormat), args...)
+}
+
+func (c *alertsClient) Delete(ctx context.Context, cfg *alerts.Config) error {
+	url := c.urlf("/v1/alerts/%s/%s", cfg.UserID, cfg.FollowedID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+	token := c.shoreline.TokenProvide()
+	req.Header.Add(api.TP_SESSION_TOKEN, token)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("alerts config upsert: unexpected response code: %s", resp.Status)
+	}
+
+	return nil
 }
 
 func clinicProvider(config OutboundConfig, shoreline shoreline.Client) (clinicsClient.ClientWithResponsesInterface, error) {
@@ -249,6 +319,7 @@ func main() {
 			serverProvider,
 			clinicProvider,
 			loggerProvider,
+			alertsProvider,
 			api.NewApi,
 		),
 		fx.Invoke(startShoreline),
