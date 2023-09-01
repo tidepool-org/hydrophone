@@ -49,40 +49,40 @@ var (
 	 */
 	mock_NoPermsGatekeeper = commonClients.NewGatekeeperMock(commonClients.Permissions{"upload": commonClients.Permission{"userid": "other-id"}}, nil)
 
-	mock_uid1Shoreline = newtestingShorelingMock(testing_uid1)
+	mock_uid1Shoreline = newtestingShorelineMock(testing_uid1)
 )
 
 // In an effort to mock shoreline so that we can return the token we wish
-type testingShorelingMock struct{ userid string }
+type testingShorelineMock struct{ userid string }
 
-func (m *testingShorelingMock) CreateCustodialUserForClinic(clinicId string, userData shoreline.CustodialUserData, token string) (*shoreline.UserData, error) {
+func (m *testingShorelineMock) CreateCustodialUserForClinic(clinicId string, userData shoreline.CustodialUserData, token string) (*shoreline.UserData, error) {
 	panic("Not Implemented")
 }
 
-func (m *testingShorelingMock) DeleteUserSessions(userID, token string) error {
+func (m *testingShorelineMock) DeleteUserSessions(userID, token string) error {
 	panic("Not Implemented")
 }
 
-func newtestingShorelingMock(userid string) *testingShorelingMock {
-	return &testingShorelingMock{userid: userid}
+func newtestingShorelineMock(userid string) *testingShorelineMock {
+	return &testingShorelineMock{userid: userid}
 }
 
-func (m *testingShorelingMock) Start() error { return nil }
-func (m *testingShorelingMock) Close()       {}
-func (m *testingShorelingMock) Login(username, password string) (*shoreline.UserData, string, error) {
+func (m *testingShorelineMock) Start() error { return nil }
+func (m *testingShorelineMock) Close()       {}
+func (m *testingShorelineMock) Login(username, password string) (*shoreline.UserData, string, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, "", nil
 }
-func (m *testingShorelingMock) Signup(username, password, email string) (*shoreline.UserData, error) {
+func (m *testingShorelineMock) Signup(username, password, email string) (*shoreline.UserData, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
-func (m *testingShorelingMock) TokenProvide() string { return testing_token }
-func (m *testingShorelingMock) GetUser(userID, token string) (*shoreline.UserData, error) {
+func (m *testingShorelineMock) TokenProvide() string { return testing_token }
+func (m *testingShorelineMock) GetUser(userID, token string) (*shoreline.UserData, error) {
 	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
 }
-func (m *testingShorelingMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate, token string) error {
+func (m *testingShorelineMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate, token string) error {
 	return nil
 }
-func (m *testingShorelingMock) CheckToken(token string) *shoreline.TokenData {
+func (m *testingShorelineMock) CheckToken(token string) *shoreline.TokenData {
 	return &shoreline.TokenData{UserID: m.userid, IsServer: false}
 }
 
