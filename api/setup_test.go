@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -53,7 +55,7 @@ var (
 )
 
 // In an effort to mock shoreline so that we can return the token we wish
-type testingShorelineMock struct{ userid string }
+type testingShorelineMock struct{ userIDs []string }
 
 func (m *testingShorelineMock) CreateCustodialUserForClinic(clinicId string, userData shoreline.CustodialUserData, token string) (*shoreline.UserData, error) {
 	panic("Not Implemented")
@@ -63,27 +65,60 @@ func (m *testingShorelineMock) DeleteUserSessions(userID, token string) error {
 	panic("Not Implemented")
 }
 
-func newtestingShorelineMock(userid string) *testingShorelineMock {
-	return &testingShorelineMock{userid: userid}
+func newtestingShorelineMock(userIDs ...string) *testingShorelineMock {
+	return &testingShorelineMock{userIDs: userIDs}
 }
 
 func (m *testingShorelineMock) Start() error { return nil }
 func (m *testingShorelineMock) Close()       {}
-func (m *testingShorelineMock) Login(username, password string) (*shoreline.UserData, string, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, "", nil
+func (m *testingShorelineMock) Login(userID, password string) (*shoreline.UserData, string, error) {
+	for _, mockedUserID := range m.userIDs {
+		if mockedUserID == userID {
+			return m.mockUser(mockedUserID), "", nil
+		}
+	}
+	return nil, "", fmt.Errorf("userID not mocked: %q", userID)
 }
-func (m *testingShorelineMock) Signup(username, password, email string) (*shoreline.UserData, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
+
+func (m *testingShorelineMock) mockUser(userID string) *shoreline.UserData {
+	return &shoreline.UserData{
+		UserID:   userID,
+		Emails:   []string{userID + "@email.org"},
+		Username: userID + "@email.org",
+	}
 }
+
+func (m *testingShorelineMock) Signup(userID, password, email string) (*shoreline.UserData, error) {
+	for _, mockedUserID := range m.userIDs {
+		if mockedUserID == userID {
+			return m.mockUser(userID), nil
+		}
+	}
+	return nil, fmt.Errorf("userID not mocked: %q", userID)
+}
+
 func (m *testingShorelineMock) TokenProvide() string { return testing_token }
+
 func (m *testingShorelineMock) GetUser(userID, token string) (*shoreline.UserData, error) {
-	return &shoreline.UserData{UserID: m.userid, Emails: []string{m.userid + "@email.org"}, Username: m.userid + "@email.org"}, nil
+	for _, mockedUserID := range m.userIDs {
+		if mockedUserID == userID {
+			return m.mockUser(userID), nil
+		}
+	}
+	return nil, fmt.Errorf("userID not mocked: %q", userID)
 }
+
 func (m *testingShorelineMock) UpdateUser(userID string, userUpdate shoreline.UserUpdate, token string) error {
 	return nil
 }
+
 func (m *testingShorelineMock) CheckToken(token string) *shoreline.TokenData {
-	return &shoreline.TokenData{UserID: m.userid, IsServer: false}
+	for _, mockedUserID := range m.userIDs {
+		if mockedUserID == token || (token == testing_token_uid1 && mockedUserID == testing_uid1) {
+			return &shoreline.TokenData{UserID: mockedUserID, IsServer: false}
+		}
+	}
+	return nil
 }
 
 type (
