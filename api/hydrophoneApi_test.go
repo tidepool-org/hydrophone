@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -21,6 +22,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/models"
+	"github.com/tidepool-org/platform/alerts"
 )
 
 var (
@@ -34,6 +36,10 @@ var (
 
 	MockGatekeeperModule = fx.Options(fx.Provide(func() commonClients.Gatekeeper {
 		return commonClients.NewGatekeeperMock(nil, &status.StatusError{Status: status.NewStatus(500, "Unable to parse response.")})
+	}))
+
+	MockAlertsModule = fx.Options(fx.Provide(func() AlertsClient {
+		return newMockAlertsClient()
 	}))
 
 	MockMetricsModule = fx.Options(fx.Provide(func() highwater.Client {
@@ -70,6 +76,7 @@ var (
 		MockShorelineModule,
 		MockMetricsModule,
 		MockSeagullModule,
+		MockAlertsModule,
 		MockTemplatesModule,
 		MockConfigModule,
 		fx.Provide(NewApi),
@@ -313,4 +320,18 @@ func Test_TokenUserHasRequestedPermissions_FullMatch(t *testing.T) {
 	if !reflect.DeepEqual(permissions, requestedPermissions) {
 		t.Fatalf("Unexpected permissions returned: %#v", permissions)
 	}
+}
+
+type mockAlertsClient struct{}
+
+func newMockAlertsClient() *mockAlertsClient {
+	return &mockAlertsClient{}
+}
+
+func (c *mockAlertsClient) Upsert(_ context.Context, _ *alerts.Config) error {
+	return nil
+}
+
+func (c *mockAlertsClient) Delete(_ context.Context, _ *alerts.Config) error {
+	return nil
 }

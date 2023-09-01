@@ -229,10 +229,10 @@ func TestSignupResponds(t *testing.T) {
 		var testRtr = mux.NewRouter()
 
 		if test.returnNone {
-			hydrophoneFindsNothing := NewApi(FAKE_CONFIG, nil, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates, zap.NewNop().Sugar())
+			hydrophoneFindsNothing := NewApi(FAKE_CONFIG, nil, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, nil, mockTemplates, zap.NewNop().Sugar())
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
-			hydrophone := NewApi(FAKE_CONFIG, nil, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates, zap.NewNop().Sugar())
+			hydrophone := NewApi(FAKE_CONFIG, nil, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, nil, mockTemplates, zap.NewNop().Sugar())
 			hydrophone.SetHandlers("", testRtr)
 		}
 

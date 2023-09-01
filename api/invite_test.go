@@ -2,15 +2,19 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"github.com/gorilla/mux"
+	commonClients "github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/hydrophone/clients"
+	"github.com/tidepool-org/hydrophone/models"
 )
 
 func initTestingRouterNoPerms() *mux.Router {
@@ -24,6 +28,7 @@ func initTestingRouterNoPerms() *mux.Router {
 		mock_NoPermsGatekeeper,
 		mockMetrics,
 		mockSeagull,
+		nil,
 		mockTemplates,
 		zap.NewNop().Sugar(),
 	)
@@ -252,6 +257,7 @@ func TestInviteResponds(t *testing.T) {
 			mockGatekeeper,
 			mockMetrics,
 			mockSeagull,
+			nil,
 			mockTemplates,
 			zap.NewNop().Sugar(),
 		)
@@ -267,6 +273,7 @@ func TestInviteResponds(t *testing.T) {
 				mockGatekeeper,
 				mockMetrics,
 				mockSeagull,
+				nil,
 				mockTemplates,
 				zap.NewNop().Sugar(),
 			)
@@ -307,5 +314,254 @@ func TestInviteResponds(t *testing.T) {
 				t.Fail()
 			}
 		}
+	}
+}
+
+func TestInviteCanAddAlerting(t *testing.T) {
+	mockShorelineAlerting := newtestingShorelineMock(testing_uid1, testing_uid2)
+	mockStoreAlerting := newMockRecordingStore(mockStoreEmpty, "UpsertConfirmation")
+	perms := map[string]commonClients.Permissions{
+		key(testing_uid1, testing_uid1): {"root": commonClients.Allowed},
+		key(testing_uid2, testing_uid2): {"root": commonClients.Allowed},
+		key(testing_uid2, testing_uid1): {"view": commonClients.Allowed},
+	}
+	mockGatekeeperAlerting := newMockGatekeeperAlerting(perms)
+	hydrophone := NewApi(
+		FAKE_CONFIG,
+		nil,
+		mockStoreAlerting,
+		mockNotifier,
+		mockShorelineAlerting,
+		mockGatekeeperAlerting,
+		mockMetrics,
+		mockSeagull,
+		nil,
+		mockTemplates,
+		zap.NewNop().Sugar(),
+	)
+	testRtr := mux.NewRouter()
+	hydrophone.SetHandlers("", testRtr)
+	buf := &bytes.Buffer{}
+	err := json.NewEncoder(buf).Encode(map[string]interface{}{
+		"email": testing_uid2 + "@email.org",
+		"permissions": commonClients.Permissions{
+			"view":     commonClients.Allowed,
+			"alerting": commonClients.Allowed,
+		},
+	})
+	if err != nil {
+		t.Fatalf("error creating test request body: %s", err)
+	}
+	request, err := http.NewRequest(http.MethodPost, "/send/invite/"+testing_uid1, buf)
+	if err != nil {
+		t.Fatalf("error creating test request: %s", err)
+	}
+	request.Header.Set(TP_SESSION_TOKEN, testing_token_uid1)
+	response := httptest.NewRecorder()
+
+	testRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status `%d` actual `%d`", http.StatusOK, response.Code)
+	}
+
+	for _, call := range mockStoreAlerting.Calls["UpsertConfirmation"] {
+		conf, ok := call.(*models.Confirmation)
+		if !ok {
+			t.Fatalf("expected Confirmation, got %+v", call)
+		}
+		ctc := &models.CareTeamContext{}
+		err := conf.DecodeContext(ctc)
+		if err != nil {
+			t.Fatalf("error decoding Confirmation Context: %s", err)
+		}
+		t.Logf("permissions: %+v", ctc.Permissions)
+		if ctc.Permissions["view"] == nil {
+			t.Fatalf("expected view permissions, got nil")
+		}
+		if ctc.Permissions["alerting"] == nil {
+			t.Fatalf("expected alerting permissions, got nil")
+		}
+		for key := range ctc.Permissions {
+			if key != "alerting" && key != "view" {
+				t.Fatalf("expected only alerting and view, got %q", key)
+			}
+		}
+	}
+
+}
+
+func TestInviteAddingAlertingMergesPerms(t *testing.T) {
+	mockShorelineAlerting := newtestingShorelineMock(testing_uid1, testing_uid2)
+	mockStoreAlerting := newMockRecordingStore(mockStoreEmpty, "UpsertConfirmation")
+	perms := map[string]commonClients.Permissions{
+		key(testing_uid1, testing_uid1): {"root": commonClients.Allowed},
+		key(testing_uid2, testing_uid2): {"root": commonClients.Allowed},
+		key(testing_uid2, testing_uid1): {"view": commonClients.Allowed, "other": commonClients.Allowed},
+	}
+	mockGatekeeperAlerting := newMockGatekeeperAlerting(perms)
+	hydrophone := NewApi(
+		FAKE_CONFIG,
+		nil,
+		mockStoreAlerting,
+		mockNotifier,
+		mockShorelineAlerting,
+		mockGatekeeperAlerting,
+		mockMetrics,
+		mockSeagull,
+		nil,
+		mockTemplates,
+		zap.NewNop().Sugar(),
+	)
+	testRtr := mux.NewRouter()
+	hydrophone.SetHandlers("", testRtr)
+	buf := &bytes.Buffer{}
+	err := json.NewEncoder(buf).Encode(map[string]interface{}{
+		"email": testing_uid2 + "@email.org",
+		"permissions": commonClients.Permissions{
+			"view":     commonClients.Allowed,
+			"alerting": commonClients.Allowed,
+		},
+	})
+	if err != nil {
+		t.Fatalf("error creating test request body: %s", err)
+	}
+	request, err := http.NewRequest(http.MethodPost, "/send/invite/"+testing_uid1, buf)
+	if err != nil {
+		t.Fatalf("error creating test request: %s", err)
+	}
+	request.Header.Set(TP_SESSION_TOKEN, testing_token_uid1)
+	response := httptest.NewRecorder()
+	testRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status `%d` actual `%d`", http.StatusOK, response.Code)
+	}
+
+	for _, call := range mockStoreAlerting.Calls["UpsertConfirmation"] {
+		conf, ok := call.(*models.Confirmation)
+		if !ok {
+			t.Fatalf("expected Confirmation, got %+v", call)
+		}
+		ctc := &models.CareTeamContext{}
+		err := conf.DecodeContext(ctc)
+		if err != nil {
+			t.Fatalf("error decoding Confirmation Context: %s", err)
+		}
+		t.Logf("permissions: %+v", ctc.Permissions)
+		if ctc.Permissions["view"] == nil {
+			t.Fatalf("expected view permissions, got nil")
+		}
+		if ctc.Permissions["alerting"] == nil {
+			t.Fatalf("expected alerting permissions, got nil")
+		}
+		if ctc.Permissions["other"] == nil {
+			t.Fatalf("expected other permissions, got nil")
+		}
+		for key := range ctc.Permissions {
+			if key != "alerting" && key != "view" && key != "other" {
+				t.Fatalf("expected only alerting, view, and other, got %q", key)
+			}
+		}
+	}
+}
+
+// mockRecordingStore can record the arguments passed to its methods.
+//
+// These arguments can be checked for testing.
+type mockRecordingStore struct {
+	clients.StoreClient
+	Calls map[string][]interface{}
+}
+
+func newMockRecordingStore(store clients.StoreClient, calls ...string) *mockRecordingStore {
+	callsToRecord := map[string][]interface{}{}
+	for _, call := range calls {
+		callsToRecord[call] = []interface{}{}
+	}
+	return &mockRecordingStore{
+		StoreClient: store,
+		Calls:       callsToRecord,
+	}
+}
+
+func (r *mockRecordingStore) UpsertConfirmation(ctx context.Context, confirmation *models.Confirmation) error {
+	if recordings := r.Calls["UpsertConfirmation"]; recordings != nil {
+		r.Calls["UpsertConfirmation"] = append(recordings, confirmation)
+		return nil
+	}
+	return r.StoreClient.UpsertConfirmation(ctx, confirmation)
+}
+
+// mockGatekeeperAlerting extends GatekeeperMock with permissions for multiple
+// mocked users.
+type mockGatekeeperAlerting struct {
+	*commonClients.GatekeeperMock
+	perms map[string]commonClients.Permissions
+}
+
+func newMockGatekeeperAlerting(perms map[string]commonClients.Permissions) *mockGatekeeperAlerting {
+	return &mockGatekeeperAlerting{
+		GatekeeperMock: commonClients.NewGatekeeperMock(nil, nil),
+		perms:          perms,
+	}
+}
+
+func (g *mockGatekeeperAlerting) UserInGroup(userID string, groupID string) (commonClients.Permissions, error) {
+	if perms, ok := g.perms[key(userID, groupID)]; ok {
+		return perms, nil
+	}
+	return g.GatekeeperMock.UserInGroup(userID, groupID)
+}
+
+// key is helper for generating mockGatekeeperAlerting map keys.
+func key(userID, groupID string) string {
+	return userID + ":" + groupID
+}
+
+func TestInviteBodyParsing(t *testing.T) {
+	rawBody := []byte(`{
+  "alertsConfig": {
+    "urgentLow": {
+      "threshold": {
+        "units": "mg/dL",
+        "value": 100
+      },
+      "repeat": 0,
+      "enabled": true
+    }
+  },
+  "permissions": {
+    "view": {}
+  },
+  "email": "foo@example.com",
+  "nickname": "whatthefoo?"
+}`)
+	ib := &inviteBody{}
+	err := json.Unmarshal(rawBody, ib)
+	if err != nil {
+		t.Fatalf("expected nil, got %+v", err)
+	}
+
+	if ib.Email != "foo@example.com" {
+		t.Fatalf("expected foo@example.com, got %q", ib.Email)
+	}
+
+	if ib.Permissions == nil {
+		t.Fatalf("expected permissions, got nil")
+	} else if ib.Permissions["view"] == nil {
+		t.Fatalf("expected view permissions, got nil")
+	}
+
+	if ib.AlertsConfig == nil {
+		t.Fatalf("expected alerts config, got nil")
+	} else if ib.AlertsConfig.UrgentLow.Threshold.Value != 100 {
+		t.Fatalf("expected urgent low threshold of 100, got %f", ib.AlertsConfig.UrgentLow.Threshold.Value)
+	} else if !ib.AlertsConfig.UrgentLow.Enabled {
+		t.Fatalf("expected true, got %t", ib.AlertsConfig.UrgentLow.Enabled)
+	}
+
+	if ib.Nickname == nil || *ib.Nickname != "whatthefoo?" {
+		t.Fatalf("expected whatthefoo?, got %+v", ib.Nickname)
 	}
 }
