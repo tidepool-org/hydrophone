@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
@@ -246,4 +247,46 @@ func generateKey() (string, error) {
 	} else {
 		return base64.URLEncoding.EncodeToString(rb), nil
 	}
+}
+
+// AlertsConfig is included with a care team invitation to configure initial
+// alerts for the invitation's recipient.
+type AlertsConfig struct {
+	UrgentLow       AlertConfig `json:"urgentLow"`
+	Low             AlertConfig `json:"low"`
+	High            AlertConfig `json:"high"`
+	NotLooping      AlertConfig `json:"notLooping"`
+	NoCommunication AlertConfig `json:"noCommunication"`
+}
+
+// AlertConfig describes the specifics of a desired alert.
+type AlertConfig struct {
+	// Enabled controls whether notifications should be sent for this alert.
+	Enabled bool
+	// Threshold is measured in mg/dL.
+	Threshold int `json:"threshold"`
+	// Delay is measured in minutes.
+	Delay DurationMinutes `json:"delay,omitempty"`
+	// Repeat is measured in minutes.
+	Repeat DurationMinutes `json:"repeat"`
+}
+
+// DurationMinutes reads a JSON integer and converts it to a time.Duration.
+type DurationMinutes time.Duration
+
+func (m *DurationMinutes) UnmarshalJSON(b []byte) error {
+	if bytes.Equal(b, []byte("null")) || len(b) == 0 {
+		*m = DurationMinutes(0)
+		return nil
+	}
+	d, err := time.ParseDuration(string(b) + "m")
+	if err != nil {
+		return err
+	}
+	*m = DurationMinutes(d)
+	return nil
+}
+
+func (m DurationMinutes) Duration() time.Duration {
+	return time.Duration(m)
 }

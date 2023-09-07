@@ -1,6 +1,9 @@
 package models
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 const USERID = "1234-555"
 
@@ -122,4 +125,43 @@ func TestConfirmationKey(t *testing.T) {
 	if len(key) != 32 {
 		t.Fatal("The generated key should be 32 chars: ", len(key))
 	}
+}
+
+func TestDurationMinutes(s *testing.T) {
+	s.Run("parses 10", func(t *testing.T) {
+		d := DurationMinutes(0)
+		if err := d.UnmarshalJSON([]byte(`42`)); err != nil {
+			t.Fatalf("expected nil, got %+v", err)
+		}
+		if dur := d.Duration(); dur != 42*time.Minute {
+			t.Fatalf("expected 42 minutes, got %s", dur)
+		}
+	})
+	s.Run("parses 0", func(t *testing.T) {
+		d := DurationMinutes(3 * time.Minute)
+		if err := d.UnmarshalJSON([]byte(`0`)); err != nil {
+			t.Fatalf("expected nil, got %+v", err)
+		}
+		if dur := d.Duration(); dur != 0*time.Minute {
+			t.Fatalf("expected 0 minutes, got %s", dur)
+		}
+	})
+	s.Run("parses null as 0 minutes", func(t *testing.T) {
+		d := DurationMinutes(0)
+		if err := d.UnmarshalJSON([]byte(`null`)); err != nil {
+			t.Fatalf("expected nil, got %+v", err)
+		}
+		if dur := d.Duration(); dur != 0*time.Minute {
+			t.Fatalf("expected 0 minutes, got %s", dur)
+		}
+	})
+	s.Run("parses an empty value as 0 minutes", func(t *testing.T) {
+		d := DurationMinutes(0)
+		if err := d.UnmarshalJSON([]byte(``)); err != nil {
+			t.Fatalf("expected nil, got %+v", err)
+		}
+		if dur := d.Duration(); dur != 0*time.Minute {
+			t.Fatalf("expected 0 minutes, got %s", dur)
+		}
+	})
 }
