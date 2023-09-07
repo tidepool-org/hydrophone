@@ -236,9 +236,13 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		var permissions commonClients.Permissions
-		conf.DecodeContext(&permissions)
-		setPerms, err := a.gatekeeper.SetPermissions(inviteeID, invitorID, permissions)
+		ctc := &models.CareTeamContext{}
+		if err := conf.DecodeContext(ctc); err != nil {
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONTEXT)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+			return
+		}
+		setPerms, err := a.gatekeeper.SetPermissions(inviteeID, invitorID, ctc.Permissions)
 		if err != nil {
 			log.Printf("AcceptInvite error setting permissions [%v]\n", err)
 			a.sendModelAsResWithStatus(
