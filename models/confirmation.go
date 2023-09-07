@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/platform/alerts"
 )
 
 type (
@@ -246,4 +249,63 @@ func generateKey() (string, error) {
 	} else {
 		return base64.URLEncoding.EncodeToString(rb), nil
 	}
+}
+
+// CareTeamContext specifies details associated with a Care Team Confirmation.
+type CareTeamContext struct {
+	// Permissions to be granted if the Confirmation is accepted.
+	Permissions clients.Permissions `json:"permissions"`
+	// AlertsConfig is the initial configuration of alerts for the invitee.
+	AlertsConfig *alerts.Config `json:"alertsConfig,omitempty"`
+	// Nickname is a user-friendly name for the recipient of the invitation.
+	Nickname *string `json:"nickname,omitempty"`
+}
+
+// UnmarshalJSON handles different iterations of Care Team Context.
+//
+// Originally the context was a go-common clients.Permissions
+// (map[string]map[string]interface{}), but with care partner alerting it
+// became necessary to handle both the older Permissions only Contexts, but
+// also newer Contexts in which Permissions are stored under a key. In
+// addition a hybrid Context is supported, where if permissions aren't found
+// under a key, it's assumed that every other keys is an individual
+// client.Permission.
+//
+// WARNING: this works only if the newly added context fields don't share a
+// name with a previously used permission-type. Right now that means "note",
+// "upload", and "view".
+//
+// If the API is migrated so this custom unmarshaler isn't necessary, that
+// would be a good thing.
+func (e *CareTeamContext) UnmarshalJSON(b []byte) error {
+	// noCustomUnmarshaler temporarily disables the custom JSON unmarshaler.
+	type noCustomUnmarshaler struct {
+		CareTeamContext
+		UnmarshalJSON struct{} `json:"-"`
+	}
+
+	generic := &noCustomUnmarshaler{}
+	if err := json.Unmarshal(b, &generic); err != nil {
+		return fmt.Errorf("unmarshaling Confirmation Context: %w", err)
+	}
+	if generic.AlertsConfig != nil {
+		e.AlertsConfig = generic.AlertsConfig
+	}
+	if generic.Nickname != nil && *generic.Nickname != "" {
+		e.Nickname = generic.Nickname
+	}
+	if generic.Permissions != nil {
+		e.Permissions = generic.Permissions
+	} else {
+		// As there's no permissions key, this must be an older context.
+		if err := json.Unmarshal(b, &e.Permissions); err != nil {
+			return fmt.Errorf("unmarshaling Permissions: %w", err)
+		}
+		// Alternatively, one could unmarshal into a map, and iterate over it,
+		// copying fields that don't match these below.
+		delete(e.Permissions, "alertsConfig")
+		delete(e.Permissions, "nickname")
+	}
+
+	return nil
 }
