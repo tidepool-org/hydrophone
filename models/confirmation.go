@@ -252,23 +252,52 @@ func generateKey() (string, error) {
 // AlertsConfig is included with a care team invitation to configure initial
 // alerts for the invitation's recipient.
 type AlertsConfig struct {
-	UrgentLow       AlertConfig `json:"urgentLow"`
-	Low             AlertConfig `json:"low"`
-	High            AlertConfig `json:"high"`
-	NotLooping      AlertConfig `json:"notLooping"`
-	NoCommunication AlertConfig `json:"noCommunication"`
+	UrgentLow       AlertConfigWithThreshold `json:"urgentLow"`
+	Low             AlertConfigDeluxe        `json:"low"`
+	High            AlertConfigDeluxe        `json:"high"`
+	NotLooping      AlertConfigWithDelay     `json:"notLooping"`
+	NoCommunication AlertConfigWithDelay     `json:"noCommunication"`
 }
 
-// AlertConfig describes the specifics of a desired alert.
-type AlertConfig struct {
+// AlertConfigBase describes the minimum specifics of a desired alert.
+type AlertConfigBase struct {
 	// Enabled controls whether notifications should be sent for this alert.
 	Enabled bool
-	// Threshold is measured in mg/dL.
-	Threshold int `json:"threshold"`
-	// Delay is measured in minutes.
-	Delay DurationMinutes `json:"delay,omitempty"`
 	// Repeat is measured in minutes.
 	Repeat DurationMinutes `json:"repeat"`
+}
+
+// AlertConfigDelay mixes in a configurable delay to AlertConfigBase.
+type AlertConfigDelay struct {
+	// Delay is measured in minutes.
+	Delay DurationMinutes `json:"delay,omitempty"`
+}
+
+// AlertConfigThreshold mixes in a configurable threshold to AlertConfigBase.
+type AlertConfigThreshold struct {
+	// Threshold is measured in mg/dL.
+	Threshold int `json:"threshold"`
+}
+
+// AlertConfigWithThreshold extends AlertConfigBase with a configurable trigger
+// threshold.
+type AlertConfigWithThreshold struct {
+	AlertConfigBase
+	AlertConfigThreshold
+}
+
+// AlertConfigWithDelay extends AlertConfigBase with a configurable delay.
+type AlertConfigWithDelay struct {
+	AlertConfigBase
+	AlertConfigDelay
+}
+
+// AlertConfigDeluxe extends AlertConfigBase with configurable delay and
+// threshold.
+type AlertConfigDeluxe struct {
+	AlertConfigBase
+	AlertConfigThreshold
+	AlertConfigDelay
 }
 
 // DurationMinutes reads a JSON integer and converts it to a time.Duration.
