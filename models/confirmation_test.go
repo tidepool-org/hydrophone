@@ -1,6 +1,10 @@
 package models
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 )
@@ -162,6 +166,61 @@ func TestDurationMinutes(s *testing.T) {
 		}
 		if dur := d.Duration(); dur != 0*time.Minute {
 			t.Fatalf("expected 0 minutes, got %s", dur)
+		}
+	})
+}
+
+func TestThresholdValidateUnits(s *testing.T) {
+	s.Run("accepts mg/dL", func(t *testing.T) {
+		raw := []byte(fmt.Sprintf(`{"units":%q,"value":42}`, UnitsMilligramsPerDeciliter))
+		threshold := &Threshold{}
+		if err := json.Unmarshal(raw, threshold); err != nil {
+			t.Fatalf("expected nil, got %s", err)
+		}
+		if threshold.Value != 42 {
+			t.Fatalf("expected 42, got %f", threshold.Value)
+		}
+		if threshold.Units != UnitsMilligramsPerDeciliter {
+			t.Fatalf("expected %q, got %q", UnitsMilligramsPerDeciliter, threshold.Units)
+		}
+	})
+	s.Run("accepts mmol/L", func(t *testing.T) {
+		raw := []byte(fmt.Sprintf(`{"units":%q,"value":42}`, UnitsMillimollsPerLiter))
+		threshold := &Threshold{}
+		if err := json.Unmarshal(raw, threshold); err != nil {
+			t.Fatalf("expected nil, got %s", err)
+		}
+		if threshold.Value != 42 {
+			t.Fatalf("expected 42, got %f", threshold.Value)
+		}
+		if threshold.Units != UnitsMillimollsPerLiter {
+			t.Fatalf("expected %q, got %q", UnitsMillimollsPerLiter, threshold.Units)
+		}
+	})
+	s.Run("doesn't accept lb/gal", func(t *testing.T) {
+		lbPerGal := "lb/gal"
+		raw := []byte(fmt.Sprintf(`{"units":%q,"value":42}`, lbPerGal))
+		threshold := &Threshold{}
+		err := json.Unmarshal(raw, threshold)
+		if errors.Is(err, nil) {
+			t.Fatalf("expected validation error, got nil")
+		}
+	})
+	s.Run("doesn't accept blank Units", func(t *testing.T) {
+		raw := []byte(fmt.Sprintf(`{"units":"","value":42}`))
+		threshold := &Threshold{}
+		err := json.Unmarshal(raw, threshold)
+		if errors.Is(err, nil) {
+			t.Fatalf("expected validation error, got nil")
+		}
+	})
+	s.Run("is case-sensitive", func(t *testing.T) {
+		badUnits := strings.ToUpper(UnitsMillimollsPerLiter)
+		raw := []byte(fmt.Sprintf(`{"units":%q,"value":42}`, badUnits))
+		threshold := &Threshold{}
+		err := json.Unmarshal(raw, threshold)
+		if errors.Is(err, nil) {
+			t.Fatalf("expected validation error, got nil")
 		}
 	})
 }

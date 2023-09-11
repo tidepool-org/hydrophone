@@ -276,7 +276,7 @@ type AlertConfigDelay struct {
 // AlertConfigThreshold mixes in a configurable threshold to AlertConfigBase.
 type AlertConfigThreshold struct {
 	// Threshold is measured in mg/dL.
-	Threshold int `json:"threshold"`
+	Threshold Threshold `json:"threshold"`
 }
 
 // AlertConfigWithThreshold extends AlertConfigBase with a configurable trigger
@@ -319,3 +319,42 @@ func (m *DurationMinutes) UnmarshalJSON(b []byte) error {
 func (m DurationMinutes) Duration() time.Duration {
 	return time.Duration(m)
 }
+
+// ValueWithUnits binds a value to its units.
+//
+// Other types can extend it to parse and validate the Units.
+type ValueWithUnits struct {
+	Value float64 `json:"value"`
+	Units string  `json:"units"`
+}
+
+// Threshold is a value measured in either mg/dL or mmol/L.
+type Threshold ValueWithUnits
+
+// UnmarshalJSON adds validation of Units.
+func (t *Threshold) UnmarshalJSON(b []byte) error {
+	v := ValueWithUnits(*t)
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	*t = Threshold(v)
+	return t.ValidateUnits()
+}
+
+// ValidateUnits returns an error if the specified Units aren't expected.
+func (t Threshold) ValidateUnits() error {
+	switch t.Units {
+	case UnitsMilligramsPerDeciliter:
+		return nil
+	case UnitsMillimollsPerLiter:
+		return nil
+	}
+	return fmt.Errorf("invalid units: %q", t.Units)
+}
+
+const (
+	// UnitsMilligramsPerDeciliter are a common blood-glucose measurement unit in the USA.
+	UnitsMilligramsPerDeciliter string = "mg/dL"
+	// UnitsMillimollsPerLiter are a common blood-glucose measurement unit in the UK.
+	UnitsMillimollsPerLiter string = "mmol/L"
+)
