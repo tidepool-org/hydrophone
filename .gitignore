@@ -1,7 +1,7 @@
 deploy/
 dist/
 hydrophone
-artifact_go.sh
+artifact_docker.sh
 .DS_Store
 /node_modules/
 /tools/
