@@ -1,10 +1,10 @@
 module github.com/tidepool-org/hydrophone/client
 
-go 1.19
+go 1.21.2
+
+require github.com/deepmap/oapi-codegen v1.11.0
 
 require (
-	github.com/deepmap/oapi-codegen v1.10.0
-	github.com/golang/mock v1.5.0
+	github.com/google/uuid v1.3.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-require github.com/google/uuid v1.3.0 // indirect
