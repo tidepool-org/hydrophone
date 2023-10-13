@@ -86,6 +86,12 @@ github.com/eapache/go-xerial-snappy
 # github.com/eapache/queue v1.1.0
 ## explicit
 github.com/eapache/queue
+# github.com/fatih/color v1.9.0
+## explicit; go 1.13
+# github.com/fsnotify/fsnotify v1.4.9
+## explicit; go 1.13
+# github.com/githubnemo/CompileDaemon v1.4.0
+## explicit; go 1.11
 # github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 ## explicit
 github.com/globalsign/mgo
@@ -93,6 +99,8 @@ github.com/globalsign/mgo/bson
 github.com/globalsign/mgo/internal/json
 github.com/globalsign/mgo/internal/sasl
 github.com/globalsign/mgo/internal/scram
+# github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572
+## explicit; go 1.13
 # github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 ## explicit
 github.com/golang/groupcache/lru
@@ -136,9 +144,19 @@ github.com/klauspost/compress/zstd/internal/xxhash
 ## explicit
 github.com/lightstep/tracecontext.go/traceparent
 github.com/lightstep/tracecontext.go/tracestate
+# github.com/mattn/go-colorable v0.1.12
+## explicit; go 1.13
+# github.com/mattn/go-isatty v0.0.14
+## explicit; go 1.12
+# github.com/mjibson/esc v0.2.0
+## explicit
 # github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe
 ## explicit
 github.com/montanaflynn/stats
+# github.com/nxadm/tail v1.4.8
+## explicit; go 1.13
+# github.com/onsi/ginkgo v1.16.4
+## explicit; go 1.15
 # github.com/pierrec/lz4 v2.5.2+incompatible
 ## explicit
 github.com/pierrec/lz4
@@ -146,6 +164,8 @@ github.com/pierrec/lz4/internal/xxh32
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
+# github.com/radovskyb/watcher v1.0.7
+## explicit
 # github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 ## explicit
 github.com/rcrowley/go-metrics
@@ -164,8 +184,8 @@ github.com/tidepool-org/go-common/clients/status
 github.com/tidepool-org/go-common/errors
 github.com/tidepool-org/go-common/events
 github.com/tidepool-org/go-common/jepson
-# github.com/tidepool-org/platform v1.33.1-0.20231002152532-fcc215f0afe0
-## explicit; go 1.19
+# github.com/tidepool-org/platform v1.33.1-0.20231013005639-3b2d96d57243
+## explicit; go 1.21
 github.com/tidepool-org/platform/alerts
 github.com/tidepool-org/platform/auth
 github.com/tidepool-org/platform/config
@@ -296,6 +316,10 @@ go.uber.org/zap/zapcore
 golang.org/x/crypto/md4
 golang.org/x/crypto/ocsp
 golang.org/x/crypto/pbkdf2
+# golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
+## explicit; go 1.11
+# golang.org/x/mod v0.10.0
+## explicit; go 1.17
 # golang.org/x/net v0.14.0
 ## explicit; go 1.17
 golang.org/x/net/context
@@ -309,10 +333,14 @@ golang.org/x/oauth2/internal
 # golang.org/x/sync v0.2.0
 ## explicit
 golang.org/x/sync/errgroup
+# golang.org/x/sys v0.11.0
+## explicit; go 1.17
 # golang.org/x/text v0.12.0
 ## explicit; go 1.17
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
+# golang.org/x/tools v0.9.3
+## explicit; go 1.18
 # google.golang.org/appengine v1.6.7
 ## explicit; go 1.11
 google.golang.org/appengine/internal
@@ -393,3 +421,5 @@ gopkg.in/jcmturner/gokrb5.v7/types
 ## explicit
 gopkg.in/jcmturner/rpc.v1/mstypes
 gopkg.in/jcmturner/rpc.v1/ndr
+# gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
+## explicit
