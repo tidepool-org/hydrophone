@@ -105,7 +105,7 @@ type alertsClient struct {
 }
 
 func (c *alertsClient) Upsert(ctx context.Context, cfg *alerts.Config) error {
-	url := c.urlf("/v1/alerts/%s/%s", cfg.UserID, cfg.FollowedID)
+	url := c.urlf("/v1/alerts/%s/%s", cfg.UserID, cfg.FollowedUserID)
 	body := &bytes.Buffer{}
 	if err := json.NewEncoder(body).Encode(cfg.Alerts); err != nil {
 		return err
@@ -134,7 +134,7 @@ func (c *alertsClient) urlf(pathFormat string, args ...interface{}) string {
 }
 
 func (c *alertsClient) Delete(ctx context.Context, cfg *alerts.Config) error {
-	url := c.urlf("/v1/alerts/%s/%s", cfg.UserID, cfg.FollowedID)
+	url := c.urlf("/v1/alerts/%s/%s", cfg.UserID, cfg.FollowedUserID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
 		return err
