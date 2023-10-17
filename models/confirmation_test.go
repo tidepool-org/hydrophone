@@ -154,7 +154,7 @@ func TestConfirmationContextCustomUnmarshaler(s *testing.T) {
   "view": {},
   "alertsConfig": {
     "userId": "%s",
-    "followedId": "%s",
+    "followedUserId": "%s",
     "low": {
       "enabled": true,
       "repeat": 30,
@@ -189,7 +189,7 @@ func TestConfirmationContextCustomUnmarshaler(s *testing.T) {
   },
   "alertsConfig": {
     "userId": "%s",
-    "followedId": "%s",
+    "followedUserId": "%s",
     "low": {
       "enabled": true,
       "repeat": 30,
