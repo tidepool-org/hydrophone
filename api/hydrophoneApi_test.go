@@ -335,3 +335,17 @@ func (c *mockAlertsClient) Upsert(_ context.Context, _ *alerts.Config) error {
 func (c *mockAlertsClient) Delete(_ context.Context, _ *alerts.Config) error {
 	return nil
 }
+
+type mockAlertsClientWithFailingUpsert struct {
+	AlertsClient
+}
+
+func newMockAlertsClientWithFailingUpsert() *mockAlertsClientWithFailingUpsert {
+	return &mockAlertsClientWithFailingUpsert{
+		AlertsClient: newMockAlertsClient(),
+	}
+}
+
+func (c *mockAlertsClientWithFailingUpsert) Upsert(_ context.Context, _ *alerts.Config) error {
+	return fmt.Errorf("this should not be called")
+}

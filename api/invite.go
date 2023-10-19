@@ -255,14 +255,16 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 		log.Printf("AcceptInvite: permissions were set as [%v] after an invite was accepted", setPerms)
-		if err := a.alerts.Upsert(req.Context(), ctc.AlertsConfig); err != nil {
-			log.Printf("AcceptInvite: error creating alerting config: %s", err)
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_CREATING_ALERTS_CONFIG)},
-				http.StatusInternalServerError,
-			)
-			return
+		if ctc.AlertsConfig != nil && ctc.Permissions["follow"] != nil {
+			if err := a.alerts.Upsert(req.Context(), ctc.AlertsConfig); err != nil {
+				log.Printf("AcceptInvite: error creating alerting config: %s", err)
+				a.sendModelAsResWithStatus(
+					res,
+					&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_CREATING_ALERTS_CONFIG)},
+					http.StatusInternalServerError,
+				)
+				return
+			}
 		}
 		conf.UpdateStatus(models.StatusCompleted)
 		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
