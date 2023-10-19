@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -389,6 +390,67 @@ func TestInviteCanAddAlerting(t *testing.T) {
 		}
 	}
 
+}
+
+func TestAcceptInviteAlertsConfigOptional(t *testing.T) {
+	mockShorelineAlerting := newtestingShorelineMock(testing_uid1, testing_uid2)
+	mockStoreAlerting := newMockRecordingStore(mockStore, "UpsertConfirmation")
+	perms := map[string]commonClients.Permissions{
+		key(testing_uid1, testing_uid1): {"root": commonClients.Allowed},
+		key(testing_uid2, testing_uid2): {"root": commonClients.Allowed},
+	}
+	mockGatekeeperAlerting := newMockGatekeeperAlerting(perms)
+	hydrophone := NewApi(
+		FAKE_CONFIG,
+		nil,
+		mockStoreAlerting,
+		mockNotifier,
+		mockShorelineAlerting,
+		mockGatekeeperAlerting,
+		mockMetrics,
+		mockSeagull,
+		newMockAlertsClientWithFailingUpsert(),
+		mockTemplates,
+		zap.NewNop().Sugar(),
+	)
+	c := &models.Confirmation{
+		Key:          testing_uid2,
+		Type:         "careteam_invitation",
+		Email:        testing_uid2,
+		ClinicId:     "",
+		CreatorId:    testing_uid1,
+		Creator:      models.Creator{},
+		Context:      []byte(`{"permissions":{"view":{}}}`),
+		Created:      time.Time{},
+		Modified:     time.Time{},
+		Status:       "pending",
+		Restrictions: &models.Restrictions{},
+		UserId:       testing_uid2,
+	}
+	buf, err := json.Marshal(c)
+	if err != nil {
+		t.Fatalf("error marshaling confirmation: %s", err)
+	}
+	body := bytes.NewBuffer(buf)
+	testRtr := mux.NewRouter()
+	hydrophone.SetHandlers("", testRtr)
+	request, err := http.NewRequest(http.MethodPut, "/confirm/accept/invite/"+testing_uid2+"/"+testing_uid1, body)
+	if err != nil {
+		t.Fatalf("error creating test request: %s", err)
+	}
+	request.Header.Set(TP_SESSION_TOKEN, testing_uid2)
+	response := httptest.NewRecorder()
+
+	testRtr.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status `%d` actual `%d`", http.StatusOK, response.Code)
+	}
+
+	numCalls := len(mockStoreAlerting.Calls["UpsertConfirmation"])
+	if numCalls != 1 {
+		t.Fatalf("expected 1 call to UpsertConfirmation, got %d", numCalls)
+	}
 }
 
 func TestInviteAddingAlertingMergesPerms(t *testing.T) {
