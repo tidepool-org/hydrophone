@@ -287,7 +287,7 @@ type CareTeamContext struct {
 //
 // If the API is migrated so this custom unmarshaler isn't necessary, that
 // would be a good thing.
-func (e *CareTeamContext) UnmarshalJSON(b []byte) error {
+func (c *CareTeamContext) UnmarshalJSON(b []byte) error {
 	// noCustomUnmarshaler temporarily disables the custom JSON unmarshaler.
 	type noCustomUnmarshaler struct {
 		CareTeamContext
@@ -299,23 +299,30 @@ func (e *CareTeamContext) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unmarshaling Confirmation Context: %w", err)
 	}
 	if generic.AlertsConfig != nil {
-		e.AlertsConfig = generic.AlertsConfig
+		c.AlertsConfig = generic.AlertsConfig
 	}
 	if generic.Nickname != nil && *generic.Nickname != "" {
-		e.Nickname = generic.Nickname
+		c.Nickname = generic.Nickname
 	}
 	if generic.Permissions != nil {
-		e.Permissions = generic.Permissions
+		c.Permissions = generic.Permissions
 	} else {
 		// As there's no permissions key, this must be an older context.
-		if err := json.Unmarshal(b, &e.Permissions); err != nil {
+		if err := json.Unmarshal(b, &c.Permissions); err != nil {
 			return fmt.Errorf("unmarshaling Permissions: %w", err)
 		}
 		// Alternatively, one could unmarshal into a map, and iterate over it,
 		// copying fields that don't match these below.
-		delete(e.Permissions, "alertsConfig")
-		delete(e.Permissions, "nickname")
+		delete(c.Permissions, "alertsConfig")
+		delete(c.Permissions, "nickname")
 	}
 
+	return nil
+}
+
+func (c *CareTeamContext) Validate() error {
+	if c.AlertsConfig != nil && c.Permissions["follow"] == nil {
+		return fmt.Errorf("no alerts config without follow permission")
+	}
 	return nil
 }
