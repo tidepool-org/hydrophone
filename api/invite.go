@@ -244,9 +244,20 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
 			return
 		}
+
+		if err := ctc.Validate(); err != nil {
+			log.Printf("AcceptInvite error validating CareTeamContext: %s", err)
+			a.sendModelAsResWithStatus(
+				res,
+				&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
+				http.StatusForbidden,
+			)
+			return
+		}
+
 		setPerms, err := a.gatekeeper.SetPermissions(inviteeID, invitorID, ctc.Permissions)
 		if err != nil {
-			log.Printf("AcceptInvite error setting permissions [%v]\n", err)
+			log.Printf("AcceptInvite error setting permissions [%v]", err)
 			a.sendModelAsResWithStatus(
 				res,
 				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)},
