@@ -346,8 +346,8 @@ func TestInviteCanAddAlerting(t *testing.T) {
 	err := json.NewEncoder(buf).Encode(map[string]interface{}{
 		"email": testing_uid2 + "@email.org",
 		"permissions": commonClients.Permissions{
-			"view":     commonClients.Allowed,
-			"alerting": commonClients.Allowed,
+			"view":   commonClients.Allowed,
+			"follow": commonClients.Allowed,
 		},
 	})
 	if err != nil {
@@ -380,12 +380,12 @@ func TestInviteCanAddAlerting(t *testing.T) {
 		if ctc.Permissions["view"] == nil {
 			t.Fatalf("expected view permissions, got nil")
 		}
-		if ctc.Permissions["alerting"] == nil {
-			t.Fatalf("expected alerting permissions, got nil")
+		if ctc.Permissions["follow"] == nil {
+			t.Fatalf("expected follow permissions, got nil")
 		}
 		for key := range ctc.Permissions {
-			if key != "alerting" && key != "view" {
-				t.Fatalf("expected only alerting and view, got %q", key)
+			if key != "follow" && key != "view" {
+				t.Fatalf("expected only follow and view, got %q", key)
 			}
 		}
 	}
@@ -541,8 +541,8 @@ func TestInviteAddingAlertingMergesPerms(t *testing.T) {
 	err := json.NewEncoder(buf).Encode(map[string]interface{}{
 		"email": testing_uid2 + "@email.org",
 		"permissions": commonClients.Permissions{
-			"view":     commonClients.Allowed,
-			"alerting": commonClients.Allowed,
+			"view":   commonClients.Allowed,
+			"follow": commonClients.Allowed,
 		},
 	})
 	if err != nil {
@@ -574,15 +574,15 @@ func TestInviteAddingAlertingMergesPerms(t *testing.T) {
 		if ctc.Permissions["view"] == nil {
 			t.Fatalf("expected view permissions, got nil")
 		}
-		if ctc.Permissions["alerting"] == nil {
+		if ctc.Permissions["follow"] == nil {
 			t.Fatalf("expected alerting permissions, got nil")
 		}
 		if ctc.Permissions["other"] == nil {
 			t.Fatalf("expected other permissions, got nil")
 		}
 		for key := range ctc.Permissions {
-			if key != "alerting" && key != "view" && key != "other" {
-				t.Fatalf("expected only alerting, view, and other, got %q", key)
+			if key != "follow" && key != "view" && key != "other" {
+				t.Fatalf("expected only follow, view, and other, got %q", key)
 			}
 		}
 	}
