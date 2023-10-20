@@ -537,7 +537,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 }
 
 func addsAlertingPermissions(existingPerms, newPerms commonClients.Permissions) bool {
-	return existingPerms["alerting"] == nil && newPerms["alerting"] != nil
+	return existingPerms["follow"] == nil && newPerms["follow"] != nil
 }
 
 // Resend a care team invite
