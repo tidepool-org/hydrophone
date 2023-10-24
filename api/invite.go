@@ -249,7 +249,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			log.Printf("AcceptInvite error validating CareTeamContext: %s", err)
 			a.sendModelAsResWithStatus(
 				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
+				&status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_VALIDATING_CONTEXT)},
 				http.StatusForbidden,
 			)
 			return
@@ -485,7 +485,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 	invite, err := models.NewConfirmationWithContext(models.TypeCareteamInvite, templateName, invitorID, ib.CareTeamContext)
 	if err != nil {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusInternalServerErrorMessage)}
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, statusInternalServerErrorMessage)}
 		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 		return
 	}
@@ -505,10 +505,8 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		a.sendModelAsResWithStatus(res, invite, http.StatusOK)
 	}
 
-	fullName := "Mickey Mouse"
-	if invite.Creator.Profile == nil {
-		log.Printf("no creator profile for the invite")
-	} else {
+	fullName := "Tidepool User"
+	if invite.Creator.Profile != nil {
 		fullName = invite.Creator.Profile.FullName
 		if invite.Creator.Profile.Patient.IsOtherPerson {
 			fullName = invite.Creator.Profile.Patient.FullName

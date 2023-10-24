@@ -68,6 +68,7 @@ const (
 	STATUS_ERR_FINDING_CLINIC         = "Error finding the clinic"
 	STATUS_ERR_DECODING_CONFIRMATION  = "Error decoding the confirmation"
 	STATUS_ERR_DECODING_CONTEXT       = "Error decoding the confirmation context"
+	STATUS_ERR_VALIDATING_CONTEXT     = "Error validating the confirmation context"
 	STATUS_ERR_CREATING_PATIENT       = "Error creating patient"
 	STATUS_ERR_FINDING_PREVIEW        = "Error finding the invite preview"
 	STATUS_ERR_CREATING_ALERTS_CONFIG = "Error creating alerts configuration"
