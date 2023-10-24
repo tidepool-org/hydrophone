@@ -339,7 +339,7 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 			templateName = models.TemplateNamePasswordReset
 		case models.TypeCareteamInvite:
 			templateName = models.TemplateNameCareteamInvite
-			has, err := conf.HasPermission("alerting")
+			has, err := conf.HasPermission("follow")
 			if err != nil {
 				log.Printf("error checking permissions, will fallback to non-alerting: %s", err)
 			} else if has {

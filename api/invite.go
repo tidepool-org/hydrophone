@@ -479,7 +479,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 	}
 
 	templateName := models.TemplateNameCareteamInvite
-	if ib.Permissions["alerting"] != nil {
+	if ib.Permissions["follow"] != nil {
 		templateName = models.TemplateNameCareteamInviteWithAlerting
 	}
 
