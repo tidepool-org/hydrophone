@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -14,7 +13,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 
 	clinicsClient "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
@@ -23,6 +21,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/models"
+	"github.com/tidepool-org/hydrophone/testutil"
 	"github.com/tidepool-org/platform/alerts"
 )
 
@@ -80,6 +79,7 @@ var (
 		MockAlertsModule,
 		MockTemplatesModule,
 		MockConfigModule,
+		fx.Provide(testutil.NewLogger),
 		fx.Provide(NewApi),
 		fx.Provide(mux.NewRouter),
 	)
@@ -100,7 +100,6 @@ func TestGetStatus_StatusOk(t *testing.T) {
 		BaseModule,
 		MockClinicsModule,
 		fx.Supply(t),
-		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&api),
 	)
 
@@ -122,7 +121,6 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 		BaseModule,
 		MockClinicsModule,
 		fx.Supply(t),
-		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&api),
 	)
 
@@ -135,10 +133,13 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 		t.Fatalf("Resp given [%d] expected [%d] ", response.Code, http.StatusInternalServerError)
 	}
 
-	body, _ := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatalf("reading response body: %s", err)
+	}
 
-	if string(body) != `{"code":500,"reason":"Session failure"}` {
-		t.Fatalf("Message given [%s] expected [%s] ", string(body), "Session failure")
+	if string(body) != `{"code":500,"reason":"store connectivity failure"}` {
+		t.Fatalf("Message given [%s] expected [%s] ", string(body), "store connectivity failure")
 	}
 }
 
@@ -220,7 +221,6 @@ func Test_TokenUserHasRequestedPermissions_GatekeeperError(t *testing.T) {
 		ResponableModule,
 		MockClinicsModule,
 		fx.Supply(t),
-		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&responsableHydrophone),
 		fx.Populate(&gk),
 	)
@@ -250,7 +250,6 @@ func Test_TokenUserHasRequestedPermissions_CompleteMismatch(t *testing.T) {
 		ResponableModule,
 		MockClinicsModule,
 		fx.Supply(t),
-		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&responsableHydrophone),
 		fx.Populate(&gk),
 	)
@@ -277,7 +276,6 @@ func Test_TokenUserHasRequestedPermissions_PartialMismatch(t *testing.T) {
 		ResponableModule,
 		MockClinicsModule,
 		fx.Supply(t),
-		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&responsableHydrophone),
 		fx.Populate(&gk),
 	)
@@ -304,7 +302,6 @@ func Test_TokenUserHasRequestedPermissions_FullMatch(t *testing.T) {
 		ResponableModule,
 		MockClinicsModule,
 		fx.Supply(t),
-		fx.Supply(zap.NewNop().Sugar()),
 		fx.Populate(&responsableHydrophone),
 		fx.Populate(&gk),
 	)

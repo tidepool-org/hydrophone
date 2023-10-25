@@ -15,7 +15,7 @@ require (
 	github.com/tidepool-org/platform v1.33.1-0.20231013005639-3b2d96d57243
 	go.mongodb.org/mongo-driver v1.11.1
 	go.uber.org/fx v1.13.1
-	go.uber.org/zap v1.16.0
+	go.uber.org/zap v1.22.0
 )
 
 require (
@@ -50,9 +50,9 @@ require (
 	github.com/xdg/stringprep v1.0.0 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.opencensus.io v0.22.4 // indirect
-	go.uber.org/atomic v1.6.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/dig v1.10.0 // indirect
-	go.uber.org/multierr v1.5.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/oauth2 v0.4.0 // indirect

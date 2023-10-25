@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/tidepool-org/go-common/events"
@@ -26,7 +25,6 @@ func NewHandler(store clients.StoreClient) events.EventHandler {
 }
 
 func (h *handler) HandleDeleteUserEvent(payload events.DeleteUserEvent) error {
-	log.Printf("Deleting confirmations for user %v", payload.UserID)
 	ctx, cancel := context.WithTimeout(context.Background(), deleteTimeout)
 	defer cancel()
 	if err := h.store.RemoveConfirmationsForUser(ctx, payload.UserID); err != nil {
