@@ -9,7 +9,6 @@ import (
 
 	clinics "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
-	"github.com/tidepool-org/go-common/clients/status"
 
 	"github.com/tidepool-org/hydrophone/models"
 )
@@ -25,20 +24,24 @@ func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars
 		}
 
 		if err := a.assertClinicMember(ctx, clinicId, token, res); err != nil {
-			a.logger.Errorw("token owner is not a clinic member", zap.Error(err))
 			return
 		}
 
 		// find all outstanding invites that are associated to this clinic
 		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{ClinicId: clinicId, Type: models.TypeCareteamInvite}, models.StatusPending)
-		if err == nil && len(found) == 0 {
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			return
+		}
+		if len(found) == 0 {
 			result := make([]*models.Confirmation, 0)
 			a.sendModelAsResWithStatus(res, result, http.StatusOK)
 			return
-		} else if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
-			a.logger.Infof("found and checked %d confirmations", len(invites))
+		}
+		if invites := a.addProfileInfoToConfirmations(found); invites != nil {
 			a.logMetric("get_patient_invites", req)
 			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
+			a.logger.Debugf("confirmations found and checked: %d", len(invites))
 			return
 		}
 	}
@@ -57,7 +60,6 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 		}
 
 		if err := a.assertClinicMember(ctx, clinicId, token, res); err != nil {
-			a.logger.Errorw("token owner is not a clinic member", zap.Error(err))
 			return
 		}
 
@@ -72,9 +74,7 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 			return
 		}
 		if conf == nil {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-			a.logger.With(zap.Error(statusErr)).Info(statusInviteNotFoundMessage)
+			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
 			return
 		}
 
@@ -84,33 +84,20 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 		conf.ValidateClinicID(clinicId, &validationErrors)
 
 		if len(validationErrors) > 0 {
-			for _, validationError := range validationErrors {
-				a.logger.Warnw("forbidden as there was a expectation mismatch", zap.Error(validationError))
-			}
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
-				http.StatusForbidden,
-			)
+			a.sendError(res, http.StatusForbidden, statusForbiddenMessage,
+				zap.Errors("validation-errors", validationErrors))
 			return
 		}
 
 		patient, err := a.createClinicPatient(ctx, *conf)
 		if err != nil {
-			a.logger.Errorw("error creating patient", zap.Error(err))
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT)},
-				http.StatusInternalServerError,
-			)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT, err)
 			return
 		}
 
 		conf.UpdateStatus(models.StatusCompleted)
 		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
-			a.logger.Warn("error adding or updating confirmation")
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
 			return
 		}
 
@@ -143,9 +130,7 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 			return
 		}
 		if conf == nil {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
-			a.logger.With(zap.Error(statusErr)).Info(statusInviteNotFoundMessage)
+			a.sendError(res, http.StatusForbidden, statusInviteNotFoundMessage)
 			return
 		}
 
@@ -153,7 +138,6 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 		if token.UserID != conf.CreatorId {
 			updatedStatus = models.StatusDeclined
 			if err := a.assertClinicMember(ctx, clinicId, token, res); err != nil {
-				a.logger.Errorw("token owner is not a clinic member", zap.Error(err))
 				return
 			}
 		}
@@ -164,22 +148,13 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 		conf.ValidateClinicID(clinicId, &validationErrors)
 
 		if len(validationErrors) > 0 {
-			for _, validationError := range validationErrors {
-				a.logger.Warnw("forbidden as there was a expectation mismatch", zap.Error(validationError))
-			}
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
-				http.StatusForbidden,
-			)
+			a.sendError(res, http.StatusForbidden, statusForbiddenMessage,
+				zap.Errors("validation-errors", validationErrors))
 			return
 		}
 
 		conf.UpdateStatus(updatedStatus)
 		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
-			a.logger.Warn("error adding or updating confirmation")
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
 			return
 		}
 
@@ -229,7 +204,7 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 		patient = response.JSON200
 	}
 
-	a.logger.Infof("permissions were set as [%v] after an invite was accepted", patient.Permissions)
+	a.logger.With(zap.Any("perms", patient.Permissions)).Info("permissions set")
 	return patient, nil
 }
 

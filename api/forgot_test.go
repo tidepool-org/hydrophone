@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go.uber.org/zap"
-
 	"github.com/gorilla/mux"
+
+	"github.com/tidepool-org/hydrophone/testutil"
 )
 
 func TestForgotResponds(t *testing.T) {
@@ -57,18 +57,19 @@ func TestForgotResponds(t *testing.T) {
 		},
 	}
 
+	logger := testutil.NewLogger(t)
 	for idx, test := range tests {
 
 		//fresh each time
 		var testRtr = mux.NewRouter()
 
+		store := mockStore
 		if test.returnNone {
-			hydrophoneFindsNothing := NewApi(FAKE_CONFIG, nil, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, nil, mockTemplates, zap.NewNop().Sugar())
-			hydrophoneFindsNothing.SetHandlers("", testRtr)
-		} else {
-			hydrophone := NewApi(FAKE_CONFIG, nil, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, nil, mockTemplates, zap.NewNop().Sugar())
-			hydrophone.SetHandlers("", testRtr)
+			store = mockStoreEmpty
 		}
+
+		hydrophone := NewApi(FAKE_CONFIG, nil, store, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, nil, mockTemplates, logger)
+		hydrophone.SetHandlers("", testRtr)
 
 		var body = &bytes.Buffer{}
 		// build the body only if there is one defined in the test

@@ -11,14 +11,14 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"go.uber.org/zap"
 
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/models"
+	"github.com/tidepool-org/hydrophone/testutil"
 )
 
-func initTestingRouterNoPerms() *mux.Router {
+func initTestingRouterNoPerms(t *testing.T) *mux.Router {
 	testRtr := mux.NewRouter()
 	hydrophone := NewApi(
 		FAKE_CONFIG,
@@ -31,7 +31,7 @@ func initTestingRouterNoPerms() *mux.Router {
 		mockSeagull,
 		nil,
 		mockTemplates,
-		zap.NewNop().Sugar(),
+		testutil.NewLogger(t),
 	)
 	hydrophone.SetHandlers("", testRtr)
 	return testRtr
@@ -39,7 +39,7 @@ func initTestingRouterNoPerms() *mux.Router {
 
 func TestSendInvite_NoPerms(t *testing.T) {
 
-	tstRtr := initTestingRouterNoPerms()
+	tstRtr := initTestingRouterNoPerms(t)
 	sendBody := &bytes.Buffer{}
 	json.NewEncoder(sendBody).Encode(testJSONObject{
 		"email": testing_uid2 + "@email.org",
@@ -62,7 +62,7 @@ func TestSendInvite_NoPerms(t *testing.T) {
 
 func TestGetReceivedInvitations_NoPerms(t *testing.T) {
 
-	tstRtr := initTestingRouterNoPerms()
+	tstRtr := initTestingRouterNoPerms(t)
 
 	request := MustRequest(t, "GET", fmt.Sprintf("/invitations/%s", testing_uid2), nil)
 	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
@@ -77,7 +77,7 @@ func TestGetReceivedInvitations_NoPerms(t *testing.T) {
 
 func TestGetSentInvitations_NoPerms(t *testing.T) {
 
-	tstRtr := initTestingRouterNoPerms()
+	tstRtr := initTestingRouterNoPerms(t)
 
 	request := MustRequest(t, "GET", fmt.Sprintf("/invite/%s", testing_uid2), nil)
 	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
@@ -92,7 +92,7 @@ func TestGetSentInvitations_NoPerms(t *testing.T) {
 
 func TestAcceptInvite_NoPerms(t *testing.T) {
 
-	tstRtr := initTestingRouterNoPerms()
+	tstRtr := initTestingRouterNoPerms(t)
 
 	request := MustRequest(t, "PUT", fmt.Sprintf("/accept/invite/%s/%s", testing_uid2, testing_uid1), nil)
 	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
@@ -107,7 +107,7 @@ func TestAcceptInvite_NoPerms(t *testing.T) {
 
 func TestDismissInvite_NoPerms(t *testing.T) {
 
-	tstRtr := initTestingRouterNoPerms()
+	tstRtr := initTestingRouterNoPerms(t)
 
 	request := MustRequest(t, "PUT", fmt.Sprintf("/dismiss/invite/%s/%s", testing_uid2, testing_uid1), nil)
 	request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
@@ -241,6 +241,7 @@ func TestInviteResponds(t *testing.T) {
 		},
 	}
 
+	logger := testutil.NewLogger(t)
 	for idx, inviteTest := range inviteTests {
 		// don't run a test if it says to skip it
 		if inviteTest.skip {
@@ -248,11 +249,16 @@ func TestInviteResponds(t *testing.T) {
 		}
 		var testRtr = mux.NewRouter()
 
+		store := mockStore
 		//default flow, fully authorized
+		if inviteTest.returnNone {
+			//testing when there is nothing to return from the store
+			store = mockStoreEmpty
+		}
 		hydrophone := NewApi(
 			FAKE_CONFIG,
 			nil,
-			mockStore,
+			store,
 			mockNotifier,
 			mockShoreline,
 			mockGatekeeper,
@@ -260,25 +266,8 @@ func TestInviteResponds(t *testing.T) {
 			mockSeagull,
 			nil,
 			mockTemplates,
-			zap.NewNop().Sugar(),
+			logger,
 		)
-
-		//testing when there is nothing to return from the store
-		if inviteTest.returnNone {
-			hydrophone = NewApi(
-				FAKE_CONFIG,
-				nil,
-				mockStoreEmpty,
-				mockNotifier,
-				mockShoreline,
-				mockGatekeeper,
-				mockMetrics,
-				mockSeagull,
-				nil,
-				mockTemplates,
-				zap.NewNop().Sugar(),
-			)
-		}
 
 		hydrophone.SetHandlers("", testRtr)
 
@@ -338,7 +327,7 @@ func TestInviteCanAddAlerting(t *testing.T) {
 		mockSeagull,
 		nil,
 		mockTemplates,
-		zap.NewNop().Sugar(),
+		testutil.NewLogger(t),
 	)
 	testRtr := mux.NewRouter()
 	hydrophone.SetHandlers("", testRtr)
@@ -411,7 +400,7 @@ func TestAcceptInviteAlertsConfigRequiresFollowPerm(t *testing.T) {
 		mockSeagull,
 		newMockAlertsClientWithFailingUpsert(),
 		mockTemplates,
-		zap.NewNop().Sugar(),
+		testutil.NewLogger(t),
 	)
 	c := &models.Confirmation{
 		Key:          testing_uid2,
@@ -443,8 +432,8 @@ func TestAcceptInviteAlertsConfigRequiresFollowPerm(t *testing.T) {
 
 	testRtr.ServeHTTP(response, request)
 
-	if response.Code != http.StatusForbidden {
-		t.Fatalf("expected status `%d` actual `%d`", http.StatusForbidden, response.Code)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected status `%d` actual `%d`", http.StatusBadRequest, response.Code)
 	}
 
 	if numCalls := len(mockStoreAlerting.Calls["UpsertConfirmation"]); numCalls != 0 {
@@ -471,7 +460,7 @@ func TestAcceptInviteAlertsConfigOptional(t *testing.T) {
 		mockSeagull,
 		newMockAlertsClientWithFailingUpsert(),
 		mockTemplates,
-		zap.NewNop().Sugar(),
+		testutil.NewLogger(t),
 	)
 	c := &models.Confirmation{
 		Key:          testing_uid2,
@@ -533,7 +522,7 @@ func TestInviteAddingAlertingMergesPerms(t *testing.T) {
 		mockSeagull,
 		nil,
 		mockTemplates,
-		zap.NewNop().Sugar(),
+		testutil.NewLogger(t),
 	)
 	testRtr := mux.NewRouter()
 	hydrophone.SetHandlers("", testRtr)

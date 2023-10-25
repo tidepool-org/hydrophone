@@ -3,13 +3,11 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/go-common/clients/shoreline"
-	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
 )
 
@@ -62,8 +60,6 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
 		resetCnf.UserId = resetUsr.UserID
 	} else {
-		log.Print(STATUS_RESET_NO_ACCOUNT)
-		log.Printf("email used [%s]", email)
 		resetCnf, err = models.NewConfirmation(models.TypeNoAccount, models.TemplateNameNoAccount, "")
 		if err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
@@ -73,6 +69,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.Email = email
 		//there is nothing more to do other than notify the user
 		resetCnf.UpdateStatus(models.StatusCompleted)
+		a.logger.With(zap.String("email", email)).Info(STATUS_RESET_NO_ACCOUNT)
 	}
 
 	if a.addOrUpdateConfirmation(req.Context(), resetCnf, res) {
@@ -87,7 +84,6 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 			a.logMetricAsServer("reset confirmation sent")
 		} else {
 			a.logMetricAsServer("reset confirmation failed to be sent")
-			log.Print("Something happened generating a passwordReset email")
 		}
 	}
 	//unless no email was given we say its all good
@@ -96,7 +92,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 // find the reset confirmation if it exists and hasn't expired
 func (a *Api) findResetConfirmation(ctx context.Context, conf *models.Confirmation) (*models.Confirmation, bool, error) {
-	a.logger.With("conf", conf).Debugf("finding reset confirmation")
+	a.logger.With("conf", conf).Debug("finding reset confirmation")
 	found, err := a.Store.FindConfirmation(ctx, conf)
 	if err != nil {
 		return nil, false, err
@@ -130,9 +126,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 	defer req.Body.Close()
 	var rb = &resetBody{}
 	if err := json.NewDecoder(req.Body).Decode(rb); err != nil {
-		log.Printf("acceptPassword: error decoding reset details %v\n", err)
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		a.sendError(res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 		return
 	}
 
@@ -144,21 +138,16 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		return
 	}
 	if expired {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-		a.logger.With(zap.Error(statusErr)).Info(STATUS_RESET_EXPIRED)
+		a.sendError(res, http.StatusNotFound, STATUS_RESET_EXPIRED)
 		return
 	}
 	if conf == nil {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-		a.logger.With(zap.Error(statusErr)).Info(STATUS_RESET_NOT_FOUND)
+		a.sendError(res, http.StatusNotFound, STATUS_RESET_NOT_FOUND)
 		return
 	}
 
 	if resetCnf.Key == "" || resetCnf.Email != conf.Email {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		a.sendError(res, http.StatusBadRequest, STATUS_RESET_ERROR)
 		return
 	}
 
@@ -167,20 +156,13 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 	if usr := a.findExistingUser(rb.Email, token); usr != nil {
 
 		if err := a.sl.UpdateUser(usr.UserID, shoreline.UserUpdate{Password: &rb.Password}, token); err != nil {
-			status := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
-			a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
-			a.logger.With(zap.Error(err)).Info("updating user password")
+			a.sendError(res, http.StatusBadRequest, STATUS_RESET_ERROR, err, "updating user password")
 			return
 		}
 		conf.UpdateStatus(models.StatusCompleted)
 		if a.addOrUpdateConfirmation(req.Context(), conf, res) {
-			//STATUS_RESET_ACCEPTED
 			a.logMetricAsServer("password reset")
-			a.sendModelAsResWithStatus(
-				res,
-				status.StatusError{Status: status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
-				http.StatusOK,
-			)
+			a.sendOK(res, STATUS_RESET_ACCEPTED)
 			return
 		}
 	}
