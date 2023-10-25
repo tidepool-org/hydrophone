@@ -7,6 +7,7 @@ import (
 
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
+	"github.com/tidepool-org/hydrophone/testutil"
 )
 
 func TestMongoStoreConfirmationOperations(t *testing.T) {
@@ -17,7 +18,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	doesNotExist := MustConfirmation(t, models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
 	testingConfig := &mongo.Config{ConnectionString: "mongodb://127.0.0.1/confirm_test", Database: "confirm_test"}
 
-	mc, err := NewMongoStoreClient(testingConfig)
+	mc, err := NewMongoStoreClient(testingConfig, testutil.NewLogger(t))
 	if err != nil {
 		t.Fatalf("we could not create the store: %v", err)
 	}
