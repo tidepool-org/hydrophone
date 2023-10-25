@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"log"
 	"net/http"
 	"time"
 
@@ -199,6 +198,7 @@ type InvocationParams struct {
 	Config     InboundConfig
 	Server     *http.Server
 	Consumer   ev.EventConsumer
+	log        *zap.SugaredLogger
 }
 
 func startEventConsumer(p InvocationParams) {
@@ -206,10 +206,10 @@ func startEventConsumer(p InvocationParams) {
 		OnStart: func(ctx context.Context) error {
 			go func() {
 				if err := p.Consumer.Start(); err != nil {
-					log.Printf("Unable to start cloud events consumer: %v", err)
-					log.Printf("Shutting down the service")
+					p.log.With(zap.Error(err)).Infof("starting cloud events consumer")
+					p.log.Infof("shutting down the service")
 					if shutdownErr := p.Shutdowner.Shutdown(); shutdownErr != nil {
-						log.Printf("Failed to shutdown: %v", shutdownErr)
+						p.log.With(zap.Error(shutdownErr)).Error("failed to shutdown")
 					}
 				}
 			}()
@@ -226,7 +226,7 @@ func startShoreline(p InvocationParams) {
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				if err := p.Shoreline.Start(); err != nil {
-					log.Printf("Unable to start Shoreline: %v", err)
+					p.log.With(zap.Error(err)).Error("starting shoreline")
 					return err
 				}
 				return nil
@@ -245,10 +245,10 @@ func startServer(p InvocationParams) {
 			OnStart: func(ctx context.Context) error {
 				go func() {
 					if err := p.Server.ListenAndServe(); err != nil {
-						log.Printf("Server error: %v", err)
-						log.Printf("Shutting down the service")
+						p.log.With(zap.Error(err)).Error("while listening")
+						p.log.Infof("shutting down")
 						if shutdownErr := p.Shutdowner.Shutdown(); shutdownErr != nil {
-							log.Printf("Failed to shutdown: %v", shutdownErr)
+							p.log.With(zap.Error(err)).Error("shutting down")
 						}
 					}
 				}()

@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/tidepool-org/go-common/clients"
@@ -145,7 +144,6 @@ func (c *Confirmation) DecodeContext(data interface{}) error {
 
 	if c.Context != nil {
 		if err := json.Unmarshal(c.Context, &data); err != nil {
-			log.Printf("Err: %v\n", err)
 			return err
 		}
 	}
@@ -259,7 +257,6 @@ func generateKey() (string, error) {
 
 	rb := make([]byte, length)
 	if _, err := rand.Read(rb); err != nil {
-		log.Println(err)
 		return "", err
 	} else {
 		return base64.URLEncoding.EncodeToString(rb), nil

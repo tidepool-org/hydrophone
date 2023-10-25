@@ -2,9 +2,9 @@ package clients
 
 import (
 	"fmt"
-	"log"
 
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type (
@@ -17,7 +17,7 @@ func NewMockNotifier() Notifier {
 
 func (c *MockNotifier) Send(to []string, subject string, msg string) (int, string) {
 	details := fmt.Sprintf("Send subject[%s] with message[%s] to %v", subject, msg, to)
-	log.Println(details)
+	zap.S().Info(details)
 	return 200, details
 }
 
