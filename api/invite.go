@@ -206,10 +206,9 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
-		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
+		conf, err := a.Store.FindConfirmation(req.Context(), accept)
 		if err != nil {
-			log.Printf("AcceptInvite error while finding confirmation [%s]\n", err.Error())
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if conf == nil {
@@ -322,11 +321,12 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			Type:      models.TypeCareteamInvite,
 		}
 
-		if conf, err := a.findExistingConfirmation(req.Context(), invite, res); err != nil {
-			log.Printf("CancelInvite: finding [%s]", err.Error())
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		conf, err := a.Store.FindConfirmation(req.Context(), invite)
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
-		} else if conf != nil {
+		}
+		if conf != nil {
 			//cancel the invite
 			conf.UpdateStatus(models.StatusCanceled)
 
@@ -376,12 +376,12 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 			return
 		}
 
-		if conf, err := a.findExistingConfirmation(req.Context(), dismiss, res); err != nil {
-			log.Printf("DismissInvite: finding [%s]", err.Error())
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		conf, err := a.Store.FindConfirmation(req.Context(), dismiss)
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
-		} else if conf != nil {
-
+		}
+		if conf != nil {
 			conf.UpdateStatus(models.StatusDeclined)
 
 			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
@@ -554,10 +554,9 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 			Type:   models.TypeCareteamInvite,
 		}
 
-		invite, err := a.findExistingConfirmation(req.Context(), find, res)
+		invite, err := a.Store.FindConfirmation(req.Context(), find)
 		if err != nil {
-			a.logger.Errorw("error while finding confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if invite == nil || invite.ClinicId != "" {
