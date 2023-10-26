@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
@@ -93,28 +95,20 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 }
 
 // find the reset confirmation if it exists and hasn't expired
-func (a *Api) findResetConfirmation(conf *models.Confirmation, ctx context.Context, res http.ResponseWriter) *models.Confirmation {
-
-	log.Printf("findResetConfirmation: finding [%v]", conf)
+func (a *Api) findResetConfirmation(ctx context.Context, conf *models.Confirmation) (*models.Confirmation, bool, error) {
+	a.logger.With("conf", conf).Debugf("finding reset confirmation")
 	found, err := a.Store.FindConfirmation(ctx, conf)
 	if err != nil {
-		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
-		return nil
+		return nil, false, err
 	}
 	if found == nil {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND)}
-		log.Printf("findResetConfirmation: not found [%s]\n", statusErr.Error())
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-		return nil
+		return nil, false, nil
 	}
 	if found.IsExpired() {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
-		log.Printf("findResetConfirmation: expired [%s]\n", statusErr.Error())
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-		return nil
+		return nil, true, nil
 	}
 
-	return found
+	return found, false, nil
 }
 
 // Accept the password change
@@ -144,34 +138,50 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 
 	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Status: models.StatusPending, Type: models.TypePasswordReset}
 
-	if conf := a.findResetConfirmation(resetCnf, req.Context(), res); conf != nil {
-		if resetCnf.Key == "" || resetCnf.Email != conf.Email {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+	conf, expired, err := a.findResetConfirmation(req.Context(), resetCnf)
+	if err != nil {
+		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+		return
+	}
+	if expired {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_RESET_EXPIRED)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		a.logger.With(zap.Error(statusErr)).Info(STATUS_RESET_EXPIRED)
+		return
+	}
+	if conf == nil {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, STATUS_RESET_NOT_FOUND)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		a.logger.With(zap.Error(statusErr)).Info(STATUS_RESET_NOT_FOUND)
+		return
+	}
+
+	if resetCnf.Key == "" || resetCnf.Email != conf.Email {
+		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
+		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		return
+	}
+
+	token := a.sl.TokenProvide()
+
+	if usr := a.findExistingUser(rb.Email, token); usr != nil {
+
+		if err := a.sl.UpdateUser(usr.UserID, shoreline.UserUpdate{Password: &rb.Password}, token); err != nil {
+			status := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
+			a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
+			a.logger.With(zap.Error(err)).Info("updating user password")
 			return
 		}
-
-		token := a.sl.TokenProvide()
-
-		if usr := a.findExistingUser(rb.Email, token); usr != nil {
-
-			if err := a.sl.UpdateUser(usr.UserID, shoreline.UserUpdate{Password: &rb.Password}, token); err != nil {
-				log.Printf("acceptPassword: error updating password as part of password reset [%v]", err)
-				status := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_RESET_ERROR)}
-				a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)
-				return
-			}
-			conf.UpdateStatus(models.StatusCompleted)
-			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
-				//STATUS_RESET_ACCEPTED
-				a.logMetricAsServer("password reset")
-				a.sendModelAsResWithStatus(
-					res,
-					status.StatusError{Status: status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
-					http.StatusOK,
-				)
-				return
-			}
+		conf.UpdateStatus(models.StatusCompleted)
+		if a.addOrUpdateConfirmation(req.Context(), conf, res) {
+			//STATUS_RESET_ACCEPTED
+			a.logMetricAsServer("password reset")
+			a.sendModelAsResWithStatus(
+				res,
+				status.StatusError{Status: status.NewStatus(http.StatusOK, STATUS_RESET_ACCEPTED)},
+				http.StatusOK,
+			)
+			return
 		}
 	}
 }
