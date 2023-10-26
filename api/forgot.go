@@ -96,10 +96,9 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 func (a *Api) findResetConfirmation(conf *models.Confirmation, ctx context.Context, res http.ResponseWriter) *models.Confirmation {
 
 	log.Printf("findResetConfirmation: finding [%v]", conf)
-	found, err := a.findExistingConfirmation(ctx, conf, res)
+	found, err := a.Store.FindConfirmation(ctx, conf)
 	if err != nil {
-		log.Printf("findResetConfirmation: error [%s]\n", err.Error())
-		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 		return nil
 	}
 	if found == nil {

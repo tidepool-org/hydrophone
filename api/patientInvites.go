@@ -66,16 +66,15 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 			Key:      inviteId,
 		}
 
-		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
+		conf, err := a.Store.FindConfirmation(req.Context(), accept)
 		if err != nil {
-			a.logger.Errorw("error while finding confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if conf == nil {
-			a.logger.Warn("confirmation not found")
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+			a.logger.With(zap.Error(statusErr)).Info(statusInviteNotFoundMessage)
 			return
 		}
 
@@ -138,16 +137,15 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 			Key:      inviteId,
 		}
 
-		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
+		conf, err := a.Store.FindConfirmation(req.Context(), accept)
 		if err != nil {
-			a.logger.Errorw("error while finding confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if conf == nil {
-			a.logger.Warn("confirmation not found")
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)}
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+			a.logger.With(zap.Error(statusErr)).Info(statusInviteNotFoundMessage)
 			return
 		}
 

@@ -126,10 +126,9 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			Type:   models.TypeClinicianInvite,
 			Status: models.StatusPending,
 		}
-		confirmation, err := a.findExistingConfirmation(req.Context(), filter, res)
+		confirmation, err := a.Store.FindConfirmation(req.Context(), filter)
 		if err != nil {
-			a.logger.Errorw("error while finding confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if confirmation == nil {
@@ -192,10 +191,9 @@ func (a *Api) GetClinicianInvite(res http.ResponseWriter, req *http.Request, var
 			Type:   models.TypeClinicianInvite,
 			Status: models.StatusPending,
 		}
-		confirmation, err := a.findExistingConfirmation(req.Context(), filter, res)
+		confirmation, err := a.Store.FindConfirmation(req.Context(), filter)
 		if err != nil {
-			a.logger.Errorw("error while finding confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if confirmation == nil {
@@ -269,10 +267,9 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			Status: models.StatusPending,
 		}
 
-		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
+		conf, err := a.Store.FindConfirmation(req.Context(), accept)
 		if err != nil {
-			a.logger.Errorw("error while finding confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 
@@ -330,7 +327,7 @@ func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request,
 			Type:   models.TypeClinicianInvite,
 			Status: models.StatusPending,
 		}
-		conf, err := a.findExistingConfirmation(ctx, filter, res)
+		conf, err := a.Store.FindConfirmation(ctx, filter)
 		if err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
@@ -361,7 +358,7 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			Type:     models.TypeClinicianInvite,
 			Status:   models.StatusPending,
 		}
-		conf, err := a.findExistingConfirmation(ctx, filter, res)
+		conf, err := a.Store.FindConfirmation(ctx, filter)
 		if err != nil {
 			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return

@@ -282,18 +282,6 @@ func (a *Api) addOrUpdateConfirmation(ctx context.Context, conf *models.Confirma
 
 // Find this confirmation
 // write error if it fails
-func (a *Api) findExistingConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
-	if found, err := a.Store.FindConfirmation(ctx, conf); err != nil {
-		log.Printf("findExistingConfirmation: [%v]", err)
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
-		return nil, statusErr
-	} else {
-		return found, nil
-	}
-}
-
-// Find this confirmation
-// write error if it fails
 func (a *Api) addProfile(conf *models.Confirmation) error {
 	if conf.CreatorId != "" {
 		if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &conf.Creator.Profile); err != nil {
@@ -511,21 +499,23 @@ func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{
 }
 
 func (a *Api) sendError(res http.ResponseWriter, statusCode int, reason string, extras ...interface{}) {
-	_, file, line, ok := runtime.Caller(1)
-	if ok {
-		segments := strings.Split(file, "/")
-		file = segments[len(segments)-1]
-	} else {
-		file = "???"
-		line = 0
+	errs := []error{}
+	nonErrs := []interface{}{}
+	for _, extra := range extras {
+		if err, ok := extra.(error); ok {
+			errs = append(errs, err)
+		} else {
+			nonErrs = append(nonErrs, extra)
+		}
 	}
-
-	messages := make([]string, len(extras))
-	for index, extra := range extras {
-		messages[index] = fmt.Sprintf("%v", extra)
-	}
-
-	log.Printf("%s:%d RESPONSE ERROR: [%d %s] %s", file, line, statusCode, reason, strings.Join(messages, "; "))
+	a.logger.
+		Desugar().
+		WithOptions(zap.AddCallerSkip(1)).
+		Sugar().
+		With(zap.Int("code", statusCode)).
+		With(zap.Errors("errors", errs)).
+		With("extras", nonErrs).
+		Error(reason)
 	a.sendModelAsResWithStatus(res, status.NewStatus(statusCode, reason), statusCode)
 }
 
