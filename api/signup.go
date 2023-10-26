@@ -47,10 +47,9 @@ const (
 
 // try to find the signup confirmation
 func (a *Api) findSignUp(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
-	found, err := a.findExistingConfirmation(ctx, conf, res)
+	found, err := a.Store.FindConfirmation(ctx, conf)
 	if err != nil {
-		log.Printf("findSignUp: error [%s]\n", err.Error())
-		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 		return nil
 	}
 	if found == nil {
@@ -80,13 +79,12 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 		return
 	}
 
-	found, err := a.findExistingConfirmation(req.Context(), fromBody, res)
+	found, err := a.Store.FindConfirmation(req.Context(), fromBody)
 	if err != nil {
 		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 		return
 	}
 	if found != nil {
-
 		updatedStatus := string(newStatus) + " signup"
 		log.Printf("updateSignupConfirmation: %s", updatedStatus)
 		found.UpdateStatus(newStatus)
