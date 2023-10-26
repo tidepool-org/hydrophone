@@ -113,16 +113,21 @@ func NewConfirmationWithContext(theType Type, templateName TemplateName, creator
 	if conf, err := NewConfirmation(theType, templateName, creatorId); err != nil {
 		return nil, err
 	} else {
-		conf.AddContext(data)
+		if err := conf.AddContext(data); err != nil {
+			return nil, err
+		}
 		return conf, nil
 	}
 }
 
 // Add context data
-func (c *Confirmation) AddContext(data interface{}) {
-
-	jsonData, _ := json.Marshal(data)
+func (c *Confirmation) AddContext(data interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
 	c.Context = jsonData
+	return nil
 }
 
 // HasPermissions checks for permissions with the given name.

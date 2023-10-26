@@ -80,7 +80,12 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 		return
 	}
 
-	if found, _ := a.findExistingConfirmation(req.Context(), fromBody, res); found != nil {
+	found, err := a.findExistingConfirmation(req.Context(), fromBody, res)
+	if err != nil {
+		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+		return
+	}
+	if found != nil {
 
 		updatedStatus := string(newStatus) + " signup"
 		log.Printf("updateSignupConfirmation: %s", updatedStatus)
@@ -370,7 +375,13 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 			return
 		}
 
-		if signup, _ := a.Store.FindConfirmation(req.Context(), &models.Confirmation{UserId: userId, Type: models.TypeSignUp, Status: models.StatusPending}); signup == nil {
+		signup, err := a.Store.FindConfirmation(req.Context(), &models.Confirmation{UserId: userId, Type: models.TypeSignUp, Status: models.StatusPending})
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			return
+		}
+
+		if signup == nil {
 			log.Printf("getSignUp %s", STATUS_SIGNUP_NOT_FOUND)
 			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
 			return
@@ -491,7 +502,12 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					templateName = models.TemplateNameSignup
 				}
 
-				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, templateName, creatorID)
+				newSignUp, err = models.NewConfirmation(models.TypeSignUp, templateName, creatorID)
+				if err != nil {
+					a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+					return nil
+				}
+
 				newSignUp.UserId = usrDetails.UserID
 				newSignUp.Email = usrDetails.Emails[0]
 				newSignUp.ClinicId = clinicId
@@ -545,8 +561,7 @@ func (a *Api) cancelSignUp(res http.ResponseWriter, req *http.Request, vars map[
 }
 
 func IsValidPassword(password string) bool {
-	ok, _ := regexp.MatchString(`\A\S{8,72}\z`, password)
-	return ok
+	return passwordRe.MatchString(password)
 }
 
 func IsValidDate(date string) bool {
@@ -558,3 +573,5 @@ type UpsertCustodialSignUpInvite struct {
 	ClinicId  string `json:"clinicId"`
 	InvitedBy string `json:"invitedBy"`
 }
+
+var passwordRe = regexp.MustCompile(`\A\S{8,72}\z`)

@@ -46,7 +46,12 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 			return
 		}
 
-		confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
+		confirmation, err := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+			return
+		}
+
 		confirmation.Email = body.Email
 		confirmation.ClinicId = *clinic.JSON200.Id
 		confirmation.Creator.ClinicId = *clinic.JSON200.Id
@@ -128,7 +133,11 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			return
 		}
 		if confirmation == nil {
-			confirmation, _ := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
+			confirmation, err := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
+			if err != nil {
+				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+				return
+			}
 			confirmation.Key = inviteId
 		}
 
@@ -321,8 +330,11 @@ func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request,
 			Type:   models.TypeClinicianInvite,
 			Status: models.StatusPending,
 		}
-		conf, _ := a.findExistingConfirmation(ctx, filter, res)
-
+		conf, err := a.findExistingConfirmation(ctx, filter, res)
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			return
+		}
 		if conf != nil {
 			filter.ClinicId = conf.ClinicId
 		}
@@ -349,7 +361,12 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			Type:     models.TypeClinicianInvite,
 			Status:   models.StatusPending,
 		}
-		conf, _ := a.findExistingConfirmation(ctx, filter, res)
+		conf, err := a.findExistingConfirmation(ctx, filter, res)
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			return
+		}
+
 		a.cancelClinicianInviteWithStatus(res, req, filter, conf, models.StatusCanceled)
 	}
 }

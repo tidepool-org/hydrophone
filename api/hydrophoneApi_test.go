@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -103,7 +104,7 @@ func TestGetStatus_StatusOk(t *testing.T) {
 		fx.Populate(&api),
 	)
 
-	request, _ := http.NewRequest("GET", "/status", nil)
+	request := MustRequest(t, "GET", "/status", nil)
 	response := httptest.NewRecorder()
 	api.IsAlive(response, request)
 
@@ -125,7 +126,7 @@ func TestGetStatus_StatusInternalServerError(t *testing.T) {
 		fx.Populate(&api),
 	)
 
-	request, _ := http.NewRequest("GET", "/status", nil)
+	request := MustRequest(t, "GET", "/status", nil)
 	response := httptest.NewRecorder()
 
 	api.IsReady(response, request)
@@ -348,4 +349,14 @@ func newMockAlertsClientWithFailingUpsert() *mockAlertsClientWithFailingUpsert {
 
 func (c *mockAlertsClientWithFailingUpsert) Upsert(_ context.Context, _ *alerts.Config) error {
 	return fmt.Errorf("this should not be called")
+}
+
+// MustRequest is a helper for tests that fails the test when request creation
+// fails.
+func MustRequest(t *testing.T, method, url string, body io.Reader) *http.Request {
+	r, err := http.NewRequest(method, url, body)
+	if err != nil {
+		t.Fatalf("error creating http.Request: %s", err)
+	}
+	return r
 }
