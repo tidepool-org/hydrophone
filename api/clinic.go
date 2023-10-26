@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -90,8 +89,16 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
 			return
 		}
-		if existingInvite := a.checkForDuplicateClinicInvite(req.Context(), clinicId, inviterID, res); existingInvite {
+		existingInvite, err := a.checkForDuplicateClinicInvite(req.Context(), clinicId, inviterID)
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			return
+		}
+		if existingInvite {
 			a.logger.Infof("clinic %s user already has or had an invite from %v", clinicId, inviterID)
+			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage)}
+			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
+			a.logger.With(zap.Error(statusErr)).Error("finding confirmation")
 			return
 		}
 
@@ -119,7 +126,12 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			}
 		}
 
-		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNamePatientClinicInvite, inviterID, ib.Permissions)
+		invite, err := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNamePatientClinicInvite, inviterID, ib.Permissions)
+		if err != nil {
+			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+			return
+		}
+
 		invite.ClinicId = clinicId
 
 		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
@@ -154,26 +166,25 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 
 // Checks do they have an existing invite or are they already a team member
 // Or are they an existing user and already in the group?
-func (a *Api) checkForDuplicateClinicInvite(ctx context.Context, clinicId, invitorID string, res http.ResponseWriter) bool {
+func (a *Api) checkForDuplicateClinicInvite(ctx context.Context, clinicId, invitorID string) (bool, error) {
 
 	//already has invite from this user?
-	invites, _ := a.Store.FindConfirmations(
+	invites, err := a.Store.FindConfirmations(
 		ctx,
 		&models.Confirmation{CreatorId: invitorID, ClinicId: clinicId, Type: models.TypeCareteamInvite},
 		models.StatusPending,
 	)
+	if err != nil {
+		return false, err
+	}
 
 	if len(invites) > 0 {
 
 		//rule is we cannot send if the invite is not yet expired
 		if !invites[0].IsExpired() {
-			log.Println(statusExistingInviteMessage)
-			log.Println("last invite not yet expired")
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-			return true
+			return true, nil
 		}
 	}
 
-	return false
+	return false, nil
 }

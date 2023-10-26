@@ -21,7 +21,7 @@ var contextData = &Extras{Blah: "stuff", Email: "test@user.org"}
 
 func Test_NewConfirmation(t *testing.T) {
 
-	confirmation, _ := NewConfirmation(TypePasswordReset, TemplateNamePasswordReset, USERID)
+	confirmation := MustConfirmation(t, TypePasswordReset, TemplateNamePasswordReset, USERID)
 
 	if confirmation.Status != StatusPending {
 		t.Fatalf("Status should be [%s] but is [%s]", StatusPending, confirmation.Status)
@@ -81,7 +81,7 @@ func Test_NewConfirmation(t *testing.T) {
 
 func Test_NewConfirmationWithContext(t *testing.T) {
 
-	confirmation, _ := NewConfirmationWithContext(TypePasswordReset, TemplateNamePasswordReset, USERID, contextData)
+	confirmation := MustConfirmationWithContext(t, TypePasswordReset, TemplateNamePasswordReset, USERID, contextData)
 
 	myExtras := &Extras{}
 
@@ -105,7 +105,9 @@ func Test_Confirmation_AddContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected nil, got %+v", err)
 	}
-	confirmation.AddContext(contextData)
+	if err := confirmation.AddContext(contextData); err != nil {
+		t.Fatalf("error adding context: %s", err)
+	}
 
 	myExtras := &Extras{}
 
@@ -126,7 +128,10 @@ func Test_Confirmation_AddContext(t *testing.T) {
 
 func TestConfirmationKey(t *testing.T) {
 
-	key, _ := generateKey()
+	key, err := generateKey()
+	if err != nil {
+		t.Fatalf("error generating key: %s", err)
+	}
 
 	if key == "" {
 		t.Fatal("There should be a generated key")
@@ -227,4 +232,28 @@ func TestConfirmationContextCustomUnmarshaler(s *testing.T) {
 // buff is a helper for generating a JSON []byte representation.
 func buff(format string, args ...interface{}) *bytes.Buffer {
 	return bytes.NewBufferString(fmt.Sprintf(format, args...))
+}
+
+// MustConfirmation is a helper for tests that fails the test when
+// confirmation creation fails.
+func MustConfirmation(t *testing.T, theType Type, templateName TemplateName,
+	creatorID string) *Confirmation {
+
+	c, err := NewConfirmation(theType, templateName, creatorID)
+	if err != nil {
+		t.Fatalf("error creating confirmation: %s", err)
+	}
+	return c
+}
+
+// MustConfirmation is a helper for tests that fails the test when
+// confirmation creation fails.
+func MustConfirmationWithContext(t *testing.T, theType Type,
+	templateName TemplateName, creatorID string, data interface{}) *Confirmation {
+
+	c, err := NewConfirmationWithContext(theType, templateName, creatorID, data)
+	if err != nil {
+		t.Fatalf("error creating confirmation: %s", err)
+	}
+	return c
 }

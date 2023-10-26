@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -76,7 +75,7 @@ func TestForgotResponds(t *testing.T) {
 		if len(test.body) != 0 {
 			json.NewEncoder(body).Encode(test.body)
 		}
-		request, _ := http.NewRequest(test.method, test.url, body)
+		request := MustRequest(t, test.method, test.url, body)
 		if test.token != "" {
 			request.Header.Set(TP_SESSION_TOKEN, testing_token)
 		}
