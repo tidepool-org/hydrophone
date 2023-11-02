@@ -12,7 +12,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/tidepool-org/clinic/client v0.0.0-20230815132146-bd6c2982ff6d
 	github.com/tidepool-org/go-common v0.10.1-0.20230508194719-72b56b95a79a
-	github.com/tidepool-org/platform v1.33.1-0.20231013005639-3b2d96d57243
+	github.com/tidepool-org/platform v1.33.1-0.20231102192306-a5ca88faae46
 	go.mongodb.org/mongo-driver v1.11.1
 	go.uber.org/fx v1.13.1
 	go.uber.org/zap v1.22.0
