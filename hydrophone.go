@@ -1,13 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"path"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -28,6 +24,11 @@ import (
 	"github.com/tidepool-org/hydrophone/models"
 	"github.com/tidepool-org/hydrophone/templates"
 	"github.com/tidepool-org/platform/alerts"
+	"github.com/tidepool-org/platform/auth"
+	authclient "github.com/tidepool-org/platform/auth/client"
+	"github.com/tidepool-org/platform/client"
+	platformlog "github.com/tidepool-org/platform/log"
+	"github.com/tidepool-org/platform/platform"
 )
 
 var defaultStopTimeout = 60 * time.Second
@@ -89,68 +90,32 @@ func seagullProvider(config OutboundConfig, httpClient *http.Client) clients.Sea
 		Build()
 }
 
-func alertsProvider(config OutboundConfig, httpClient *http.Client, shorelineClient shoreline.Client) api.AlertsClient {
-	return &alertsClient{
-		client:    httpClient,
-		shoreline: shorelineClient,
-		host:      config.DataClientAddress,
+func alertsProvider(config OutboundConfig, tokenProvider auth.ExternalAccessor, logger platformlog.Logger) (api.AlertsClient, error) {
+	cfg := client.NewConfig()
+	cfg.Address = config.DataClientAddress
+	platformCfg := platform.NewConfig()
+	platformCfg.Config = cfg
+	platformClient, err := platform.NewClient(platformCfg, platform.AuthorizeAsService)
+	if err != nil {
+		return nil, err
 	}
+	return alerts.NewClient(platformClient, tokenProvider, logger), nil
 }
 
-type alertsClient struct {
-	client    *http.Client
-	host      string
-	shoreline clients.TokenProvider
+func zapPlatformAdapterProvider(zapper *zap.SugaredLogger) platformlog.Logger {
+	return NewZapPlatformAdapter(zapper)
 }
 
-func (c *alertsClient) Upsert(ctx context.Context, cfg *alerts.Config) error {
-	url := c.urlf("/v1/alerts/%s/%s", cfg.UserID, cfg.FollowedUserID)
-	body := &bytes.Buffer{}
-	if err := json.NewEncoder(body).Encode(cfg.Alerts); err != nil {
-		return err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
-	if err != nil {
-		return err
-	}
-	token := c.shoreline.TokenProvide()
-	req.Header.Add(api.TP_SESSION_TOKEN, token)
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("alerts config upsert: unexpected response code: %s", resp.Status)
-	}
-
-	return nil
+func externalConfigLoaderProvider(loader platform.ConfigLoader) authclient.ExternalConfigLoader {
+	return authclient.NewExternalEnvconfigLoader(loader)
 }
 
-func (c *alertsClient) urlf(pathFormat string, args ...interface{}) string {
-	return fmt.Sprintf(c.host+path.Join("/", pathFormat), args...)
+func platformConfigLoaderProvider(loader client.ConfigLoader) platform.ConfigLoader {
+	return platform.NewEnvconfigLoader(loader)
 }
 
-func (c *alertsClient) Delete(ctx context.Context, cfg *alerts.Config) error {
-	url := c.urlf("/v1/alerts/%s/%s", cfg.UserID, cfg.FollowedUserID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
-	if err != nil {
-		return err
-	}
-	token := c.shoreline.TokenProvide()
-	req.Header.Add(api.TP_SESSION_TOKEN, token)
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("alerts config upsert: unexpected response code: %s", resp.Status)
-	}
-
-	return nil
+func clientConfigLoaderProvider() client.ConfigLoader {
+	return client.NewEnvconfigLoader()
 }
 
 func clinicProvider(config OutboundConfig, shoreline shoreline.Client) (clinicsClient.ClientWithResponsesInterface, error) {
@@ -306,6 +271,14 @@ func main() {
 			cloudEventsConfigProvider,
 			faultTolerantConsumerProvider,
 			events.NewHandler,
+		),
+		authclient.ExternalClientModule,
+		authclient.ProvideServiceName("hydrophone"),
+		fx.Provide(
+			externalConfigLoaderProvider,
+			platformConfigLoaderProvider,
+			clientConfigLoaderProvider,
+			zapPlatformAdapterProvider,
 		),
 		fx.Provide(
 			seagullProvider,
