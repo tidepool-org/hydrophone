@@ -468,14 +468,6 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		a.sendModelAsResWithStatus(res, invite, http.StatusOK)
 	}
 
-	fullName := "Tidepool User"
-	if invite.Creator.Profile != nil {
-		fullName = invite.Creator.Profile.FullName
-		if invite.Creator.Profile.Patient.IsOtherPerson {
-			fullName = invite.Creator.Profile.Patient.FullName
-		}
-	}
-
 	var webPath = "signup"
 
 	if invite.UserId != "" {
@@ -483,7 +475,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 	}
 
 	emailContent := map[string]interface{}{
-		"CareteamName": fullName,
+		"CareteamName": findFullname(invite.Creator.Profile),
 		"Email":        invite.Email,
 		"WebPath":      webPath,
 		"Nickname":     ib.Nickname,
@@ -495,6 +487,21 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 	a.sendModelAsResWithStatus(res, invite, http.StatusOK)
 	return
+}
+
+// findFullname of an confirmation's creator, if known.
+//
+// It falls back to a reasonable generic name if unknown.
+func findFullname(profile *models.Profile) string {
+	fullname := "Tidepool User"
+	if profile != nil {
+		if profile.Patient.IsOtherPerson && profile.Patient.FullName != "" {
+			fullname = profile.Patient.FullName
+		} else if profile.FullName != "" {
+			fullname = profile.FullName
+		}
+	}
+	return fullname
 }
 
 func addsAlertingPermissions(existingPerms, newPerms commonClients.Permissions) bool {

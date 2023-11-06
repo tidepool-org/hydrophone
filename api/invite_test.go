@@ -676,3 +676,41 @@ func TestInviteBodyParsing(t *testing.T) {
 		t.Fatalf("expected whatthefoo?, got %+v", ib.Nickname)
 	}
 }
+
+func TestFindFullname(t *testing.T) {
+	t.Run("when nil returns a generic name", func(t *testing.T) {
+		if findFullname(nil) == "" {
+			t.Errorf("expected a default name, got \"\"")
+		}
+	})
+
+	t.Run("prioritizes the creator's patient name if present", func(t *testing.T) {
+		expected := "Foo"
+		profile := &models.Profile{
+			FullName: "Bar",
+			Patient: models.Patient{
+				IsOtherPerson: true,
+				FullName:      expected,
+			},
+		}
+		got := findFullname(profile)
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+
+	t.Run("falls back to the creator's name if present", func(t *testing.T) {
+		expected := "Foo"
+		profile := &models.Profile{
+			FullName: expected,
+			Patient: models.Patient{
+				IsOtherPerson: false,
+				FullName:      "Bar",
+			},
+		}
+		got := findFullname(profile)
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+}
