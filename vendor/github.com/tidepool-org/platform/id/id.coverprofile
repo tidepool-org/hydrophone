@@ -1,0 +1,11 @@
+mode: atomic
+github.com/tidepool-org/platform/id/id.go:10.38,11.16 1 7
+github.com/tidepool-org/platform/id/id.go:11.16,13.3 1 2
+github.com/tidepool-org/platform/id/id.go:14.2,16.16 3 5
+github.com/tidepool-org/platform/id/id.go:16.16,18.3 1 0
+github.com/tidepool-org/platform/id/id.go:18.8,18.24 1 5
+github.com/tidepool-org/platform/id/id.go:18.24,20.3 1 0
+github.com/tidepool-org/platform/id/id.go:21.2,21.39 1 5
+github.com/tidepool-org/platform/id/id.go:24.43,25.16 1 2
+github.com/tidepool-org/platform/id/id.go:25.16,26.13 1 1
+github.com/tidepool-org/platform/id/id.go:28.2,28.14 1 1

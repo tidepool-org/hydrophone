@@ -24,6 +24,11 @@ import (
 	"github.com/tidepool-org/hydrophone/models"
 	"github.com/tidepool-org/hydrophone/templates"
 	"github.com/tidepool-org/platform/alerts"
+	"github.com/tidepool-org/platform/auth"
+	authclient "github.com/tidepool-org/platform/auth/client"
+	"github.com/tidepool-org/platform/client"
+	platformlog "github.com/tidepool-org/platform/log"
+	"github.com/tidepool-org/platform/platform"
 )
 
 var defaultStopTimeout = 60 * time.Second
@@ -85,13 +90,16 @@ func seagullProvider(config OutboundConfig, httpClient *http.Client) clients.Sea
 		Build()
 }
 
-func alertsProvider(config OutboundConfig) (*alerts.Client, error) {
-	cfg := &alerts.ClientConfig{}
-	loader := alerts.NewEnvconfigLoader(nil)
-	if err := loader.Load(cfg); err != nil {
+func alertsProvider(config OutboundConfig, tokenProvider auth.ExternalAccessor, logger platformlog.Logger) (api.AlertsClient, error) {
+	cfg := client.NewConfig()
+	cfg.Address = config.DataClientAddress
+	platformCfg := platform.NewConfig()
+	platformCfg.Config = cfg
+	platformClient, err := platform.NewClient(platformCfg, platform.AuthorizeAsService)
+	if err != nil {
 		return nil, err
 	}
-	return alerts.NewClient(cfg)
+	return alerts.NewClient(platformClient, tokenProvider, logger), nil
 }
 
 func clinicProvider(config OutboundConfig, shoreline shoreline.Client) (clinicsClient.ClientWithResponsesInterface, error) {
@@ -247,6 +255,14 @@ func main() {
 			cloudEventsConfigProvider,
 			faultTolerantConsumerProvider,
 			events.NewHandler,
+		),
+		authclient.ExternalClientModule,
+		authclient.ProvideServiceName("hydrophone"),
+		fx.Provide(
+			authclient.NewExternalEnvconfigLoader,
+			platform.NewEnvconfigLoader,
+			client.NewEnvconfigLoader,
+			NewZapPlatformAdapter,
 		),
 		fx.Provide(
 			seagullProvider,

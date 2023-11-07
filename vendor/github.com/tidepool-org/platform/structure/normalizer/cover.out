@@ -1,0 +1,16 @@
+mode: atomic
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:12.24,14.2 1 26
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:16.58,20.2 1 27
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:22.48,24.2 1 4
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:26.39,28.2 1 2
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:30.48,32.2 1 2
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:34.37,36.2 1 2
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:38.41,40.2 1 2
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:42.38,44.2 1 2
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:46.36,48.2 1 10
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:50.45,52.2 1 8
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:54.75,57.2 2 2
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:59.79,63.2 1 2
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:65.79,69.2 1 5
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:71.70,75.2 1 5
+github.com/tidepool-org/platform/structure/normalizer/normalizer.go:77.75,81.2 1 2

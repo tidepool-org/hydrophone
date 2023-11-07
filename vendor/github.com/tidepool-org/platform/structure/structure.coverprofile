@@ -1,0 +1,19 @@
+mode: atomic
+github.com/tidepool-org/platform/structure/parser.go:88.69,89.27 1 0
+github.com/tidepool-org/platform/structure/parser.go:89.27,91.30 2 0
+github.com/tidepool-org/platform/structure/parser.go:91.30,93.4 1 0
+github.com/tidepool-org/platform/structure/parser.go:94.3,94.41 1 0
+github.com/tidepool-org/platform/structure/parser.go:95.8,97.3 1 0
+github.com/tidepool-org/platform/structure/parser.go:98.2,98.22 1 0
+github.com/tidepool-org/platform/structure/structure.go:13.25,19.2 1 1
+github.com/tidepool-org/platform/structure/structure.go:52.44,54.2 1 10
+github.com/tidepool-org/platform/structure/structure.go:56.46,58.2 1 3
+github.com/tidepool-org/platform/structure/structure.go:60.44,62.2 1 3
+github.com/tidepool-org/platform/structure/structure.go:64.66,65.23 1 9
+github.com/tidepool-org/platform/structure/structure.go:65.23,67.3 1 2
+github.com/tidepool-org/platform/structure/structure.go:69.2,71.3 1 7
+github.com/tidepool-org/platform/structure/structure.go:78.40,80.2 1 16
+github.com/tidepool-org/platform/structure/structure.go:82.44,84.2 1 5
+github.com/tidepool-org/platform/structure/structure.go:86.42,88.2 1 5
+github.com/tidepool-org/platform/structure/structure.go:90.64,94.2 1 26
+github.com/tidepool-org/platform/structure/structure.go:96.54,98.2 1 28

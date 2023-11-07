@@ -1,0 +1,6 @@
+mode: atomic
+github.com/tidepool-org/platform/config/config.go:18.44,20.45 2 8
+github.com/tidepool-org/platform/config/config.go:20.45,21.46 1 19
+github.com/tidepool-org/platform/config/config.go:21.46,23.4 1 8
+github.com/tidepool-org/platform/config/config.go:25.2,25.13 1 8
+github.com/tidepool-org/platform/config/errors.go:7.41,9.2 1 1

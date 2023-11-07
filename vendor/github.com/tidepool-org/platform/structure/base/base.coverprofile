@@ -1,0 +1,17 @@
+mode: atomic
+github.com/tidepool-org/platform/structure/base/base.go:15.18,20.2 1 26
+github.com/tidepool-org/platform/structure/base/base.go:22.42,24.2 1 4
+github.com/tidepool-org/platform/structure/base/base.go:26.33,28.2 1 2
+github.com/tidepool-org/platform/structure/base/base.go:30.42,32.2 1 2
+github.com/tidepool-org/platform/structure/base/base.go:34.31,36.2 1 2
+github.com/tidepool-org/platform/structure/base/base.go:38.35,40.2 1 2
+github.com/tidepool-org/platform/structure/base/base.go:42.32,44.2 1 2
+github.com/tidepool-org/platform/structure/base/base.go:46.30,48.2 1 15
+github.com/tidepool-org/platform/structure/base/base.go:50.39,51.16 1 10
+github.com/tidepool-org/platform/structure/base/base.go:51.16,55.3 3 9
+github.com/tidepool-org/platform/structure/base/base.go:58.58,65.2 1 2
+github.com/tidepool-org/platform/structure/base/base.go:67.58,74.2 1 7
+github.com/tidepool-org/platform/structure/base/base.go:76.49,83.2 1 9
+github.com/tidepool-org/platform/structure/base/base.go:85.54,92.24 2 2
+github.com/tidepool-org/platform/structure/base/base.go:92.24,94.3 1 1
+github.com/tidepool-org/platform/structure/base/base.go:95.2,95.13 1 2

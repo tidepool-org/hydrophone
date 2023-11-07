@@ -1,0 +1,10 @@
+mode: atomic
+github.com/tidepool-org/platform/origin/origin.go:20.23,27.2 1 62
+github.com/tidepool-org/platform/origin/origin.go:38.57,39.22 1 2
+github.com/tidepool-org/platform/origin/origin.go:39.22,41.3 1 1
+github.com/tidepool-org/platform/origin/origin.go:42.2,44.14 3 1
+github.com/tidepool-org/platform/origin/origin.go:47.26,49.2 1 36
+github.com/tidepool-org/platform/origin/origin.go:51.55,58.2 6 3
+github.com/tidepool-org/platform/origin/origin.go:60.58,63.22 3 27
+github.com/tidepool-org/platform/origin/origin.go:63.22,65.3 1 26
+github.com/tidepool-org/platform/origin/origin.go:66.2,68.97 3 27

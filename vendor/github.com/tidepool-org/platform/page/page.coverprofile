@@ -1,0 +1,12 @@
+mode: atomic
+github.com/tidepool-org/platform/page/pagination.go:26.34,31.2 1 30
+github.com/tidepool-org/platform/page/pagination.go:33.59,34.45 1 6
+github.com/tidepool-org/platform/page/pagination.go:34.45,36.3 1 3
+github.com/tidepool-org/platform/page/pagination.go:37.2,37.45 1 6
+github.com/tidepool-org/platform/page/pagination.go:37.45,39.3 1 3
+github.com/tidepool-org/platform/page/pagination.go:42.62,45.2 2 5
+github.com/tidepool-org/platform/page/pagination.go:47.61,49.37 2 3
+github.com/tidepool-org/platform/page/pagination.go:49.37,51.3 1 2
+github.com/tidepool-org/platform/page/pagination.go:52.2,52.37 1 3
+github.com/tidepool-org/platform/page/pagination.go:52.37,54.3 1 2
+github.com/tidepool-org/platform/page/pagination.go:55.2,55.68 1 3

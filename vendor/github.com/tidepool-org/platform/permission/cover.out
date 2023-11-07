@@ -1,0 +1,7 @@
+mode: atomic
+github.com/tidepool-org/platform/permission/permission.go:22.63,23.51 1 0
+github.com/tidepool-org/platform/permission/permission.go:23.51,24.38 1 0
+github.com/tidepool-org/platform/permission/permission.go:24.38,26.4 1 0
+github.com/tidepool-org/platform/permission/permission.go:27.3,27.37 1 0
+github.com/tidepool-org/platform/permission/permission.go:27.37,29.4 1 0
+github.com/tidepool-org/platform/permission/permission.go:31.2,31.20 1 0
