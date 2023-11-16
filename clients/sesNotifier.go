@@ -1,7 +1,11 @@
 package clients
 
 import (
+	"fmt"
 	"log"
+	"net/http"
+
+	"golang.org/x/net/idna"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -78,7 +82,11 @@ func NewSesNotifier(cfg *SesNotifierConfig) (*SesNotifier, error) {
 func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string) {
 	var toAwsAddress = make([]*string, len(to))
 	for i, x := range to {
-		toAwsAddress[i] = aws.String(x)
+		encodedAddress, err := idna.ToASCII(x)
+		if err != nil {
+			return http.StatusBadRequest, fmt.Sprintf(`unable to Punycode email "%s": %v`, x, err)
+		}
+		toAwsAddress[i] = aws.String(encodedAddress)
 	}
 
 	input := &ses.SendEmailInput{
@@ -127,7 +135,7 @@ func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string
 			log.Println(err.Error())
 		}
 
-		return 400, result.String()
+		return http.StatusBadRequest, fmt.Sprintf("%s: %s", result.String(), err.Error())
 	}
-	return 200, result.String()
+	return http.StatusOK, result.String()
 }
