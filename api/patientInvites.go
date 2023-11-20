@@ -30,18 +30,18 @@ func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars
 		// find all outstanding invites that are associated to this clinic
 		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{ClinicId: clinicId, Type: models.TypeCareteamInvite}, models.StatusPending)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if len(found) == 0 {
 			result := make([]*models.Confirmation, 0)
-			a.sendModelAsResWithStatus(res, result, http.StatusOK)
+			a.sendModelAsResWithStatus(ctx, res, result, http.StatusOK)
 			return
 		}
-		if invites := a.addProfileInfoToConfirmations(found); invites != nil {
+		if invites := a.addProfileInfoToConfirmations(ctx, found); invites != nil {
 			a.logMetric("get_patient_invites", req)
-			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
-			a.logger.Debugf("confirmations found and checked: %d", len(invites))
+			a.sendModelAsResWithStatus(ctx, res, invites, http.StatusOK)
+			a.logger(ctx).Debugf("confirmations found and checked: %d", len(invites))
 			return
 		}
 	}
@@ -68,13 +68,13 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 			Key:      inviteId,
 		}
 
-		conf, err := a.Store.FindConfirmation(req.Context(), accept)
+		conf, err := a.Store.FindConfirmation(ctx, accept)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if conf == nil {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
+			a.sendError(ctx, res, http.StatusNotFound, statusInviteNotFoundMessage)
 			return
 		}
 
@@ -84,25 +84,25 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 		conf.ValidateClinicID(clinicId, &validationErrors)
 
 		if len(validationErrors) > 0 {
-			a.sendError(res, http.StatusForbidden, statusForbiddenMessage,
+			a.sendError(ctx, res, http.StatusForbidden, statusForbiddenMessage,
 				zap.Errors("validation-errors", validationErrors))
 			return
 		}
 
 		patient, err := a.createClinicPatient(ctx, *conf)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT, err)
 			return
 		}
 
 		conf.UpdateStatus(models.StatusCompleted)
-		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
+		if !a.addOrUpdateConfirmation(ctx, conf, res) {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
 			return
 		}
 
 		a.logMetric("accept_patient_invite", req)
-		a.sendModelAsResWithStatus(res, patient, http.StatusOK)
+		a.sendModelAsResWithStatus(ctx, res, patient, http.StatusOK)
 		return
 	}
 }
@@ -124,13 +124,13 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 			Key:      inviteId,
 		}
 
-		conf, err := a.Store.FindConfirmation(req.Context(), accept)
+		conf, err := a.Store.FindConfirmation(ctx, accept)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if conf == nil {
-			a.sendError(res, http.StatusForbidden, statusInviteNotFoundMessage)
+			a.sendError(ctx, res, http.StatusForbidden, statusInviteNotFoundMessage)
 			return
 		}
 
@@ -148,13 +148,13 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 		conf.ValidateClinicID(clinicId, &validationErrors)
 
 		if len(validationErrors) > 0 {
-			a.sendError(res, http.StatusForbidden, statusForbiddenMessage,
+			a.sendError(ctx, res, http.StatusForbidden, statusForbiddenMessage,
 				zap.Errors("validation-errors", validationErrors))
 			return
 		}
 
 		conf.UpdateStatus(updatedStatus)
-		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
+		if !a.addOrUpdateConfirmation(ctx, conf, res) {
 			return
 		}
 
@@ -164,7 +164,7 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 			a.logMetric("cancel_clinic_invite", req)
 		}
 
-		a.sendModelAsResWithStatus(res, conf, http.StatusOK)
+		a.sendModelAsResWithStatus(ctx, res, conf, http.StatusOK)
 		return
 	}
 }
@@ -204,7 +204,7 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 		patient = response.JSON200
 	}
 
-	a.logger.With(zap.Any("perms", patient.Permissions)).Info("permissions set")
+	a.logger(ctx).With(zap.Any("perms", patient.Permissions)).Info("permissions set")
 	return patient, nil
 }
 

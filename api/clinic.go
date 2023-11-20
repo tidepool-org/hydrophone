@@ -37,17 +37,17 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		if permissions, err := a.tokenUserHasRequestedPermissions(token, inviterID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
 		defer req.Body.Close()
 		var ib = &ClinicInvite{}
 		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-			a.sendError(res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 			return
 		}
 
@@ -63,11 +63,11 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			Limit:     &limit,
 		})
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 		if response.JSON200 == nil || len(*response.JSON200) == 0 {
-			a.sendError(res, http.StatusNotFound, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusNotFound, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 
@@ -76,20 +76,20 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 
 		patientExists, err := a.checkExistingPatientOfClinic(ctx, clinicId, inviterID)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return
 		}
 		if patientExists {
-			a.sendError(res, http.StatusConflict, statusExistingPatientMessage)
+			a.sendError(ctx, res, http.StatusConflict, statusExistingPatientMessage)
 			return
 		}
-		existingInvite, err := a.checkForDuplicateClinicInvite(req.Context(), clinicId, inviterID)
+		existingInvite, err := a.checkForDuplicateClinicInvite(ctx, clinicId, inviterID)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if existingInvite {
-			a.sendError(res, http.StatusConflict, statusExistingInviteMessage,
+			a.sendError(ctx, res, http.StatusConflict, statusExistingInviteMessage,
 				zap.String("clinicId", clinicId), zap.String("inviterID", inviterID), err)
 			return
 		}
@@ -106,9 +106,9 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			Role:  &role,
 			Limit: &maxClinicians,
 		}
-		listResponse, err := a.clinics.ListCliniciansWithResponse(req.Context(), clinics.ClinicId(clinicId), params)
+		listResponse, err := a.clinics.ListCliniciansWithResponse(ctx, clinics.ClinicId(clinicId), params)
 		if err != nil || response.StatusCode() != http.StatusOK {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 		var recipients []string
@@ -120,17 +120,17 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 
 		invite, err := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNamePatientClinicInvite, inviterID, ib.Permissions)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
 			return
 		}
 
 		invite.ClinicId = clinicId
 
-		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
+		if a.addOrUpdateConfirmation(ctx, invite, res) {
 			a.logMetric("invite created", req)
 
 			if err := a.addProfile(invite); err != nil {
-				a.logger.With(zap.Error(err)).Error(STATUS_ERR_ADDING_PROFILE)
+				a.logger(ctx).With(zap.Error(err)).Error(STATUS_ERR_ADDING_PROFILE)
 				return
 			} else if !suppressEmail {
 				fullName := invite.Creator.Profile.FullName
@@ -150,7 +150,7 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 				}
 			}
 
-			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+			a.sendModelAsResWithStatus(ctx, res, invite, http.StatusOK)
 			return
 		}
 	}

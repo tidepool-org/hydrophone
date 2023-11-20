@@ -29,20 +29,20 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 
 		clinic, err := a.clinics.GetClinicWithResponse(ctx, clinics.ClinicId(clinicId))
 		if err != nil || clinic == nil || clinic.JSON200 == nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 
 		defer req.Body.Close()
 		var body = &ClinicianInvite{}
 		if err := json.NewDecoder(req.Body).Decode(body); err != nil {
-			a.sendError(res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 			return
 		}
 
 		confirmation, err := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
 			return
 		}
 
@@ -51,7 +51,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 		confirmation.Creator.ClinicId = *clinic.JSON200.Id
 		confirmation.Creator.ClinicName = clinic.JSON200.Name
 
-		invitedUsr := a.findExistingUser(body.Email, a.sl.TokenProvide())
+		invitedUsr := a.findExistingUser(ctx, body.Email, a.sl.TokenProvide())
 		if invitedUsr != nil && invitedUsr.UserID != "" {
 			confirmation.UserId = invitedUsr.UserID
 		}
@@ -62,7 +62,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 			Roles:    body.Roles,
 		})
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 		if response.StatusCode() != http.StatusOK {
@@ -74,7 +74,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 
 		code, msg, optionalErr := a.sendClinicianConfirmation(req, confirmation)
 		if code != 0 {
-			a.sendError(res, code, msg, optionalErr)
+			a.sendError(ctx, res, code, msg, optionalErr)
 			return
 		}
 
@@ -98,13 +98,13 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 
 		clinic, err := a.clinics.GetClinicWithResponse(ctx, clinics.ClinicId(clinicId))
 		if err != nil || clinic == nil || clinic.JSON200 == nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 
 		inviteResponse, err := a.clinics.GetInvitedClinicianWithResponse(ctx, clinics.ClinicId(clinicId), clinics.InviteId(inviteId))
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 		if inviteResponse.StatusCode() != http.StatusOK || inviteResponse.JSON200 == nil {
@@ -119,15 +119,15 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			Type:   models.TypeClinicianInvite,
 			Status: models.StatusPending,
 		}
-		confirmation, err := a.Store.FindConfirmation(req.Context(), filter)
+		confirmation, err := a.Store.FindConfirmation(ctx, filter)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if confirmation == nil {
 			confirmation, err := models.NewConfirmation(models.TypeClinicianInvite, models.TemplateNameClinicianInvite, token.UserID)
 			if err != nil {
-				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
 				return
 			}
 			confirmation.Key = inviteId
@@ -138,18 +138,18 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		confirmation.Creator.ClinicId = *clinic.JSON200.Id
 		confirmation.Creator.ClinicName = clinic.JSON200.Name
 
-		invitedUsr := a.findExistingUser(confirmation.Email, a.sl.TokenProvide())
+		invitedUsr := a.findExistingUser(ctx, confirmation.Email, a.sl.TokenProvide())
 		if invitedUsr != nil && invitedUsr.UserID != "" {
 			confirmation.UserId = invitedUsr.UserID
 		}
 
 		code, msg, optionalErr := a.sendClinicianConfirmation(req, confirmation)
 		if code > 0 {
-			a.sendError(res, code, msg, optionalErr)
+			a.sendError(ctx, res, code, msg, optionalErr)
 			return
 		}
 
-		a.sendModelAsResWithStatus(res, confirmation, http.StatusOK)
+		a.sendModelAsResWithStatus(ctx, res, confirmation, http.StatusOK)
 		return
 	}
 }
@@ -168,7 +168,7 @@ func (a *Api) GetClinicianInvite(res http.ResponseWriter, req *http.Request, var
 		// Make sure the invite belongs to the clinic
 		inviteResponse, err := a.clinics.GetInvitedClinicianWithResponse(ctx, clinics.ClinicId(clinicId), clinics.InviteId(inviteId))
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 		if inviteResponse.StatusCode() != http.StatusOK || inviteResponse.JSON200 == nil {
@@ -183,17 +183,17 @@ func (a *Api) GetClinicianInvite(res http.ResponseWriter, req *http.Request, var
 			Type:   models.TypeClinicianInvite,
 			Status: models.StatusPending,
 		}
-		confirmation, err := a.Store.FindConfirmation(req.Context(), filter)
+		confirmation, err := a.Store.FindConfirmation(ctx, filter)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if confirmation == nil {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
+			a.sendError(ctx, res, http.StatusNotFound, statusInviteNotFoundMessage)
 			return
 		}
 
-		a.sendModelAsResWithStatus(res, confirmation, http.StatusOK)
+		a.sendModelAsResWithStatus(ctx, res, confirmation, http.StatusOK)
 		return
 	}
 }
@@ -204,33 +204,33 @@ func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request
 		ctx := req.Context()
 		userId := vars["userId"]
 
-		invitedUsr := a.findExistingUser(userId, req.Header.Get(TP_SESSION_TOKEN))
+		invitedUsr := a.findExistingUser(ctx, userId, req.Header.Get(TP_SESSION_TOKEN))
 
 		// Tokens only legit when for same userid
 		if userId != token.UserID || invitedUsr == nil || invitedUsr.UserID == "" {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
 		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeClinicianInvite}, models.StatusPending)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if len(found) == 0 {
-			a.sendError(res, http.StatusNotFound, STATUS_NOT_FOUND)
+			a.sendError(ctx, res, http.StatusNotFound, STATUS_NOT_FOUND)
 			return
 		}
-		if invites := a.addProfileInfoToConfirmations(found); invites != nil {
-			a.ensureIdSet(req.Context(), userId, invites)
+		if invites := a.addProfileInfoToConfirmations(ctx, found); invites != nil {
+			a.ensureIdSet(ctx, userId, invites)
 			if err := a.populateRestrictions(ctx, *invitedUsr, *token, invites); err != nil {
-				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 				return
 			}
 
 			a.logMetric("get_clinician_invitations", req)
-			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
-			a.logger.Infof("invites found and checked: %d", len(invites))
+			a.sendModelAsResWithStatus(ctx, res, invites, http.StatusOK)
+			a.logger(ctx).Infof("invites found and checked: %d", len(invites))
 			return
 		}
 	}
@@ -243,11 +243,11 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		userId := vars["userId"]
 		inviteId := vars["inviteId"]
 
-		invitedUsr := a.findExistingUser(token.UserID, req.Header.Get(TP_SESSION_TOKEN))
+		invitedUsr := a.findExistingUser(ctx, token.UserID, req.Header.Get(TP_SESSION_TOKEN))
 
 		// Tokens only legit when for same userid
 		if token.IsServer || userId != token.UserID || invitedUsr == nil || invitedUsr.UserID != token.UserID {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
@@ -258,32 +258,32 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			Status: models.StatusPending,
 		}
 
-		conf, err := a.Store.FindConfirmation(req.Context(), accept)
+		conf, err := a.Store.FindConfirmation(ctx, accept)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 
 		if err := a.populateRestrictions(ctx, *invitedUsr, *token, []*models.Confirmation{conf}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 
 		if conf.Restrictions != nil && !conf.Restrictions.CanAccept {
-			a.sendError(res, http.StatusForbidden, STATUS_ERR_ACCEPTING_CONFIRMATION)
+			a.sendError(ctx, res, http.StatusForbidden, STATUS_ERR_ACCEPTING_CONFIRMATION)
 			return
 		}
 
 		association := clinics.AssociateClinicianToUserJSONRequestBody{UserId: token.UserID}
 		response, err := a.clinics.AssociateClinicianToUserWithResponse(ctx, clinics.ClinicId(conf.ClinicId), clinics.InviteId(inviteId), association)
 		if err != nil || response.StatusCode() != http.StatusOK {
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendModelAsResWithStatus(ctx, res, err, http.StatusInternalServerError)
 			return
 		}
 
 		conf.UpdateStatus(models.StatusCompleted)
-		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
+		if !a.addOrUpdateConfirmation(ctx, conf, res) {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
 			return
 		}
 
@@ -301,10 +301,10 @@ func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request,
 		userId := vars["userId"]
 		inviteId := vars["inviteId"]
 
-		invitedUsr := a.findExistingUser(token.UserID, req.Header.Get(TP_SESSION_TOKEN))
+		invitedUsr := a.findExistingUser(ctx, token.UserID, req.Header.Get(TP_SESSION_TOKEN))
 		// Tokens only legit when for same userid
 		if token.IsServer || userId != token.UserID || invitedUsr == nil || invitedUsr.UserID != token.UserID {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
@@ -316,7 +316,7 @@ func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request,
 		}
 		conf, err := a.Store.FindConfirmation(ctx, filter)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if conf != nil {
@@ -346,7 +346,7 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 		conf, err := a.Store.FindConfirmation(ctx, filter)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 
@@ -356,7 +356,6 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 
 func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.Confirmation) (code int, msg string, err error) {
 	ctx := req.Context()
-
 	if err := a.addProfile(confirmation); err != nil {
 		return http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err
 	}
@@ -395,7 +394,7 @@ func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http
 
 	response, err := a.clinics.DeleteInvitedClinicianWithResponse(ctx, clinics.ClinicId(filter.ClinicId), clinics.InviteId(filter.Key))
 	if err != nil || (response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusNotFound) {
-		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 		return
 	}
 
@@ -416,10 +415,10 @@ func (a *Api) assertClinicMember(ctx context.Context, clinicId string, token *sh
 	// Non-server tokens only legit when for same userid
 	if !token.IsServer {
 		if result, err := a.clinics.GetClinicianWithResponse(ctx, clinics.ClinicId(clinicId), clinics.ClinicianId(token.UserID)); err != nil || result.StatusCode() == http.StatusInternalServerError {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return err
 		} else if result.StatusCode() != http.StatusOK {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return fmt.Errorf("unexpected status code %v when fetching clinician %v from clinic %v", result.StatusCode(), token.UserID, clinicId)
 		}
 	}
@@ -430,10 +429,10 @@ func (a *Api) assertClinicAdmin(ctx context.Context, clinicId string, token *sho
 	// Non-server tokens only legit when for same userid
 	if !token.IsServer {
 		if result, err := a.clinics.GetClinicianWithResponse(ctx, clinics.ClinicId(clinicId), clinics.ClinicianId(token.UserID)); err != nil || result.StatusCode() == http.StatusInternalServerError {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return err
 		} else if result.StatusCode() != http.StatusOK {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return fmt.Errorf("unexpected status code %v when fetching clinician %v from clinic %v", result.StatusCode(), token.UserID, clinicId)
 		} else {
 			clinician := result.JSON200
@@ -442,7 +441,7 @@ func (a *Api) assertClinicAdmin(ctx context.Context, clinicId string, token *sho
 					return nil
 				}
 			}
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return fmt.Errorf("the clinician doesn't have the required permissions %v", clinician.Roles)
 		}
 	}
