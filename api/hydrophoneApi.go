@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/kelseyhightower/envconfig"
@@ -35,8 +36,9 @@ type (
 		seagull    commonClients.Seagull
 		metrics    highwater.Client
 		alerts     AlertsClient
-		logger     *zap.SugaredLogger
+		baseLogger *zap.SugaredLogger
 		Config     Config
+		mu         sync.Mutex
 	}
 	Config struct {
 		ServerSecret string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
@@ -127,7 +129,7 @@ func NewApi(
 		seagull:    seagull,
 		alerts:     alerts,
 		templates:  templates,
-		logger:     logger,
+		baseLogger: logger,
 	}
 }
 
@@ -164,24 +166,47 @@ var RouterModule = fx.Options(fx.Provide(routerProvider, apiConfigProvider))
 //
 // This is effected via its type being that of a mux.MiddlewareFunc.
 func (a *Api) addUserIDToLogger(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
+	return http.HandlerFunc(func(w http.ResponseWriter, orig *http.Request) {
+		vars := mux.Vars(orig)
+		next := orig
 		for key := range vars {
 			if !strings.EqualFold(key, "userid") {
 				continue
 			}
-			oldLogger := a.logger
-			a.logger = a.logger.With(key, vars[key])
-			defer func(l *zap.SugaredLogger) {
-				a.logger = l
-			}(oldLogger)
+			ctxLog := a.baseLogger.With(zap.String(key, vars[key]))
+			ctxWithLog := context.WithValue(orig.Context(), ctxLoggerKey{}, ctxLog)
+			next = orig.WithContext(ctxWithLog)
 			break
 		}
-		h.ServeHTTP(w, r)
+		h.ServeHTTP(w, next)
+	})
+}
+
+type ctxLoggerKey struct{}
+
+func (a *Api) logger(ctx context.Context) *zap.SugaredLogger {
+	if logger, ok := ctx.Value(ctxLoggerKey{}).(*zap.SugaredLogger); ok {
+		return logger
+	}
+	return a.cloneLogger()
+}
+
+func (a *Api) cloneLogger() *zap.SugaredLogger {
+	return a.baseLogger.WithOptions()
+}
+
+func (a *Api) ctxLoggerHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origCtx := r.Context()
+		ctxLog := a.cloneLogger()
+		ctxWithLog := context.WithValue(origCtx, ctxLoggerKey{}, ctxLog)
+		rWithLog := r.WithContext(ctxWithLog)
+		h.ServeHTTP(w, rWithLog)
 	})
 }
 
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
+	rtr.Use(mux.MiddlewareFunc(a.ctxLoggerHandler))
 	c := rtr.PathPrefix("/confirm").Subrouter()
 
 	c.HandleFunc("/status", a.IsReady).Methods("GET")
@@ -303,8 +328,9 @@ func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (a *Api) IsReady(res http.ResponseWriter, req *http.Request) {
-	if err := a.Store.Ping(req.Context()); err != nil {
-		a.sendError(res, http.StatusInternalServerError, "store connectivity failure", err)
+	ctx := req.Context()
+	if err := a.Store.Ping(ctx); err != nil {
+		a.sendError(ctx, res, http.StatusInternalServerError, "store connectivity failure", err)
 		return
 	}
 	res.WriteHeader(http.StatusOK)
@@ -320,7 +346,7 @@ func (a *Api) IsAlive(res http.ResponseWriter, req *http.Request) {
 // write an error if it all goes wrong
 func (a *Api) addOrUpdateConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) bool {
 	if err := a.Store.UpsertConfirmation(ctx, conf); err != nil {
-		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
 		return false
 	}
 	return true
@@ -339,11 +365,11 @@ func (a *Api) addProfile(conf *models.Confirmation) error {
 	return nil
 }
 
-func (a *Api) addProfileInfoToConfirmations(results []*models.Confirmation) []*models.Confirmation {
+func (a *Api) addProfileInfoToConfirmations(ctx context.Context, results []*models.Confirmation) []*models.Confirmation {
 	for i := range results {
 		if err := a.addProfile(results[i]); err != nil {
 			//report and move on
-			a.logger.With(zap.Error(err)).Warn("getting profile")
+			a.logger(ctx).With(zap.Error(err)).Warn("getting profile")
 		}
 	}
 	return results
@@ -351,6 +377,7 @@ func (a *Api) addProfileInfoToConfirmations(results []*models.Confirmation) []*m
 
 // Generate a notification from the given confirmation,write the error if it fails
 func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}, recipients ...string) bool {
+	ctx := req.Context()
 	templateName := conf.TemplateName
 	if templateName == models.TemplateNameUndefined {
 		switch conf.Type {
@@ -360,7 +387,7 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 			templateName = models.TemplateNameCareteamInvite
 			has, err := conf.HasPermission("follow")
 			if err != nil {
-				a.logger.With(zap.Error(err)).Warn("permissions check failed; falling back to non-alerting notification")
+				a.logger(ctx).With(zap.Error(err)).Warn("permissions check failed; falling back to non-alerting notification")
 			} else if has {
 				templateName = models.TemplateNameCareteamInviteWithAlerting
 			}
@@ -369,7 +396,7 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 		case models.TypeNoAccount:
 			templateName = models.TemplateNameNoAccount
 		default:
-			a.logger.With(zap.String("type", string(conf.Type))).
+			a.logger(ctx).With(zap.String("type", string(conf.Type))).
 				Info("unknown confirmation type")
 			return false
 		}
@@ -380,14 +407,14 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 
 	template, ok := a.templates[templateName]
 	if !ok {
-		a.logger.With(zap.String("template", string(templateName))).
+		a.logger(ctx).With(zap.String("template", string(templateName))).
 			Info("unknown template type")
 		return false
 	}
 
 	subject, body, err := template.Execute(content)
 	if err != nil {
-		a.logger.With(zap.Error(err)).Error("executing email template")
+		a.logger(ctx).With(zap.Error(err)).Error("executing email template")
 		return false
 	}
 
@@ -400,7 +427,7 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 	}
 
 	if status, details := a.notifier.Send(addresses, subject, body); status != http.StatusOK {
-		a.logger.Errorw(
+		a.logger(ctx).Errorw(
 			"error sending email",
 			"email", addresses,
 			"subject", subject,
@@ -414,18 +441,19 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 
 // find and validate the token
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
+	ctx := req.Context()
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
 		td := a.sl.CheckToken(token)
 
 		if td == nil {
-			a.sendError(res, http.StatusForbidden, STATUS_INVALID_TOKEN,
+			a.sendError(ctx, res, http.StatusForbidden, STATUS_INVALID_TOKEN,
 				zap.String("token", token))
 			return nil
 		}
 		//all good!
 		return td
 	}
-	a.sendError(res, http.StatusUnauthorized, STATUS_NO_TOKEN)
+	a.sendError(ctx, res, http.StatusUnauthorized, STATUS_NO_TOKEN)
 	return nil
 }
 
@@ -445,9 +473,9 @@ func (a *Api) logMetricAsServer(name string) {
 
 // Find existing user based on the given indentifier
 // The indentifier could be either an id or email address
-func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
+func (a *Api) findExistingUser(ctx context.Context, indentifier, token string) *shoreline.UserData {
 	if usr, err := a.sl.GetUser(indentifier, token); err != nil {
-		a.logger.With(zap.Error(err)).Error("getting user details")
+		a.logger(ctx).With(zap.Error(err)).Error("getting user details")
 		return nil
 	} else {
 		return usr
@@ -463,10 +491,10 @@ func (a *Api) ensureIdSet(ctx context.Context, userId string, confirmations []*m
 	for i := range confirmations {
 		//set the userid if not set already
 		if confirmations[i].UserId == "" {
-			a.logger.Debug("UserId wasn't set for invite so setting it")
+			a.logger(ctx).Debug("UserId wasn't set for invite so setting it")
 			confirmations[i].UserId = userId
 			if err := a.Store.UpsertConfirmation(ctx, confirmations[i]); err != nil {
-				a.logger.With(zap.Error(err)).Warn("upserting confirmation")
+				a.logger(ctx).With(zap.Error(err)).Warn("upserting confirmation")
 			}
 		}
 	}
@@ -520,9 +548,9 @@ func (a *Api) populateRestrictions(ctx context.Context, user shoreline.UserData,
 	return nil
 }
 
-func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
+func (a *Api) sendModelAsResWithStatus(ctx context.Context, res http.ResponseWriter, model interface{}, statusCode int) {
 	if jsonDetails, err := json.Marshal(model); err != nil {
-		a.logger.With("model", model, zap.Error(err)).Errorf("trying to send model")
+		a.logger(ctx).With("model", model, zap.Error(err)).Errorf("trying to send model")
 		http.Error(res, "Error marshaling data for response", http.StatusInternalServerError)
 	} else {
 		res.Header().Set("content-type", "application/json")
@@ -531,19 +559,19 @@ func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{
 	}
 }
 
-func (a *Api) sendError(res http.ResponseWriter, statusCode int, reason string, extras ...interface{}) {
-	a.sendErrorLog(statusCode, reason, extras...)
-	a.sendModelAsResWithStatus(res, status.NewStatus(statusCode, reason), statusCode)
+func (a *Api) sendError(ctx context.Context, res http.ResponseWriter, statusCode int, reason string, extras ...interface{}) {
+	a.sendErrorLog(ctx, statusCode, reason, extras...)
+	a.sendModelAsResWithStatus(ctx, res, status.NewStatus(statusCode, reason), statusCode)
 }
 
-func (a *Api) sendErrorWithCode(res http.ResponseWriter, statusCode int, errorCode int, reason string, extras ...interface{}) {
-	a.sendErrorLog(statusCode, reason, extras...)
-	a.sendModelAsResWithStatus(res, status.NewStatusWithError(statusCode, errorCode, reason), statusCode)
+func (a *Api) sendErrorWithCode(ctx context.Context, res http.ResponseWriter, statusCode int, errorCode int, reason string, extras ...interface{}) {
+	a.sendErrorLog(ctx, statusCode, reason, extras...)
+	a.sendModelAsResWithStatus(ctx, res, status.NewStatusWithError(statusCode, errorCode, reason), statusCode)
 }
 
-func (a *Api) sendErrorLog(code int, reason string, extras ...interface{}) {
+func (a *Api) sendErrorLog(ctx context.Context, code int, reason string, extras ...interface{}) {
 	nonErrs, errs, fields := splitExtrasAndErrorsAndFields(extras)
-	log := a.logger.WithOptions(zap.AddCallerSkip(2)).
+	log := a.logger(ctx).WithOptions(zap.AddCallerSkip(2)).
 		Desugar().With(fields...).Sugar().
 		With(zap.Int("code", code)).
 		With(zap.Array("extras", zapArrayAny(nonErrs)))
@@ -562,8 +590,8 @@ func (a *Api) sendErrorLog(code int, reason string, extras ...interface{}) {
 }
 
 // sendOK helps send a 200 response with a standard form and optional message.
-func (a *Api) sendOK(res http.ResponseWriter, reason string) {
-	a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusOK, reason), http.StatusOK)
+func (a *Api) sendOK(ctx context.Context, res http.ResponseWriter, reason string) {
+	a.sendModelAsResWithStatus(ctx, res, status.NewStatus(http.StatusOK, reason), http.StatusOK)
 }
 
 func splitExtrasAndErrorsAndFields(extras []interface{}) ([]interface{}, []error, []zapcore.Field) {

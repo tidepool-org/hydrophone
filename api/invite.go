@@ -49,7 +49,7 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 
 		//rule is we cannot send if the invite is not yet expired
 		if !invites[0].IsExpired() {
-			a.logger.With(zap.String("email", inviteeEmail)).Debug(statusExistingInviteMessage)
+			a.logger(ctx).With(zap.String("email", inviteeEmail)).Debug(statusExistingInviteMessage)
 			return true
 		}
 	}
@@ -70,13 +70,13 @@ func (a *Api) checkExistingPatientOfClinic(ctx context.Context, clinicId, patien
 	return false, fmt.Errorf("unexpected status code %v when checking if user is existing patient", response.StatusCode())
 }
 
-func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string) (bool, *shoreline.UserData) {
+func (a *Api) checkAccountAlreadySharedWithUser(ctx context.Context, invitorID, inviteeEmail string) (bool, *shoreline.UserData) {
 	//already in the group?
-	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
+	invitedUsr := a.findExistingUser(ctx, inviteeEmail, a.sl.TokenProvide())
 
 	if invitedUsr != nil && invitedUsr.UserID != "" {
 		if perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorID); err != nil {
-			a.logger.With(zap.Error(err)).Error("checking if user is in group")
+			a.logger(ctx).With(zap.Error(err)).Error("checking if user is in group")
 		} else if perms != nil {
 			return true, invitedUsr
 		}
@@ -93,6 +93,7 @@ func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string) 
 // status: 400
 func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
+		ctx := req.Context()
 		inviteeID := vars["userid"]
 
 		if inviteeID == "" {
@@ -101,28 +102,28 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		}
 		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeID != token.UserID {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED,
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED,
 				zap.String("inviteeID", inviteeID))
 			return
 		}
 
-		invitedUsr := a.findExistingUser(inviteeID, req.Header.Get(TP_SESSION_TOKEN))
+		invitedUsr := a.findExistingUser(ctx, inviteeID, req.Header.Get(TP_SESSION_TOKEN))
 
 		//find all oustanding invites were this user is the invite//
-		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
+		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if len(found) == 0 {
-			a.sendError(res, http.StatusNotFound, STATUS_NOT_FOUND)
+			a.sendError(ctx, res, http.StatusNotFound, STATUS_NOT_FOUND)
 			return
 		}
-		if invites := a.addProfileInfoToConfirmations(found); invites != nil {
-			a.ensureIdSet(req.Context(), inviteeID, invites)
+		if invites := a.addProfileInfoToConfirmations(ctx, found); invites != nil {
+			a.ensureIdSet(ctx, inviteeID, invites)
 			a.logMetric("get received invites", req)
-			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
-			a.logger.Debugf("invites found and checked: %d", len(invites))
+			a.sendModelAsResWithStatus(ctx, res, invites, http.StatusOK)
+			a.logger(ctx).Debugf("invites found and checked: %d", len(invites))
 			return
 		}
 	}
@@ -136,7 +137,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 // status: 400
 func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-
+		ctx := req.Context()
 		invitorID := vars["userid"]
 
 		if invitorID == "" {
@@ -145,26 +146,26 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 		}
 
 		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
 		//find all invites I have sent that are pending or declined
-		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{CreatorId: invitorID, Type: models.TypeCareteamInvite}, models.StatusPending, models.StatusDeclined)
+		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{CreatorId: invitorID, Type: models.TypeCareteamInvite}, models.StatusPending, models.StatusDeclined)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if len(found) == 0 {
-			a.sendError(res, http.StatusNotFound, STATUS_NOT_FOUND)
+			a.sendError(ctx, res, http.StatusNotFound, STATUS_NOT_FOUND)
 			return
 		}
-		if invitations := a.addProfileInfoToConfirmations(found); invitations != nil {
+		if invitations := a.addProfileInfoToConfirmations(ctx, found); invitations != nil {
 			a.logMetric("get sent invites", req)
-			a.sendModelAsResWithStatus(res, invitations, http.StatusOK)
+			a.sendModelAsResWithStatus(ctx, res, invitations, http.StatusOK)
 			return
 		}
 	}
@@ -177,13 +178,13 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 // http.StatusForbidden when mismatch of user ID's, type or status
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-
+		ctx := req.Context()
 		inviteeID := vars["userid"]
 		invitorID := vars["invitedby"]
 
 		if inviteeID == "" || invitorID == "" {
 			res.WriteHeader(http.StatusBadRequest)
-			a.logger.
+			a.logger(ctx).
 				With(zap.String("inviteeID", inviteeID)).
 				With(zap.String("invitorID", invitorID)).
 				Info("inviteeID or invitorID is not set")
@@ -192,29 +193,29 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 
 		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeID != token.UserID {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
 		accept := &models.Confirmation{}
 		if err := json.NewDecoder(req.Body).Decode(accept); err != nil {
-			a.sendError(res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 			return
 		}
 
 		if accept.Key == "" {
 			res.WriteHeader(http.StatusBadRequest)
-			a.logger.Info("no confirmation key set")
+			a.logger(ctx).Info("no confirmation key set")
 			return
 		}
 
-		conf, err := a.Store.FindConfirmation(req.Context(), accept)
+		conf, err := a.Store.FindConfirmation(ctx, accept)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if conf == nil {
-			a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
+			a.sendError(ctx, res, http.StatusNotFound, statusInviteNotFoundMessage)
 			return
 		}
 
@@ -226,37 +227,37 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			ValidateCreatorID(invitorID, &validationErrors)
 
 		if len(validationErrors) > 0 {
-			a.sendError(res, http.StatusForbidden, statusForbiddenMessage,
+			a.sendError(ctx, res, http.StatusForbidden, statusForbiddenMessage,
 				zap.Errors("validation-errors", validationErrors))
 			return
 		}
 
 		ctc := &models.CareTeamContext{}
 		if err := conf.DecodeContext(ctc); err != nil {
-			a.sendError(res, http.StatusBadRequest, STATUS_ERR_DECODING_CONTEXT)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONTEXT)
 			return
 		}
 
 		if err := ctc.Validate(); err != nil {
-			a.sendError(res, http.StatusBadRequest, STATUS_ERR_VALIDATING_CONTEXT, err)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_VALIDATING_CONTEXT, err)
 			return
 		}
 
 		setPerms, err := a.gatekeeper.SetPermissions(inviteeID, invitorID, ctc.Permissions)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_SETTING_PERMISSIONS, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SETTING_PERMISSIONS, err)
 			return
 		}
-		a.logger.With(zapPermsField(setPerms)).Info("permissions set")
+		a.logger(ctx).With(zapPermsField(setPerms)).Info("permissions set")
 		if ctc.AlertsConfig != nil && ctc.Permissions["follow"] != nil {
-			if err := a.alerts.Upsert(req.Context(), ctc.AlertsConfig); err != nil {
-				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_ALERTS_CONFIG, err)
+			if err := a.alerts.Upsert(ctx, ctc.AlertsConfig); err != nil {
+				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_ALERTS_CONFIG, err)
 				return
 			}
 		}
 		conf.UpdateStatus(models.StatusCompleted)
-		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
+		if !a.addOrUpdateConfirmation(ctx, conf, res) {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
 			return
 		}
 		a.logMetric("acceptinvite", req)
@@ -273,7 +274,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 // status: 400 when the incoming data is incomplete or incorrect
 func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-
+		ctx := req.Context()
 		invitorID := vars["userid"]
 		email := vars["invited_address"]
 
@@ -283,10 +284,10 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
@@ -297,22 +298,22 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			Type:      models.TypeCareteamInvite,
 		}
 
-		conf, err := a.Store.FindConfirmation(req.Context(), invite)
+		conf, err := a.Store.FindConfirmation(ctx, invite)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if conf != nil {
 			//cancel the invite
 			conf.UpdateStatus(models.StatusCanceled)
 
-			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
+			if a.addOrUpdateConfirmation(ctx, conf, res) {
 				a.logMetric("canceled invite", req)
 				res.WriteHeader(http.StatusOK)
 				return
 			}
 		}
-		a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
+		a.sendError(ctx, res, http.StatusNotFound, statusInviteNotFoundMessage)
 		return
 	}
 }
@@ -321,7 +322,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 // status: 400
 func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-
+		ctx := req.Context()
 		inviteeID := vars["userid"]
 		invitorID := vars["invitedby"]
 
@@ -332,13 +333,13 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 
 		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeID != token.UserID {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
 		dismiss := &models.Confirmation{}
 		if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
-			a.sendError(res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 			return
 		}
 
@@ -347,21 +348,21 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 			return
 		}
 
-		conf, err := a.Store.FindConfirmation(req.Context(), dismiss)
+		conf, err := a.Store.FindConfirmation(ctx, dismiss)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if conf != nil {
 			conf.UpdateStatus(models.StatusDeclined)
 
-			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
+			if a.addOrUpdateConfirmation(ctx, conf, res) {
 				a.logMetric("dismissinvite", req)
 				res.WriteHeader(http.StatusOK)
 				return
 			}
 		}
-		a.sendError(res, http.StatusNotFound, statusInviteNotFoundMessage)
+		a.sendError(ctx, res, http.StatusNotFound, statusInviteNotFoundMessage)
 		return
 	}
 }
@@ -377,7 +378,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 	if token == nil {
 		return
 	}
-
+	ctx := req.Context()
 	invitorID := vars["userid"]
 	if invitorID == "" {
 		res.WriteHeader(http.StatusBadRequest)
@@ -390,16 +391,16 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 	}
 	permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, requiredPerms)
 	if err != nil {
-		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 		return
 	} else if permissions["root"] == nil && permissions["custodian"] == nil {
-		a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+		a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 		return
 	}
 
 	var ib = &inviteBody{}
 	if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-		a.sendError(res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
+		a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 		return
 	}
 
@@ -408,12 +409,12 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		return
 	}
 
-	if a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID) {
-		a.sendError(res, http.StatusConflict, statusExistingInviteMessage,
+	if a.checkForDuplicateInvite(ctx, ib.Email, invitorID) {
+		a.sendError(ctx, res, http.StatusConflict, statusExistingInviteMessage,
 			zap.String("email", ib.Email))
 		return
 	}
-	alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email)
+	alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(ctx, invitorID, ib.Email)
 	if alreadyMember && invitedUsr != nil {
 		// In the past, having an existing relationship would cause this
 		// handler to abort with an error response. With the development of
@@ -424,14 +425,14 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		// continue.
 		perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorID)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, statusInternalServerErrorMessage)
+			a.sendError(ctx, res, http.StatusInternalServerError, statusInternalServerErrorMessage)
 			return
 		}
 		if !addsAlertingPermissions(perms, ib.Permissions) {
 			// Since this invitation doesn't add alerting permissions,
 			// maintain the previous handler's behavior, and abort with an
 			// error response.
-			a.sendError(res, http.StatusConflict, statusExistingMemberMessage,
+			a.sendError(ctx, res, http.StatusConflict, statusExistingMemberMessage,
 				zap.String("email", ib.Email), zap.String("invitorID", invitorID))
 			return
 		}
@@ -439,7 +440,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		for key := range perms {
 			ib.Permissions[key] = perms[key]
 		}
-		a.logger.With(zapPermsField(perms)).Info("permissions set")
+		a.logger(ctx).With(zapPermsField(perms)).Info("permissions set")
 	}
 
 	templateName := models.TemplateNameCareteamInvite
@@ -449,7 +450,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 	invite, err := models.NewConfirmationWithContext(models.TypeCareteamInvite, templateName, invitorID, ib.CareTeamContext)
 	if err != nil {
-		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
 		return
 	}
 
@@ -458,14 +459,14 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		invite.UserId = invitedUsr.UserID
 	}
 
-	if !a.addOrUpdateConfirmation(req.Context(), invite, res) {
+	if !a.addOrUpdateConfirmation(ctx, invite, res) {
 		return
 	}
 	a.logMetric("invite created", req)
 
 	if err := a.addProfile(invite); err != nil {
-		a.logger.With(zap.Error(err)).Warn(STATUS_ERR_ADDING_PROFILE)
-		a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+		a.logger(ctx).With(zap.Error(err)).Warn(STATUS_ERR_ADDING_PROFILE)
+		a.sendModelAsResWithStatus(ctx, res, invite, http.StatusOK)
 	}
 
 	fullName := "Tidepool User"
@@ -493,7 +494,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		a.logMetric("invite sent", req)
 	}
 
-	a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+	a.sendModelAsResWithStatus(ctx, res, invite, http.StatusOK)
 	return
 }
 
@@ -505,7 +506,7 @@ func addsAlertingPermissions(existingPerms, newPerms commonClients.Permissions) 
 func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 		inviteId := vars["inviteId"]
-
+		ctx := req.Context()
 		if inviteId == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
@@ -517,35 +518,35 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 			Type:   models.TypeCareteamInvite,
 		}
 
-		invite, err := a.Store.FindConfirmation(req.Context(), find)
+		invite, err := a.Store.FindConfirmation(ctx, find)
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if invite == nil || invite.ClinicId != "" {
 			if invite.ClinicId != "" {
-				a.logger.Info("cannot resend clinic invite using care team invite endpoint")
+				a.logger(ctx).Info("cannot resend clinic invite using care team invite endpoint")
 			} else {
-				a.logger.Info("cannot resend confirmation, because it doesn't exist")
+				a.logger(ctx).Info("cannot resend confirmation, because it doesn't exist")
 			}
-			a.sendError(res, http.StatusForbidden, statusForbiddenMessage)
+			a.sendError(ctx, res, http.StatusForbidden, statusForbiddenMessage)
 			return
 		}
 
 		if permissions, err := a.tokenUserHasRequestedPermissions(token, invite.CreatorId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusForbidden, statusForbiddenMessage)
+			a.sendError(ctx, res, http.StatusForbidden, statusForbiddenMessage)
 			return
 		}
 
 		invite.ResetCreationAttributes()
-		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
+		if a.addOrUpdateConfirmation(ctx, invite, res) {
 			a.logMetric("invite updated", req)
 
 			if err := a.addProfile(invite); err != nil {
-				a.logger.With(zap.Error(err)).Warn(STATUS_ERR_ADDING_PROFILE)
+				a.logger(ctx).With(zap.Error(err)).Warn(STATUS_ERR_ADDING_PROFILE)
 			} else {
 				fullName := invite.Creator.Profile.FullName
 				if invite.Creator.Profile.Patient.IsOtherPerson {
@@ -568,7 +569,7 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 				}
 			}
 
-			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+			a.sendModelAsResWithStatus(ctx, res, invite, http.StatusOK)
 			return
 		}
 	}

@@ -1,13 +1,17 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -71,18 +75,23 @@ var (
 		return NewResponsableMockGatekeeper()
 	}))
 
-	BaseModule = fx.Options(
-		clients.MockNotifierModule,
-		MockShorelineModule,
-		MockMetricsModule,
-		MockSeagullModule,
-		MockAlertsModule,
-		MockTemplatesModule,
-		MockConfigModule,
-		fx.Provide(testutil.NewLogger),
-		fx.Provide(NewApi),
-		fx.Provide(mux.NewRouter),
-	)
+	BaseModuleWithLog = func(rw io.ReadWriter) fx.Option {
+		return fx.Options(
+			clients.MockNotifierModule,
+			MockShorelineModule,
+			MockMetricsModule,
+			MockSeagullModule,
+			MockAlertsModule,
+			MockTemplatesModule,
+			MockConfigModule,
+			fx.Supply(fx.Annotate(rw, fx.As(new(io.ReadWriter)))),
+			fx.Provide(testutil.NewLoggerWithReadWriter),
+			fx.Provide(NewApi),
+			fx.Provide(mux.NewRouter),
+		)
+	}
+
+	BaseModule = BaseModuleWithLog(os.Stderr)
 
 	ResponableModule = fx.Options(
 		clients.MockStoreFailsModule,
@@ -320,6 +329,58 @@ func Test_TokenUserHasRequestedPermissions_FullMatch(t *testing.T) {
 	}
 }
 
+func TestAddUserIDToLogger(s *testing.T) {
+	s.Run("is request specific (and thread-safe)", func(t *testing.T) {
+		// This test is designed to try to exacerbate thread-safety issues in
+		// Api logging. Unfortunately, it can't 100% reliably produce an error
+		// in the event of a race condition.
+		//
+		// As a result, if this test is flapping, that's a strong indicator
+		// that there's a thread-safety issue. A symptom of these flaps is
+		// having the test fail some number of times, then randomly pass, and
+		// then stay passing. This can be caused by Go caching the test result
+		// (it's not actually running it again, it just reports the previous
+		// success). Use the -count=1 flag to go test to force the test to be
+		// re-run.
+		userIDs := []string{"foo", "bar", "baz", "quux"}
+		vars := testutil.WithRotatingVar("userId", userIDs)
+		ht := newHydrophoneTest(t)
+		handler := ht.handlerWithSync(len(userIDs))
+
+		logData := ht.captureLogs(func() {
+			ts := ht.Server(handler, ht.Api.addUserIDToLogger, vars)
+			for i := 0; i < len(userIDs); i++ {
+				go ts.Client().Get(ts.URL)
+			}
+			ht.syncer.Sync()
+		})
+
+		for _, userID := range userIDs {
+			expected := fmt.Sprintf(`"userId": "%s"`, userID)
+			if strings.Count(logData, expected) != 1 {
+				t.Errorf("expected 1x field %s, got:\n%s", expected, logData)
+			}
+		}
+	})
+
+	s.Run("includes the userId", func(t *testing.T) {
+		vars := testutil.WithRotatingVars(map[string]string{"userId": "foo"})
+		ht := newHydrophoneTest(t)
+
+		logData := ht.captureLogs(func() {
+			ts := ht.Server(ht.handlerLog(), ht.Api.addUserIDToLogger, vars)
+			if _, err := ts.Client().Get(ts.URL); err != nil {
+				t.Errorf("expected no error, got: %s", err)
+			}
+		})
+
+		expected := `"userId": "foo"`
+		if !strings.Contains(logData, expected) {
+			t.Errorf("expected field %s, got: %s", expected, logData)
+		}
+	})
+}
+
 type mockAlertsClient struct{}
 
 func newMockAlertsClient() *mockAlertsClient {
@@ -356,4 +417,112 @@ func MustRequest(t *testing.T, method, url string, body io.Reader) *http.Request
 		t.Fatalf("error creating http.Request: %s", err)
 	}
 	return r
+}
+
+// hydrophoneTest bundles useful scaffolding for hydrophone tests.
+type hydrophoneTest struct {
+	*testing.T
+	Api    *Api
+	logBuf *bytes.Buffer
+	syncer *syncer
+}
+
+// newHydrophoneTest handles creating the scaffolding for testing a hydrophone
+// handler.
+func newHydrophoneTest(t *testing.T) *hydrophoneTest {
+	var api *Api
+
+	logBuf := &bytes.Buffer{}
+	fx.New(
+		clients.MockStoreFailsModule,
+		MockGatekeeperModule,
+		BaseModuleWithLog(logBuf),
+		MockClinicsModule,
+		fx.Supply(t),
+		fx.Populate(&api),
+	)
+
+	return &hydrophoneTest{
+		T:      t,
+		Api:    api,
+		logBuf: logBuf,
+	}
+}
+
+// Server provides a test server, with the provided middleware applied to each
+// request.
+func (ht *hydrophoneTest) Server(h http.Handler, middleware ...mux.MiddlewareFunc) *httptest.Server {
+	var combined http.Handler = h
+	for _, m := range middleware {
+		combined = m(combined)
+	}
+	ts := httptest.NewServer(combined)
+	ht.Cleanup(ts.Close)
+	return ts
+}
+
+// handlerOK just responds with a bare 200 header.
+func (ht *hydrophoneTest) handlerOK() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+}
+
+// handlerLog simply logs "test"
+func (ht *hydrophoneTest) handlerLog() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ht.Api.logger(r.Context()).Info("test")
+		ht.handlerOK().ServeHTTP(w, r)
+	})
+}
+
+// handlerWithSync will cause the test server to wait until size requests have
+// been made before allowing any of them to finish.
+func (ht *hydrophoneTest) handlerWithSync(size int) http.Handler {
+	ht.syncer = newSyncer(size)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ht.handlerLog().ServeHTTP(w, r)
+		ht.syncer.Wait()
+	})
+}
+
+// captureLogs returns the output written to the logs from within f.
+func (ht *hydrophoneTest) captureLogs(f func()) string {
+	ht.Helper()
+	prev := ht.logBuf.Len()
+	f()
+	return ht.logBuf.String()[prev:]
+}
+
+// syncer synchonizes two goroutines.
+//
+// It can be useful to produce race conditions.
+type syncer struct {
+	size    int
+	waiting chan struct{}
+	done    chan struct{}
+
+	mu sync.Mutex
+}
+
+func newSyncer(size int) *syncer {
+	return &syncer{
+		size:    size,
+		waiting: make(chan struct{}),
+		done:    make(chan struct{}),
+	}
+}
+
+func (s *syncer) Wait() {
+	<-s.waiting
+	<-s.done
+}
+
+func (s *syncer) Sync() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := 0; i < s.size; i++ {
+		s.waiting <- struct{}{}
+	}
+	close(s.done)
 }
