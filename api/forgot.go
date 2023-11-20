@@ -42,7 +42,7 @@ type (
 // status: 200
 // status: 400 no email given
 func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
+	ctx := req.Context()
 	email := vars["useremail"]
 	if email == "" {
 		res.WriteHeader(http.StatusBadRequest)
@@ -51,28 +51,28 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 	resetCnf, err := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "")
 	if err != nil {
-		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
 		return
 	}
 
 	resetCnf.Email = email
 
-	if resetUsr := a.findExistingUser(resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
+	if resetUsr := a.findExistingUser(ctx, resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
 		resetCnf.UserId = resetUsr.UserID
 	} else {
 		resetCnf, err = models.NewConfirmation(models.TypeNoAccount, models.TemplateNameNoAccount, "")
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
 			return
 		}
 
 		resetCnf.Email = email
 		//there is nothing more to do other than notify the user
 		resetCnf.UpdateStatus(models.StatusCompleted)
-		a.logger.With(zap.String("email", email)).Info(STATUS_RESET_NO_ACCOUNT)
+		a.logger(ctx).With(zap.String("email", email)).Info(STATUS_RESET_NO_ACCOUNT)
 	}
 
-	if a.addOrUpdateConfirmation(req.Context(), resetCnf, res) {
+	if a.addOrUpdateConfirmation(ctx, resetCnf, res) {
 		a.logMetricAsServer("reset confirmation created")
 
 		emailContent := map[string]interface{}{
@@ -92,7 +92,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 
 // find the reset confirmation if it exists and hasn't expired
 func (a *Api) findResetConfirmation(ctx context.Context, conf *models.Confirmation) (*models.Confirmation, bool, error) {
-	a.logger.With("conf", conf).Debug("finding reset confirmation")
+	a.logger(ctx).With("conf", conf).Debug("finding reset confirmation")
 	found, err := a.Store.FindConfirmation(ctx, conf)
 	if err != nil {
 		return nil, false, err
@@ -122,47 +122,47 @@ func (a *Api) findResetConfirmation(ctx context.Context, conf *models.Confirmati
 // status: 400 STATUS_RESET_ERROR when we can't update the users password
 // status: 404 STATUS_RESET_NOT_FOUND when no matching reset confirmation is found
 func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-
+	ctx := req.Context()
 	defer req.Body.Close()
 	var rb = &resetBody{}
 	if err := json.NewDecoder(req.Body).Decode(rb); err != nil {
-		a.sendError(res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
+		a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 		return
 	}
 
 	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Status: models.StatusPending, Type: models.TypePasswordReset}
 
-	conf, expired, err := a.findResetConfirmation(req.Context(), resetCnf)
+	conf, expired, err := a.findResetConfirmation(ctx, resetCnf)
 	if err != nil {
-		a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 		return
 	}
 	if expired {
-		a.sendError(res, http.StatusNotFound, STATUS_RESET_EXPIRED)
+		a.sendError(ctx, res, http.StatusNotFound, STATUS_RESET_EXPIRED)
 		return
 	}
 	if conf == nil {
-		a.sendError(res, http.StatusNotFound, STATUS_RESET_NOT_FOUND)
+		a.sendError(ctx, res, http.StatusNotFound, STATUS_RESET_NOT_FOUND)
 		return
 	}
 
 	if resetCnf.Key == "" || resetCnf.Email != conf.Email {
-		a.sendError(res, http.StatusBadRequest, STATUS_RESET_ERROR)
+		a.sendError(ctx, res, http.StatusBadRequest, STATUS_RESET_ERROR)
 		return
 	}
 
 	token := a.sl.TokenProvide()
 
-	if usr := a.findExistingUser(rb.Email, token); usr != nil {
+	if usr := a.findExistingUser(ctx, rb.Email, token); usr != nil {
 
 		if err := a.sl.UpdateUser(usr.UserID, shoreline.UserUpdate{Password: &rb.Password}, token); err != nil {
-			a.sendError(res, http.StatusBadRequest, STATUS_RESET_ERROR, err, "updating user password")
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_RESET_ERROR, err, "updating user password")
 			return
 		}
 		conf.UpdateStatus(models.StatusCompleted)
-		if a.addOrUpdateConfirmation(req.Context(), conf, res) {
+		if a.addOrUpdateConfirmation(ctx, conf, res) {
 			a.logMetricAsServer("password reset")
-			a.sendOK(res, STATUS_RESET_ACCEPTED)
+			a.sendOK(ctx, res, STATUS_RESET_ACCEPTED)
 			return
 		}
 	}
