@@ -22,7 +22,7 @@ pipeline {
                         ).trim().toUpperCase()
                     }
                     env.APP_VERSION = env.version
-                    env.buildImage = "docker.ci.diabeloop.eu/go-build:1.17"
+                    env.buildImage = "docker.ci.diabeloop.eu/go-build:1.20"
                     ciConfig = utils.getConfig()
                 }
             }

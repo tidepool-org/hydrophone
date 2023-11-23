@@ -1,5 +1,5 @@
 # Development
-FROM --platform=$BUILDPLATFORM golang:1.17-alpine AS development
+FROM --platform=$BUILDPLATFORM golang:1.20-alpine AS development
 ARG APP_VERSION
 ENV APP_VERSION=${APP_VERSION}
 ENV GO111MODULE=on
@@ -11,8 +11,8 @@ COPY . .
 
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
-    apk add git rsync
-    
+    apk add --no-cache gcc musl-dev git rsync
+
 RUN git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 
 ARG TARGETPLATFORM

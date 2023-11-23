@@ -1,9 +1,10 @@
 module: hydrophone
 type: golang
+goVersion: "1.20"
 runTests: false
 testCommand: go test -race -v
 docker: true
-dockerBuild: 
+dockerBuild:
   platform: 'linux/arm64,linux/amd64'
   buildArgs:
   - 'APP_VERSION=$version'

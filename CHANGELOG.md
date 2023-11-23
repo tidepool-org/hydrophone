@@ -3,6 +3,10 @@
 Hydrophone is the module responsible for sending emails.
 This API sends notifications to users for things like forgotten passwords, initial signup, and invitations.
 
+## 1.15.2 - 2013-11-23
+### Engineering
+- YLP-2703 Bump versions of dependencies
+
 ## 1.15.1 - 2023-08-01
 ### Engineering
 - YLP-2553 Update Diabeloop website url in emails footers
