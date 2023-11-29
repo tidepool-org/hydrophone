@@ -206,7 +206,7 @@ func startEventConsumer(p InvocationParams) {
 		OnStart: func(ctx context.Context) error {
 			go func() {
 				if err := p.Consumer.Start(); err != nil {
-					p.Log.With(zap.Error(err)).Infof("starting cloud events consumer")
+					p.Log.With(zap.Error(err)).Error("starting cloud events consumer")
 					p.Log.Infof("shutting down the service")
 					if shutdownErr := p.Shutdowner.Shutdown(); shutdownErr != nil {
 						p.Log.With(zap.Error(shutdownErr)).Error("failed to shutdown")

@@ -475,7 +475,7 @@ func (a *Api) logMetricAsServer(name string) {
 // The indentifier could be either an id or email address
 func (a *Api) findExistingUser(ctx context.Context, indentifier, token string) *shoreline.UserData {
 	if usr, err := a.sl.GetUser(indentifier, token); err != nil {
-		a.logger(ctx).With(zap.Error(err)).Error("getting user details")
+		a.logger(ctx).With(zap.Error(err)).Error("getting existing user details")
 		return nil
 	} else {
 		return usr
