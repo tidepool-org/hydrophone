@@ -23,6 +23,7 @@ func (a *Api) GetPatientInvites(res http.ResponseWriter, req *http.Request, vars
 			return
 		}
 
+		// assertClinicMember logs and writes a response on errors
 		if err := a.assertClinicMember(ctx, clinicId, token, res); err != nil {
 			return
 		}
@@ -59,6 +60,7 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 			return
 		}
 
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if err := a.assertClinicMember(ctx, clinicId, token, res); err != nil {
 			return
 		}
@@ -96,6 +98,7 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 		}
 
 		conf.UpdateStatus(models.StatusCompleted)
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if !a.addOrUpdateConfirmation(ctx, conf, res) {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
 			return
@@ -137,6 +140,7 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 		updatedStatus := models.StatusCanceled
 		if token.UserID != conf.CreatorId {
 			updatedStatus = models.StatusDeclined
+			// assertClinicMember logs and writes a response on errors
 			if err := a.assertClinicMember(ctx, clinicId, token, res); err != nil {
 				return
 			}
@@ -154,6 +158,7 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 		}
 
 		conf.UpdateStatus(updatedStatus)
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if !a.addOrUpdateConfirmation(ctx, conf, res) {
 			return
 		}

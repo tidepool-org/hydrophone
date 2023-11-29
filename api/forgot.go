@@ -60,6 +60,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	if resetUsr := a.findExistingUser(ctx, resetCnf.Email, a.sl.TokenProvide()); resetUsr != nil {
 		resetCnf.UserId = resetUsr.UserID
 	} else {
+		a.logger(ctx).With(zap.String("email", email)).Debug(STATUS_RESET_NO_ACCOUNT)
 		resetCnf, err = models.NewConfirmation(models.TypeNoAccount, models.TemplateNameNoAccount, "")
 		if err != nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
@@ -72,6 +73,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		a.logger(ctx).With(zap.String("email", email)).Info(STATUS_RESET_NO_ACCOUNT)
 	}
 
+	// addOrUpdateConfirmation logs and writes a response on errors
 	if a.addOrUpdateConfirmation(ctx, resetCnf, res) {
 		a.logMetricAsServer("reset confirmation created")
 
@@ -126,7 +128,8 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 	defer req.Body.Close()
 	var rb = &resetBody{}
 	if err := json.NewDecoder(req.Body).Decode(rb); err != nil {
-		a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
+		a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err,
+			"acceptPassword: error decoding reset details")
 		return
 	}
 
@@ -160,7 +163,8 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 			return
 		}
 		conf.UpdateStatus(models.StatusCompleted)
-		if a.addOrUpdateConfirmation(ctx, conf, res) {
+		// addOrUpdateConfirmation logs and writes a response on errors
+		if !a.addOrUpdateConfirmation(ctx, conf, res) {
 			a.logMetricAsServer("password reset")
 			a.sendOK(ctx, res, STATUS_RESET_ACCEPTED)
 			return
