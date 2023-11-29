@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -76,16 +77,19 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 
 		patientExists, err := a.checkExistingPatientOfClinic(ctx, clinicId, inviterID)
 		if err != nil {
-			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err,
+				"checking if user is already a patient of clinic")
 			return
 		}
 		if patientExists {
-			a.sendError(ctx, res, http.StatusConflict, statusExistingPatientMessage)
+			a.sendError(ctx, res, http.StatusConflict, statusExistingPatientMessage,
+				"user is already a patient of clinic")
 			return
 		}
 		existingInvite, err := a.checkForDuplicateClinicInvite(ctx, clinicId, inviterID)
 		if err != nil {
-			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err,
+				fmt.Sprintf("clinic %s user already has or had an invite from %v", clinicId, inviterID))
 			return
 		}
 		if existingInvite {
@@ -126,6 +130,7 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 
 		invite.ClinicId = clinicId
 
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if a.addOrUpdateConfirmation(ctx, invite, res) {
 			a.logMetric("invite created", req)
 

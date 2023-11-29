@@ -49,7 +49,9 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 
 		//rule is we cannot send if the invite is not yet expired
 		if !invites[0].IsExpired() {
-			a.logger(ctx).With(zap.String("email", inviteeEmail)).Debug(statusExistingInviteMessage)
+			a.logger(ctx).With(zap.String("email", inviteeEmail),
+				zap.String("extra", "last invite not yet expired")).
+				Debug(statusExistingInviteMessage)
 			return true
 		}
 	}
@@ -102,8 +104,8 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		}
 		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeID != token.UserID {
-			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED,
-				zap.String("inviteeID", inviteeID))
+			extra := fmt.Sprintf("token owner %s is not authorized to accept invite of for %s", token.UserID, inviteeID)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED, zap.String("inviteeID", inviteeID), extra)
 			return
 		}
 
@@ -112,7 +114,8 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		//find all oustanding invites were this user is the invite//
 		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
 		if err != nil {
-			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err,
+				"while finding pending invites")
 			return
 		}
 		if len(found) == 0 {
@@ -256,8 +259,8 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			}
 		}
 		conf.UpdateStatus(models.StatusCompleted)
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if !a.addOrUpdateConfirmation(ctx, conf, res) {
-			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
 			return
 		}
 		a.logMetric("acceptinvite", req)
@@ -306,7 +309,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 		if conf != nil {
 			//cancel the invite
 			conf.UpdateStatus(models.StatusCanceled)
-
+			// addOrUpdateConfirmation logs and writes a response on errors
 			if a.addOrUpdateConfirmation(ctx, conf, res) {
 				a.logMetric("canceled invite", req)
 				res.WriteHeader(http.StatusOK)
@@ -355,7 +358,7 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 		}
 		if conf != nil {
 			conf.UpdateStatus(models.StatusDeclined)
-
+			// addOrUpdateConfirmation logs and writes a response on errors
 			if a.addOrUpdateConfirmation(ctx, conf, res) {
 				a.logMetric("dismissinvite", req)
 				res.WriteHeader(http.StatusOK)
@@ -459,6 +462,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		invite.UserId = invitedUsr.UserID
 	}
 
+	// addOrUpdateConfirmation logs and writes a response on errors
 	if !a.addOrUpdateConfirmation(ctx, invite, res) {
 		return
 	}
@@ -542,6 +546,7 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		invite.ResetCreationAttributes()
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if a.addOrUpdateConfirmation(ctx, invite, res) {
 			a.logMetric("invite updated", req)
 

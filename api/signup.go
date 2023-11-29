@@ -54,8 +54,10 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 	}
 	if found != nil {
 		updatedStatus := string(newStatus) + " signup"
+		a.logger(ctx).Debugf("new status: %s", updatedStatus)
 		found.UpdateStatus(newStatus)
 
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if a.addOrUpdateConfirmation(ctx, found, res) {
 			a.logMetricAsServer(updatedStatus)
 			res.WriteHeader(http.StatusOK)
@@ -156,6 +158,7 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if a.addOrUpdateConfirmation(ctx, found, res) {
 			a.logMetricAsServer("signup confirmation recreated")
 
@@ -289,6 +292,7 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		found.UpdateStatus(models.StatusCompleted)
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if a.addOrUpdateConfirmation(ctx, found, res) {
 			a.logMetricAsServer("accept signup")
 		}
@@ -496,6 +500,7 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				return nil
 			}
 
+			// addOrUpdateConfirmation logs and writes a response on errors
 			if a.addOrUpdateConfirmation(ctx, newSignUp, res) {
 				a.logMetric("signup confirmation created", req)
 

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"go.uber.org/zap"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/hydrophone/models"
@@ -24,6 +26,7 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 		clinicId := vars["clinicId"]
 
 		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
+			// assertClinicAdmin will log and send a response
 			return
 		}
 
@@ -93,6 +96,7 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		inviteId := vars["inviteId"]
 
 		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
+			// assertClinicAdmin will log and send a response
 			return
 		}
 
@@ -144,7 +148,7 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 
 		code, msg, optionalErr := a.sendClinicianConfirmation(req, confirmation)
-		if code > 0 {
+		if code != 0 {
 			a.sendError(ctx, res, code, msg, optionalErr)
 			return
 		}
@@ -162,6 +166,7 @@ func (a *Api) GetClinicianInvite(res http.ResponseWriter, req *http.Request, var
 		inviteId := vars["inviteId"]
 
 		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
+			// assertClinicAdmin will log and send a response
 			return
 		}
 
@@ -208,7 +213,8 @@ func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request
 
 		// Tokens only legit when for same userid
 		if userId != token.UserID || invitedUsr == nil || invitedUsr.UserID == "" {
-			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED,
+				"token belongs to a different user or user doesn't exist")
 			return
 		}
 
@@ -224,7 +230,8 @@ func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request
 		if invites := a.addProfileInfoToConfirmations(ctx, found); invites != nil {
 			a.ensureIdSet(ctx, userId, invites)
 			if err := a.populateRestrictions(ctx, *invitedUsr, *token, invites); err != nil {
-				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err,
+					"error populating restriction in invites for user")
 				return
 			}
 
@@ -247,7 +254,8 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 
 		// Tokens only legit when for same userid
 		if token.IsServer || userId != token.UserID || invitedUsr == nil || invitedUsr.UserID != token.UserID {
-			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED,
+				"token belongs to a different user or user doesn't exist")
 			return
 		}
 
@@ -265,7 +273,8 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 
 		if err := a.populateRestrictions(ctx, *invitedUsr, *token, []*models.Confirmation{conf}); err != nil {
-			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err,
+				"error populating restriction in invites for uiser")
 			return
 		}
 
@@ -282,8 +291,8 @@ func (a *Api) AcceptClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		}
 
 		conf.UpdateStatus(models.StatusCompleted)
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if !a.addOrUpdateConfirmation(ctx, conf, res) {
-			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
 			return
 		}
 
@@ -304,7 +313,8 @@ func (a *Api) DismissClinicianInvite(res http.ResponseWriter, req *http.Request,
 		invitedUsr := a.findExistingUser(ctx, token.UserID, req.Header.Get(TP_SESSION_TOKEN))
 		// Tokens only legit when for same userid
 		if token.IsServer || userId != token.UserID || invitedUsr == nil || invitedUsr.UserID != token.UserID {
-			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED,
+				"token belongs to a different user or user doesn't exist")
 			return
 		}
 
@@ -335,6 +345,7 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 		inviteId := vars["inviteId"]
 
 		if err := a.assertClinicAdmin(ctx, clinicId, token, res); err != nil {
+			// assertClinicAdmin will log and send a response
 			return
 		}
 
@@ -357,6 +368,7 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.Confirmation) (code int, msg string, err error) {
 	ctx := req.Context()
 	if err := a.addProfile(confirmation); err != nil {
+		a.logger(ctx).With(zap.Error(err)).Error(STATUS_ERR_ADDING_PROFILE)
 		return http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err
 	}
 
@@ -400,6 +412,7 @@ func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http
 
 	if conf != nil {
 		conf.UpdateStatus(statusUpdate)
+		// addOrUpdateConfirmation logs and writes a response on errors
 		if !a.addOrUpdateConfirmation(ctx, conf, res) {
 			return
 		}
