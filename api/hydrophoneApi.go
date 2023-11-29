@@ -440,6 +440,8 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 }
 
 // find and validate the token
+//
+// The token's userID field is added to the context's logger.
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
 	ctx := req.Context()
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
@@ -451,6 +453,13 @@ func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.Token
 			return nil
 		}
 		//all good!
+
+		ctxLog := a.logger(ctx).With(zap.String("token's userID", td.UserID))
+		if td.IsServer {
+			ctxLog = a.logger(ctx).With(zap.String("token's userID", "<server>"))
+		}
+		*req = *req.WithContext(context.WithValue(ctx, ctxLoggerKey{}, ctxLog))
+
 		return td
 	}
 	a.sendError(ctx, res, http.StatusUnauthorized, STATUS_NO_TOKEN)
