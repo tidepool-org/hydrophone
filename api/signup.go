@@ -327,8 +327,8 @@ func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map
 // status: 200 with a single result in an array
 // status: 404
 func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	ctx := req.Context()
 	if token := a.token(res, req); token != nil {
+		ctx := req.Context()
 
 		userId := vars["userid"]
 
