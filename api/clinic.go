@@ -93,7 +93,7 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		}
 		if existingInvite {
 			a.sendError(ctx, res, http.StatusConflict, statusExistingInviteMessage,
-				zap.String("clinicId", clinicId), zap.String("inviterID", inviterID), err)
+				zap.String("inviterID", inviterID), err)
 			return
 		}
 

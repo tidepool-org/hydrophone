@@ -159,27 +159,27 @@ func routerProvider(api *Api) *mux.Router {
 // RouterModule build a router
 var RouterModule = fx.Options(fx.Provide(routerProvider, apiConfigProvider))
 
-// addUserIDToLogger adds userID to the logging context.
+// addPathVarToLogger adds a request's path variable to the logging context.
 //
-// It uses the first matching userID it finds, additional userIDs (which
-// shouldn't exist anyway) are ignored.
-//
-// This is effected via its type being that of a mux.MiddlewareFunc.
-func (a *Api) addUserIDToLogger(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, orig *http.Request) {
-		vars := mux.Vars(orig)
-		next := orig
-		for key := range vars {
-			if !strings.EqualFold(key, "userid") {
-				continue
+// It uses the first case-insensitive match of name it finds, additional occurrences of name are
+// ignored.
+func (a *Api) addPathVarToLogger(name string) mux.MiddlewareFunc {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, orig *http.Request) {
+			vars := mux.Vars(orig)
+			next := orig
+			for key := range vars {
+				if !strings.EqualFold(key, name) {
+					continue
+				}
+				ctxLog := a.logger(orig.Context()).With(zap.String(key, vars[key]))
+				ctxWithLog := context.WithValue(orig.Context(), ctxLoggerKey{}, ctxLog)
+				next = orig.WithContext(ctxWithLog)
+				break
 			}
-			ctxLog := a.baseLogger.With(zap.String(key, vars[key]))
-			ctxWithLog := context.WithValue(orig.Context(), ctxLoggerKey{}, ctxLog)
-			next = orig.WithContext(ctxWithLog)
-			break
-		}
-		h.ServeHTTP(w, next)
-	})
+			h.ServeHTTP(w, next)
+		})
+	}
 }
 
 type ctxLoggerKey struct{}
@@ -207,6 +207,9 @@ func (a *Api) ctxLoggerHandler(h http.Handler) http.Handler {
 
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	rtr.Use(mux.MiddlewareFunc(a.ctxLoggerHandler))
+	rtr.Use(a.addPathVarToLogger("userid"))
+	rtr.Use(a.addPathVarToLogger("clinicid"))
+
 	c := rtr.PathPrefix("/confirm").Subrouter()
 
 	c.HandleFunc("/status", a.IsReady).Methods("GET")
@@ -218,8 +221,6 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	c.HandleFunc("/live", a.IsAlive).Methods("GET")
 	rtr.HandleFunc("/live", a.IsAlive).Methods("GET")
 
-	// uid is a shortened name for this middleware
-	uid := a.addUserIDToLogger
 	// vars is a shorthand for applying the varsHandler to an handler.
 	type vars = varsHandler
 
@@ -227,16 +228,16 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// POST /confirm/send/forgot/:useremail
 	// POST /confirm/send/invite/:userid
 	csend := rtr.PathPrefix("/confirm/send").Subrouter()
-	csend.Handle("/signup/{userid}", uid(vars(a.sendSignUp))).Methods("POST")
+	csend.Handle("/signup/{userid}", vars(a.sendSignUp)).Methods("POST")
 	csend.Handle("/forgot/{useremail}", vars(a.passwordReset)).Methods("POST")
-	csend.Handle("/invite/{userid}", uid(vars(a.SendInvite))).Methods("POST")
-	csend.Handle("/invite/{userId}/clinic", uid(vars(a.InviteClinic))).Methods("POST")
+	csend.Handle("/invite/{userid}", vars(a.SendInvite)).Methods("POST")
+	csend.Handle("/invite/{userId}/clinic", vars(a.InviteClinic)).Methods("POST")
 
 	send := rtr.PathPrefix("/send").Subrouter()
-	send.Handle("/signup/{userid}", uid(vars(a.sendSignUp))).Methods("POST")
+	send.Handle("/signup/{userid}", vars(a.sendSignUp)).Methods("POST")
 	send.Handle("/forgot/{useremail}", vars(a.passwordReset)).Methods("POST")
-	send.Handle("/invite/{userid}", uid(vars(a.SendInvite))).Methods("POST")
-	send.Handle("/invite/{userId}/clinic", uid(vars(a.InviteClinic))).Methods("POST")
+	send.Handle("/invite/{userid}", vars(a.SendInvite)).Methods("POST")
+	send.Handle("/invite/{userId}/clinic", vars(a.InviteClinic)).Methods("POST")
 
 	// POST /confirm/resend/signup/:useremail
 	// POST /confirm/resend/invite/:inviteId
@@ -252,46 +253,46 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	caccept := rtr.PathPrefix("/confirm/accept").Subrouter()
 	caccept.Handle("/signup/{confirmationid}", vars(a.acceptSignUp)).Methods("PUT")
 	caccept.Handle("/forgot", vars(a.acceptPassword)).Methods("PUT")
-	caccept.Handle("/invite/{userid}/{invitedby}", uid(vars(a.AcceptInvite))).Methods("PUT")
+	caccept.Handle("/invite/{userid}/{invitedby}", vars(a.AcceptInvite)).Methods("PUT")
 
 	accept := rtr.PathPrefix("/accept").Subrouter()
 	accept.Handle("/signup/{confirmationid}", vars(a.acceptSignUp)).Methods("PUT")
 	accept.Handle("/forgot", vars(a.acceptPassword)).Methods("PUT")
-	accept.Handle("/invite/{userid}/{invitedby}", uid(vars(a.AcceptInvite))).Methods("PUT")
+	accept.Handle("/invite/{userid}/{invitedby}", vars(a.AcceptInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid
-	c.Handle("/signup/{userid}", uid(vars(a.getSignUp))).Methods("GET")
-	c.Handle("/invite/{userid}", uid(vars(a.GetSentInvitations))).Methods("GET")
+	c.Handle("/signup/{userid}", vars(a.getSignUp)).Methods("GET")
+	c.Handle("/invite/{userid}", vars(a.GetSentInvitations)).Methods("GET")
 
-	rtr.Handle("/signup/{userid}", uid(vars(a.getSignUp))).Methods("GET")
-	rtr.Handle("/invite/{userid}", uid(vars(a.GetSentInvitations))).Methods("GET")
+	rtr.Handle("/signup/{userid}", vars(a.getSignUp)).Methods("GET")
+	rtr.Handle("/invite/{userid}", vars(a.GetSentInvitations)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
-	c.Handle("/invitations/{userid}", uid(vars(a.GetReceivedInvitations))).Methods("GET")
+	c.Handle("/invitations/{userid}", vars(a.GetReceivedInvitations)).Methods("GET")
 
-	rtr.Handle("/invitations/{userid}", uid(vars(a.GetReceivedInvitations))).Methods("GET")
+	rtr.Handle("/invitations/{userid}", vars(a.GetReceivedInvitations)).Methods("GET")
 
 	// PUT /confirm/dismiss/invite/:userid/:invited_by
 	// PUT /confirm/dismiss/signup/:userid
 	cdismiss := rtr.PathPrefix("/confirm/dismiss").Subrouter()
-	cdismiss.Handle("/invite/{userid}/{invitedby}", uid(vars(a.DismissInvite))).Methods("PUT")
-	cdismiss.Handle("/signup/{userid}", uid(vars(a.dismissSignUp))).Methods("PUT")
+	cdismiss.Handle("/invite/{userid}/{invitedby}", vars(a.DismissInvite)).Methods("PUT")
+	cdismiss.Handle("/signup/{userid}", vars(a.dismissSignUp)).Methods("PUT")
 
 	dismiss := rtr.PathPrefix("/dismiss").Subrouter()
-	dismiss.Handle("/invite/{userid}/{invitedby}", uid(vars(a.DismissInvite))).Methods("PUT")
-	dismiss.Handle("/signup/{userid}", uid(vars(a.dismissSignUp))).Methods("PUT")
+	dismiss.Handle("/invite/{userid}/{invitedby}", vars(a.DismissInvite)).Methods("PUT")
+	dismiss.Handle("/signup/{userid}", vars(a.dismissSignUp)).Methods("PUT")
 
 	// POST /confirm/signup/:userid
-	c.Handle("/signup/{userid}", uid(vars(a.createSignUp))).Methods("POST")
+	c.Handle("/signup/{userid}", vars(a.createSignUp)).Methods("POST")
 
 	// PUT /confirm/:userid/invited/:invited_address
 	// PUT /confirm/signup/:userid
-	c.Handle("/{userid}/invited/{invited_address}", uid(vars(a.CancelInvite))).Methods("PUT")
-	c.Handle("/signup/{userid}", uid(vars(a.cancelSignUp))).Methods("PUT")
+	c.Handle("/{userid}/invited/{invited_address}", vars(a.CancelInvite)).Methods("PUT")
+	c.Handle("/signup/{userid}", vars(a.cancelSignUp)).Methods("PUT")
 
-	rtr.Handle("/{userid}/invited/{invited_address}", uid(vars(a.CancelInvite))).Methods("PUT")
-	rtr.Handle("/signup/{userid}", uid(vars(a.cancelSignUp))).Methods("PUT")
+	rtr.Handle("/{userid}/invited/{invited_address}", vars(a.CancelInvite)).Methods("PUT")
+	rtr.Handle("/signup/{userid}", vars(a.cancelSignUp)).Methods("PUT")
 
 	// GET /v1/clinics/:clinicId/invites/patients
 	// GET /v1/clinics/:clinicId/invites/patients/:inviteId
@@ -303,13 +304,13 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	rtr.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", vars(a.AcceptPatientInvite)).Methods("PUT")
 	rtr.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", vars(a.CancelOrDismissPatientInvite)).Methods("DELETE")
 
-	c.Handle("/v1/clinicians/{userId}/invites", uid(vars(a.GetClinicianInvitations))).Methods("GET")
-	c.Handle("/v1/clinicians/{userId}/invites/{inviteId}", uid(vars(a.AcceptClinicianInvite))).Methods("PUT")
-	c.Handle("/v1/clinicians/{userId}/invites/{inviteId}", uid(vars(a.DismissClinicianInvite))).Methods("DELETE")
+	c.Handle("/v1/clinicians/{userId}/invites", vars(a.GetClinicianInvitations)).Methods("GET")
+	c.Handle("/v1/clinicians/{userId}/invites/{inviteId}", vars(a.AcceptClinicianInvite)).Methods("PUT")
+	c.Handle("/v1/clinicians/{userId}/invites/{inviteId}", vars(a.DismissClinicianInvite)).Methods("DELETE")
 
-	rtr.Handle("/v1/clinicians/{userId}/invites", uid(vars(a.GetClinicianInvitations))).Methods("GET")
-	rtr.Handle("/v1/clinicians/{userId}/invites/{inviteId}", uid(vars(a.AcceptClinicianInvite))).Methods("PUT")
-	rtr.Handle("/v1/clinicians/{userId}/invites/{inviteId}", uid(vars(a.DismissClinicianInvite))).Methods("DELETE")
+	rtr.Handle("/v1/clinicians/{userId}/invites", vars(a.GetClinicianInvitations)).Methods("GET")
+	rtr.Handle("/v1/clinicians/{userId}/invites/{inviteId}", vars(a.AcceptClinicianInvite)).Methods("PUT")
+	rtr.Handle("/v1/clinicians/{userId}/invites/{inviteId}", vars(a.DismissClinicianInvite)).Methods("DELETE")
 
 	c.Handle("/v1/clinics/{clinicId}/invites/clinicians", vars(a.SendClinicianInvite)).Methods("POST")
 	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", vars(a.ResendClinicianInvite)).Methods("PATCH")
@@ -582,8 +583,10 @@ func (a *Api) sendErrorLog(ctx context.Context, code int, reason string, extras 
 	details := splitExtrasAndErrorsAndFields(extras)
 	log := a.logger(ctx).WithOptions(zap.AddCallerSkip(2)).
 		Desugar().With(details.Fields...).Sugar().
-		With(zap.Int("code", code)).
-		With(zap.Array("extras", zapArrayAny(details.NonErrors)))
+		With(zap.Int("code", code))
+	if len(details.NonErrors) > 0 {
+		log = log.With(zap.Array("extras", zapArrayAny(details.NonErrors)))
+	}
 	if len(details.Errors) == 1 {
 		log = log.With(zap.Error(details.Errors[0]))
 	} else if len(details.Errors) > 1 {
