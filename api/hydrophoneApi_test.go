@@ -329,7 +329,7 @@ func Test_TokenUserHasRequestedPermissions_FullMatch(t *testing.T) {
 	}
 }
 
-func TestAddUserIDToLogger(s *testing.T) {
+func TestAddPathVarToLogger(s *testing.T) {
 	s.Run("is request specific (and thread-safe)", func(t *testing.T) {
 		// This test is designed to try to exacerbate thread-safety issues in
 		// Api logging. Unfortunately, it can't 100% reliably produce an error
@@ -348,7 +348,7 @@ func TestAddUserIDToLogger(s *testing.T) {
 		handler := ht.handlerWithSync(len(userIDs))
 
 		logData := ht.captureLogs(func() {
-			ts := ht.Server(handler, ht.Api.addUserIDToLogger, vars)
+			ts := ht.Server(handler, ht.Api.addPathVarToLogger("userid"), vars)
 			for i := 0; i < len(userIDs); i++ {
 				go ts.Client().Get(ts.URL)
 			}
@@ -368,7 +368,7 @@ func TestAddUserIDToLogger(s *testing.T) {
 		ht := newHydrophoneTest(t)
 
 		logData := ht.captureLogs(func() {
-			ts := ht.Server(ht.handlerLog(), ht.Api.addUserIDToLogger, vars)
+			ts := ht.Server(ht.handlerLog(), ht.Api.addPathVarToLogger("userid"), vars)
 			if _, err := ts.Client().Get(ts.URL); err != nil {
 				t.Errorf("expected no error, got: %s", err)
 			}
@@ -377,6 +377,28 @@ func TestAddUserIDToLogger(s *testing.T) {
 		expected := `"userId": "foo"`
 		if !strings.Contains(logData, expected) {
 			t.Errorf("expected field %s, got: %s", expected, logData)
+		}
+	})
+
+	s.Run("includes both the clinicId and the userId", func(t *testing.T) {
+		vars := testutil.WithRotatingVars(map[string]string{"userId": "foo", "clinicId": "bar"})
+		ht := newHydrophoneTest(t)
+
+		logData := ht.captureLogs(func() {
+			ts := ht.Server(ht.handlerLog(), ht.Api.addPathVarToLogger("clinicid"),
+				ht.Api.addPathVarToLogger("userid"), vars)
+			if _, err := ts.Client().Get(ts.URL); err != nil {
+				t.Errorf("expected no error, got: %s", err)
+			}
+		})
+
+		expectedUserId := `"userId": "foo"`
+		if !strings.Contains(logData, expectedUserId) {
+			t.Errorf("expected field %s, got: %s", expectedUserId, logData)
+		}
+		expectedClinicId := `"clinicId": "bar"`
+		if !strings.Contains(logData, expectedClinicId) {
+			t.Errorf("expected field %s, got: %s", expectedClinicId, logData)
 		}
 	})
 }
