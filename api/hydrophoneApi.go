@@ -241,10 +241,10 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	// POST /confirm/resend/signup/:useremail
 	// POST /confirm/resend/invite/:inviteId
 	c.Handle("/resend/signup/{useremail}", vars(a.resendSignUp)).Methods("POST")
-	c.Handle("/resend/invite/{inviteId}", uid(vars(a.ResendInvite))).Methods("PATCH")
+	c.Handle("/resend/invite/{inviteId}", vars(a.ResendInvite)).Methods("PATCH")
 
 	rtr.Handle("/resend/signup/{useremail}", vars(a.resendSignUp)).Methods("POST")
-	rtr.Handle("/resend/invite/{inviteId}", uid(vars(a.ResendInvite))).Methods("PATCH")
+	rtr.Handle("/resend/invite/{inviteId}", vars(a.ResendInvite)).Methods("PATCH")
 
 	// PUT /confirm/accept/signup/:confirmationID
 	// PUT /confirm/accept/forgot/
@@ -579,17 +579,17 @@ func (a *Api) sendErrorWithCode(ctx context.Context, res http.ResponseWriter, st
 }
 
 func (a *Api) sendErrorLog(ctx context.Context, code int, reason string, extras ...interface{}) {
-	nonErrs, errs, fields := splitExtrasAndErrorsAndFields(extras)
+	details := splitExtrasAndErrorsAndFields(extras)
 	log := a.logger(ctx).WithOptions(zap.AddCallerSkip(2)).
-		Desugar().With(fields...).Sugar().
+		Desugar().With(details.Fields...).Sugar().
 		With(zap.Int("code", code)).
-		With(zap.Array("extras", zapArrayAny(nonErrs)))
-	if len(errs) == 1 {
-		log = log.With(zap.Error(errs[0]))
-	} else if len(errs) > 1 {
-		log = log.With(zap.Errors("errors", errs))
+		With(zap.Array("extras", zapArrayAny(details.NonErrors)))
+	if len(details.Errors) == 1 {
+		log = log.With(zap.Error(details.Errors[0]))
+	} else if len(details.Errors) > 1 {
+		log = log.With(zap.Errors("errors", details.Errors))
 	}
-	if code < http.StatusInternalServerError || len(errs) == 0 {
+	if code < http.StatusInternalServerError || len(details.Errors) == 0 {
 		// if there are no errors, use info to skip the stack trace, as it's
 		// probably not useful
 		log.Info(reason)
@@ -603,26 +603,34 @@ func (a *Api) sendOK(ctx context.Context, res http.ResponseWriter, reason string
 	a.sendModelAsResWithStatus(ctx, res, status.NewStatus(http.StatusOK, reason), http.StatusOK)
 }
 
-func splitExtrasAndErrorsAndFields(extras []interface{}) ([]interface{}, []error, []zapcore.Field) {
-	errs := []error{}
-	nonErrs := []interface{}{}
-	fields := []zap.Field{}
+type extrasDetails struct {
+	Errors    []error
+	NonErrors []interface{}
+	Fields    []zap.Field
+}
+
+func splitExtrasAndErrorsAndFields(extras []interface{}) extrasDetails {
+	details := extrasDetails{
+		Errors:    []error{},
+		NonErrors: []interface{}{},
+		Fields:    []zap.Field{},
+	}
 	for _, extra := range extras {
 		if err, ok := extra.(error); ok {
 			if err != nil {
-				errs = append(errs, err)
+				details.Errors = append(details.Errors, err)
 			}
 		} else if field, ok := extra.(zap.Field); ok {
-			fields = append(fields, field)
+			details.Fields = append(details.Fields, field)
 		} else if extraErrs, ok := extra.([]error); ok {
 			if len(extraErrs) > 0 {
-				errs = append(errs, extraErrs...)
+				details.Errors = append(details.Errors, extraErrs...)
 			}
 		} else {
-			nonErrs = append(nonErrs, extra)
+			details.NonErrors = append(details.NonErrors, extra)
 		}
 	}
-	return nonErrs, errs, fields
+	return details
 }
 
 func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, groupId string, requestedPermissions commonClients.Permissions) (commonClients.Permissions, error) {

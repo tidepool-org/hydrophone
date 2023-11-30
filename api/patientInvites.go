@@ -100,7 +100,6 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 		conf.UpdateStatus(models.StatusCompleted)
 		// addOrUpdateConfirmation logs and writes a response on errors
 		if !a.addOrUpdateConfirmation(ctx, conf, res) {
-			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
 			return
 		}
 

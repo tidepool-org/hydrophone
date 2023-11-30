@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -89,7 +88,7 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		existingInvite, err := a.checkForDuplicateClinicInvite(ctx, clinicId, inviterID)
 		if err != nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err,
-				fmt.Sprintf("clinic %s user already has or had an invite from %v", clinicId, inviterID))
+				zap.String("inviterID", inviterID), "clinic already has or had an invite")
 			return
 		}
 		if existingInvite {

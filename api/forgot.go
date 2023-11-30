@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -70,7 +69,6 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 		resetCnf.Email = email
 		//there is nothing more to do other than notify the user
 		resetCnf.UpdateStatus(models.StatusCompleted)
-		a.logger(ctx).With(zap.String("email", email)).Info(STATUS_RESET_NO_ACCOUNT)
 	}
 
 	// addOrUpdateConfirmation logs and writes a response on errors
@@ -90,23 +88,6 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	}
 	//unless no email was given we say its all good
 	res.WriteHeader(http.StatusOK)
-}
-
-// find the reset confirmation if it exists and hasn't expired
-func (a *Api) findResetConfirmation(ctx context.Context, conf *models.Confirmation) (*models.Confirmation, bool, error) {
-	a.logger(ctx).With("conf", conf).Debug("finding reset confirmation")
-	found, err := a.Store.FindConfirmation(ctx, conf)
-	if err != nil {
-		return nil, false, err
-	}
-	if found == nil {
-		return nil, false, nil
-	}
-	if found.IsExpired() {
-		return nil, true, nil
-	}
-
-	return found, false, nil
 }
 
 // Accept the password change
@@ -135,17 +116,17 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 
 	resetCnf := &models.Confirmation{Key: rb.Key, Email: rb.Email, Status: models.StatusPending, Type: models.TypePasswordReset}
 
-	conf, expired, err := a.findResetConfirmation(ctx, resetCnf)
+	conf, err := a.Store.FindConfirmation(ctx, resetCnf)
 	if err != nil {
 		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 		return
 	}
-	if expired {
-		a.sendError(ctx, res, http.StatusNotFound, STATUS_RESET_EXPIRED)
-		return
-	}
 	if conf == nil {
 		a.sendError(ctx, res, http.StatusNotFound, STATUS_RESET_NOT_FOUND)
+		return
+	}
+	if conf.IsExpired() {
+		a.sendError(ctx, res, http.StatusNotFound, STATUS_RESET_EXPIRED)
 		return
 	}
 
@@ -164,7 +145,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 		}
 		conf.UpdateStatus(models.StatusCompleted)
 		// addOrUpdateConfirmation logs and writes a response on errors
-		if !a.addOrUpdateConfirmation(ctx, conf, res) {
+		if a.addOrUpdateConfirmation(ctx, conf, res) {
 			a.logMetricAsServer("password reset")
 			a.sendOK(ctx, res, STATUS_RESET_ACCEPTED)
 			return
