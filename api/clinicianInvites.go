@@ -75,9 +75,9 @@ func (a *Api) SendClinicianInvite(res http.ResponseWriter, req *http.Request, va
 			return
 		}
 
-		code, msg, optionalErr := a.sendClinicianConfirmation(req, confirmation)
-		if code != 0 {
-			a.sendError(ctx, res, code, msg, optionalErr)
+		msg, err := a.sendClinicianConfirmation(req, confirmation)
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, msg, err)
 			return
 		}
 
@@ -147,9 +147,9 @@ func (a *Api) ResendClinicianInvite(res http.ResponseWriter, req *http.Request, 
 			confirmation.UserId = invitedUsr.UserID
 		}
 
-		code, msg, optionalErr := a.sendClinicianConfirmation(req, confirmation)
-		if code != 0 {
-			a.sendError(ctx, res, code, msg, optionalErr)
+		msg, err := a.sendClinicianConfirmation(req, confirmation)
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, msg, err)
 			return
 		}
 
@@ -365,16 +365,16 @@ func (a *Api) CancelClinicianInvite(res http.ResponseWriter, req *http.Request, 
 	}
 }
 
-func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.Confirmation) (code int, msg string, err error) {
+func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.Confirmation) (msg string, err error) {
 	ctx := req.Context()
 	if err := a.addProfile(confirmation); err != nil {
 		a.logger(ctx).With(zap.Error(err)).Error(STATUS_ERR_ADDING_PROFILE)
-		return http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err
+		return STATUS_ERR_SAVING_CONFIRMATION, err
 	}
 
 	confirmation.Modified = time.Now()
 	if err := a.Store.UpsertConfirmation(ctx, confirmation); err != nil {
-		return http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err
+		return STATUS_ERR_SAVING_CONFIRMATION, err
 	}
 
 	a.logMetric("clinician_invite_created", req)
@@ -394,11 +394,11 @@ func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.
 	}
 
 	if !a.createAndSendNotification(req, confirmation, emailContent) {
-		return http.StatusInternalServerError, STATUS_ERR_SENDING_EMAIL, nil
+		return STATUS_ERR_SENDING_EMAIL, nil
 	}
 
 	a.logMetric("clinician_invite_sent", req)
-	return 0, "", nil
+	return "", nil
 }
 
 func (a *Api) cancelClinicianInviteWithStatus(res http.ResponseWriter, req *http.Request, filter, conf *models.Confirmation, statusUpdate models.Status) {
