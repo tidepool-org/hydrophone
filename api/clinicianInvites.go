@@ -394,7 +394,9 @@ func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.
 	}
 
 	if !a.createAndSendNotification(req, confirmation, emailContent) {
-		return STATUS_ERR_SENDING_EMAIL, nil
+		// TODO: better to re-work createAndSendNotification to return a
+		// proper error.
+		return STATUS_ERR_SENDING_EMAIL, fmt.Errorf("sending email")
 	}
 
 	a.logMetric("clinician_invite_sent", req)
