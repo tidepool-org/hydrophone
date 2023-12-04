@@ -260,6 +260,7 @@ golang.org/x/crypto/ocsp
 golang.org/x/crypto/pbkdf2
 # golang.org/x/net v0.0.0-20220513224357-95641704303c
 ## explicit; go 1.17
+golang.org/x/net/idna
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -267,7 +268,9 @@ golang.org/x/net/proxy
 golang.org/x/sync/errgroup
 # golang.org/x/text v0.3.7
 ## explicit; go 1.17
+golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 # gopkg.in/jcmturner/aescts.v1 v1.0.1
 ## explicit
