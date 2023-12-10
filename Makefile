@@ -37,12 +37,11 @@ test:
 $(OAPI_CODEGEN):
 	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.13.4
 
-$(SWAGGER_CLI):
-	npm-tools
+$(SWAGGER_CLI): npm-tools
 
 .PHONY: npm-tools
 npm-tools:
 # When using --no-save, any dependencies not included will be deleted, so one
 # has to install all the packages all at the same time. But it saves us from
 # having to muck with packages.json.
-	npm i --no-save --local $(NPM_PKG_SPECS)
+	npm install --no-save --local $(NPM_PKG_SPECS)
