@@ -254,6 +254,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 		a.logger(ctx).With(zapPermsField(setPerms)).Info("permissions set")
 		if ctc.AlertsConfig != nil && ctc.Permissions["follow"] != nil {
 			if err := a.alerts.Upsert(ctx, ctc.AlertsConfig); err != nil {
+				a.logger(ctx).With("config", ctc.AlertsConfig, "the-error", err).Info("alerts")
 				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_ALERTS_CONFIG, err)
 				return
 			}
