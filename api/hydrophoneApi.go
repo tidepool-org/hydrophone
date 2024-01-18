@@ -61,6 +61,7 @@ const (
 	STATUS_ERR_FINDING_CLINIC         = "Error finding the clinic"
 	STATUS_ERR_DECODING_CONFIRMATION  = "Error decoding the confirmation"
 	STATUS_ERR_CREATING_PATIENT       = "Error creating patient"
+	STATUS_ERR_MRN_REQUIRED           = "Error creating patient because MRN is required"
 	STATUS_ERR_FINDING_PREVIEW        = "Error finding the invite preview"
 
 	//returned status messages
