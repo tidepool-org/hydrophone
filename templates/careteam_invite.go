@@ -160,7 +160,10 @@ const _CareteamInviteBodyTemplate string = `
 `
 
 func NewCareteamInviteTemplate() (models.Template, error) {
-	return models.NewPrecompiledTemplate(models.TemplateNameCareteamInvite, _CareteamInviteSubjectTemplate, _CareteamInviteBodyTemplate)
+	return models.NewPrecompiledTemplate(models.TemplateNameCareteamInvite,
+		_CareteamInviteSubjectTemplate,
+		_CareteamInviteBodyTemplate,
+	)
 }
 
 // Awaiting new content for invitations with alerting, but until then, use the existing email.
@@ -168,5 +171,7 @@ var careteamInviteWithAlerting = _CareteamInviteBodyTemplate
 
 func NewCareteamInviteWithAlertingTemplate() (models.Template, error) {
 	return models.NewPrecompiledTemplate(models.TemplateNameCareteamInviteWithAlerting,
-		careteamInviteWithAlerting, _CareteamInviteSubjectTemplate)
+		_CareteamInviteSubjectTemplate,
+		careteamInviteWithAlerting,
+	)
 }
