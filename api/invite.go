@@ -240,11 +240,8 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONTEXT)
 			return
 		}
-		// In the event that the invitee didn't have a user account when they
-		// were invited, this could be empty. Since they're accepting the
-		// invite now, they clearly have a userID, so we can populate that
-		// field now.
-		if ctc.AlertsConfig != nil && ctc.AlertsConfig.UserID == "" {
+
+		if ctc.AlertsConfig != nil {
 			ctc.AlertsConfig.UserID = inviteeID
 		}
 
