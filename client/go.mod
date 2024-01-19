@@ -74,3 +74,6 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// Resolve GO-2023-2116, GO-2023-2115, GO-2023-2052
+replace github.com/gofiber/fiber/v2 v2.49.1 => github.com/gofiber/fiber/v2 v2.52.0

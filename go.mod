@@ -8,8 +8,8 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/clinic/client v0.0.0-20240118184732-13bcf1eae0cd
-	github.com/tidepool-org/go-common v0.11.1-0.20240118173354-94b2e200da21
+	github.com/tidepool-org/clinic/client v0.0.0-20240119154138-fd88ad427641
+	github.com/tidepool-org/go-common v0.11.1-0.20240119151220-be854abc1af5
 	go.mongodb.org/mongo-driver v1.12.1
 	go.uber.org/fx v1.20.1
 	go.uber.org/zap v1.26.0
