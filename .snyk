@@ -1,0 +1,9 @@
+ignore:
+  'SNYK-GOLANG-GOOGLEGOLANGORGPROTOBUFENCODINGPROTOJSON-6137908':
+    - '*':
+        reason: 'Protobuf is not used in this project'
+        expires: '2024-04-16'
+  'SNYK-GOLANG-GOLANGORGXNETHTTP2-6173321':
+    - '*':
+        reason: 'Fix is available in https://github.com/tidepool-org/hydrophone/pull/131'
+        expires: '2024-04-16'
