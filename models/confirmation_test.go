@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 )
 
 const (
@@ -65,6 +66,10 @@ func Test_NewConfirmation(t *testing.T) {
 	if confirmation.Creator.UserId != "" {
 		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
 		t.Fail()
+	}
+
+	if confirmation.ExpiresAt.IsZero() {
+		t.Errorf("expected expiresAt to be non-Zero")
 	}
 
 	confirmation.UpdateStatus(StatusCompleted)
@@ -227,6 +232,47 @@ func TestConfirmationContextCustomUnmarshaler(s *testing.T) {
 			t.Fatalf("expected 100, got %f", low.Value)
 		}
 	})
+}
+
+func TestConfirmationCalculatesExpiresAt(t *testing.T) {
+	for cType := range Timeouts {
+		invite, err := NewConfirmation(cType, TemplateNamePasswordReset, USERID)
+		if err != nil {
+			t.Fatalf("expected nil, got %+v", err)
+		}
+		if invite.ExpiresAt == nil || invite.ExpiresAt.IsZero() {
+			t.Errorf("expected non-Zero ExiresAt")
+		}
+	}
+}
+
+func TestConfirmationIsExpired(t *testing.T) {
+	for cType := range Timeouts {
+		invite, err := NewConfirmation(cType, TemplateNameCareteamInvite, USERID)
+		if err != nil {
+			t.Fatalf("expected nil error, got %s", err)
+		}
+		if invite.IsExpired() {
+			t.Errorf("expected false, got true")
+		}
+		*invite.ExpiresAt = time.Unix(0, 0)
+		if !invite.IsExpired() {
+			t.Errorf("expected true, got false")
+		}
+	}
+
+	// These types don't have timeouts, so don't get an expires at. They're
+	// never expired.
+	for _, cType := range []Type{TypeClinicianInvite, TypeNoAccount} {
+		nonExpiringInviting, err := NewConfirmation(cType, TemplateNameCareteamInvite, USERID)
+		if err != nil {
+			t.Fatalf("expected nil error, got %s", err)
+		}
+		if nonExpiringInviting.IsExpired() {
+			t.Errorf("expected invitation type %q to never expire", cType)
+		}
+	}
+
 }
 
 // buff is a helper for generating a JSON []byte representation.

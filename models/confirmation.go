@@ -23,6 +23,7 @@ type (
 		Created   time.Time       `json:"created" bson:"created"`
 		Modified  time.Time       `json:"modified" bson:"modified"`
 		Status    Status          `json:"status" bson:"status"`
+		ExpiresAt *time.Time      `json:"expiresAt,omitempty" bson:"expiresAt,omitempty"`
 
 		Restrictions *Restrictions `json:"restrictions" bson:"-"`
 		TemplateName TemplateName  `json:"-" bson:"templateName"`
@@ -110,6 +111,10 @@ func NewConfirmation(theType Type, templateName TemplateName, creatorId string) 
 			Created:      time.Now(),
 		}
 
+		if timeout, ok := Timeouts[theType]; ok {
+			expiresAt := conf.Created.Add(timeout)
+			conf.ExpiresAt = &expiresAt
+		}
 		return conf, nil
 	}
 }
@@ -232,12 +237,10 @@ func (c *Confirmation) ValidateType(expectedType Type, validationErrors *[]error
 }
 
 func (c *Confirmation) IsExpired() bool {
-	timeout, ok := Timeouts[c.Type]
-	if !ok {
+	if c.ExpiresAt == nil || c.ExpiresAt.IsZero() {
 		return false
 	}
-
-	return time.Now().After(c.Created.Add(timeout))
+	return time.Now().After(*c.ExpiresAt)
 }
 
 func (c *Confirmation) ResetKey() error {
