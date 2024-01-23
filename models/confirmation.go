@@ -51,7 +51,7 @@ type (
 	}
 
 	AcceptPatientInvite struct {
-		Mrn       string   `json:"mrn"`
+		MRN       string   `json:"mrn"`
 		BirthDate string   `json:"birthDate"`
 		FullName  string   `json:"fullName"`
 		Tags      []string `json:"tags"`

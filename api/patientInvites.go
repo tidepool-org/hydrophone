@@ -99,16 +99,19 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 		}
 
 		accept := models.AcceptPatientInvite{}
-		if err := json.NewDecoder(req.Body).Decode(&accept); err != nil {
-			a.logger.Errorw("error decoding accept patient invite body", zap.Error(err))
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT)},
-				http.StatusInternalServerError,
-			)
-			return
+		if req.ContentLength > 0 {
+			if err := json.NewDecoder(req.Body).Decode(&accept); err != nil {
+				a.logger.Errorw("error decoding accept patient invite body", zap.Error(err))
+				a.sendModelAsResWithStatus(
+					res,
+					&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT)},
+					http.StatusInternalServerError,
+				)
+				return
+			}
 		}
-		mrnRequired, err := a.isMrnRequired(ctx, conf.ClinicId)
+
+		mrnRequired, err := a.isMRNRequired(ctx, conf.ClinicId)
 		if err != nil {
 			a.logger.Errorw("error fetching mrn requirement settings", zap.Error(err))
 			a.sendModelAsResWithStatus(
@@ -118,7 +121,7 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 			)
 			return
 		}
-		if mrnRequired && strings.TrimSpace(accept.Mrn) == "" {
+		if mrnRequired && strings.TrimSpace(accept.MRN) == "" {
 			a.sendModelAsResWithStatus(
 				res,
 				&status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_MRN_REQUIRED)},
@@ -249,8 +252,8 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 	if accept.FullName != "" {
 		body.FullName = &accept.FullName
 	}
-	if accept.Mrn != "" {
-		body.Mrn = &accept.Mrn
+	if accept.MRN != "" {
+		body.Mrn = &accept.MRN
 	}
 	if count := len(accept.Tags); count > 0 {
 		tagIds := make(clinics.PatientTagIds, 0, count)
@@ -285,7 +288,7 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 	return patient, nil
 }
 
-func (a *Api) isMrnRequired(ctx context.Context, clinicId string) (bool, error) {
+func (a *Api) isMRNRequired(ctx context.Context, clinicId string) (bool, error) {
 	response, err := a.clinics.GetMRNSettingsWithResponse(ctx, clinicId)
 	if err != nil {
 		return false, err
@@ -293,7 +296,7 @@ func (a *Api) isMrnRequired(ctx context.Context, clinicId string) (bool, error) 
 
 	// The clinic doesn't have custom MRN settings
 	if response.StatusCode() == http.StatusNotFound {
-		return true, nil
+		return false, nil
 	} else if response.StatusCode() != http.StatusOK {
 		return false, fmt.Errorf("unexpected response code when fetching clinic %s settings %v", clinicId, response.StatusCode())
 	}
