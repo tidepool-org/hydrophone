@@ -4,59 +4,29 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"regexp"
 	"time"
+
+	"go.uber.org/zap"
 
 	clinics "github.com/tidepool-org/clinic/client"
 
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
-	"github.com/tidepool-org/go-common/clients/status"
 
 	"github.com/tidepool-org/hydrophone/models"
 )
 
-const (
-	STATUS_SIGNUP_NOT_FOUND  = "No matching signup confirmation was found"
-	STATUS_SIGNUP_NO_ID      = "Required userid is missing"
-	STATUS_SIGNUP_NO_CONF    = "Required confirmation id is missing"
-	STATUS_SIGNUP_ACCEPTED   = "User has had signup confirmed"
-	STATUS_EXISTING_SIGNUP   = "User already has an existing valid signup confirmation"
-	STATUS_SIGNUP_EXPIRED    = "The signup confirmation has expired"
-	STATUS_SIGNUP_ERROR      = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
-	STATUS_ERR_FINDING_USR   = "Error finding user"
-	STATUS_ERR_UPDATING_USR  = "Error updating user"
-	STATUS_NO_PASSWORD       = "User does not have a password"
-	STATUS_MISSING_PASSWORD  = "Password is missing"
-	STATUS_INVALID_PASSWORD  = "Password specified is invalid"
-	STATUS_MISSING_BIRTHDAY  = "Birthday is missing"
-	STATUS_INVALID_BIRTHDAY  = "Birthday specified is invalid"
-	STATUS_MISMATCH_BIRTHDAY = "Birthday specified does not match patient birthday"
-)
-
-const (
-	ERROR_NO_PASSWORD       = 1001
-	ERROR_MISSING_PASSWORD  = 1002
-	ERROR_INVALID_PASSWORD  = 1003
-	ERROR_MISSING_BIRTHDAY  = 1004
-	ERROR_INVALID_BIRTHDAY  = 1005
-	ERROR_MISMATCH_BIRTHDAY = 1006
-)
-
 // try to find the signup confirmation
 func (a *Api) findSignUp(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
-	found, err := a.findExistingConfirmation(ctx, conf, res)
+	found, err := a.Store.FindConfirmation(ctx, conf)
 	if err != nil {
-		log.Printf("findSignUp: error [%s]\n", err.Error())
-		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 		return nil
 	}
 	if found == nil {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND)}
-		log.Printf("findSignUp: not found [%s]\n", statusErr.Error())
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		a.sendError(ctx, res, http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND)
 		return nil
 	}
 
@@ -65,35 +35,36 @@ func (a *Api) findSignUp(ctx context.Context, conf *models.Confirmation, res htt
 
 // update an existing signup confirmation
 func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
 	fromBody := &models.Confirmation{}
 	if err := json.NewDecoder(req.Body).Decode(fromBody); err != nil {
-		log.Printf("updateSignupConfirmation: error decoding signup to cancel [%s]", err.Error())
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 		return
 	}
 
 	if fromBody.Key == "" {
-		log.Printf("updateSignupConfirmation: %s", STATUS_SIGNUP_NO_CONF)
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_CONF)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+		a.sendError(ctx, res, http.StatusBadRequest, STATUS_SIGNUP_NO_CONF)
 		return
 	}
 
-	if found, _ := a.findExistingConfirmation(req.Context(), fromBody, res); found != nil {
-
+	found, err := a.Store.FindConfirmation(ctx, fromBody)
+	if err != nil {
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+		return
+	}
+	if found != nil {
 		updatedStatus := string(newStatus) + " signup"
-		log.Printf("updateSignupConfirmation: %s", updatedStatus)
+		a.logger(ctx).Debugf("new status: %s", updatedStatus)
 		found.UpdateStatus(newStatus)
 
-		if a.addOrUpdateConfirmation(req.Context(), found, res) {
+		// addOrUpdateConfirmation logs and writes a response on errors
+		if a.addOrUpdateConfirmation(ctx, found, res) {
 			a.logMetricAsServer(updatedStatus)
 			res.WriteHeader(http.StatusOK)
 			return
 		}
 	} else {
-		log.Printf("updateSignupConfirmation: %s [%v]", STATUS_SIGNUP_NOT_FOUND, fromBody)
-		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
+		a.sendError(ctx, res, http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND)
 		return
 	}
 }
@@ -110,14 +81,15 @@ func (a *Api) updateSignupConfirmation(newStatus models.Status, res http.Respons
 // status: 403 STATUS_EXISTING_SIGNUP
 // status: 500 STATUS_ERR_FINDING_USER
 func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	ctx := req.Context()
 	if newSignUp := a.upsertSignUp(res, req, vars); newSignUp != nil {
 		clinicName := "Diabetes Clinic"
 		creatorName := "Clinician"
 
 		if newSignUp.ClinicId != "" {
-			resp, err := a.clinics.GetClinicWithResponse(req.Context(), clinics.ClinicId(newSignUp.ClinicId))
+			resp, err := a.clinics.GetClinicWithResponse(ctx, clinics.ClinicId(newSignUp.ClinicId))
 			if err != nil {
-				a.sendError(res, http.StatusInternalServerError, "unable to fetch clinic")
+				a.sendError(ctx, res, http.StatusInternalServerError, "unable to fetch clinic")
 				return
 			}
 			if resp.StatusCode() == http.StatusOK && resp.JSON200.Name != "" {
@@ -126,8 +98,7 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 		}
 
 		if err := a.addProfile(newSignUp); err != nil {
-			log.Printf("sendSignUp: error when adding profile [%s]", err.Error())
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_ADDING_PROFILE, err)
 			return
 		}
 		if newSignUp.Creator.Profile != nil && newSignUp.Creator.Profile.FullName != "" {
@@ -136,11 +107,14 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 
 		profile := &models.Profile{}
 		if err := a.seagull.GetCollection(newSignUp.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "sendSignUp: error getting user profile: ", err.Error())
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, "getting user profile", err)
 			return
 		}
 
-		log.Printf("Sending email confirmation to %s with key %s", newSignUp.Email, newSignUp.Key)
+		a.logger(ctx).
+			With(zap.String("email", newSignUp.Email)).
+			With(zap.String("key", newSignUp.Key)).
+			Debug("sending email confirmation")
 
 		emailContent := map[string]interface{}{
 			"Key":         newSignUp.Key,
@@ -158,7 +132,6 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			return
 		} else {
 			a.logMetric("signup confirmation failed to be sent", req)
-			log.Print("Something happened generating a signup email")
 		}
 	}
 }
@@ -169,38 +142,40 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 // status: 200
 // status: 404 STATUS_SIGNUP_EXPIRED
 func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	ctx := req.Context()
 	email := vars["useremail"]
 
 	toFind := &models.Confirmation{Email: email, Status: models.StatusPending, Type: models.TypeSignUp}
 
-	if found := a.findSignUp(req.Context(), toFind, res); found != nil {
-		if err := a.Store.RemoveConfirmation(req.Context(), found); err != nil {
-			log.Printf("resendSignUp: error deleting old [%s]", err.Error())
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+	if found := a.findSignUp(ctx, toFind, res); found != nil {
+		if err := a.Store.RemoveConfirmation(ctx, found); err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_DELETING_CONFIRMATION, err)
 			return
 		}
 
 		if err := found.ResetKey(); err != nil {
-			log.Printf("resendSignUp: error resetting key [%s]", err.Error())
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_RESETTING_KEY, err)
 			return
 		}
 
-		if a.addOrUpdateConfirmation(req.Context(), found, res) {
+		// addOrUpdateConfirmation logs and writes a response on errors
+		if a.addOrUpdateConfirmation(ctx, found, res) {
 			a.logMetricAsServer("signup confirmation recreated")
 
 			if err := a.addProfile(found); err != nil {
-				log.Printf("resendSignUp: error when adding profile [%s]", err.Error())
-				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_ADDING_PROFILE, err)
 				return
 			} else {
 				profile := &models.Profile{}
 				if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
-					a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "resendSignUp: error getting user profile: ", err.Error())
+					a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 					return
 				}
 
-				log.Printf("Resending email confirmation to %s with key %s", found.Email, found.Key)
+				a.logger(ctx).
+					With(zap.String("email", found.Email)).
+					With(zap.String("key", found.Key)).
+					Debug("resending email confirmation")
 
 				emailContent := map[string]interface{}{
 					"Key":      found.Key,
@@ -213,9 +188,9 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				}
 
 				if found.ClinicId != "" {
-					resp, err := a.clinics.GetClinicWithResponse(req.Context(), clinics.ClinicId(found.ClinicId))
+					resp, err := a.clinics.GetClinicWithResponse(ctx, clinics.ClinicId(found.ClinicId))
 					if err != nil {
-						a.sendError(res, http.StatusInternalServerError, "unable to fetch clinic")
+						a.sendError(ctx, res, http.StatusInternalServerError, "unable to fetch clinic")
 						return
 					}
 					if resp.StatusCode() == http.StatusOK && resp.JSON200.Name != "" {
@@ -227,7 +202,6 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					a.logMetricAsServer("signup confirmation re-sent")
 				} else {
 					a.logMetricAsServer("signup confirmation failed to be sent")
-					log.Print("resendSignUp: Something happened trying to resend a signup email")
 				}
 			}
 
@@ -249,19 +223,19 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // status: 400 STATUS_INVALID_BIRTHDAY
 // status: 400 STATUS_MISMATCH_BIRTHDAY
 func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	ctx := req.Context()
 	confirmationId := vars["confirmationid"]
 
 	if confirmationId == "" {
-		log.Printf("acceptSignUp %s", STATUS_SIGNUP_NO_CONF)
-		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_CONF), http.StatusBadRequest)
+		a.sendError(ctx, res, http.StatusBadRequest, STATUS_SIGNUP_NO_CONF)
 		return
 	}
 
 	toFind := &models.Confirmation{Key: confirmationId}
 
-	if found := a.findSignUp(req.Context(), toFind, res); found != nil {
+	if found := a.findSignUp(ctx, toFind, res); found != nil {
 		if found.IsExpired() {
-			a.sendError(res, http.StatusNotFound, STATUS_SIGNUP_EXPIRED, "acceptSignUp: expired")
+			a.sendError(ctx, res, http.StatusNotFound, STATUS_SIGNUP_EXPIRED)
 			return
 		}
 
@@ -269,43 +243,43 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		updates := shoreline.UserUpdate{EmailVerified: &emailVerified}
 
 		if user, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide()); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error trying to get user to check email verified: ", err.Error())
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, "trying to get user to check email verified", err)
 			return
 
 		} else if !user.PasswordExists {
 			acceptance := &models.Acceptance{}
 			if req.Body != nil {
 				if err := json.NewDecoder(req.Body).Decode(acceptance); err != nil {
-					a.sendErrorWithCode(res, http.StatusConflict, ERROR_NO_PASSWORD, STATUS_NO_PASSWORD, "acceptSignUp: error decoding acceptance: ", err.Error())
+					a.sendErrorWithCode(ctx, res, http.StatusConflict, ERROR_NO_PASSWORD, STATUS_NO_PASSWORD, "decoding acceptance", err)
 					return
 				}
 			}
 
 			if acceptance.Password == "" {
-				a.sendErrorWithCode(res, http.StatusConflict, ERROR_MISSING_PASSWORD, STATUS_MISSING_PASSWORD, "acceptSignUp: missing password")
+				a.sendErrorWithCode(ctx, res, http.StatusConflict, ERROR_MISSING_PASSWORD, STATUS_MISSING_PASSWORD, "missing password")
 				return
 			}
 			if !IsValidPassword(acceptance.Password) {
-				a.sendErrorWithCode(res, http.StatusConflict, ERROR_INVALID_PASSWORD, STATUS_INVALID_PASSWORD, "acceptSignUp: invalid password specified")
+				a.sendErrorWithCode(ctx, res, http.StatusConflict, ERROR_INVALID_PASSWORD, STATUS_INVALID_PASSWORD, "invalid password specified")
 				return
 			}
 			if acceptance.Birthday == "" {
-				a.sendErrorWithCode(res, http.StatusConflict, ERROR_MISSING_BIRTHDAY, STATUS_MISSING_BIRTHDAY, "acceptSignUp: missing birthday")
+				a.sendErrorWithCode(ctx, res, http.StatusConflict, ERROR_MISSING_BIRTHDAY, STATUS_MISSING_BIRTHDAY, "missing birthday")
 				return
 			}
 			if !IsValidDate(acceptance.Birthday) {
-				a.sendErrorWithCode(res, http.StatusConflict, ERROR_INVALID_BIRTHDAY, STATUS_INVALID_BIRTHDAY, "acceptSignUp: invalid birthday specified")
+				a.sendErrorWithCode(ctx, res, http.StatusConflict, ERROR_INVALID_BIRTHDAY, STATUS_INVALID_BIRTHDAY, "invalid birthday specified")
 				return
 			}
 
 			profile := &models.Profile{}
 			if err := a.seagull.GetCollection(found.UserId, "profile", a.sl.TokenProvide(), profile); err != nil {
-				a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, "acceptSignUp: error getting the users profile: ", err.Error())
+				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, "getting the users profile", err)
 				return
 			}
 
 			if acceptance.Birthday != profile.Patient.Birthday {
-				a.sendErrorWithCode(res, http.StatusConflict, ERROR_MISMATCH_BIRTHDAY, STATUS_MISMATCH_BIRTHDAY, "acceptSignUp: acceptance birthday does not match user patient birthday")
+				a.sendErrorWithCode(ctx, res, http.StatusConflict, ERROR_MISMATCH_BIRTHDAY, STATUS_MISMATCH_BIRTHDAY, "acceptance birthday does not match user patient birthday")
 				return
 			}
 
@@ -313,12 +287,13 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		if err := a.sl.UpdateUser(found.UserId, updates, a.sl.TokenProvide()); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_UPDATING_USR, "acceptSignUp error trying to update user to be email verified: ", err.Error())
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_UPDATING_USER, err)
 			return
 		}
 
 		found.UpdateStatus(models.StatusCompleted)
-		if a.addOrUpdateConfirmation(req.Context(), found, res) {
+		// addOrUpdateConfirmation logs and writes a response on errors
+		if a.addOrUpdateConfirmation(ctx, found, res) {
 			a.logMetricAsServer("accept signup")
 		}
 
@@ -336,14 +311,14 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // status: 400 STATUS_ERR_DECODING_CONFIRMATION
 // status: 404 STATUS_SIGNUP_NOT_FOUND
 func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	ctx := req.Context()
 	userId := vars["userid"]
 
 	if userId == "" {
-		log.Printf("dismissSignUp %s", STATUS_SIGNUP_NO_ID)
-		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+		a.sendError(ctx, res, http.StatusBadRequest, STATUS_SIGNUP_NO_ID)
 		return
 	}
-	log.Print("dismissSignUp: dismissing for ", userId)
+	a.logger(ctx).Debug("dismissing invite")
 	a.updateSignupConfirmation(models.StatusDeclined, res, req)
 }
 
@@ -353,31 +328,36 @@ func (a *Api) dismissSignUp(res http.ResponseWriter, req *http.Request, vars map
 // status: 404
 func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
+		ctx := req.Context()
 
 		userId := vars["userid"]
 
 		if userId == "" {
-			log.Printf("getSignUp %s", STATUS_SIGNUP_NO_ID)
-			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_SIGNUP_NO_ID)
 			return
 		}
 
 		if permissions, err := a.tokenUserHasRequestedPermissions(token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
-		if signup, _ := a.Store.FindConfirmation(req.Context(), &models.Confirmation{UserId: userId, Type: models.TypeSignUp, Status: models.StatusPending}); signup == nil {
-			log.Printf("getSignUp %s", STATUS_SIGNUP_NOT_FOUND)
-			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND), http.StatusNotFound)
+		signup, err := a.Store.FindConfirmation(ctx, &models.Confirmation{UserId: userId, Type: models.TypeSignUp, Status: models.StatusPending})
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			return
+		}
+
+		if signup == nil {
+			a.sendError(ctx, res, http.StatusNotFound, STATUS_SIGNUP_NOT_FOUND)
 			return
 		} else {
 			a.logMetric("get signup", req)
-			log.Printf("getSignUp found a pending signup for user %s", userId)
-			a.sendModelAsResWithStatus(res, signup, http.StatusOK)
+			a.sendModelAsResWithStatus(ctx, res, signup, http.StatusOK)
+			a.logger(ctx).Debug("found a pending signup")
 			return
 		}
 	}
@@ -391,56 +371,56 @@ func (a *Api) getSignUp(res http.ResponseWriter, req *http.Request, vars map[str
 // status: 403 STATUS_EXISTING_SIGNUP
 // status: 500 STATUS_ERR_FINDING_USER
 func (a *Api) createSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	ctx := req.Context()
 	if newSignUp := a.upsertSignUp(res, req, vars); newSignUp != nil {
-		a.sendModelAsResWithStatus(res, newSignUp, http.StatusOK)
+		a.sendModelAsResWithStatus(ctx, res, newSignUp, http.StatusOK)
 	}
 }
 
 // Return a new or refreshed an account signup confirmation
+//
+// If it returns nil, an HTTP response has been sent.
 //
 // status: 400 STATUS_SIGNUP_NO_ID
 // status: 401 STATUS_NO_TOKEN
 // status: 403 STATUS_EXISTING_SIGNUP
 // status: 500 STATUS_ERR_FINDING_USER
 func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) *models.Confirmation {
+	ctx := req.Context()
 	if token := a.token(res, req); token != nil {
 		userId := vars["userid"]
 		if userId == "" {
-			log.Printf("upsertSignUp %s", STATUS_SIGNUP_NO_ID)
-			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_SIGNUP_NO_ID)
 			return nil
 		}
 
 		if permissions, err := a.tokenUserHasRequestedPermissions(token, userId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return nil
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return nil
 		}
 
 		var upsertCustodialSignUpInvite UpsertCustodialSignUpInvite
 		if err := json.NewDecoder(req.Body).Decode(&upsertCustodialSignUpInvite); err != nil && err != io.EOF {
-			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusBadRequest, "error decoding payload")}, http.StatusBadRequest)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)
 			return nil
 		}
 
 		if usrDetails, err := a.sl.GetUser(userId, a.sl.TokenProvide()); err != nil {
-			log.Printf("upsertSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
-			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusNotFound, STATUS_ERR_FINDING_USER)}, http.StatusNotFound)
+			a.sendError(ctx, res, http.StatusNotFound, STATUS_ERR_FINDING_USER, err)
 			return nil
 		} else if len(usrDetails.Emails) == 0 {
 			// Delete existing any existing invites if the email address is empty
-			existing, err := a.Store.FindConfirmation(req.Context(), &models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
+			existing, err := a.Store.FindConfirmation(ctx, &models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
 			if err != nil {
-				log.Printf("upsertSignUp: error finding old invite [%s]", err.Error())
-				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 				return nil
 			}
 			if existing != nil {
-				if err := a.Store.RemoveConfirmation(req.Context(), existing); err != nil {
-					log.Printf("upsertSignUp: error deleting old [%s]", err.Error())
-					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+				if err := a.Store.RemoveConfirmation(ctx, existing); err != nil {
+					a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_DELETING_CONFIRMATION, err)
 					return nil
 				}
 			}
@@ -449,10 +429,9 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		} else {
 
 			// get any existing confirmations
-			newSignUp, err := a.Store.FindConfirmation(req.Context(), &models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
+			newSignUp, err := a.Store.FindConfirmation(ctx, &models.Confirmation{UserId: usrDetails.UserID, Type: models.TypeSignUp})
 			if err != nil {
-				log.Printf("upsertSignUp: error [%s]\n", err.Error())
-				a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 				return nil
 			} else if newSignUp == nil {
 
@@ -474,8 +453,7 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					} else {
 						tokenUserDetails, err := a.sl.GetUser(token.UserID, a.sl.TokenProvide())
 						if err != nil {
-							log.Printf("upsertSignUp: error when getting token user [%s]", err.Error())
-							a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+							a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 							return nil
 						}
 
@@ -491,21 +469,24 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					templateName = models.TemplateNameSignup
 				}
 
-				newSignUp, _ = models.NewConfirmation(models.TypeSignUp, templateName, creatorID)
+				newSignUp, err = models.NewConfirmation(models.TypeSignUp, templateName, creatorID)
+				if err != nil {
+					a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+					return nil
+				}
+
 				newSignUp.UserId = usrDetails.UserID
 				newSignUp.Email = usrDetails.Emails[0]
 				newSignUp.ClinicId = clinicId
 			} else if newSignUp.Email != usrDetails.Emails[0] {
 
-				if err := a.Store.RemoveConfirmation(req.Context(), newSignUp); err != nil {
-					log.Printf("upsertSignUp: error deleting old [%s]", err.Error())
-					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+				if err := a.Store.RemoveConfirmation(ctx, newSignUp); err != nil {
+					a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_DELETING_CONFIRMATION, err)
 					return nil
 				}
 
 				if err := newSignUp.ResetKey(); err != nil {
-					log.Printf("upsertSignUp: error resetting key [%s]", err.Error())
-					a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+					a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_RESETTING_KEY, err)
 					return nil
 				}
 
@@ -515,12 +496,12 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					newSignUp.CreatorId = upsertCustodialSignUpInvite.InvitedBy
 				}
 			} else {
-				log.Printf("upsertSignUp %s", STATUS_EXISTING_SIGNUP)
-				a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusForbidden, STATUS_EXISTING_SIGNUP), http.StatusForbidden)
+				a.sendError(ctx, res, http.StatusForbidden, STATUS_EXISTING_SIGNUP)
 				return nil
 			}
 
-			if a.addOrUpdateConfirmation(req.Context(), newSignUp, res) {
+			// addOrUpdateConfirmation logs and writes a response on errors
+			if a.addOrUpdateConfirmation(ctx, newSignUp, res) {
 				a.logMetric("signup confirmation created", req)
 
 				return newSignUp
@@ -533,20 +514,19 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 // status: 200
 // status: 400 STATUS_SIGNUP_NO_ID
 func (a *Api) cancelSignUp(res http.ResponseWriter, req *http.Request, vars map[string]string) {
+	ctx := req.Context()
 	userId := vars["userid"]
 
 	if userId == "" {
-		log.Printf("cancelSignUp: %s", STATUS_SIGNUP_NO_ID)
-		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
+		a.sendError(ctx, res, http.StatusBadRequest, STATUS_SIGNUP_NO_ID)
 		return
 	}
-	log.Print("cancelSignUp: canceling for ", userId)
 	a.updateSignupConfirmation(models.StatusCanceled, res, req)
+	a.logger(ctx).Debug("canceled signup")
 }
 
 func IsValidPassword(password string) bool {
-	ok, _ := regexp.MatchString(`\A\S{8,72}\z`, password)
-	return ok
+	return passwordRe.MatchString(password)
 }
 
 func IsValidDate(date string) bool {
@@ -558,3 +538,5 @@ type UpsertCustodialSignUpInvite struct {
 	ClinicId  string `json:"clinicId"`
 	InvitedBy string `json:"invitedBy"`
 }
+
+var passwordRe = regexp.MustCompile(`\A\S{8,72}\z`)

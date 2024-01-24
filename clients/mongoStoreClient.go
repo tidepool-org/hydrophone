@@ -3,7 +3,6 @@ package clients
 import (
 	"context"
 	"fmt"
-	"log"
 	"regexp"
 
 	"github.com/kelseyhightower/envconfig"
@@ -13,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 
 	tpMongo "github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
@@ -26,10 +26,11 @@ const (
 type MongoStoreClient struct {
 	client   *mongo.Client
 	database string
+	log      *zap.SugaredLogger
 }
 
 // NewMongoStoreClient creates a new MongoStoreClient
-func NewMongoStoreClient(config *tpMongo.Config) (*MongoStoreClient, error) {
+func NewMongoStoreClient(config *tpMongo.Config, log *zap.SugaredLogger) (*MongoStoreClient, error) {
 	connectionString, err := config.ToConnectionString()
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid MongoDB configuration")
@@ -44,6 +45,7 @@ func NewMongoStoreClient(config *tpMongo.Config) (*MongoStoreClient, error) {
 	return &MongoStoreClient{
 		client:   mongoClient,
 		database: config.Database,
+		log:      log,
 	}, nil
 }
 
@@ -61,8 +63,7 @@ func (c *MongoStoreClient) EnsureIndexes(ctx context.Context) error {
 	}
 
 	if _, err := confirmationsCollection(c).Indexes().CreateMany(ctx, indexes); err != nil {
-		log.Fatal(err)
-		return err
+		c.log.With(zap.Error(err)).Fatal("creating indexes")
 	}
 
 	return nil
@@ -77,8 +78,8 @@ func mongoConfigProvider() (tpMongo.Config, error) {
 	return config, nil
 }
 
-func mongoStoreProvider(config tpMongo.Config) (StoreClient, error) {
-	return NewMongoStoreClient(&config)
+func mongoStoreProvider(config tpMongo.Config, log *zap.SugaredLogger) (StoreClient, error) {
+	return NewMongoStoreClient(&config, log)
 }
 
 // MongoModule for dependency injection
@@ -144,7 +145,6 @@ func (c *MongoStoreClient) FindConfirmation(ctx context.Context, confirmation *m
 	opts := options.FindOne().SetSort(bson.D{{Key: "created", Value: -1}})
 
 	if err = confirmationsCollection(c).FindOne(ctx, query, opts).Decode(&result); err != nil && err != mongo.ErrNoDocuments {
-		log.Printf("FindConfirmation: something bad happened [%v]", err)
 		return result, err
 	}
 
@@ -189,7 +189,6 @@ func (c *MongoStoreClient) FindConfirmations(ctx context.Context, confirmation *
 	}
 
 	if err = cursor.All(ctx, &results); err != nil {
-		log.Printf("FindConfirmations: something bad happened [%v]", err)
 		return results, err
 	}
 	return results, nil

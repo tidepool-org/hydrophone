@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/event"
-	"go.mongodb.org/mongo-driver/internal/driverutil"
 	"go.mongodb.org/mongo-driver/mongo/description"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
@@ -100,7 +99,6 @@ func (di *DropIndexes) Execute(ctx context.Context) error {
 		WriteConcern:      di.writeConcern,
 		ServerAPI:         di.serverAPI,
 		Timeout:           di.timeout,
-		Name:              driverutil.DropIndexesOp,
 	}.Execute(ctx)
 
 }

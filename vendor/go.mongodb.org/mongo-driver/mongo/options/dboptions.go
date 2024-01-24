@@ -95,9 +95,6 @@ func MergeDatabaseOptions(opts ...*DatabaseOptions) *DatabaseOptions {
 		if opt.Registry != nil {
 			d.Registry = opt.Registry
 		}
-		if opt.BSONOptions != nil {
-			d.BSONOptions = opt.BSONOptions
-		}
 	}
 
 	return d

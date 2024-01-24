@@ -4,16 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"reflect"
-	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/kelseyhightower/envconfig"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	clinicsClient "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
@@ -22,6 +22,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/models"
+	"github.com/tidepool-org/platform/alerts"
 )
 
 type (
@@ -34,8 +35,10 @@ type (
 		gatekeeper commonClients.Gatekeeper
 		seagull    commonClients.Seagull
 		metrics    highwater.Client
-		logger     *zap.SugaredLogger
+		alerts     AlertsClient
+		baseLogger *zap.SugaredLogger
 		Config     Config
+		mu         sync.Mutex
 	}
 	Config struct {
 		ServerSecret string `envconfig:"TIDEPOOL_SERVER_SECRET" required:"true"`
@@ -48,28 +51,59 @@ type (
 	varsHandler func(http.ResponseWriter, *http.Request, map[string]string)
 )
 
+type AlertsClient interface {
+	Upsert(context.Context, *alerts.Config) error
+	Delete(context.Context, *alerts.Config) error
+}
+
 const (
 	TP_SESSION_TOKEN = "x-tidepool-session-token"
 
-	//returned error messages
-	STATUS_ERR_SENDING_EMAIL          = "Error sending email"
-	STATUS_ERR_SAVING_CONFIRMATION    = "Error saving the confirmation"
-	STATUS_ERR_CREATING_CONFIRMATION  = "Error creating a confirmation"
-	STATUS_ERR_FINDING_CONFIRMATION   = "Error finding the confirmation"
 	STATUS_ERR_ACCEPTING_CONFIRMATION = "Error accepting invitation"
-	STATUS_ERR_FINDING_USER           = "Error finding the user"
-	STATUS_ERR_FINDING_CLINIC         = "Error finding the clinic"
-	STATUS_ERR_DECODING_CONFIRMATION  = "Error decoding the confirmation"
+	STATUS_ERR_ADDING_PROFILE         = "Error adding profile"
+	STATUS_ERR_CREATING_ALERTS_CONFIG = "Error creating alerts configuration"
+	STATUS_ERR_CREATING_CONFIRMATION  = "Error creating a confirmation"
 	STATUS_ERR_CREATING_PATIENT       = "Error creating patient"
+	STATUS_ERR_DECODING_CONFIRMATION  = "Error decoding the confirmation"
+	STATUS_ERR_DECODING_CONTEXT       = "Error decoding the confirmation context"
+	STATUS_ERR_DELETING_CONFIRMATION  = "Error deleting a confirmation"
+	STATUS_ERR_FINDING_CLINIC         = "Error finding the clinic"
+	STATUS_ERR_FINDING_CONFIRMATION   = "Error finding the confirmation"
 	STATUS_ERR_MRN_REQUIRED           = "Error creating patient because MRN is required"
 	STATUS_ERR_FINDING_PREVIEW        = "Error finding the invite preview"
+	STATUS_ERR_FINDING_USER           = "Error finding the user"
+	STATUS_ERR_RESETTING_KEY          = "Error resetting key"
+	STATUS_ERR_SAVING_CONFIRMATION    = "Error saving the confirmation"
+	STATUS_ERR_SENDING_EMAIL          = "Error sending email"
+	STATUS_ERR_SETTING_PERMISSIONS    = "Error setting permissions"
+	STATUS_ERR_UPDATING_USER          = "Error updating user"
+	STATUS_ERR_VALIDATING_CONTEXT     = "Error validating the confirmation context"
 
-	//returned status messages
-	STATUS_NOT_FOUND     = "Nothing found"
-	STATUS_NO_TOKEN      = "No x-tidepool-session-token was found"
-	STATUS_INVALID_TOKEN = "The x-tidepool-session-token was invalid"
-	STATUS_UNAUTHORIZED  = "Not authorized for requested operation"
-	STATUS_OK            = "OK"
+	STATUS_EXISTING_SIGNUP   = "User already has an existing valid signup confirmation"
+	STATUS_INVALID_BIRTHDAY  = "Birthday specified is invalid"
+	STATUS_INVALID_PASSWORD  = "Password specified is invalid"
+	STATUS_INVALID_TOKEN     = "The x-tidepool-session-token was invalid"
+	STATUS_MISMATCH_BIRTHDAY = "Birthday specified does not match patient birthday"
+	STATUS_MISSING_BIRTHDAY  = "Birthday is missing"
+	STATUS_MISSING_PASSWORD  = "Password is missing"
+	STATUS_NO_PASSWORD       = "User does not have a password"
+	STATUS_NO_TOKEN          = "No x-tidepool-session-token was found"
+	STATUS_OK                = "OK"
+	STATUS_SIGNUP_ACCEPTED   = "User has had signup confirmed"
+	STATUS_SIGNUP_ERROR      = "Error while completing signup confirmation. The signup confirmation remains active until it expires"
+	STATUS_SIGNUP_EXPIRED    = "The signup confirmation has expired"
+	STATUS_SIGNUP_NOT_FOUND  = "No matching signup confirmation was found"
+	STATUS_SIGNUP_NO_CONF    = "Required confirmation id is missing"
+	STATUS_SIGNUP_NO_ID      = "Required userid is missing"
+	STATUS_UNAUTHORIZED      = "Not authorized for requested operation"
+	STATUS_NOT_FOUND         = "Nothing found"
+
+	ERROR_NO_PASSWORD       = 1001
+	ERROR_MISSING_PASSWORD  = 1002
+	ERROR_INVALID_PASSWORD  = 1003
+	ERROR_MISSING_BIRTHDAY  = 1004
+	ERROR_INVALID_BIRTHDAY  = 1005
+	ERROR_MISMATCH_BIRTHDAY = 1006
 )
 
 func NewApi(
@@ -81,6 +115,7 @@ func NewApi(
 	gatekeeper commonClients.Gatekeeper,
 	metrics highwater.Client,
 	seagull commonClients.Seagull,
+	alerts AlertsClient,
 	templates models.Templates,
 	logger *zap.SugaredLogger,
 ) *Api {
@@ -93,8 +128,9 @@ func NewApi(
 		gatekeeper: gatekeeper,
 		metrics:    metrics,
 		seagull:    seagull,
+		alerts:     alerts,
 		templates:  templates,
-		logger:     logger,
+		baseLogger: logger,
 	}
 }
 
@@ -124,7 +160,56 @@ func routerProvider(api *Api) *mux.Router {
 // RouterModule build a router
 var RouterModule = fx.Options(fx.Provide(routerProvider, apiConfigProvider))
 
+// addPathVarToLogger adds a request's path variable to the logging context.
+//
+// It uses the first case-insensitive match of name it finds, additional occurrences of name are
+// ignored.
+func (a *Api) addPathVarToLogger(name string) mux.MiddlewareFunc {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, orig *http.Request) {
+			vars := mux.Vars(orig)
+			next := orig
+			for key := range vars {
+				if !strings.EqualFold(key, name) {
+					continue
+				}
+				ctxLog := a.logger(orig.Context()).With(zap.String(key, vars[key]))
+				ctxWithLog := context.WithValue(orig.Context(), ctxLoggerKey{}, ctxLog)
+				next = orig.WithContext(ctxWithLog)
+				break
+			}
+			h.ServeHTTP(w, next)
+		})
+	}
+}
+
+type ctxLoggerKey struct{}
+
+func (a *Api) logger(ctx context.Context) *zap.SugaredLogger {
+	if logger, ok := ctx.Value(ctxLoggerKey{}).(*zap.SugaredLogger); ok {
+		return logger
+	}
+	return a.cloneLogger()
+}
+
+func (a *Api) cloneLogger() *zap.SugaredLogger {
+	return a.baseLogger.WithOptions()
+}
+
+func (a *Api) ctxLoggerHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origCtx := r.Context()
+		ctxLog := a.cloneLogger()
+		ctxWithLog := context.WithValue(origCtx, ctxLoggerKey{}, ctxLog)
+		rWithLog := r.WithContext(ctxWithLog)
+		h.ServeHTTP(w, rWithLog)
+	})
+}
+
 func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
+	rtr.Use(mux.MiddlewareFunc(a.ctxLoggerHandler))
+	rtr.Use(a.addPathVarToLogger("userid"))
+	rtr.Use(a.addPathVarToLogger("clinicid"))
 
 	c := rtr.PathPrefix("/confirm").Subrouter()
 
@@ -137,103 +222,106 @@ func (a *Api) SetHandlers(prefix string, rtr *mux.Router) {
 	c.HandleFunc("/live", a.IsAlive).Methods("GET")
 	rtr.HandleFunc("/live", a.IsAlive).Methods("GET")
 
+	// vars is a shorthand for applying the varsHandler to an handler.
+	type vars = varsHandler
+
 	// POST /confirm/send/signup/:userid
 	// POST /confirm/send/forgot/:useremail
 	// POST /confirm/send/invite/:userid
 	csend := rtr.PathPrefix("/confirm/send").Subrouter()
-	csend.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
-	csend.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
-	csend.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
-	csend.Handle("/invite/{userId}/clinic", varsHandler(a.InviteClinic)).Methods("POST")
+	csend.Handle("/signup/{userid}", vars(a.sendSignUp)).Methods("POST")
+	csend.Handle("/forgot/{useremail}", vars(a.passwordReset)).Methods("POST")
+	csend.Handle("/invite/{userid}", vars(a.SendInvite)).Methods("POST")
+	csend.Handle("/invite/{userId}/clinic", vars(a.InviteClinic)).Methods("POST")
 
 	send := rtr.PathPrefix("/send").Subrouter()
-	send.Handle("/signup/{userid}", varsHandler(a.sendSignUp)).Methods("POST")
-	send.Handle("/forgot/{useremail}", varsHandler(a.passwordReset)).Methods("POST")
-	send.Handle("/invite/{userid}", varsHandler(a.SendInvite)).Methods("POST")
-	send.Handle("/invite/{userId}/clinic", varsHandler(a.InviteClinic)).Methods("POST")
+	send.Handle("/signup/{userid}", vars(a.sendSignUp)).Methods("POST")
+	send.Handle("/forgot/{useremail}", vars(a.passwordReset)).Methods("POST")
+	send.Handle("/invite/{userid}", vars(a.SendInvite)).Methods("POST")
+	send.Handle("/invite/{userId}/clinic", vars(a.InviteClinic)).Methods("POST")
 
 	// POST /confirm/resend/signup/:useremail
 	// POST /confirm/resend/invite/:inviteId
-	c.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
-	c.Handle("/resend/invite/{inviteId}", varsHandler(a.ResendInvite)).Methods("PATCH")
+	c.Handle("/resend/signup/{useremail}", vars(a.resendSignUp)).Methods("POST")
+	c.Handle("/resend/invite/{inviteId}", vars(a.ResendInvite)).Methods("PATCH")
 
-	rtr.Handle("/resend/signup/{useremail}", varsHandler(a.resendSignUp)).Methods("POST")
-	rtr.Handle("/resend/invite/{inviteId}", varsHandler(a.ResendInvite)).Methods("PATCH")
+	rtr.Handle("/resend/signup/{useremail}", vars(a.resendSignUp)).Methods("POST")
+	rtr.Handle("/resend/invite/{inviteId}", vars(a.ResendInvite)).Methods("PATCH")
 
 	// PUT /confirm/accept/signup/:confirmationID
 	// PUT /confirm/accept/forgot/
 	// PUT /confirm/accept/invite/:userid/:invited_by
 	caccept := rtr.PathPrefix("/confirm/accept").Subrouter()
-	caccept.Handle("/signup/{confirmationid}", varsHandler(a.acceptSignUp)).Methods("PUT")
-	caccept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
-	caccept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
+	caccept.Handle("/signup/{confirmationid}", vars(a.acceptSignUp)).Methods("PUT")
+	caccept.Handle("/forgot", vars(a.acceptPassword)).Methods("PUT")
+	caccept.Handle("/invite/{userid}/{invitedby}", vars(a.AcceptInvite)).Methods("PUT")
 
 	accept := rtr.PathPrefix("/accept").Subrouter()
-	accept.Handle("/signup/{confirmationid}", varsHandler(a.acceptSignUp)).Methods("PUT")
-	accept.Handle("/forgot", varsHandler(a.acceptPassword)).Methods("PUT")
-	accept.Handle("/invite/{userid}/{invitedby}", varsHandler(a.AcceptInvite)).Methods("PUT")
+	accept.Handle("/signup/{confirmationid}", vars(a.acceptSignUp)).Methods("PUT")
+	accept.Handle("/forgot", vars(a.acceptPassword)).Methods("PUT")
+	accept.Handle("/invite/{userid}/{invitedby}", vars(a.AcceptInvite)).Methods("PUT")
 
 	// GET /confirm/signup/:userid
 	// GET /confirm/invite/:userid
-	c.Handle("/signup/{userid}", varsHandler(a.getSignUp)).Methods("GET")
-	c.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
+	c.Handle("/signup/{userid}", vars(a.getSignUp)).Methods("GET")
+	c.Handle("/invite/{userid}", vars(a.GetSentInvitations)).Methods("GET")
 
-	rtr.Handle("/signup/{userid}", varsHandler(a.getSignUp)).Methods("GET")
-	rtr.Handle("/invite/{userid}", varsHandler(a.GetSentInvitations)).Methods("GET")
+	rtr.Handle("/signup/{userid}", vars(a.getSignUp)).Methods("GET")
+	rtr.Handle("/invite/{userid}", vars(a.GetSentInvitations)).Methods("GET")
 
 	// GET /confirm/invitations/:userid
-	c.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
+	c.Handle("/invitations/{userid}", vars(a.GetReceivedInvitations)).Methods("GET")
 
-	rtr.Handle("/invitations/{userid}", varsHandler(a.GetReceivedInvitations)).Methods("GET")
+	rtr.Handle("/invitations/{userid}", vars(a.GetReceivedInvitations)).Methods("GET")
 
 	// PUT /confirm/dismiss/invite/:userid/:invited_by
 	// PUT /confirm/dismiss/signup/:userid
 	cdismiss := rtr.PathPrefix("/confirm/dismiss").Subrouter()
-	cdismiss.Handle("/invite/{userid}/{invitedby}", varsHandler(a.DismissInvite)).Methods("PUT")
-	cdismiss.Handle("/signup/{userid}", varsHandler(a.dismissSignUp)).Methods("PUT")
+	cdismiss.Handle("/invite/{userid}/{invitedby}", vars(a.DismissInvite)).Methods("PUT")
+	cdismiss.Handle("/signup/{userid}", vars(a.dismissSignUp)).Methods("PUT")
 
 	dismiss := rtr.PathPrefix("/dismiss").Subrouter()
-	dismiss.Handle("/invite/{userid}/{invitedby}", varsHandler(a.DismissInvite)).Methods("PUT")
-	dismiss.Handle("/signup/{userid}", varsHandler(a.dismissSignUp)).Methods("PUT")
+	dismiss.Handle("/invite/{userid}/{invitedby}", vars(a.DismissInvite)).Methods("PUT")
+	dismiss.Handle("/signup/{userid}", vars(a.dismissSignUp)).Methods("PUT")
 
 	// POST /confirm/signup/:userid
-	c.Handle("/signup/{userid}", varsHandler(a.createSignUp)).Methods("POST")
+	c.Handle("/signup/{userid}", vars(a.createSignUp)).Methods("POST")
 
 	// PUT /confirm/:userid/invited/:invited_address
 	// PUT /confirm/signup/:userid
-	c.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
-	c.Handle("/signup/{userid}", varsHandler(a.cancelSignUp)).Methods("PUT")
+	c.Handle("/{userid}/invited/{invited_address}", vars(a.CancelInvite)).Methods("PUT")
+	c.Handle("/signup/{userid}", vars(a.cancelSignUp)).Methods("PUT")
 
-	rtr.Handle("/{userid}/invited/{invited_address}", varsHandler(a.CancelInvite)).Methods("PUT")
-	rtr.Handle("/signup/{userid}", varsHandler(a.cancelSignUp)).Methods("PUT")
+	rtr.Handle("/{userid}/invited/{invited_address}", vars(a.CancelInvite)).Methods("PUT")
+	rtr.Handle("/signup/{userid}", vars(a.cancelSignUp)).Methods("PUT")
 
 	// GET /v1/clinics/:clinicId/invites/patients
 	// GET /v1/clinics/:clinicId/invites/patients/:inviteId
-	c.Handle("/v1/clinics/{clinicId}/invites/patients", varsHandler(a.GetPatientInvites)).Methods("GET")
-	c.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.AcceptPatientInvite)).Methods("PUT")
-	c.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.CancelOrDismissPatientInvite)).Methods("DELETE")
+	c.Handle("/v1/clinics/{clinicId}/invites/patients", vars(a.GetPatientInvites)).Methods("GET")
+	c.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", vars(a.AcceptPatientInvite)).Methods("PUT")
+	c.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", vars(a.CancelOrDismissPatientInvite)).Methods("DELETE")
 
-	rtr.Handle("/v1/clinics/{clinicId}/invites/patients", varsHandler(a.GetPatientInvites)).Methods("GET")
-	rtr.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.AcceptPatientInvite)).Methods("PUT")
-	rtr.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", varsHandler(a.CancelOrDismissPatientInvite)).Methods("DELETE")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/patients", vars(a.GetPatientInvites)).Methods("GET")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", vars(a.AcceptPatientInvite)).Methods("PUT")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/patients/{inviteId}", vars(a.CancelOrDismissPatientInvite)).Methods("DELETE")
 
-	c.Handle("/v1/clinicians/{userId}/invites", varsHandler(a.GetClinicianInvitations)).Methods("GET")
-	c.Handle("/v1/clinicians/{userId}/invites/{inviteId}", varsHandler(a.AcceptClinicianInvite)).Methods("PUT")
-	c.Handle("/v1/clinicians/{userId}/invites/{inviteId}", varsHandler(a.DismissClinicianInvite)).Methods("DELETE")
+	c.Handle("/v1/clinicians/{userId}/invites", vars(a.GetClinicianInvitations)).Methods("GET")
+	c.Handle("/v1/clinicians/{userId}/invites/{inviteId}", vars(a.AcceptClinicianInvite)).Methods("PUT")
+	c.Handle("/v1/clinicians/{userId}/invites/{inviteId}", vars(a.DismissClinicianInvite)).Methods("DELETE")
 
-	rtr.Handle("/v1/clinicians/{userId}/invites", varsHandler(a.GetClinicianInvitations)).Methods("GET")
-	rtr.Handle("/v1/clinicians/{userId}/invites/{inviteId}", varsHandler(a.AcceptClinicianInvite)).Methods("PUT")
-	rtr.Handle("/v1/clinicians/{userId}/invites/{inviteId}", varsHandler(a.DismissClinicianInvite)).Methods("DELETE")
+	rtr.Handle("/v1/clinicians/{userId}/invites", vars(a.GetClinicianInvitations)).Methods("GET")
+	rtr.Handle("/v1/clinicians/{userId}/invites/{inviteId}", vars(a.AcceptClinicianInvite)).Methods("PUT")
+	rtr.Handle("/v1/clinicians/{userId}/invites/{inviteId}", vars(a.DismissClinicianInvite)).Methods("DELETE")
 
-	c.Handle("/v1/clinics/{clinicId}/invites/clinicians", varsHandler(a.SendClinicianInvite)).Methods("POST")
-	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.ResendClinicianInvite)).Methods("PATCH")
-	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.GetClinicianInvite)).Methods("GET")
-	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.CancelClinicianInvite)).Methods("DELETE")
+	c.Handle("/v1/clinics/{clinicId}/invites/clinicians", vars(a.SendClinicianInvite)).Methods("POST")
+	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", vars(a.ResendClinicianInvite)).Methods("PATCH")
+	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", vars(a.GetClinicianInvite)).Methods("GET")
+	c.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", vars(a.CancelClinicianInvite)).Methods("DELETE")
 
-	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians", varsHandler(a.SendClinicianInvite)).Methods("POST")
-	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.GetClinicianInvite)).Methods("GET")
-	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.ResendClinicianInvite)).Methods("PATCH")
-	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", varsHandler(a.CancelClinicianInvite)).Methods("DELETE")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians", vars(a.SendClinicianInvite)).Methods("POST")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", vars(a.GetClinicianInvite)).Methods("GET")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", vars(a.ResendClinicianInvite)).Methods("PATCH")
+	rtr.Handle("/v1/clinics/{clinicId}/invites/clinicians/{inviteId}", vars(a.CancelClinicianInvite)).Methods("DELETE")
 }
 
 func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
@@ -242,10 +330,9 @@ func (h varsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (a *Api) IsReady(res http.ResponseWriter, req *http.Request) {
-	if err := a.Store.Ping(req.Context()); err != nil {
-		log.Printf("Error getting status [%v]", err)
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, err.Error())}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+	ctx := req.Context()
+	if err := a.Store.Ping(ctx); err != nil {
+		a.sendError(ctx, res, http.StatusInternalServerError, "store connectivity failure", err)
 		return
 	}
 	res.WriteHeader(http.StatusOK)
@@ -261,9 +348,7 @@ func (a *Api) IsAlive(res http.ResponseWriter, req *http.Request) {
 // write an error if it all goes wrong
 func (a *Api) addOrUpdateConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) bool {
 	if err := a.Store.UpsertConfirmation(ctx, conf); err != nil {
-		log.Printf("Error saving the confirmation [%v]", err)
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION, err)
 		return false
 	}
 	return true
@@ -271,22 +356,9 @@ func (a *Api) addOrUpdateConfirmation(ctx context.Context, conf *models.Confirma
 
 // Find this confirmation
 // write error if it fails
-func (a *Api) findExistingConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) (*models.Confirmation, error) {
-	if found, err := a.Store.FindConfirmation(ctx, conf); err != nil {
-		log.Printf("findExistingConfirmation: [%v]", err)
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
-		return nil, statusErr
-	} else {
-		return found, nil
-	}
-}
-
-// Find this confirmation
-// write error if it fails
 func (a *Api) addProfile(conf *models.Confirmation) error {
 	if conf.CreatorId != "" {
 		if err := a.seagull.GetCollection(conf.CreatorId, "profile", a.sl.TokenProvide(), &conf.Creator.Profile); err != nil {
-			log.Printf("error getting the creators profile [%v] ", err)
 			return err
 		}
 
@@ -295,32 +367,19 @@ func (a *Api) addProfile(conf *models.Confirmation) error {
 	return nil
 }
 
-// Find these confirmations
-// write error if fails or write no-content if it doesn't exist
-func (a *Api) checkFoundConfirmations(res http.ResponseWriter, results []*models.Confirmation, err error) []*models.Confirmation {
-	if err != nil {
-		log.Println("Error finding confirmations ", err)
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION)}
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
-		return nil
-	} else if len(results) == 0 {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, STATUS_NOT_FOUND)}
-		//log.Println("No confirmations were found ", statusErr.Error())
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-		return nil
-	} else {
-		for i := range results {
-			if err = a.addProfile(results[i]); err != nil {
-				//report and move on
-				log.Println("Error getting profile", err.Error())
-			}
+func (a *Api) addProfileInfoToConfirmations(ctx context.Context, results []*models.Confirmation) []*models.Confirmation {
+	for i := range results {
+		if err := a.addProfile(results[i]); err != nil {
+			//report and move on
+			a.logger(ctx).With(zap.Error(err)).Warn("getting profile")
 		}
-		return results
 	}
+	return results
 }
 
 // Generate a notification from the given confirmation,write the error if it fails
 func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirmation, content map[string]interface{}, recipients ...string) bool {
+	ctx := req.Context()
 	templateName := conf.TemplateName
 	if templateName == models.TemplateNameUndefined {
 		switch conf.Type {
@@ -328,12 +387,19 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 			templateName = models.TemplateNamePasswordReset
 		case models.TypeCareteamInvite:
 			templateName = models.TemplateNameCareteamInvite
+			has, err := conf.HasPermission("follow")
+			if err != nil {
+				a.logger(ctx).With(zap.Error(err)).Warn("permissions check failed; falling back to non-alerting notification")
+			} else if has {
+				templateName = models.TemplateNameCareteamInviteWithAlerting
+			}
 		case models.TypeSignUp:
 			templateName = models.TemplateNameSignup
 		case models.TypeNoAccount:
 			templateName = models.TemplateNameNoAccount
 		default:
-			log.Printf("Unknown confirmation type %s", conf.Type)
+			a.logger(ctx).With(zap.String("type", string(conf.Type))).
+				Info("unknown confirmation type")
 			return false
 		}
 	}
@@ -343,13 +409,14 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 
 	template, ok := a.templates[templateName]
 	if !ok {
-		log.Printf("Unknown template type %s", templateName)
+		a.logger(ctx).With(zap.String("template", string(templateName))).
+			Info("unknown template type")
 		return false
 	}
 
 	subject, body, err := template.Execute(content)
 	if err != nil {
-		log.Printf("Error executing email template %s", err)
+		a.logger(ctx).With(zap.Error(err)).Error("executing email template")
 		return false
 	}
 
@@ -362,7 +429,7 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 	}
 
 	if status, details := a.notifier.Send(addresses, subject, body); status != http.StatusOK {
-		a.logger.Errorw(
+		a.logger(ctx).Errorw(
 			"error sending email",
 			"email", addresses,
 			"subject", subject,
@@ -375,21 +442,29 @@ func (a *Api) createAndSendNotification(req *http.Request, conf *models.Confirma
 }
 
 // find and validate the token
+//
+// The token's userID field is added to the context's logger.
 func (a *Api) token(res http.ResponseWriter, req *http.Request) *shoreline.TokenData {
+	ctx := req.Context()
 	if token := req.Header.Get(TP_SESSION_TOKEN); token != "" {
 		td := a.sl.CheckToken(token)
 
 		if td == nil {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_INVALID_TOKEN)}
-			log.Printf("token %v err[%v] ", token, statusErr)
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+			a.sendError(ctx, res, http.StatusForbidden, STATUS_INVALID_TOKEN,
+				zap.String("token", token))
 			return nil
 		}
 		//all good!
+
+		ctxLog := a.logger(ctx).With(zap.String("token's userID", td.UserID))
+		if td.IsServer {
+			ctxLog = a.logger(ctx).With(zap.String("token's userID", "<server>"))
+		}
+		*req = *req.WithContext(context.WithValue(ctx, ctxLoggerKey{}, ctxLog))
+
 		return td
 	}
-	statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_NO_TOKEN)}
-	a.sendModelAsResWithStatus(res, statusErr, http.StatusUnauthorized)
+	a.sendError(ctx, res, http.StatusUnauthorized, STATUS_NO_TOKEN)
 	return nil
 }
 
@@ -409,9 +484,9 @@ func (a *Api) logMetricAsServer(name string) {
 
 // Find existing user based on the given indentifier
 // The indentifier could be either an id or email address
-func (a *Api) findExistingUser(indentifier, token string) *shoreline.UserData {
+func (a *Api) findExistingUser(ctx context.Context, indentifier, token string) *shoreline.UserData {
 	if usr, err := a.sl.GetUser(indentifier, token); err != nil {
-		log.Printf("Error [%s] trying to get existing users details", err.Error())
+		a.logger(ctx).With(zap.Error(err)).Error("getting existing user details")
 		return nil
 	} else {
 		return usr
@@ -427,9 +502,11 @@ func (a *Api) ensureIdSet(ctx context.Context, userId string, confirmations []*m
 	for i := range confirmations {
 		//set the userid if not set already
 		if confirmations[i].UserId == "" {
-			log.Println("UserId wasn't set for invite so setting it")
+			a.logger(ctx).Debug("UserId wasn't set for invite so setting it")
 			confirmations[i].UserId = userId
-			a.Store.UpsertConfirmation(ctx, confirmations[i])
+			if err := a.Store.UpsertConfirmation(ctx, confirmations[i]); err != nil {
+				a.logger(ctx).With(zap.Error(err)).Warn("upserting confirmation")
+			}
 		}
 	}
 }
@@ -482,9 +559,9 @@ func (a *Api) populateRestrictions(ctx context.Context, user shoreline.UserData,
 	return nil
 }
 
-func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{}, statusCode int) {
+func (a *Api) sendModelAsResWithStatus(ctx context.Context, res http.ResponseWriter, model interface{}, statusCode int) {
 	if jsonDetails, err := json.Marshal(model); err != nil {
-		log.Printf("Error [%s] trying to send model [%s]", err.Error(), model)
+		a.logger(ctx).With("model", model, zap.Error(err)).Errorf("trying to send model")
 		http.Error(res, "Error marshaling data for response", http.StatusInternalServerError)
 	} else {
 		res.Header().Set("content-type", "application/json")
@@ -493,42 +570,71 @@ func (a *Api) sendModelAsResWithStatus(res http.ResponseWriter, model interface{
 	}
 }
 
-func (a *Api) sendError(res http.ResponseWriter, statusCode int, reason string, extras ...interface{}) {
-	_, file, line, ok := runtime.Caller(1)
-	if ok {
-		segments := strings.Split(file, "/")
-		file = segments[len(segments)-1]
-	} else {
-		file = "???"
-		line = 0
-	}
-
-	messages := make([]string, len(extras))
-	for index, extra := range extras {
-		messages[index] = fmt.Sprintf("%v", extra)
-	}
-
-	log.Printf("%s:%d RESPONSE ERROR: [%d %s] %s", file, line, statusCode, reason, strings.Join(messages, "; "))
-	a.sendModelAsResWithStatus(res, status.NewStatus(statusCode, reason), statusCode)
+func (a *Api) sendError(ctx context.Context, res http.ResponseWriter, statusCode int, reason string, extras ...interface{}) {
+	a.sendErrorLog(ctx, statusCode, reason, extras...)
+	a.sendModelAsResWithStatus(ctx, res, status.NewStatus(statusCode, reason), statusCode)
 }
 
-func (a *Api) sendErrorWithCode(res http.ResponseWriter, statusCode int, errorCode int, reason string, extras ...interface{}) {
-	_, file, line, ok := runtime.Caller(1)
-	if ok {
-		segments := strings.Split(file, "/")
-		file = segments[len(segments)-1]
+func (a *Api) sendErrorWithCode(ctx context.Context, res http.ResponseWriter, statusCode int, errorCode int, reason string, extras ...interface{}) {
+	a.sendErrorLog(ctx, statusCode, reason, extras...)
+	a.sendModelAsResWithStatus(ctx, res, status.NewStatusWithError(statusCode, errorCode, reason), statusCode)
+}
+
+func (a *Api) sendErrorLog(ctx context.Context, code int, reason string, extras ...interface{}) {
+	details := splitExtrasAndErrorsAndFields(extras)
+	log := a.logger(ctx).WithOptions(zap.AddCallerSkip(2)).
+		Desugar().With(details.Fields...).Sugar().
+		With(zap.Int("code", code))
+	if len(details.NonErrors) > 0 {
+		log = log.With(zap.Array("extras", zapArrayAny(details.NonErrors)))
+	}
+	if len(details.Errors) == 1 {
+		log = log.With(zap.Error(details.Errors[0]))
+	} else if len(details.Errors) > 1 {
+		log = log.With(zap.Errors("errors", details.Errors))
+	}
+	if code < http.StatusInternalServerError || len(details.Errors) == 0 {
+		// if there are no errors, use info to skip the stack trace, as it's
+		// probably not useful
+		log.Info(reason)
 	} else {
-		file = "???"
-		line = 0
+		log.Error(reason)
 	}
+}
 
-	messages := make([]string, len(extras))
-	for index, extra := range extras {
-		messages[index] = fmt.Sprintf("%v", extra)
+// sendOK helps send a 200 response with a standard form and optional message.
+func (a *Api) sendOK(ctx context.Context, res http.ResponseWriter, reason string) {
+	a.sendModelAsResWithStatus(ctx, res, status.NewStatus(http.StatusOK, reason), http.StatusOK)
+}
+
+type extrasDetails struct {
+	Errors    []error
+	NonErrors []interface{}
+	Fields    []zap.Field
+}
+
+func splitExtrasAndErrorsAndFields(extras []interface{}) extrasDetails {
+	details := extrasDetails{
+		Errors:    []error{},
+		NonErrors: []interface{}{},
+		Fields:    []zap.Field{},
 	}
-
-	log.Printf("%s:%d RESPONSE ERROR: [%d %s] %s", file, line, statusCode, reason, strings.Join(messages, "; "))
-	a.sendModelAsResWithStatus(res, status.NewStatusWithError(statusCode, errorCode, reason), statusCode)
+	for _, extra := range extras {
+		if err, ok := extra.(error); ok {
+			if err != nil {
+				details.Errors = append(details.Errors, err)
+			}
+		} else if field, ok := extra.(zap.Field); ok {
+			details.Fields = append(details.Fields, field)
+		} else if extraErrs, ok := extra.([]error); ok {
+			if len(extraErrs) > 0 {
+				details.Errors = append(details.Errors, extraErrs...)
+			}
+		} else {
+			details.NonErrors = append(details.NonErrors, extra)
+		}
+	}
+	return details
 }
 
 func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, groupId string, requestedPermissions commonClients.Permissions) (commonClients.Permissions, error) {
@@ -547,4 +653,15 @@ func (a *Api) tokenUserHasRequestedPermissions(tokenData *shoreline.TokenData, g
 		}
 		return finalPermissions, nil
 	}
+}
+
+// zapArrayAny helps convert extras to strings for inclusion in a structured
+// log message.
+func zapArrayAny(extras []interface{}) zapcore.ArrayMarshalerFunc {
+	return zapcore.ArrayMarshalerFunc(func(enc zapcore.ArrayEncoder) error {
+		for _, extra := range extras {
+			enc.AppendString(fmt.Sprintf("%v", extra))
+		}
+		return nil
+	})
 }

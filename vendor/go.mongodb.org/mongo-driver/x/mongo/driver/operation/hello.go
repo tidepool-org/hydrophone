@@ -15,9 +15,7 @@ import (
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/internal/bsonutil"
-	"go.mongodb.org/mongo-driver/internal/driverutil"
-	"go.mongodb.org/mongo-driver/internal/handshake"
+	"go.mongodb.org/mongo-driver/internal"
 	"go.mongodb.org/mongo-driver/mongo/address"
 	"go.mongodb.org/mongo-driver/mongo/description"
 	"go.mongodb.org/mongo-driver/version"
@@ -32,6 +30,7 @@ import (
 // sharded clusters is 512.
 const maxClientMetadataSize = 512
 
+const awsLambdaPrefix = "AWS_Lambda_"
 const driverName = "mongo-go-driver"
 
 // Hello is used to run the handshake operation.
@@ -125,30 +124,48 @@ func (h *Hello) Result(addr address.Address) description.Server {
 	return description.NewServer(addr, bson.Raw(h.res))
 }
 
-const dockerEnvPath = "/.dockerenv"
+const (
+	// FaaS environment variable names
+	envVarAWSExecutionEnv        = "AWS_EXECUTION_ENV"
+	envVarAWSLambdaRuntimeAPI    = "AWS_LAMBDA_RUNTIME_API"
+	envVarFunctionsWorkerRuntime = "FUNCTIONS_WORKER_RUNTIME"
+	envVarKService               = "K_SERVICE"
+	envVarFunctionName           = "FUNCTION_NAME"
+	envVarVercel                 = "VERCEL"
+)
 
 const (
-	// Runtime names
-	runtimeNameDocker = "docker"
+	// FaaS environment variable names
+	envVarAWSRegion                   = "AWS_REGION"
+	envVarAWSLambdaFunctionMemorySize = "AWS_LAMBDA_FUNCTION_MEMORY_SIZE"
+	envVarFunctionMemoryMB            = "FUNCTION_MEMORY_MB"
+	envVarFunctionTimeoutSec          = "FUNCTION_TIMEOUT_SEC"
+	envVarFunctionRegion              = "FUNCTION_REGION"
+	envVarVercelRegion                = "VERCEL_REGION"
+)
 
-	// Orchestrator names
-	orchestratorNameK8s = "kubernetes"
+const (
+	// FaaS environment names used by the client
+	envNameAWSLambda = "aws.lambda"
+	envNameAzureFunc = "azure.func"
+	envNameGCPFunc   = "gcp.func"
+	envNameVercel    = "vercel"
 )
 
 // getFaasEnvName parses the FaaS environment variable name and returns the
 // corresponding name used by the client. If none of the variables or variables
-// for multiple names are populated the FaaS values MUST be entirely omitted.
-// When variables for multiple "client.env.name" values are present, "vercel"
-// takes precedence over "aws.lambda"; any other combination MUST cause FaaS
-// values to be entirely omitted.
+// for multiple names are populated the client.env value MUST be entirely
+// omitted. When variables for multiple "client.env.name" values are present,
+// "vercel" takes precedence over "aws.lambda"; any other combination MUST cause
+// "client.env" to be entirely omitted.
 func getFaasEnvName() string {
 	envVars := []string{
-		driverutil.EnvVarAWSExecutionEnv,
-		driverutil.EnvVarAWSLambdaRuntimeAPI,
-		driverutil.EnvVarFunctionsWorkerRuntime,
-		driverutil.EnvVarKService,
-		driverutil.EnvVarFunctionName,
-		driverutil.EnvVarVercel,
+		envVarAWSExecutionEnv,
+		envVarAWSLambdaRuntimeAPI,
+		envVarFunctionsWorkerRuntime,
+		envVarKService,
+		envVarFunctionName,
+		envVarVercel,
 	}
 
 	// If none of the variables are populated the client.env value MUST be
@@ -164,23 +181,23 @@ func getFaasEnvName() string {
 		var name string
 
 		switch envVar {
-		case driverutil.EnvVarAWSExecutionEnv:
-			if !strings.HasPrefix(val, driverutil.AwsLambdaPrefix) {
+		case envVarAWSExecutionEnv:
+			if !strings.HasPrefix(val, awsLambdaPrefix) {
 				continue
 			}
 
-			name = driverutil.EnvNameAWSLambda
-		case driverutil.EnvVarAWSLambdaRuntimeAPI:
-			name = driverutil.EnvNameAWSLambda
-		case driverutil.EnvVarFunctionsWorkerRuntime:
-			name = driverutil.EnvNameAzureFunc
-		case driverutil.EnvVarKService, driverutil.EnvVarFunctionName:
-			name = driverutil.EnvNameGCPFunc
-		case driverutil.EnvVarVercel:
+			name = envNameAWSLambda
+		case envVarAWSLambdaRuntimeAPI:
+			name = envNameAWSLambda
+		case envVarFunctionsWorkerRuntime:
+			name = envNameAzureFunc
+		case envVarKService, envVarFunctionName:
+			name = envNameGCPFunc
+		case envVarVercel:
 			// "vercel" takes precedence over "aws.lambda".
-			delete(names, driverutil.EnvNameAWSLambda)
+			delete(names, envNameAWSLambda)
 
-			name = driverutil.EnvNameVercel
+			name = envNameVercel
 		}
 
 		names[name] = struct{}{}
@@ -198,31 +215,6 @@ func getFaasEnvName() string {
 	}
 
 	return ""
-}
-
-type containerInfo struct {
-	runtime      string
-	orchestrator string
-}
-
-// getContainerEnvInfo returns runtime and orchestrator of a container.
-// If no fields is populated, the client.env.container value MUST be entirely
-// omitted.
-func getContainerEnvInfo() *containerInfo {
-	var runtime, orchestrator string
-	if _, err := os.Stat(dockerEnvPath); !os.IsNotExist(err) {
-		runtime = runtimeNameDocker
-	}
-	if v := os.Getenv(driverutil.EnvVarK8s); v != "" {
-		orchestrator = orchestratorNameK8s
-	}
-	if runtime != "" || orchestrator != "" {
-		return &containerInfo{
-			runtime:      runtime,
-			orchestrator: orchestrator,
-		}
-	}
-	return nil
 }
 
 // appendClientAppName appends the application metadata to the dst. It is the
@@ -263,20 +255,14 @@ func appendClientEnv(dst []byte, omitNonName, omitDoc bool) ([]byte, error) {
 	}
 
 	name := getFaasEnvName()
-	container := getContainerEnvInfo()
-	// Omit the entire 'env' if both name and container are empty because other
-	// fields depend on either of them.
-	if name == "" && container == nil {
+	if name == "" {
 		return dst, nil
 	}
 
 	var idx int32
 
 	idx, dst = bsoncore.AppendDocumentElementStart(dst, "env")
-
-	if name != "" {
-		dst = bsoncore.AppendStringElement(dst, "name", name)
-	}
+	dst = bsoncore.AppendStringElement(dst, "name", name)
 
 	addMem := func(envVar string) []byte {
 		mem := os.Getenv(envVar)
@@ -319,33 +305,16 @@ func appendClientEnv(dst []byte, omitNonName, omitDoc bool) ([]byte, error) {
 	}
 
 	if !omitNonName {
-		// No other FaaS fields will be populated if the name is empty.
 		switch name {
-		case driverutil.EnvNameAWSLambda:
-			dst = addMem(driverutil.EnvVarAWSLambdaFunctionMemorySize)
-			dst = addRegion(driverutil.EnvVarAWSRegion)
-		case driverutil.EnvNameGCPFunc:
-			dst = addMem(driverutil.EnvVarFunctionMemoryMB)
-			dst = addRegion(driverutil.EnvVarFunctionRegion)
-			dst = addTimeout(driverutil.EnvVarFunctionTimeoutSec)
-		case driverutil.EnvNameVercel:
-			dst = addRegion(driverutil.EnvVarVercelRegion)
-		}
-	}
-
-	if container != nil {
-		var idxCntnr int32
-		idxCntnr, dst = bsoncore.AppendDocumentElementStart(dst, "container")
-		if container.runtime != "" {
-			dst = bsoncore.AppendStringElement(dst, "runtime", container.runtime)
-		}
-		if container.orchestrator != "" {
-			dst = bsoncore.AppendStringElement(dst, "orchestrator", container.orchestrator)
-		}
-		var err error
-		dst, err = bsoncore.AppendDocumentEnd(dst, idxCntnr)
-		if err != nil {
-			return dst, err
+		case envNameAWSLambda:
+			dst = addMem(envVarAWSLambdaFunctionMemorySize)
+			dst = addRegion(envVarAWSRegion)
+		case envNameGCPFunc:
+			dst = addMem(envVarFunctionMemoryMB)
+			dst = addRegion(envVarFunctionRegion)
+			dst = addTimeout(envVarFunctionTimeoutSec)
+		case envNameVercel:
+			dst = addRegion(envVarVercelRegion)
 		}
 	}
 
@@ -388,25 +357,21 @@ func appendClientPlatform(dst []byte) []byte {
 //			name: "<string>"
 //		},
 //		driver: {
-//			name: "<string>",
-//			version: "<string>"
+//		      	name: "<string>",
+//		        version: "<string>"
 //		},
 //		platform: "<string>",
 //		os: {
-//			type: "<string>",
-//			name: "<string>",
-//			architecture: "<string>",
-//			version: "<string>"
+//		        type: "<string>",
+//		        name: "<string>",
+//		        architecture: "<string>",
+//		        version: "<string>"
 //		},
 //		env: {
-//			name: "<string>",
-//			timeout_sec: 42,
-//			memory_mb: 1024,
-//			region: "<string>",
-//			container: {
-//				runtime: "<string>",
-//				orchestrator: "<string>"
-//			}
+//		        name: "<string>",
+//		        timeout_sec: 42,
+//		        memory_mb: 1024,
+//		        region: "<string>",
 //		}
 //	}
 func encodeClientMetadata(appname string, maxLen int) ([]byte, error) {
@@ -455,7 +420,7 @@ retry:
 	}
 
 	if len(dst) > maxLen {
-		// Implementers SHOULD cumulatively update fields in the
+		// Implementors SHOULD cumulatively update fields in the
 		// following order until the document is under the size limit
 		//
 		//    1. Omit fields from ``env`` except ``env.name``
@@ -530,10 +495,10 @@ func (h *Hello) handshakeCommand(dst []byte, desc description.SelectedServer) ([
 func (h *Hello) command(dst []byte, desc description.SelectedServer) ([]byte, error) {
 	// Use "hello" if topology is LoadBalanced, API version is declared or server
 	// has responded with "helloOk". Otherwise, use legacy hello.
-	if h.loadBalanced || h.serverAPI != nil || desc.Server.HelloOK {
+	if desc.Kind == description.LoadBalanced || h.serverAPI != nil || desc.Server.HelloOK {
 		dst = bsoncore.AppendInt32Element(dst, "hello", 1)
 	} else {
-		dst = bsoncore.AppendInt32Element(dst, handshake.LegacyHello, 1)
+		dst = bsoncore.AppendInt32Element(dst, internal.LegacyHello, 1)
 	}
 	dst = bsoncore.AppendBooleanElement(dst, "helloOk", true)
 
@@ -571,16 +536,8 @@ func (h *Hello) StreamResponse(ctx context.Context, conn driver.StreamerConnecti
 	return h.createOperation().ExecuteExhaust(ctx, conn)
 }
 
-// isLegacyHandshake returns True if server API version is not requested and
-// loadBalanced is False. If this is the case, then the drivers MUST use legacy
-// hello for the first message of the initial handshake with the OP_QUERY
-// protocol
-func isLegacyHandshake(srvAPI *driver.ServerAPIOptions, loadbalanced bool) bool {
-	return srvAPI == nil && !loadbalanced
-}
-
 func (h *Hello) createOperation() driver.Operation {
-	op := driver.Operation{
+	return driver.Operation{
 		Clock:      h.clock,
 		CommandFn:  h.command,
 		Database:   "admin",
@@ -591,36 +548,23 @@ func (h *Hello) createOperation() driver.Operation {
 		},
 		ServerAPI: h.serverAPI,
 	}
-
-	if isLegacyHandshake(h.serverAPI, h.loadBalanced) {
-		op.Legacy = driver.LegacyHandshake
-	}
-
-	return op
 }
 
 // GetHandshakeInformation performs the MongoDB handshake for the provided connection and returns the relevant
 // information about the server. This function implements the driver.Handshaker interface.
 func (h *Hello) GetHandshakeInformation(ctx context.Context, _ address.Address, c driver.Connection) (driver.HandshakeInformation, error) {
-	deployment := driver.SingleConnectionDeployment{C: c}
-
-	op := driver.Operation{
+	err := driver.Operation{
 		Clock:      h.clock,
 		CommandFn:  h.handshakeCommand,
-		Deployment: deployment,
+		Deployment: driver.SingleConnectionDeployment{C: c},
 		Database:   "admin",
 		ProcessResponseFn: func(info driver.ResponseInfo) error {
 			h.res = info.ServerResponse
 			return nil
 		},
 		ServerAPI: h.serverAPI,
-	}
-
-	if isLegacyHandshake(h.serverAPI, h.loadBalanced) {
-		op.Legacy = driver.LegacyHandshake
-	}
-
-	if err := op.Execute(ctx); err != nil {
+	}.Execute(ctx)
+	if err != nil {
 		return driver.HandshakeInformation{}, err
 	}
 
@@ -633,13 +577,10 @@ func (h *Hello) GetHandshakeInformation(ctx context.Context, _ address.Address, 
 	if serverConnectionID, ok := h.res.Lookup("connectionId").AsInt64OK(); ok {
 		info.ServerConnectionID = &serverConnectionID
 	}
-
-	var err error
-
 	// Cast to bson.Raw to lookup saslSupportedMechs to avoid converting from bsoncore.Value to bson.RawValue for the
 	// StringSliceFromRawValue call.
 	if saslSupportedMechs, lookupErr := bson.Raw(h.res).LookupErr("saslSupportedMechs"); lookupErr == nil {
-		info.SaslSupportedMechs, err = bsonutil.StringSliceFromRawValue("saslSupportedMechs", saslSupportedMechs)
+		info.SaslSupportedMechs, err = internal.StringSliceFromRawValue("saslSupportedMechs", saslSupportedMechs)
 	}
 	return info, err
 }

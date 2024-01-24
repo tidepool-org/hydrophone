@@ -7,7 +7,6 @@
 package description
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -31,46 +30,8 @@ func (ssf ServerSelectorFunc) SelectServer(t Topology, s []Server) ([]Server, er
 	return ssf(t, s)
 }
 
-// serverSelectorInfo contains metadata concerning the server selector for the
-// purpose of publication.
-type serverSelectorInfo struct {
-	Type      string
-	Data      string               `json:",omitempty"`
-	Selectors []serverSelectorInfo `json:",omitempty"`
-}
-
-// String returns the JSON string representation of the serverSelectorInfo.
-func (sss serverSelectorInfo) String() string {
-	bytes, _ := json.Marshal(sss)
-
-	return string(bytes)
-}
-
-// serverSelectorInfoGetter is an interface that defines an info() method to
-// get the serverSelectorInfo.
-type serverSelectorInfoGetter interface {
-	info() serverSelectorInfo
-}
-
 type compositeSelector struct {
 	selectors []ServerSelector
-}
-
-func (cs *compositeSelector) info() serverSelectorInfo {
-	csInfo := serverSelectorInfo{Type: "compositeSelector"}
-
-	for _, sel := range cs.selectors {
-		if getter, ok := sel.(serverSelectorInfoGetter); ok {
-			csInfo.Selectors = append(csInfo.Selectors, getter.info())
-		}
-	}
-
-	return csInfo
-}
-
-// String returns the JSON string representation of the compositeSelector.
-func (cs *compositeSelector) String() string {
-	return cs.info().String()
 }
 
 // CompositeSelector combines multiple selectors into a single selector by applying them in order to the candidates
@@ -107,16 +68,8 @@ func LatencySelector(latency time.Duration) ServerSelector {
 	return &latencySelector{latency: latency}
 }
 
-func (latencySelector) info() serverSelectorInfo {
-	return serverSelectorInfo{Type: "latencySelector"}
-}
-
-func (selector latencySelector) String() string {
-	return selector.info().String()
-}
-
-func (selector *latencySelector) SelectServer(t Topology, candidates []Server) ([]Server, error) {
-	if selector.latency < 0 {
+func (ls *latencySelector) SelectServer(t Topology, candidates []Server) ([]Server, error) {
+	if ls.latency < 0 {
 		return candidates, nil
 	}
 	if t.Kind == LoadBalanced {
@@ -141,7 +94,7 @@ func (selector *latencySelector) SelectServer(t Topology, candidates []Server) (
 			return candidates, nil
 		}
 
-		max := min + selector.latency
+		max := min + ls.latency
 
 		viableIndexes := make([]int, 0, len(candidates))
 		for i, candidate := range candidates {
@@ -162,88 +115,75 @@ func (selector *latencySelector) SelectServer(t Topology, candidates []Server) (
 	}
 }
 
-type writeServerSelector struct{}
-
 // WriteSelector selects all the writable servers.
 func WriteSelector() ServerSelector {
-	return writeServerSelector{}
-}
-
-func (writeServerSelector) info() serverSelectorInfo {
-	return serverSelectorInfo{Type: "writeSelector"}
-}
-
-func (selector writeServerSelector) String() string {
-	return selector.info().String()
-}
-
-func (writeServerSelector) SelectServer(t Topology, candidates []Server) ([]Server, error) {
-	switch t.Kind {
-	case Single, LoadBalanced:
-		return candidates, nil
-	default:
-		result := []Server{}
-		for _, candidate := range candidates {
-			switch candidate.Kind {
-			case Mongos, RSPrimary, Standalone:
-				result = append(result, candidate)
+	return ServerSelectorFunc(func(t Topology, candidates []Server) ([]Server, error) {
+		switch t.Kind {
+		case Single, LoadBalanced:
+			return candidates, nil
+		default:
+			result := []Server{}
+			for _, candidate := range candidates {
+				switch candidate.Kind {
+				case Mongos, RSPrimary, Standalone:
+					result = append(result, candidate)
+				}
 			}
+			return result, nil
 		}
-		return result, nil
-	}
-}
-
-type readPrefServerSelector struct {
-	rp                *readpref.ReadPref
-	isOutputAggregate bool
+	})
 }
 
 // ReadPrefSelector selects servers based on the provided read preference.
 func ReadPrefSelector(rp *readpref.ReadPref) ServerSelector {
-	return readPrefServerSelector{
-		rp:                rp,
-		isOutputAggregate: false,
-	}
+	return readPrefSelector(rp, false)
 }
 
-func (selector readPrefServerSelector) info() serverSelectorInfo {
-	return serverSelectorInfo{
-		Type: "readPrefSelector",
-		Data: selector.rp.String(),
-	}
-}
-
-func (selector readPrefServerSelector) String() string {
-	return selector.info().String()
-}
-
-func (selector readPrefServerSelector) SelectServer(t Topology, candidates []Server) ([]Server, error) {
-	if t.Kind == LoadBalanced {
-		// In LoadBalanced mode, there should only be one server in the topology and it must be selected. We check
-		// this before checking MaxStaleness support because there's no monitoring in this mode, so the candidate
-		// server wouldn't have a wire version set, which would result in an error.
-		return candidates, nil
-	}
-
-	switch t.Kind {
-	case Single:
-		return candidates, nil
-	case ReplicaSetNoPrimary, ReplicaSetWithPrimary:
-		return selectForReplicaSet(selector.rp, selector.isOutputAggregate, t, candidates)
-	case Sharded:
-		return selectByKind(candidates, Mongos), nil
-	}
-
-	return nil, nil
-}
-
-// OutputAggregateSelector selects servers based on the provided read preference
-// given that the underlying operation is aggregate with an output stage.
+// OutputAggregateSelector selects servers based on the provided read preference given that the underlying operation is
+// aggregate with an output stage.
 func OutputAggregateSelector(rp *readpref.ReadPref) ServerSelector {
-	return readPrefServerSelector{
-		rp:                rp,
-		isOutputAggregate: true,
+	return readPrefSelector(rp, true)
+}
+
+func readPrefSelector(rp *readpref.ReadPref, isOutputAggregate bool) ServerSelector {
+	return ServerSelectorFunc(func(t Topology, candidates []Server) ([]Server, error) {
+		if t.Kind == LoadBalanced {
+			// In LoadBalanced mode, there should only be one server in the topology and it must be selected. We check
+			// this before checking MaxStaleness support because there's no monitoring in this mode, so the candidate
+			// server wouldn't have a wire version set, which would result in an error.
+			return candidates, nil
+		}
+
+		if _, set := rp.MaxStaleness(); set {
+			for _, s := range candidates {
+				if s.Kind != Unknown {
+					if err := maxStalenessSupported(s.WireVersion); err != nil {
+						return nil, err
+					}
+				}
+			}
+		}
+
+		switch t.Kind {
+		case Single:
+			return candidates, nil
+		case ReplicaSetNoPrimary, ReplicaSetWithPrimary:
+			return selectForReplicaSet(rp, isOutputAggregate, t, candidates)
+		case Sharded:
+			return selectByKind(candidates, Mongos), nil
+		}
+
+		return nil, nil
+	})
+}
+
+// maxStalenessSupported returns an error if the given server version does not support max staleness.
+func maxStalenessSupported(wireVersion *VersionRange) error {
+	if wireVersion != nil && wireVersion.Max < 5 {
+		return fmt.Errorf("max staleness is only supported for servers 3.4 or newer")
 	}
+
+	return nil
 }
 
 func selectForReplicaSet(rp *readpref.ReadPref, isOutputAggregate bool, t Topology, candidates []Server) ([]Server, error) {

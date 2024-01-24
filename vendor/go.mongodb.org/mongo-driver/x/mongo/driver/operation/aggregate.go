@@ -13,7 +13,6 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/event"
-	"go.mongodb.org/mongo-driver/internal/driverutil"
 	"go.mongodb.org/mongo-driver/mongo/description"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -112,7 +111,6 @@ func (a *Aggregate) Execute(ctx context.Context) error {
 		IsOutputAggregate:              a.hasOutputStage,
 		MaxTime:                        a.maxTime,
 		Timeout:                        a.timeout,
-		Name:                           driverutil.AggregateOp,
 	}.Execute(ctx)
 
 }

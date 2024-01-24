@@ -7,18 +7,18 @@ import (
 
 	"github.com/tidepool-org/go-common/clients/mongo"
 	"github.com/tidepool-org/hydrophone/models"
+	"github.com/tidepool-org/hydrophone/testutil"
 )
 
 func TestMongoStoreConfirmationOperations(t *testing.T) {
 
-	confirmation, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
+	confirmation := MustConfirmation(t, models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
 	confirmation.Email = "test@test.com"
 
-	doesNotExist, _ := models.NewConfirmation(models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
-
+	doesNotExist := MustConfirmation(t, models.TypePasswordReset, models.TemplateNamePasswordReset, "123.456")
 	testingConfig := &mongo.Config{ConnectionString: "mongodb://127.0.0.1/confirm_test", Database: "confirm_test"}
 
-	mc, err := NewMongoStoreClient(testingConfig)
+	mc, err := NewMongoStoreClient(testingConfig, testutil.NewLogger(t))
 	if err != nil {
 		t.Fatalf("we could not create the store: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 
 	//Find with other statuses
 	const fromUser, toUser, toEmail, toOtherEmail = "999.111", "312.123", "some@email.org", "some@other.org"
-	c1, _ := models.NewConfirmation(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, fromUser)
+	c1 := MustConfirmation(t, models.TypeCareteamInvite, models.TemplateNameCareteamInvite, fromUser)
 	c1.UserId = toUser
 	c1.Email = toEmail
 	c1.UpdateStatus(models.StatusDeclined)
@@ -88,7 +88,7 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 	// Sleep some so the second confirmation created time is after the first confirmation created time
 	time.Sleep(time.Second)
 
-	c2, _ := models.NewConfirmation(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, fromUser)
+	c2 := MustConfirmation(t, models.TypeCareteamInvite, models.TemplateNameCareteamInvite, fromUser)
 	c2.Email = toOtherEmail
 	c2.UpdateStatus(models.StatusCompleted)
 	mc.UpsertConfirmation(context.Background(), c2)
@@ -149,4 +149,16 @@ func TestMongoStoreConfirmationOperations(t *testing.T) {
 			t.Fatalf("status invalid: %s", confirmations[0].Status)
 		}
 	}
+}
+
+// MustConfirmation is a helper for tests that fails the test when
+// confirmation creation fails.
+func MustConfirmation(t *testing.T, theType models.Type, templateName models.TemplateName,
+	creatorID string) *models.Confirmation {
+
+	c, err := models.NewConfirmation(theType, templateName, creatorID)
+	if err != nil {
+		t.Fatalf("error creating confirmation: %s", err)
+	}
+	return c
 }

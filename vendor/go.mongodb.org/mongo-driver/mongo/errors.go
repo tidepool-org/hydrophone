@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/internal/codecutil"
 	"go.mongodb.org/mongo-driver/x/mongo/driver"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/mongocrypt"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/topology"
@@ -88,69 +87,52 @@ func replaceErrors(err error) error {
 		return MongocryptError{Code: me.Code, Message: me.Message}
 	}
 
-	if errors.Is(err, codecutil.ErrNilValue) {
-		return ErrNilValue
-	}
-
-	if marshalErr, ok := err.(codecutil.MarshalError); ok {
-		return MarshalError{
-			Value: marshalErr.Value,
-			Err:   marshalErr.Err,
-		}
-	}
-
 	return err
 }
 
-// IsDuplicateKeyError returns true if err is a duplicate key error.
+// IsDuplicateKeyError returns true if err is a duplicate key error
 func IsDuplicateKeyError(err error) bool {
-	if se := ServerError(nil); errors.As(err, &se) {
-		return se.HasErrorCode(11000) || // Duplicate key error.
-			se.HasErrorCode(11001) || // Duplicate key error on update.
-			// Duplicate key error in a capped collection. See SERVER-7164.
-			se.HasErrorCode(12582) ||
-			// Mongos insert error caused by a duplicate key error. See
-			// SERVER-11493.
-			se.HasErrorCodeWithMessage(16460, " E11000 ")
+	// handles SERVER-7164 and SERVER-11493
+	for ; err != nil; err = unwrap(err) {
+		if e, ok := err.(ServerError); ok {
+			return e.HasErrorCode(11000) || e.HasErrorCode(11001) || e.HasErrorCode(12582) ||
+				e.HasErrorCodeWithMessage(16460, " E11000 ")
+		}
 	}
 	return false
 }
 
-// timeoutErrs is a list of error values that indicate a timeout happened.
-var timeoutErrs = [...]error{
-	context.DeadlineExceeded,
-	driver.ErrDeadlineWouldBeExceeded,
-	topology.ErrServerSelectionTimeout,
-}
-
-// IsTimeout returns true if err was caused by a timeout. For error chains,
-// IsTimeout returns true if any error in the chain was caused by a timeout.
+// IsTimeout returns true if err is from a timeout
 func IsTimeout(err error) bool {
-	// Check if the error chain contains any of the timeout error values.
-	for _, target := range timeoutErrs {
-		if errors.Is(err, target) {
+	for ; err != nil; err = unwrap(err) {
+		// check unwrappable errors together
+		if err == context.DeadlineExceeded {
 			return true
 		}
-	}
-
-	// Check if the error chain contains any error types that can indicate
-	// timeout.
-	if errors.As(err, &topology.WaitQueueTimeoutError{}) {
-		return true
-	}
-	if ce := (CommandError{}); errors.As(err, &ce) && ce.IsMaxTimeMSExpiredError() {
-		return true
-	}
-	if we := (WriteException{}); errors.As(err, &we) && we.WriteConcernError != nil && we.WriteConcernError.IsMaxTimeMSExpiredError() {
-		return true
-	}
-	if ne := net.Error(nil); errors.As(err, &ne) {
-		return ne.Timeout()
-	}
-	// Check timeout error labels.
-	if le := LabeledError(nil); errors.As(err, &le) {
-		if le.HasErrorLabel("NetworkTimeoutError") || le.HasErrorLabel("ExceededTimeLimitError") {
+		if err == driver.ErrDeadlineWouldBeExceeded {
 			return true
+		}
+		if err == topology.ErrServerSelectionTimeout {
+			return true
+		}
+		if _, ok := err.(topology.WaitQueueTimeoutError); ok {
+			return true
+		}
+		if ce, ok := err.(CommandError); ok && ce.IsMaxTimeMSExpiredError() {
+			return true
+		}
+		if we, ok := err.(WriteException); ok && we.WriteConcernError != nil &&
+			we.WriteConcernError.IsMaxTimeMSExpiredError() {
+			return true
+		}
+		if ne, ok := err.(net.Error); ok {
+			return ne.Timeout()
+		}
+		//timeout error labels
+		if le, ok := err.(LabeledError); ok {
+			if le.HasErrorLabel("NetworkTimeoutError") || le.HasErrorLabel("ExceededTimeLimitError") {
+				return true
+			}
 		}
 	}
 

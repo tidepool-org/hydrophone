@@ -95,9 +95,6 @@ func MergeCollectionOptions(opts ...*CollectionOptions) *CollectionOptions {
 		if opt.Registry != nil {
 			c.Registry = opt.Registry
 		}
-		if opt.BSONOptions != nil {
-			c.BSONOptions = opt.BSONOptions
-		}
 	}
 
 	return c

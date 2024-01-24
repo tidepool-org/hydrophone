@@ -3,14 +3,12 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"go.uber.org/zap"
 
 	clinics "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
-	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
 )
 
@@ -39,19 +37,17 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		if permissions, err := a.tokenUserHasRequestedPermissions(token, inviterID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
 		defer req.Body.Close()
 		var ib = &ClinicInvite{}
 		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-			a.logger.Errorw("error decoding invite", zap.Error(err))
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 			return
 		}
 
@@ -67,11 +63,11 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			Limit:     &limit,
 		})
 		if err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 		if response.JSON200 == nil || len(*response.JSON200) == 0 {
-			a.sendError(res, http.StatusNotFound, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusNotFound, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 
@@ -80,18 +76,24 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 
 		patientExists, err := a.checkExistingPatientOfClinic(ctx, clinicId, inviterID)
 		if err != nil {
-			a.logger.Errorw("error checking if user is already a patient of clinic", zap.Error(err))
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err,
+				"checking if user is already a patient of clinic")
 			return
 		}
 		if patientExists {
-			a.logger.Info("user is already a patient of clinic")
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingPatientMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
+			a.sendError(ctx, res, http.StatusConflict, statusExistingPatientMessage,
+				"user is already a patient of clinic")
 			return
 		}
-		if existingInvite := a.checkForDuplicateClinicInvite(req.Context(), clinicId, inviterID, res); existingInvite {
-			a.logger.Infof("clinic %s user already has or had an invite from %v", clinicId, inviterID)
+		existingInvite, err := a.checkForDuplicateClinicInvite(ctx, clinicId, inviterID)
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err,
+				zap.String("inviterID", inviterID), "clinic already has or had an invite")
+			return
+		}
+		if existingInvite {
+			a.sendError(ctx, res, http.StatusConflict, statusExistingInviteMessage,
+				zap.String("inviterID", inviterID), err)
 			return
 		}
 
@@ -107,9 +109,9 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			Role:  &role,
 			Limit: &maxClinicians,
 		}
-		listResponse, err := a.clinics.ListCliniciansWithResponse(req.Context(), clinics.ClinicId(clinicId), params)
+		listResponse, err := a.clinics.ListCliniciansWithResponse(ctx, clinics.ClinicId(clinicId), params)
 		if err != nil || response.StatusCode() != http.StatusOK {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CLINIC, err)
 			return
 		}
 		var recipients []string
@@ -119,14 +121,20 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 			}
 		}
 
-		invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNamePatientClinicInvite, inviterID, ib.Permissions)
+		invite, err := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNamePatientClinicInvite, inviterID, ib.Permissions)
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+			return
+		}
+
 		invite.ClinicId = clinicId
 
-		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
+		// addOrUpdateConfirmation logs and writes a response on errors
+		if a.addOrUpdateConfirmation(ctx, invite, res) {
 			a.logMetric("invite created", req)
 
 			if err := a.addProfile(invite); err != nil {
-				a.logger.Errorw("error adding profile information to confirmation", zap.Error(err))
+				a.logger(ctx).With(zap.Error(err)).Error(STATUS_ERR_ADDING_PROFILE)
 				return
 			} else if !suppressEmail {
 				fullName := invite.Creator.Profile.FullName
@@ -146,7 +154,7 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 				}
 			}
 
-			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+			a.sendModelAsResWithStatus(ctx, res, invite, http.StatusOK)
 			return
 		}
 	}
@@ -154,26 +162,25 @@ func (a *Api) InviteClinic(res http.ResponseWriter, req *http.Request, vars map[
 
 // Checks do they have an existing invite or are they already a team member
 // Or are they an existing user and already in the group?
-func (a *Api) checkForDuplicateClinicInvite(ctx context.Context, clinicId, invitorID string, res http.ResponseWriter) bool {
+func (a *Api) checkForDuplicateClinicInvite(ctx context.Context, clinicId, invitorID string) (bool, error) {
 
 	//already has invite from this user?
-	invites, _ := a.Store.FindConfirmations(
+	invites, err := a.Store.FindConfirmations(
 		ctx,
 		&models.Confirmation{CreatorId: invitorID, ClinicId: clinicId, Type: models.TypeCareteamInvite},
 		models.StatusPending,
 	)
+	if err != nil {
+		return false, err
+	}
 
 	if len(invites) > 0 {
 
 		//rule is we cannot send if the invite is not yet expired
 		if !invites[0].IsExpired() {
-			log.Println(statusExistingInviteMessage)
-			log.Println("last invite not yet expired")
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-			return true
+			return true, nil
 		}
 	}
 
-	return false
+	return false, nil
 }

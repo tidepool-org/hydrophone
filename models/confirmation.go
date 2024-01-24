@@ -5,8 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
+
+	"github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/platform/alerts"
 )
 
 type (
@@ -117,16 +119,31 @@ func NewConfirmationWithContext(theType Type, templateName TemplateName, creator
 	if conf, err := NewConfirmation(theType, templateName, creatorId); err != nil {
 		return nil, err
 	} else {
-		conf.AddContext(data)
+		if err := conf.AddContext(data); err != nil {
+			return nil, err
+		}
 		return conf, nil
 	}
 }
 
 // Add context data
-func (c *Confirmation) AddContext(data interface{}) {
-
-	jsonData, _ := json.Marshal(data)
+func (c *Confirmation) AddContext(data interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
 	c.Context = jsonData
+	return nil
+}
+
+// HasPermissions checks for permissions with the given name.
+func (c *Confirmation) HasPermission(name string) (bool, error) {
+	perms := clients.Permissions{}
+	err := c.DecodeContext(&perms)
+	if err != nil {
+		return false, err
+	}
+	return perms[name] != nil, nil
 }
 
 // Decode the context data into the provided type
@@ -134,7 +151,6 @@ func (c *Confirmation) DecodeContext(data interface{}) error {
 
 	if c.Context != nil {
 		if err := json.Unmarshal(c.Context, &data); err != nil {
-			log.Printf("Err: %v\n", err)
 			return err
 		}
 	}
@@ -248,9 +264,74 @@ func generateKey() (string, error) {
 
 	rb := make([]byte, length)
 	if _, err := rand.Read(rb); err != nil {
-		log.Println(err)
 		return "", err
 	} else {
 		return base64.URLEncoding.EncodeToString(rb), nil
 	}
+}
+
+// CareTeamContext specifies details associated with a Care Team Confirmation.
+type CareTeamContext struct {
+	// Permissions to be granted if the Confirmation is accepted.
+	Permissions clients.Permissions `json:"permissions"`
+	// AlertsConfig is the initial configuration of alerts for the invitee.
+	AlertsConfig *alerts.Config `json:"alertsConfig,omitempty"`
+	// Nickname is a user-friendly name for the recipient of the invitation.
+	Nickname *string `json:"nickname,omitempty"`
+}
+
+// UnmarshalJSON handles different iterations of Care Team Context.
+//
+// Originally the context was a go-common clients.Permissions
+// (map[string]map[string]interface{}), but with care partner alerting it
+// became necessary to handle both the older Permissions only Contexts, but
+// also newer Contexts in which Permissions are stored under a key. In
+// addition a hybrid Context is supported, where if permissions aren't found
+// under a key, it's assumed that every other keys is an individual
+// client.Permission.
+//
+// WARNING: this works only if the newly added context fields don't share a
+// name with a previously used permission-type. Right now that means "note",
+// "upload", and "view".
+//
+// If the API is migrated so this custom unmarshaler isn't necessary, that
+// would be a good thing.
+func (c *CareTeamContext) UnmarshalJSON(b []byte) error {
+	// noCustomUnmarshaler temporarily disables the custom JSON unmarshaler.
+	type noCustomUnmarshaler struct {
+		CareTeamContext
+		UnmarshalJSON struct{} `json:"-"`
+	}
+
+	generic := &noCustomUnmarshaler{}
+	if err := json.Unmarshal(b, &generic); err != nil {
+		return fmt.Errorf("unmarshaling Confirmation Context: %w", err)
+	}
+	if generic.AlertsConfig != nil {
+		c.AlertsConfig = generic.AlertsConfig
+	}
+	if generic.Nickname != nil && *generic.Nickname != "" {
+		c.Nickname = generic.Nickname
+	}
+	if generic.Permissions != nil {
+		c.Permissions = generic.Permissions
+	} else {
+		// As there's no permissions key, this must be an older context.
+		if err := json.Unmarshal(b, &c.Permissions); err != nil {
+			return fmt.Errorf("unmarshaling Permissions: %w", err)
+		}
+		// Alternatively, one could unmarshal into a map, and iterate over it,
+		// copying fields that don't match these below.
+		delete(c.Permissions, "alertsConfig")
+		delete(c.Permissions, "nickname")
+	}
+
+	return nil
+}
+
+func (c *CareTeamContext) Validate() error {
+	if c.AlertsConfig != nil && c.Permissions["follow"] == nil {
+		return fmt.Errorf("no alerts config without follow permission")
+	}
+	return nil
 }

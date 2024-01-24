@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"strings"
 
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
@@ -100,6 +101,9 @@ func (m *testingShorelineMock) Signup(userID, password, email string) (*shorelin
 func (m *testingShorelineMock) TokenProvide() string { return testing_token }
 
 func (m *testingShorelineMock) GetUser(userID, token string) (*shoreline.UserData, error) {
+	if prefix, _, found := strings.Cut(userID, "@"); found {
+		userID = prefix
+	}
 	for _, mockedUserID := range m.userIDs {
 		if mockedUserID == userID {
 			return m.mockUser(userID), nil

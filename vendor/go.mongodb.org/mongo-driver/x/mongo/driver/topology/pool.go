@@ -74,7 +74,6 @@ type poolConfig struct {
 	MaxConnecting    uint64
 	MaxIdleTime      time.Duration
 	MaintainInterval time.Duration
-	LoadBalanced     bool
 	PoolMonitor      *event.PoolMonitor
 	Logger           *logger.Logger
 	handshakeErrFn   func(error, uint64, *primitive.ObjectID)
@@ -94,7 +93,6 @@ type pool struct {
 	minSize       uint64
 	maxSize       uint64
 	maxConnecting uint64
-	loadBalanced  bool
 	monitor       *event.PoolMonitor
 	logger        *logger.Logger
 
@@ -208,7 +206,6 @@ func newPool(config poolConfig, connOpts ...ConnectionOption) *pool {
 		minSize:               config.MinPoolSize,
 		maxSize:               config.MaxPoolSize,
 		maxConnecting:         maxConnecting,
-		loadBalanced:          config.LoadBalanced,
 		monitor:               config.PoolMonitor,
 		logger:                config.Logger,
 		handshakeErrFn:        config.handshakeErrFn,
@@ -503,7 +500,6 @@ func (p *pool) checkOut(ctx context.Context) (conn *connection, err error) {
 				Type:    event.GetFailed,
 				Address: p.address.String(),
 				Reason:  event.ReasonConnectionErrored,
-				Error:   err,
 			})
 		}
 		return nil, err
@@ -546,7 +542,6 @@ func (p *pool) checkOut(ctx context.Context) (conn *connection, err error) {
 					Type:    event.GetFailed,
 					Address: p.address.String(),
 					Reason:  event.ReasonConnectionErrored,
-					Error:   w.err,
 				})
 			}
 			return nil, w.err
@@ -577,7 +572,6 @@ func (p *pool) checkOut(ctx context.Context) (conn *connection, err error) {
 	p.stateMu.RUnlock()
 
 	// Wait for either the wantConn to be ready or for the Context to time out.
-	start := time.Now()
 	select {
 	case <-w.ready:
 		if w.err != nil {
@@ -595,7 +589,6 @@ func (p *pool) checkOut(ctx context.Context) (conn *connection, err error) {
 					Type:    event.GetFailed,
 					Address: p.address.String(),
 					Reason:  event.ReasonConnectionErrored,
-					Error:   w.err,
 				})
 			}
 
@@ -619,8 +612,6 @@ func (p *pool) checkOut(ctx context.Context) (conn *connection, err error) {
 		}
 		return w.conn, nil
 	case <-ctx.Done():
-		duration := time.Since(start)
-
 		if mustLogPoolMessage(p) {
 			keysAndValues := logger.KeyValues{
 				logger.KeyReason, logger.ReasonConnCheckoutFailedTimout,
@@ -634,24 +625,16 @@ func (p *pool) checkOut(ctx context.Context) (conn *connection, err error) {
 				Type:    event.GetFailed,
 				Address: p.address.String(),
 				Reason:  event.ReasonTimedOut,
-				Error:   ctx.Err(),
 			})
 		}
 
-		err := WaitQueueTimeoutError{
-			Wrapped:              ctx.Err(),
-			maxPoolSize:          p.maxSize,
-			totalConnections:     p.totalConnectionCount(),
-			availableConnections: p.availableConnectionCount(),
-			waitDuration:         duration,
+		return nil, WaitQueueTimeoutError{
+			Wrapped:                      ctx.Err(),
+			PinnedCursorConnections:      atomic.LoadUint64(&p.pinnedCursorConnections),
+			PinnedTransactionConnections: atomic.LoadUint64(&p.pinnedTransactionConnections),
+			maxPoolSize:                  p.maxSize,
+			totalConnectionCount:         p.totalConnectionCount(),
 		}
-		if p.loadBalanced {
-			err.pinnedConnections = &pinnedConnections{
-				cursorConnections:      atomic.LoadUint64(&p.pinnedCursorConnections),
-				transactionConnections: atomic.LoadUint64(&p.pinnedTransactionConnections),
-			}
-		}
-		return nil, err
 	}
 }
 
@@ -895,7 +878,6 @@ func (p *pool) clear(err error, serviceID *primitive.ObjectID) {
 			Type:      event.PoolCleared,
 			Address:   p.address.String(),
 			ServiceID: serviceID,
-			Error:     err,
 		})
 	}
 }

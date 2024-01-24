@@ -112,7 +112,7 @@ func (sc *SaslClient) Start() (string, []byte, error) {
 	status := C.sspi_client_init(&sc.state, cusername, cpassword)
 
 	if status != C.SSPI_OK {
-		return mechName, nil, sc.getError("unable to initialize client")
+		return mechName, nil, sc.getError("unable to intitialize client")
 	}
 
 	payload, err := sc.Next(nil)

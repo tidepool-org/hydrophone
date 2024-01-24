@@ -26,7 +26,7 @@ type bulkWriteBatch struct {
 	indexes  []int
 }
 
-// bulkWrite performs a bulkwrite operation
+// bulkWrite perfoms a bulkwrite operation
 type bulkWrite struct {
 	comment                  interface{}
 	ordered                  *bool

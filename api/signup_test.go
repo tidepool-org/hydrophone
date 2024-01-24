@@ -3,13 +3,12 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"go.uber.org/zap"
-
 	"github.com/gorilla/mux"
+
+	"github.com/tidepool-org/hydrophone/testutil"
 )
 
 func TestSignupResponds(t *testing.T) {
@@ -219,6 +218,7 @@ func TestSignupResponds(t *testing.T) {
 		},
 	}
 
+	logger := testutil.NewLogger(t)
 	for idx, test := range tests {
 
 		if test.skip {
@@ -228,20 +228,19 @@ func TestSignupResponds(t *testing.T) {
 		//fresh each time
 		var testRtr = mux.NewRouter()
 
+		store := mockStore
 		if test.returnNone {
-			hydrophoneFindsNothing := NewApi(FAKE_CONFIG, nil, mockStoreEmpty, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates, zap.NewNop().Sugar())
-			hydrophoneFindsNothing.SetHandlers("", testRtr)
-		} else {
-			hydrophone := NewApi(FAKE_CONFIG, nil, mockStore, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, mockTemplates, zap.NewNop().Sugar())
-			hydrophone.SetHandlers("", testRtr)
+			store = mockStoreEmpty
 		}
+		h := NewApi(FAKE_CONFIG, nil, store, mockNotifier, mockShoreline, mockGatekeeper, mockMetrics, mockSeagull, nil, mockTemplates, logger)
+		h.SetHandlers("", testRtr)
 
 		var body = &bytes.Buffer{}
 		// build the body only if there is one defined in the test
 		if len(test.body) != 0 {
 			json.NewEncoder(body).Encode(test.body)
 		}
-		request, _ := http.NewRequest(test.method, test.url, body)
+		request := MustRequest(t, test.method, test.url, body)
 		if test.token != "" {
 			request.Header.Set(TP_SESSION_TOKEN, testing_token)
 		}

@@ -13,6 +13,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/internal"
 	"go.mongodb.org/mongo-driver/mongo/description"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
@@ -195,7 +196,7 @@ func (s *sessionImpl) WithTransaction(ctx context.Context, fn func(ctx SessionCo
 			if s.clientSession.TransactionRunning() {
 				// Wrap the user-provided Context in a new one that behaves like context.Background() for deadlines and
 				// cancellations, but forwards Value requests to the original one.
-				_ = s.AbortTransaction(newBackgroundContext(ctx))
+				_ = s.AbortTransaction(internal.NewBackgroundContext(ctx))
 			}
 
 			select {
@@ -227,13 +228,13 @@ func (s *sessionImpl) WithTransaction(ctx context.Context, fn func(ctx SessionCo
 		if ctx.Err() != nil {
 			// Wrap the user-provided Context in a new one that behaves like context.Background() for deadlines and
 			// cancellations, but forwards Value requests to the original one.
-			_ = s.AbortTransaction(newBackgroundContext(ctx))
+			_ = s.AbortTransaction(internal.NewBackgroundContext(ctx))
 			return nil, ctx.Err()
 		}
 
 	CommitLoop:
 		for {
-			err = s.CommitTransaction(newBackgroundContext(ctx))
+			err = s.CommitTransaction(ctx)
 			// End when error is nil, as transaction has been committed.
 			if err == nil {
 				return res, nil

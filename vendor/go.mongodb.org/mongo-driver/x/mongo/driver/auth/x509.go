@@ -9,6 +9,7 @@ package auth
 import (
 	"context"
 
+	"go.mongodb.org/mongo-driver/mongo/description"
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 	"go.mongodb.org/mongo-driver/x/mongo/driver"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/operation"
@@ -36,14 +37,20 @@ var _ SpeculativeConversation = (*x509Conversation)(nil)
 
 // FirstMessage returns the first message to be sent to the server.
 func (c *x509Conversation) FirstMessage() (bsoncore.Document, error) {
-	return createFirstX509Message(), nil
+	return createFirstX509Message(description.Server{}, ""), nil
 }
 
 // createFirstX509Message creates the first message for the X509 conversation.
-func createFirstX509Message() bsoncore.Document {
+func createFirstX509Message(desc description.Server, user string) bsoncore.Document {
 	elements := [][]byte{
 		bsoncore.AppendInt32Element(nil, "authenticate", 1),
 		bsoncore.AppendStringElement(nil, "mechanism", MongoDBX509),
+	}
+
+	// Server versions < 3.4 require the username to be included in the message. Versions >= 3.4 will extract the
+	// username from the certificate.
+	if desc.WireVersion != nil && desc.WireVersion.Max < 5 {
+		elements = append(elements, bsoncore.AppendStringElement(nil, "user", user))
 	}
 
 	return bsoncore.BuildDocument(nil, elements...)
@@ -62,7 +69,7 @@ func (a *MongoDBX509Authenticator) CreateSpeculativeConversation() (SpeculativeC
 
 // Auth authenticates the provided connection by conducting an X509 authentication conversation.
 func (a *MongoDBX509Authenticator) Auth(ctx context.Context, cfg *Config) error {
-	requestDoc := createFirstX509Message()
+	requestDoc := createFirstX509Message(cfg.Description, a.User)
 	authCmd := operation.
 		NewCommand(requestDoc).
 		Database("$external").

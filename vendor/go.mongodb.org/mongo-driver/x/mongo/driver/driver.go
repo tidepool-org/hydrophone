@@ -10,7 +10,7 @@ import (
 	"context"
 	"time"
 
-	"go.mongodb.org/mongo-driver/internal/csot"
+	"go.mongodb.org/mongo-driver/internal"
 	"go.mongodb.org/mongo-driver/mongo/address"
 	"go.mongodb.org/mongo-driver/mongo/description"
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
@@ -89,7 +89,7 @@ type RTTMonitor interface {
 	Stats() string
 }
 
-var _ RTTMonitor = &csot.ZeroRTTMonitor{}
+var _ RTTMonitor = &internal.ZeroRTTMonitor{}
 
 // PinnedConnection represents a Connection that can be pinned by one or more cursors or transactions. Implementations
 // of this interface should maintain the following invariants:
@@ -210,21 +210,21 @@ var _ Server = SingleConnectionDeployment{}
 // SelectServer implements the Deployment interface. This method does not use the
 // description.SelectedServer provided and instead returns itself. The Connections returned from the
 // Connection method have a no-op Close method.
-func (scd SingleConnectionDeployment) SelectServer(context.Context, description.ServerSelector) (Server, error) {
-	return scd, nil
+func (ssd SingleConnectionDeployment) SelectServer(context.Context, description.ServerSelector) (Server, error) {
+	return ssd, nil
 }
 
 // Kind implements the Deployment interface. It always returns description.Single.
-func (SingleConnectionDeployment) Kind() description.TopologyKind { return description.Single }
+func (ssd SingleConnectionDeployment) Kind() description.TopologyKind { return description.Single }
 
 // Connection implements the Server interface. It always returns the embedded connection.
-func (scd SingleConnectionDeployment) Connection(context.Context) (Connection, error) {
-	return scd.C, nil
+func (ssd SingleConnectionDeployment) Connection(context.Context) (Connection, error) {
+	return ssd.C, nil
 }
 
 // RTTMonitor implements the driver.Server interface.
-func (scd SingleConnectionDeployment) RTTMonitor() RTTMonitor {
-	return &csot.ZeroRTTMonitor{}
+func (ssd SingleConnectionDeployment) RTTMonitor() RTTMonitor {
+	return &internal.ZeroRTTMonitor{}
 }
 
 // TODO(GODRIVER-617): We can likely use 1 type for both the Type and the RetryMode by using 2 bits for the mode and 1

@@ -11,7 +11,6 @@ import (
 	"errors"
 
 	"go.mongodb.org/mongo-driver/event"
-	"go.mongodb.org/mongo-driver/internal/driverutil"
 	"go.mongodb.org/mongo-driver/mongo/description"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
@@ -54,7 +53,6 @@ func (dd *DropDatabase) Execute(ctx context.Context) error {
 		Selector:       dd.selector,
 		WriteConcern:   dd.writeConcern,
 		ServerAPI:      dd.serverAPI,
-		Name:           driverutil.DropDatabaseOp,
 	}.Execute(ctx)
 
 }
