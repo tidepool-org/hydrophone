@@ -52,6 +52,13 @@ type (
 		RequiredIdp string `json:"requiredIdp,omitempty"`
 	}
 
+	AcceptPatientInvite struct {
+		MRN       string   `json:"mrn"`
+		BirthDate string   `json:"birthDate"`
+		FullName  string   `json:"fullName"`
+		Tags      []string `json:"tags"`
+	}
+
 	//Enum type's
 	Status string
 	Type   string

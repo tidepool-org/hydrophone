@@ -69,6 +69,7 @@ const (
 	STATUS_ERR_DELETING_CONFIRMATION  = "Error deleting a confirmation"
 	STATUS_ERR_FINDING_CLINIC         = "Error finding the clinic"
 	STATUS_ERR_FINDING_CONFIRMATION   = "Error finding the confirmation"
+	STATUS_ERR_MRN_REQUIRED           = "Error creating patient because MRN is required"
 	STATUS_ERR_FINDING_PREVIEW        = "Error finding the invite preview"
 	STATUS_ERR_FINDING_USER           = "Error finding the user"
 	STATUS_ERR_RESETTING_KEY          = "Error resetting key"

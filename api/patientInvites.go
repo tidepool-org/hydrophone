@@ -2,8 +2,12 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/oapi-codegen/runtime/types"
+	"github.com/tidepool-org/go-common/clients/status"
 	"net/http"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -65,12 +69,11 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 			return
 		}
 
-		accept := &models.Confirmation{
+		c := &models.Confirmation{
 			ClinicId: clinicId,
 			Key:      inviteId,
 		}
-
-		conf, err := a.Store.FindConfirmation(ctx, accept)
+		conf, err := a.Store.FindConfirmation(ctx, c)
 		if err != nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
@@ -91,7 +94,34 @@ func (a *Api) AcceptPatientInvite(res http.ResponseWriter, req *http.Request, va
 			return
 		}
 
-		patient, err := a.createClinicPatient(ctx, *conf)
+		accept := models.AcceptPatientInvite{}
+		if req.ContentLength > 0 {
+			if err := json.NewDecoder(req.Body).Decode(&accept); err != nil {
+				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT,
+					fmt.Errorf("error decoding accept patient invite body: %w", err),
+				)
+				return
+			}
+		}
+
+		mrnRequired, err := a.isMRNRequired(ctx, conf.ClinicId)
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT,
+				fmt.Errorf("error fetching mrn requirement settings: %w", err),
+			)
+			return
+		}
+		if mrnRequired && strings.TrimSpace(accept.MRN) == "" {
+			a.sendModelAsResWithStatus(
+				ctx,
+				res,
+				&status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_MRN_REQUIRED)},
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		patient, err := a.createClinicPatient(ctx, *conf, accept)
 		if err != nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_PATIENT, err)
 			return
@@ -173,7 +203,7 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 	}
 }
 
-func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confirmation) (*clinics.Patient, error) {
+func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confirmation, accept models.AcceptPatientInvite) (*clinics.Patient, error) {
 	var permissions commonClients.Permissions
 	if err := confirmation.DecodeContext(&permissions); err != nil {
 		return nil, err
@@ -186,10 +216,29 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 			Note:   getPermission(permissions, "note"),
 		},
 	}
+	if accept.BirthDate != "" {
+		body.BirthDate = &types.Date{}
+		if err := body.BirthDate.UnmarshalText([]byte(accept.BirthDate)); err != nil {
+			return nil, err
+		}
+	}
+	if accept.FullName != "" {
+		body.FullName = &accept.FullName
+	}
+	if accept.MRN != "" {
+		body.Mrn = &accept.MRN
+	}
+	if count := len(accept.Tags); count > 0 {
+		tagIds := make(clinics.PatientTagIds, 0, count)
+		for _, tag := range accept.Tags {
+			tagIds = append(tagIds, tag)
+		}
+		body.Tags = &tagIds
+	}
 
 	var patient *clinics.Patient
-	clinicId := clinics.ClinicId(confirmation.ClinicId)
-	patientId := clinics.PatientId(confirmation.CreatorId)
+	clinicId := confirmation.ClinicId
+	patientId := confirmation.CreatorId
 	response, err := a.clinics.CreatePatientFromUserWithResponse(ctx, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
@@ -210,6 +259,22 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 
 	a.logger(ctx).With(zap.Any("perms", patient.Permissions)).Info("permissions set")
 	return patient, nil
+}
+
+func (a *Api) isMRNRequired(ctx context.Context, clinicId string) (bool, error) {
+	response, err := a.clinics.GetMRNSettingsWithResponse(ctx, clinicId)
+	if err != nil {
+		return false, err
+	}
+
+	// The clinic doesn't have custom MRN settings
+	if response.StatusCode() == http.StatusNotFound {
+		return false, nil
+	} else if response.StatusCode() != http.StatusOK {
+		return false, fmt.Errorf("unexpected response code when fetching clinic %s settings %v", clinicId, response.StatusCode())
+	}
+
+	return response.JSON200.Required, nil
 }
 
 func getPermission(permissions commonClients.Permissions, permission string) *map[string]interface{} {
