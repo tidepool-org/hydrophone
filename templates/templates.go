@@ -15,6 +15,12 @@ func New() (models.Templates, error) {
 		templates[template.Name()] = template
 	}
 
+	if template, err := NewCareteamInviteWithAlertingTemplate(); err != nil {
+		return nil, fmt.Errorf("templates: failure to create careteam invite with alerting template: %w", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
 	if template, err := NewNoAccountTemplate(); err != nil {
 		return nil, fmt.Errorf("templates: failure to create no account template: %s", err)
 	} else {

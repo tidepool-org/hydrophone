@@ -4,34 +4,35 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"go.uber.org/zap"
 
 	clinics "github.com/tidepool-org/clinic/client"
+	"github.com/tidepool-org/go-common/clients"
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
-	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/hydrophone/models"
 )
 
 const (
 	//Status message we return from the service
-	statusExistingInviteMessage  = "There is already an existing invite"
-	statusExistingMemberMessage  = "The user is already an existing member"
-	statusExistingPatientMessage = "The user is already a patient of the clinic"
-	statusInviteNotFoundMessage  = "No matching invite was found"
-	statusForbiddenMessage       = "Forbidden to perform requested operation"
+	statusExistingInviteMessage      = "There is already an existing invite"
+	statusExistingMemberMessage      = "The user is already an existing member"
+	statusExistingPatientMessage     = "The user is already a patient of the clinic"
+	statusInviteNotFoundMessage      = "No matching invite was found"
+	statusForbiddenMessage           = "Forbidden to perform requested operation"
+	statusInternalServerErrorMessage = "Internal Server Error"
 )
 
-type (
-	//Invite details for generating a new invite
-	inviteBody struct {
-		Email       string                    `json:"email"`
-		Permissions commonClients.Permissions `json:"permissions"`
-	}
-)
+// Invite details for generating a new invite
+type inviteBody struct {
+	Email string `json:"email"`
+	models.CareTeamContext
+	// UnmarshalJSON prevents inviteBody from inheriting it from
+	// CareTeamContext.
+	UnmarshalJSON struct{} `json:"-"`
+}
 
 // Checks do they have an existing invite or are they already a team member
 // Or are they an existing user and already in the group?
@@ -48,8 +49,9 @@ func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitor
 
 		//rule is we cannot send if the invite is not yet expired
 		if !invites[0].IsExpired() {
-			log.Println(statusExistingInviteMessage)
-			log.Println("last invite not yet expired")
+			a.logger(ctx).With(zap.String("email", inviteeEmail),
+				zap.String("extra", "last invite not yet expired")).
+				Debug(statusExistingInviteMessage)
 			return true
 		}
 	}
@@ -70,15 +72,14 @@ func (a *Api) checkExistingPatientOfClinic(ctx context.Context, clinicId, patien
 	return false, fmt.Errorf("unexpected status code %v when checking if user is existing patient", response.StatusCode())
 }
 
-func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string) (bool, *shoreline.UserData) {
+func (a *Api) checkAccountAlreadySharedWithUser(ctx context.Context, invitorID, inviteeEmail string) (bool, *shoreline.UserData) {
 	//already in the group?
-	invitedUsr := a.findExistingUser(inviteeEmail, a.sl.TokenProvide())
+	invitedUsr := a.findExistingUser(ctx, inviteeEmail, a.sl.TokenProvide())
 
 	if invitedUsr != nil && invitedUsr.UserID != "" {
 		if perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorID); err != nil {
-			log.Printf("error checking if user is in group [%v]", err)
+			a.logger(ctx).With(zap.Error(err)).Error("checking if user is in group")
 		} else if perms != nil {
-			log.Println(statusExistingMemberMessage)
 			return true, invitedUsr
 		}
 		return false, invitedUsr
@@ -94,6 +95,7 @@ func (a *Api) checkAccountAlreadySharedWithUser(invitorID, inviteeEmail string) 
 // status: 400
 func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
+		ctx := req.Context()
 		inviteeID := vars["userid"]
 
 		if inviteeID == "" {
@@ -102,24 +104,29 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		}
 		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeID != token.UserID {
-			a.logger.Warnf("token owner %s is not authorized to accept invite of for %s", token.UserID, inviteeID)
-			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+			extra := fmt.Sprintf("token owner %s is not authorized to accept invite of for %s", token.UserID, inviteeID)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED, zap.String("inviteeID", inviteeID), extra)
 			return
 		}
 
-		invitedUsr := a.findExistingUser(inviteeID, req.Header.Get(TP_SESSION_TOKEN))
+		invitedUsr := a.findExistingUser(ctx, inviteeID, req.Header.Get(TP_SESSION_TOKEN))
 
 		//find all oustanding invites were this user is the invite//
-		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
+		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
 		if err != nil {
-			a.logger.Errorw("error while finding pending invites", zap.Error(err))
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err,
+				"while finding pending invites")
+			return
 		}
-
-		if invites := a.checkFoundConfirmations(res, found, err); invites != nil {
-			a.ensureIdSet(req.Context(), inviteeID, invites)
-			a.logger.Infof("found and have checked [%d] invites ", len(invites))
+		if len(found) == 0 {
+			a.sendError(ctx, res, http.StatusNotFound, STATUS_NOT_FOUND)
+			return
+		}
+		if invites := a.addProfileInfoToConfirmations(ctx, found); invites != nil {
+			a.ensureIdSet(ctx, inviteeID, invites)
 			a.logMetric("get received invites", req)
-			a.sendModelAsResWithStatus(res, invites, http.StatusOK)
+			a.sendModelAsResWithStatus(ctx, res, invites, http.StatusOK)
+			a.logger(ctx).Debugf("invites found and checked: %d", len(invites))
 			return
 		}
 	}
@@ -133,7 +140,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 // status: 400
 func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-
+		ctx := req.Context()
 		invitorID := vars["userid"]
 
 		if invitorID == "" {
@@ -142,18 +149,26 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 		}
 
 		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
 		//find all invites I have sent that are pending or declined
-		found, err := a.Store.FindConfirmations(req.Context(), &models.Confirmation{CreatorId: invitorID, Type: models.TypeCareteamInvite}, models.StatusPending, models.StatusDeclined)
-		if invitations := a.checkFoundConfirmations(res, found, err); invitations != nil {
+		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{CreatorId: invitorID, Type: models.TypeCareteamInvite}, models.StatusPending, models.StatusDeclined)
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
+			return
+		}
+		if len(found) == 0 {
+			a.sendError(ctx, res, http.StatusNotFound, STATUS_NOT_FOUND)
+			return
+		}
+		if invitations := a.addProfileInfoToConfirmations(ctx, found); invitations != nil {
 			a.logMetric("get sent invites", req)
-			a.sendModelAsResWithStatus(res, invitations, http.StatusOK)
+			a.sendModelAsResWithStatus(ctx, res, invitations, http.StatusOK)
 			return
 		}
 	}
@@ -166,54 +181,44 @@ func (a *Api) GetSentInvitations(res http.ResponseWriter, req *http.Request, var
 // http.StatusForbidden when mismatch of user ID's, type or status
 func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-
+		ctx := req.Context()
 		inviteeID := vars["userid"]
 		invitorID := vars["invitedby"]
 
 		if inviteeID == "" || invitorID == "" {
-			log.Printf("AcceptInvite inviteeID %s or invitorID %s not set", inviteeID, invitorID)
 			res.WriteHeader(http.StatusBadRequest)
+			a.logger(ctx).
+				With(zap.String("inviteeID", inviteeID)).
+				With(zap.String("invitorID", invitorID)).
+				Info("inviteeID or invitorID is not set")
 			return
 		}
 
 		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeID != token.UserID {
-			log.Println("AcceptInvite ", STATUS_UNAUTHORIZED)
-			a.sendModelAsResWithStatus(
-				res,
-				status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)},
-				http.StatusUnauthorized,
-			)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
 		accept := &models.Confirmation{}
 		if err := json.NewDecoder(req.Body).Decode(accept); err != nil {
-			log.Printf("AcceptInvite error decoding invite data: %v\n", err)
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)},
-				http.StatusBadRequest,
-			)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 			return
 		}
 
 		if accept.Key == "" {
-			log.Println("AcceptInvite has no confirmation key set")
 			res.WriteHeader(http.StatusBadRequest)
+			a.logger(ctx).Info("no confirmation key set")
 			return
 		}
 
-		conf, err := a.findExistingConfirmation(req.Context(), accept, res)
+		conf, err := a.Store.FindConfirmation(ctx, accept)
 		if err != nil {
-			log.Printf("AcceptInvite error while finding confirmation [%s]\n", err.Error())
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if conf == nil {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
-			log.Println("AcceptInvite ", statusErr.Error())
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+			a.sendError(ctx, res, http.StatusNotFound, statusInviteNotFoundMessage)
 			return
 		}
 
@@ -225,35 +230,41 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 			ValidateCreatorID(invitorID, &validationErrors)
 
 		if len(validationErrors) > 0 {
-			for _, validationError := range validationErrors {
-				log.Println("AcceptInvite forbidden as there was a expectation mismatch", validationError)
-			}
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
-				http.StatusForbidden,
-			)
+			a.sendError(ctx, res, http.StatusForbidden, statusForbiddenMessage,
+				zap.Errors("validation-errors", validationErrors))
 			return
 		}
 
-		var permissions commonClients.Permissions
-		conf.DecodeContext(&permissions)
-		setPerms, err := a.gatekeeper.SetPermissions(inviteeID, invitorID, permissions)
-		if err != nil {
-			log.Printf("AcceptInvite error setting permissions [%v]\n", err)
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_CONFIRMATION)},
-				http.StatusInternalServerError,
-			)
+		ctc := &models.CareTeamContext{}
+		if err := conf.DecodeContext(ctc); err != nil {
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONTEXT)
 			return
 		}
-		log.Printf("AcceptInvite: permissions were set as [%v] after an invite was accepted", setPerms)
+
+		if ctc.AlertsConfig != nil {
+			ctc.AlertsConfig.UserID = inviteeID
+		}
+
+		if err := ctc.Validate(); err != nil {
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_VALIDATING_CONTEXT, err)
+			return
+		}
+
+		setPerms, err := a.gatekeeper.SetPermissions(inviteeID, invitorID, ctc.Permissions)
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_SETTING_PERMISSIONS, err)
+			return
+		}
+		a.logger(ctx).With(zapPermsField(setPerms)).Info("permissions set")
+		if ctc.AlertsConfig != nil && ctc.Permissions["follow"] != nil {
+			if err := a.alerts.Upsert(ctx, ctc.AlertsConfig); err != nil {
+				a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_ALERTS_CONFIG, err)
+				return
+			}
+		}
 		conf.UpdateStatus(models.StatusCompleted)
-		if !a.addOrUpdateConfirmation(req.Context(), conf, res) {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_SAVING_CONFIRMATION)}
-			log.Println("AcceptInvite ", statusErr.Error())
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusInternalServerError)
+		// addOrUpdateConfirmation logs and writes a response on errors
+		if !a.addOrUpdateConfirmation(ctx, conf, res) {
 			return
 		}
 		a.logMetric("acceptinvite", req)
@@ -270,7 +281,7 @@ func (a *Api) AcceptInvite(res http.ResponseWriter, req *http.Request, vars map[
 // status: 400 when the incoming data is incomplete or incorrect
 func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-
+		ctx := req.Context()
 		invitorID := vars["userid"]
 		email := vars["invited_address"]
 
@@ -280,10 +291,10 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 		}
 
 		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
@@ -294,23 +305,22 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 			Type:      models.TypeCareteamInvite,
 		}
 
-		if conf, err := a.findExistingConfirmation(req.Context(), invite, res); err != nil {
-			log.Printf("CancelInvite: finding [%s]", err.Error())
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		conf, err := a.Store.FindConfirmation(ctx, invite)
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
-		} else if conf != nil {
+		}
+		if conf != nil {
 			//cancel the invite
 			conf.UpdateStatus(models.StatusCanceled)
-
-			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
+			// addOrUpdateConfirmation logs and writes a response on errors
+			if a.addOrUpdateConfirmation(ctx, conf, res) {
 				a.logMetric("canceled invite", req)
 				res.WriteHeader(http.StatusOK)
 				return
 			}
 		}
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
-		log.Printf("CancelInvite: [%s]", statusErr.Error())
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		a.sendError(ctx, res, http.StatusNotFound, statusInviteNotFoundMessage)
 		return
 	}
 }
@@ -319,7 +329,7 @@ func (a *Api) CancelInvite(res http.ResponseWriter, req *http.Request, vars map[
 // status: 400
 func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
-
+		ctx := req.Context()
 		inviteeID := vars["userid"]
 		invitorID := vars["invitedby"]
 
@@ -330,16 +340,13 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 
 		// Non-server tokens only legit when for same userid
 		if !token.IsServer && inviteeID != token.UserID {
-			log.Printf("DismissInvite %s ", STATUS_UNAUTHORIZED)
-			a.sendModelAsResWithStatus(res, status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
+			a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
 			return
 		}
 
 		dismiss := &models.Confirmation{}
 		if err := json.NewDecoder(req.Body).Decode(dismiss); err != nil {
-			log.Printf("DismissInvite: error decoding invite to dismiss [%v]", err)
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
+			a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
 			return
 		}
 
@@ -348,23 +355,21 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 			return
 		}
 
-		if conf, err := a.findExistingConfirmation(req.Context(), dismiss, res); err != nil {
-			log.Printf("DismissInvite: finding [%s]", err.Error())
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+		conf, err := a.Store.FindConfirmation(ctx, dismiss)
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
-		} else if conf != nil {
-
+		}
+		if conf != nil {
 			conf.UpdateStatus(models.StatusDeclined)
-
-			if a.addOrUpdateConfirmation(req.Context(), conf, res) {
+			// addOrUpdateConfirmation logs and writes a response on errors
+			if a.addOrUpdateConfirmation(ctx, conf, res) {
 				a.logMetric("dismissinvite", req)
 				res.WriteHeader(http.StatusOK)
 				return
 			}
 		}
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
-		log.Printf("DismissInvite: [%s]", statusErr.Error())
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
+		a.sendError(ctx, res, http.StatusNotFound, statusInviteNotFoundMessage)
 		return
 	}
 }
@@ -376,101 +381,140 @@ func (a *Api) DismissInvite(res http.ResponseWriter, req *http.Request, vars map
 // status: 409 statusExistingMemberMessage - user is already part of the team
 // status: 400
 func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	if token := a.token(res, req); token != nil {
-
-		invitorID := vars["userid"]
-
-		if invitorID == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
-			return
-		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
-			return
-		}
-
-		defer req.Body.Close()
-		var ib = &inviteBody{}
-		if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-			log.Printf("SendInvite: error decoding invite to detail %v\n", err)
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusBadRequest)
-			return
-		}
-
-		if ib.Email == "" || ib.Permissions == nil {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if a.checkForDuplicateInvite(req.Context(), ib.Email, invitorID) {
-			log.Printf("SendInvite: invited [%s] user already has or had an invite", ib.Email)
-			statusErr := &status.StatusError{
-				Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage),
-			}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-			return
-		} else if alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(invitorID, ib.Email); alreadyMember {
-			a.logger.Infof("invited [%s] user is already a member of the care team of %v", ib.Email, invitorID)
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingMemberMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-			return
-		} else {
-			//None exist so lets create the invite
-			invite, _ := models.NewConfirmationWithContext(models.TypeCareteamInvite, models.TemplateNameCareteamInvite, invitorID, ib.Permissions)
-
-			invite.Email = ib.Email
-			if invitedUsr != nil {
-				invite.UserId = invitedUsr.UserID
-			}
-
-			if a.addOrUpdateConfirmation(req.Context(), invite, res) {
-				a.logMetric("invite created", req)
-
-				if err := a.addProfile(invite); err != nil {
-					log.Println("SendInvite: ", err.Error())
-				} else {
-
-					fullName := invite.Creator.Profile.FullName
-
-					if invite.Creator.Profile.Patient.IsOtherPerson {
-						fullName = invite.Creator.Profile.Patient.FullName
-					}
-
-					var webPath = "signup"
-
-					if invite.UserId != "" {
-						webPath = "login"
-					}
-
-					emailContent := map[string]interface{}{
-						"CareteamName": fullName,
-						"Email":        invite.Email,
-						"WebPath":      webPath,
-					}
-
-					if a.createAndSendNotification(req, invite, emailContent) {
-						a.logMetric("invite sent", req)
-					}
-				}
-
-				a.sendModelAsResWithStatus(res, invite, http.StatusOK)
-				return
-			}
-		}
-
+	token := a.token(res, req) // a.token writes a response on failure
+	if token == nil {
+		return
 	}
+	ctx := req.Context()
+	invitorID := vars["userid"]
+	if invitorID == "" {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	requiredPerms := commonClients.Permissions{
+		"root":      commonClients.Allowed,
+		"custodian": commonClients.Allowed,
+	}
+	permissions, err := a.tokenUserHasRequestedPermissions(token, invitorID, requiredPerms)
+	if err != nil {
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
+		return
+	} else if permissions["root"] == nil && permissions["custodian"] == nil {
+		a.sendError(ctx, res, http.StatusUnauthorized, STATUS_UNAUTHORIZED)
+		return
+	}
+
+	var ib = &inviteBody{}
+	if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
+		a.sendError(ctx, res, http.StatusBadRequest, STATUS_ERR_DECODING_CONFIRMATION, err)
+		return
+	}
+
+	if ib.Email == "" || ib.Permissions == nil {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if a.checkForDuplicateInvite(ctx, ib.Email, invitorID) {
+		a.sendError(ctx, res, http.StatusConflict, statusExistingInviteMessage,
+			zap.String("email", ib.Email))
+		return
+	}
+	alreadyMember, invitedUsr := a.checkAccountAlreadySharedWithUser(ctx, invitorID, ib.Email)
+	if alreadyMember && invitedUsr != nil {
+		// In the past, having an existing relationship would cause this
+		// handler to abort with an error response. With the development of
+		// the Care Team Alerting features, users with existing relationships
+		// should be able to send a new invite that adds alerting
+		// permissions. As a result, this code now checks if the current
+		// invitation would add alerting permissions, and if so, allows it to
+		// continue.
+		perms, err := a.gatekeeper.UserInGroup(invitedUsr.UserID, invitorID)
+		if err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, statusInternalServerErrorMessage)
+			return
+		}
+		if !addsAlertingPermissions(perms, ib.Permissions) {
+			// Since this invitation doesn't add alerting permissions,
+			// maintain the previous handler's behavior, and abort with an
+			// error response.
+			a.sendError(ctx, res, http.StatusConflict, statusExistingMemberMessage,
+				zap.String("email", ib.Email), zap.String("invitorID", invitorID))
+			return
+		}
+
+		for key := range perms {
+			ib.Permissions[key] = perms[key]
+		}
+		a.logger(ctx).With(zapPermsField(perms)).Info("permissions set")
+	}
+
+	templateName := models.TemplateNameCareteamInvite
+	if ib.Permissions["follow"] != nil {
+		templateName = models.TemplateNameCareteamInviteWithAlerting
+	}
+
+	invite, err := models.NewConfirmationWithContext(models.TypeCareteamInvite, templateName, invitorID, ib.CareTeamContext)
+	if err != nil {
+		a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+		return
+	}
+
+	invite.Email = ib.Email
+	if invitedUsr != nil {
+		invite.UserId = invitedUsr.UserID
+	}
+
+	// addOrUpdateConfirmation logs and writes a response on errors
+	if !a.addOrUpdateConfirmation(ctx, invite, res) {
+		return
+	}
+	a.logMetric("invite created", req)
+
+	if err := a.addProfile(invite); err != nil {
+		a.logger(ctx).With(zap.Error(err)).Warn(STATUS_ERR_ADDING_PROFILE)
+		a.sendModelAsResWithStatus(ctx, res, invite, http.StatusOK)
+	}
+
+	fullName := "Tidepool User"
+	if invite.Creator.Profile != nil {
+		fullName = invite.Creator.Profile.FullName
+		if invite.Creator.Profile.Patient.IsOtherPerson {
+			fullName = invite.Creator.Profile.Patient.FullName
+		}
+	}
+
+	var webPath = "signup"
+
+	if invite.UserId != "" {
+		webPath = "login"
+	}
+
+	emailContent := map[string]interface{}{
+		"CareteamName": fullName,
+		"Email":        invite.Email,
+		"WebPath":      webPath,
+		"Nickname":     ib.Nickname,
+	}
+
+	if a.createAndSendNotification(req, invite, emailContent) {
+		a.logMetric("invite sent", req)
+	}
+
+	a.sendModelAsResWithStatus(ctx, res, invite, http.StatusOK)
+	return
+}
+
+func addsAlertingPermissions(existingPerms, newPerms commonClients.Permissions) bool {
+	return existingPerms["follow"] == nil && newPerms["follow"] != nil
 }
 
 // Resend a care team invite
 func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
 	if token := a.token(res, req); token != nil {
 		inviteId := vars["inviteId"]
-
+		ctx := req.Context()
 		if inviteId == "" {
 			res.WriteHeader(http.StatusBadRequest)
 			return
@@ -482,38 +526,36 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 			Type:   models.TypeCareteamInvite,
 		}
 
-		invite, err := a.findExistingConfirmation(req.Context(), find, res)
+		invite, err := a.Store.FindConfirmation(ctx, find)
 		if err != nil {
-			a.logger.Errorw("error while finding confirmation", zap.Error(err))
-			a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return
 		}
 		if invite == nil || invite.ClinicId != "" {
 			if invite.ClinicId != "" {
-				a.logger.Warn("cannot resend clinic invite using care team invite endpoint")
+				a.logger(ctx).Info("cannot resend clinic invite using care team invite endpoint")
 			} else {
-				a.logger.Warn("cannot resend confirmation, because it doesn't exist")
+				a.logger(ctx).Info("cannot resend confirmation, because it doesn't exist")
 			}
-
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusForbidden)
+			a.sendError(ctx, res, http.StatusForbidden, statusForbiddenMessage)
 			return
 		}
 
 		if permissions, err := a.tokenUserHasRequestedPermissions(token, invite.CreatorId, commonClients.Permissions{"root": commonClients.Allowed, "custodian": commonClients.Allowed}); err != nil {
-			a.sendError(res, http.StatusInternalServerError, STATUS_ERR_FINDING_USR, err)
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, err)
 			return
 		} else if permissions["root"] == nil && permissions["custodian"] == nil {
-			a.sendError(res, http.StatusForbidden, statusForbiddenMessage)
+			a.sendError(ctx, res, http.StatusForbidden, statusForbiddenMessage)
 			return
 		}
 
 		invite.ResetCreationAttributes()
-		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
+		// addOrUpdateConfirmation logs and writes a response on errors
+		if a.addOrUpdateConfirmation(ctx, invite, res) {
 			a.logMetric("invite updated", req)
 
 			if err := a.addProfile(invite); err != nil {
-				a.logger.Warn("Resend invite", zap.Error(err))
+				a.logger(ctx).With(zap.Error(err)).Warn(STATUS_ERR_ADDING_PROFILE)
 			} else {
 				fullName := invite.Creator.Profile.FullName
 				if invite.Creator.Profile.Patient.IsOtherPerson {
@@ -536,8 +578,16 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 				}
 			}
 
-			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
+			a.sendModelAsResWithStatus(ctx, res, invite, http.StatusOK)
 			return
 		}
 	}
+}
+
+func zapPermsField(perms clients.Permissions) zap.Field {
+	permsForLog := []string{}
+	for key := range perms {
+		permsForLog = append(permsForLog, key)
+	}
+	return zap.Strings("perms", permsForLog)
 }

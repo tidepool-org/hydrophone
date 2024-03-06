@@ -16,8 +16,12 @@ func (t TemplateName) String() string {
 }
 
 const (
-	TemplateNamePatientClinicInvite                TemplateName = "patient_clinic_invitation"
-	TemplateNameCareteamInvite                     TemplateName = "careteam_invitation"
+	TemplateNamePatientClinicInvite TemplateName = "patient_clinic_invitation"
+	TemplateNameCareteamInvite      TemplateName = "careteam_invitation"
+	// TemplateNameCareteamInviteWithAlerting is sent when a user is invited
+	// via the Loop app to use the Care Partner app to receive alert
+	// notifications.
+	TemplateNameCareteamInviteWithAlerting         TemplateName = "careteam_invitation_with_alerting"
 	TemplateNameClinicianInvite                    TemplateName = "clinician_invitation"
 	TemplateNameNoAccount                          TemplateName = "no_account"
 	TemplateNamePasswordReset                      TemplateName = "password_reset"

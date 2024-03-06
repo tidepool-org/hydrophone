@@ -1,6 +1,10 @@
 # github.com/Shopify/sarama v1.38.1
 ## explicit; go 1.17
 github.com/Shopify/sarama
+# github.com/ant0ine/go-json-rest v3.3.2+incompatible
+## explicit
+github.com/ant0ine/go-json-rest/rest
+github.com/ant0ine/go-json-rest/rest/trie
 # github.com/apapsch/go-jsonmerge/v2 v2.0.0
 ## explicit; go 1.12
 github.com/apapsch/go-jsonmerge/v2
@@ -52,6 +56,9 @@ github.com/aws/aws-sdk-go/service/sso/ssoiface
 github.com/aws/aws-sdk-go/service/ssooidc
 github.com/aws/aws-sdk-go/service/sts
 github.com/aws/aws-sdk-go/service/sts/stsiface
+# github.com/blang/semver v3.5.1+incompatible
+## explicit
+github.com/blang/semver
 # github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.14.0
 ## explicit; go 1.17
 github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2
@@ -93,6 +100,9 @@ github.com/globalsign/mgo/internal/scram
 # github.com/golang/mock v1.6.0
 ## explicit; go 1.11
 github.com/golang/mock/gomock
+# github.com/golang/protobuf v1.5.3
+## explicit; go 1.9
+github.com/golang/protobuf/proto
 # github.com/golang/snappy v0.0.4
 ## explicit
 github.com/golang/snappy
@@ -201,11 +211,11 @@ github.com/pkg/errors
 # github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 ## explicit
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/clinic/client v0.0.0-20240119154138-fd88ad427641
-## explicit; go 1.21
+# github.com/tidepool-org/clinic/client v0.0.0-20240306220554-4e22e08f6bba
+## explicit; go 1.22
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/go-common v0.11.1-0.20240119151220-be854abc1af5
-## explicit; go 1.21
+# github.com/tidepool-org/go-common v0.11.1-0.20240306185825-1ddb2b762e00
+## explicit; go 1.22
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc
 github.com/tidepool-org/go-common/clients/hakken
@@ -216,6 +226,39 @@ github.com/tidepool-org/go-common/clients/status
 github.com/tidepool-org/go-common/errors
 github.com/tidepool-org/go-common/events
 github.com/tidepool-org/go-common/jepson
+# github.com/tidepool-org/platform v1.33.1-0.20231115170155-f8e6c2c3a407
+## explicit; go 1.21
+github.com/tidepool-org/platform/alerts
+github.com/tidepool-org/platform/auth
+github.com/tidepool-org/platform/auth/client
+github.com/tidepool-org/platform/client
+github.com/tidepool-org/platform/config
+github.com/tidepool-org/platform/crypto
+github.com/tidepool-org/platform/data
+github.com/tidepool-org/platform/data/blood/glucose
+github.com/tidepool-org/platform/errors
+github.com/tidepool-org/platform/id
+github.com/tidepool-org/platform/log
+github.com/tidepool-org/platform/log/null
+github.com/tidepool-org/platform/metadata
+github.com/tidepool-org/platform/net
+github.com/tidepool-org/platform/oauth
+github.com/tidepool-org/platform/origin
+github.com/tidepool-org/platform/page
+github.com/tidepool-org/platform/permission
+github.com/tidepool-org/platform/platform
+github.com/tidepool-org/platform/pointer
+github.com/tidepool-org/platform/provider
+github.com/tidepool-org/platform/request
+github.com/tidepool-org/platform/service
+github.com/tidepool-org/platform/structure
+github.com/tidepool-org/platform/structure/base
+github.com/tidepool-org/platform/structure/normalizer
+github.com/tidepool-org/platform/structure/parser
+github.com/tidepool-org/platform/structure/validator
+github.com/tidepool-org/platform/time/zone
+github.com/tidepool-org/platform/user
+github.com/tidepool-org/platform/version
 # github.com/xdg-go/pbkdf2 v1.0.0
 ## explicit; go 1.9
 github.com/xdg-go/pbkdf2
@@ -316,6 +359,10 @@ golang.org/x/crypto/scrypt
 golang.org/x/net/http2/hpack
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
+# golang.org/x/oauth2 v0.13.0
+## explicit; go 1.18
+golang.org/x/oauth2
+golang.org/x/oauth2/internal
 # golang.org/x/sync v0.6.0
 ## explicit; go 1.18
 golang.org/x/sync/errgroup
@@ -328,3 +375,41 @@ golang.org/x/sys/windows
 ## explicit; go 1.18
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
+# google.golang.org/appengine v1.6.8
+## explicit; go 1.11
+google.golang.org/appengine/internal
+google.golang.org/appengine/internal/base
+google.golang.org/appengine/internal/datastore
+google.golang.org/appengine/internal/log
+google.golang.org/appengine/internal/remote_api
+google.golang.org/appengine/internal/urlfetch
+google.golang.org/appengine/urlfetch
+# google.golang.org/protobuf v1.31.0
+## explicit; go 1.11
+google.golang.org/protobuf/encoding/prototext
+google.golang.org/protobuf/encoding/protowire
+google.golang.org/protobuf/internal/descfmt
+google.golang.org/protobuf/internal/descopts
+google.golang.org/protobuf/internal/detrand
+google.golang.org/protobuf/internal/encoding/defval
+google.golang.org/protobuf/internal/encoding/messageset
+google.golang.org/protobuf/internal/encoding/tag
+google.golang.org/protobuf/internal/encoding/text
+google.golang.org/protobuf/internal/errors
+google.golang.org/protobuf/internal/filedesc
+google.golang.org/protobuf/internal/filetype
+google.golang.org/protobuf/internal/flags
+google.golang.org/protobuf/internal/genid
+google.golang.org/protobuf/internal/impl
+google.golang.org/protobuf/internal/order
+google.golang.org/protobuf/internal/pragma
+google.golang.org/protobuf/internal/set
+google.golang.org/protobuf/internal/strs
+google.golang.org/protobuf/internal/version
+google.golang.org/protobuf/proto
+google.golang.org/protobuf/reflect/protodesc
+google.golang.org/protobuf/reflect/protoreflect
+google.golang.org/protobuf/reflect/protoregistry
+google.golang.org/protobuf/runtime/protoiface
+google.golang.org/protobuf/runtime/protoimpl
+google.golang.org/protobuf/types/descriptorpb

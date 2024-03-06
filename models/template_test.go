@@ -87,7 +87,10 @@ func Test_NewPrecompiledTemplate_Success(t *testing.T) {
 }
 
 func Test_NewPrecompiledTemplate_Name(t *testing.T) {
-	tmpl, _ := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate)
+	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate)
+	if err != nil {
+		t.Fatalf("error with template: %s", err)
+	}
 	if tmpl.Name() != name {
 		t.Fatalf(`Name is "%s", but should be "%s"`, tmpl.Name(), name)
 	}
@@ -96,7 +99,10 @@ func Test_NewPrecompiledTemplate_Name(t *testing.T) {
 func Test_NewPrecompiledTemplate_ExecuteSuccess(t *testing.T) {
 	expectedSubject := `Username is 'Test User'`
 	expectedBody := `Key is '123.blah.456.blah'`
-	tmpl, _ := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate)
+	tmpl, err := NewPrecompiledTemplate(name, subjectSuccessTemplate, bodySuccessTemplate)
+	if err != nil {
+		t.Fatalf("error with template: %s", err)
+	}
 	subject, body, err := tmpl.Execute(content)
 	if err != nil {
 		t.Fatalf(`Error is "%s", but should be nil`, err)

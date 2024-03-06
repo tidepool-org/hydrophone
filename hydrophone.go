@@ -3,13 +3,11 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kelseyhightower/envconfig"
-
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -24,6 +22,12 @@ import (
 	"github.com/tidepool-org/hydrophone/events"
 	"github.com/tidepool-org/hydrophone/models"
 	"github.com/tidepool-org/hydrophone/templates"
+	"github.com/tidepool-org/platform/alerts"
+	"github.com/tidepool-org/platform/auth"
+	authclient "github.com/tidepool-org/platform/auth/client"
+	"github.com/tidepool-org/platform/client"
+	platformlog "github.com/tidepool-org/platform/log"
+	"github.com/tidepool-org/platform/platform"
 )
 
 var defaultStopTimeout = 60 * time.Second
@@ -38,6 +42,7 @@ type (
 		MetricsClientAddress    string `split_words:"true" required:"true"`
 		SeagullClientAddress    string `split_words:"true" required:"true"`
 		ClinicClientAddress     string `split_words:"true" required:"true"`
+		DataClientAddress       string `split_words:"true" required:"true"`
 	}
 
 	//InboundConfig describes how to receive inbound communication
@@ -82,6 +87,34 @@ func seagullProvider(config OutboundConfig, httpClient *http.Client) clients.Sea
 		WithHostGetter(disc.NewStaticHostGetterFromString(config.SeagullClientAddress)).
 		WithHttpClient(httpClient).
 		Build()
+}
+
+func alertsProvider(config OutboundConfig, tokenProvider auth.ExternalAccessor, logger platformlog.Logger) (api.AlertsClient, error) {
+	cfg := client.NewConfig()
+	cfg.Address = config.DataClientAddress
+	platformCfg := platform.NewConfig()
+	platformCfg.Config = cfg
+	platformClient, err := platform.NewClient(platformCfg, platform.AuthorizeAsService)
+	if err != nil {
+		return nil, err
+	}
+	return alerts.NewClient(platformClient, tokenProvider, logger), nil
+}
+
+func zapPlatformAdapterProvider(zapper *zap.SugaredLogger) platformlog.Logger {
+	return NewZapPlatformAdapter(zapper)
+}
+
+func externalConfigLoaderProvider(loader platform.ConfigLoader) authclient.ExternalConfigLoader {
+	return authclient.NewExternalEnvconfigLoader(loader)
+}
+
+func platformConfigLoaderProvider(loader client.ConfigLoader) platform.ConfigLoader {
+	return platform.NewEnvconfigLoader(loader)
+}
+
+func clientConfigLoaderProvider() client.ConfigLoader {
+	return client.NewEnvconfigLoader()
 }
 
 func clinicProvider(config OutboundConfig, shoreline shoreline.Client) (clinicsClient.ClientWithResponsesInterface, error) {
@@ -165,6 +198,7 @@ type InvocationParams struct {
 	Config     InboundConfig
 	Server     *http.Server
 	Consumer   ev.EventConsumer
+	Log        *zap.SugaredLogger
 }
 
 func startEventConsumer(p InvocationParams) {
@@ -172,10 +206,10 @@ func startEventConsumer(p InvocationParams) {
 		OnStart: func(ctx context.Context) error {
 			go func() {
 				if err := p.Consumer.Start(); err != nil {
-					log.Printf("Unable to start cloud events consumer: %v", err)
-					log.Printf("Shutting down the service")
+					p.Log.With(zap.Error(err)).Error("starting cloud events consumer")
+					p.Log.Infof("shutting down the service")
 					if shutdownErr := p.Shutdowner.Shutdown(); shutdownErr != nil {
-						log.Printf("Failed to shutdown: %v", shutdownErr)
+						p.Log.With(zap.Error(shutdownErr)).Error("failed to shutdown")
 					}
 				}
 			}()
@@ -192,7 +226,7 @@ func startShoreline(p InvocationParams) {
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				if err := p.Shoreline.Start(); err != nil {
-					log.Printf("Unable to start Shoreline: %v", err)
+					p.Log.With(zap.Error(err)).Error("starting shoreline")
 					return err
 				}
 				return nil
@@ -211,10 +245,10 @@ func startServer(p InvocationParams) {
 			OnStart: func(ctx context.Context) error {
 				go func() {
 					if err := p.Server.ListenAndServe(); err != nil {
-						log.Printf("Server error: %v", err)
-						log.Printf("Shutting down the service")
+						p.Log.With(zap.Error(err)).Error("while listening")
+						p.Log.Infof("shutting down")
 						if shutdownErr := p.Shutdowner.Shutdown(); shutdownErr != nil {
-							log.Printf("Failed to shutdown: %v", shutdownErr)
+							p.Log.With(zap.Error(err)).Error("shutting down")
 						}
 					}
 				}()
@@ -237,6 +271,14 @@ func main() {
 			faultTolerantConsumerProvider,
 			events.NewHandler,
 		),
+		authclient.ExternalClientModule,
+		authclient.ProvideServiceName("hydrophone"),
+		fx.Provide(
+			externalConfigLoaderProvider,
+			platformConfigLoaderProvider,
+			clientConfigLoaderProvider,
+			zapPlatformAdapterProvider,
+		),
 		fx.Provide(
 			seagullProvider,
 			highwaterProvider,
@@ -249,6 +291,7 @@ func main() {
 			serverProvider,
 			clinicProvider,
 			loggerProvider,
+			alertsProvider,
 			api.NewApi,
 		),
 		fx.Invoke(startShoreline),
