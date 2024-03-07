@@ -1,6 +1,6 @@
 module github.com/tidepool-org/hydrophone/client
 
-go 1.21
+go 1.22
 
 require github.com/deepmap/oapi-codegen v1.16.2
 

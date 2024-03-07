@@ -22,6 +22,10 @@ dist/hydrophone: $(GENERATED_SRCS)
 build:
 	$(MAKE) dist/hydrophone
 
+.PHONY: test
+test:
+	GOWORK=off ./test.sh
+
 .PHONY: generate
 # Generates client api
 generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
@@ -29,10 +33,6 @@ generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
 	$(OAPI_CODEGEN) -package=api -generate=types spec/confirm.v1.yaml > client/types.go
 	$(OAPI_CODEGEN) -package=api -generate=client spec/confirm.v1.yaml > client/client.go
 	cd client && go generate ./...
-
-.PHONY: test
-test:
-	GOWORK=off ./test.sh
 
 $(OAPI_CODEGEN):
 	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.13.4
