@@ -381,7 +381,7 @@ func (a *Api) sendClinicianConfirmation(req *http.Request, confirmation *models.
 
 	fullName := confirmation.Creator.Profile.FullName
 
-	var webPath = "signup"
+	var webPath = "signup/clinician"
 	if confirmation.UserId != "" {
 		webPath = "login"
 	}

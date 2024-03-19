@@ -485,7 +485,7 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 		}
 	}
 
-	var webPath = "signup"
+	var webPath = "signup/personal"
 
 	if invite.UserId != "" {
 		webPath = "login"
@@ -562,7 +562,7 @@ func (a *Api) ResendInvite(res http.ResponseWriter, req *http.Request, vars map[
 					fullName = invite.Creator.Profile.Patient.FullName
 				}
 
-				var webPath = "signup"
+				var webPath = "signup/personal"
 				if invite.UserId != "" {
 					webPath = "login"
 				}
