@@ -27,4 +27,5 @@ services:
 script:
   - ./build.sh
   - make test
+  - make staticcheck
   - ./artifact.sh

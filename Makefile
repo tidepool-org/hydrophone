@@ -4,6 +4,7 @@ TOOLS_BIN = tools/bin
 NPM_BIN = node_modules/.bin
 
 OAPI_CODEGEN = $(TOOLS_BIN)/oapi-codegen
+STATICCHECK = $(TOOLS_BIN)/staticcheck
 SWAGGER_CLI = $(NPM_BIN)/swagger-cli
 
 NPM_PKG_SPECS = \
@@ -34,6 +35,9 @@ generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
 test:
 	GOWORK=off ./test.sh
 
+$(STATICCHECK):
+	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install honnef.co/go/tools/cmd/staticcheck@2023.1.6
+
 $(OAPI_CODEGEN):
 	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.13.4
 
@@ -46,3 +50,7 @@ npm-tools:
 # has to install all the packages all at the same time. But it saves us from
 # having to muck with packages.json.
 	npm i --no-save --local $(NPM_PKG_SPECS)
+
+.PHONY: staticcheck
+staticcheck: $(STATICCHECK)
+	GOWORK=off $(TOOLS_BIN)/staticcheck --fail none ./...
