@@ -241,7 +241,7 @@ func TestConfirmationCalculatesExpiresAt(t *testing.T) {
 			t.Fatalf("expected nil, got %+v", err)
 		}
 		if invite.ExpiresAt == nil || invite.ExpiresAt.IsZero() {
-			t.Errorf("expected non-Zero ExiresAt")
+			t.Errorf("expected non-Zero ExpiresAt")
 		}
 	}
 }
