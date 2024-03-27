@@ -18,8 +18,8 @@ github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnweb
 github.com/bmatcuk/doublestar v1.1.1/go.mod h1:UD6OnuiIn0yFxxA2le/rnRU1G4RaI4UvFv1sNto9p6w=
 github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.14.0 h1:1MCVOxNZySIYOWMI1+6Z7YR0PK3AmDi/Fklk1KdFIv8=
 github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.14.0/go.mod h1:/B8nchIwQlr00jtE9bR0aoKaag7bO67xPM7r1DXCH4I=
-github.com/cloudevents/sdk-go/v2 v2.14.0 h1:Nrob4FwVgi5L4tV9lhjzZcjYqFVyJzsA56CwPaPfv6s=
-github.com/cloudevents/sdk-go/v2 v2.14.0/go.mod h1:xDmKfzNjM8gBvjaF8ijFjM1VYOVUEeUfapHMUX1T5To=
+github.com/cloudevents/sdk-go/v2 v2.15.2 h1:54+I5xQEnI73RBhWHxbI1XJcqOFOVJN85vb41+8mHUc=
+github.com/cloudevents/sdk-go/v2 v2.15.2/go.mod h1:lL7kSWAE/V8VI4Wh0jbL2v/jvqsm6tjmaQBSvxcv4uE=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -130,10 +130,10 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/tidepool-org/clinic/client v0.0.0-20240307005814-71ebe5953545 h1:Ko8X3+ebRDvxV6Y5WlUETkS/jEOTGoFXG9zgCu4BzoM=
-github.com/tidepool-org/clinic/client v0.0.0-20240307005814-71ebe5953545/go.mod h1:7BpAdFdGJNB3aw/xvCz5XnWjSWRoUtWIX4xcMc4Bsko=
-github.com/tidepool-org/go-common v0.11.1-0.20240306185825-1ddb2b762e00 h1:DVsfc6MaobBIIkxM7DUmEhU1S3vxJXhJnQbeWyCVM44=
-github.com/tidepool-org/go-common v0.11.1-0.20240306185825-1ddb2b762e00/go.mod h1:GwHnbUxw7Pqvh/2gdC5V9DD02HkFO1IZ+bvrVLA6iWo=
+github.com/tidepool-org/clinic/client v0.0.0-20240327000654-159f9ee1d246 h1:GxiKTDgQUugye4+r1oeOEfrUOMmDqQM5fY92Ocmlrcs=
+github.com/tidepool-org/clinic/client v0.0.0-20240327000654-159f9ee1d246/go.mod h1:7BpAdFdGJNB3aw/xvCz5XnWjSWRoUtWIX4xcMc4Bsko=
+github.com/tidepool-org/go-common v0.12.0 h1:6H9O52toEoFYrO/hVmORwv2nKw6lJSfCTKdUMkNcCXc=
+github.com/tidepool-org/go-common v0.12.0/go.mod h1:Spc4F1BkMBkYV3F9mAWBXmcJ6VU9dFbdYR1QtDQs0oo=
 github.com/tidepool-org/platform v1.33.1-0.20240307003344-157a71a95e3c h1:Cy/Gp+djfO8MsSb/wSDu2b+em7EYMzEwO/6NzdPQyGg=
 github.com/tidepool-org/platform v1.33.1-0.20240307003344-157a71a95e3c/go.mod h1:ShFoHwaZmkZzvsO0TCq9rcZlxpv412HQx4N8AIcAOQM=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=

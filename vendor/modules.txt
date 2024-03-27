@@ -62,8 +62,8 @@ github.com/blang/semver
 # github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.14.0
 ## explicit; go 1.17
 github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2
-# github.com/cloudevents/sdk-go/v2 v2.14.0
-## explicit; go 1.17
+# github.com/cloudevents/sdk-go/v2 v2.15.2
+## explicit; go 1.18
 github.com/cloudevents/sdk-go/v2
 github.com/cloudevents/sdk-go/v2/binding
 github.com/cloudevents/sdk-go/v2/binding/format
@@ -211,10 +211,10 @@ github.com/pkg/errors
 # github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 ## explicit
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/clinic/client v0.0.0-20240307005814-71ebe5953545
+# github.com/tidepool-org/clinic/client v0.0.0-20240327000654-159f9ee1d246
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/go-common v0.11.1-0.20240306185825-1ddb2b762e00
+# github.com/tidepool-org/go-common v0.12.0
 ## explicit; go 1.22
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc
