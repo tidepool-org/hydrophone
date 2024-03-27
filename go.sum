@@ -134,8 +134,8 @@ github.com/tidepool-org/clinic/client v0.0.0-20240327000654-159f9ee1d246 h1:GxiK
 github.com/tidepool-org/clinic/client v0.0.0-20240327000654-159f9ee1d246/go.mod h1:7BpAdFdGJNB3aw/xvCz5XnWjSWRoUtWIX4xcMc4Bsko=
 github.com/tidepool-org/go-common v0.12.0 h1:6H9O52toEoFYrO/hVmORwv2nKw6lJSfCTKdUMkNcCXc=
 github.com/tidepool-org/go-common v0.12.0/go.mod h1:Spc4F1BkMBkYV3F9mAWBXmcJ6VU9dFbdYR1QtDQs0oo=
-github.com/tidepool-org/platform v1.33.1-0.20240307003344-157a71a95e3c h1:Cy/Gp+djfO8MsSb/wSDu2b+em7EYMzEwO/6NzdPQyGg=
-github.com/tidepool-org/platform v1.33.1-0.20240307003344-157a71a95e3c/go.mod h1:ShFoHwaZmkZzvsO0TCq9rcZlxpv412HQx4N8AIcAOQM=
+github.com/tidepool-org/platform v1.33.1-0.20240318203309-8562d717b712 h1:FN3z9uVd467lQk/ruxFvq8phvbLxSeBbDz4+o4XCRyA=
+github.com/tidepool-org/platform v1.33.1-0.20240318203309-8562d717b712/go.mod h1:Ten75EzUzT8epZx7uPhRq3wTMZSSZnSxBnasMT5C4Ek=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/xdg-go/pbkdf2 v1.0.0 h1:Su7DPu48wXMwC3bs7MCNG+z4FhcyEuz5dlvchbq0B0c=

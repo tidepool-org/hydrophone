@@ -77,3 +77,6 @@ require (
 
 // Resolve GO-2023-2116, GO-2023-2115, GO-2023-2052
 replace github.com/gofiber/fiber/v2 v2.49.1 => github.com/gofiber/fiber/v2 v2.52.0
+
+// Resolve GO-2024-2611
+replace google.golang.org/protobuf v1.32.0 => google.golang.org/protobuf v1.33.0
