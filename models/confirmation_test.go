@@ -68,7 +68,7 @@ func Test_NewConfirmation(t *testing.T) {
 		t.Fail()
 	}
 
-	if confirmation.ExpiresAt.IsZero() {
+	if confirmation.ExpiresAt == nil || confirmation.ExpiresAt.IsZero() {
 		t.Errorf("expected expiresAt to be non-Zero")
 	}
 
