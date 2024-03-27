@@ -255,7 +255,8 @@ func TestConfirmationIsExpired(t *testing.T) {
 		if invite.IsExpired() {
 			t.Errorf("expected invite to not be expired")
 		}
-		*invite.ExpiresAt = time.Unix(0, 0)
+        expiresAt := time.Unix(0, 0)
+		invite.ExpiresAt = &expiresAt
 		if !invite.IsExpired() {
 			t.Errorf("expected true, got false")
 		}
