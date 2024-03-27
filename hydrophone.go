@@ -171,7 +171,7 @@ func cloudEventsConfigProvider() (*ev.CloudEventsConfig, error) {
 	return cfg, nil
 }
 
-func faultTolerantConsumerProvider(config *ev.CloudEventsConfig, handler ev.EventHandler) (ev.EventConsumer, error) {
+func faultTolerantConsumerProvider(config *ev.CloudEventsConfig, handler ev.EventHandler) (ev.StartStopper, error) {
 	return ev.NewFaultTolerantConsumerGroup(config, func() (ev.MessageConsumer, error) {
 		handlers := []ev.EventHandler{handler}
 		return ev.NewCloudEventsMessageHandler(handlers)
@@ -197,7 +197,7 @@ type InvocationParams struct {
 	Shoreline  shoreline.Client
 	Config     InboundConfig
 	Server     *http.Server
-	Consumer   ev.EventConsumer
+	Consumer   ev.StartStopper
 	Log        *zap.SugaredLogger
 }
 
