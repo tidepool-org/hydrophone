@@ -19,14 +19,14 @@ type FaultTolerantConsumerGroup struct {
 	config         *CloudEventsConfig
 	createConsumer ConsumerFactory
 	m              sync.Mutex
-	delegate       EventConsumer
+	delegate       StartStopper
 	isShuttingDown bool
 	attempts       uint
 	delay          time.Duration
 	delayType      retry.DelayTypeFunc
 }
 
-var _ EventConsumer = &FaultTolerantConsumerGroup{}
+var _ StartStopper = &FaultTolerantConsumerGroup{}
 
 func NewFaultTolerantConsumerGroup(config *CloudEventsConfig, createConsumer ConsumerFactory) (*FaultTolerantConsumerGroup, error) {
 	return &FaultTolerantConsumerGroup{

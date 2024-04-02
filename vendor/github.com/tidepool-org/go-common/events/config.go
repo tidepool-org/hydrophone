@@ -1,7 +1,6 @@
 package events
 
 import (
-	"errors"
 	"github.com/Shopify/sarama"
 	"github.com/kelseyhightower/envconfig"
 )
@@ -69,11 +68,4 @@ func (k *CloudEventsConfig) GetDeadLettersTopic() string {
 
 func (k *CloudEventsConfig) IsDeadLettersEnabled() bool {
 	return k.GetDeadLettersTopic() != ""
-}
-
-func validateConsumerConfig(config *CloudEventsConfig) error {
-	if config.KafkaConsumerGroup == "" {
-		return errors.New("consumer group cannot be empty")
-	}
-	return nil
 }

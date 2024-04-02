@@ -214,7 +214,7 @@ github.com/rcrowley/go-metrics
 # github.com/tidepool-org/clinic/client v0.0.0-20240125151732-338a1e40e083
 ## explicit; go 1.21
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/go-common v0.11.0
+# github.com/tidepool-org/go-common v0.11.1-0.20240327213938-b73f17c89fd8
 ## explicit; go 1.21
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc

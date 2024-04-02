@@ -748,6 +748,8 @@ github.com/tidepool-org/clinic/client v0.0.0-20231026151906-ad2e71e79f6f/go.mod 
 github.com/tidepool-org/devices/api v0.0.0-20220914225528-c7373eb1babc h1:QLsASXo2G8RRm9C6/5Wf7+4iQK6dJQlqcVQFax0AunA=
 github.com/tidepool-org/devices/api v0.0.0-20220914225528-c7373eb1babc/go.mod h1:hiVnAb182K2eV2/ZqZGhi3v3qK7qJhBuDE4bR0HvIcE=
 github.com/tidepool-org/go-common v0.10.1-0.20230508194719-72b56b95a79a/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
+github.com/tidepool-org/go-common v0.11.1-0.20240327213938-b73f17c89fd8 h1:uMotRG/chhFcBEVpcAzbv+ecYKaEKCexAFXoKTXbW50=
+github.com/tidepool-org/go-common v0.11.1-0.20240327213938-b73f17c89fd8/go.mod h1:H5FwIwQLFAunmfoy1jtzsQM+lxV/6ssw8l40e/KfQ4A=
 github.com/tidepool-org/hydrophone/client v0.0.0-20230915144349-ccec1a4d1782/go.mod h1:OTyfLgQuKg7xiU5PLMvxzwwOaUdZsbeIvVxTKrT0n+g=
 github.com/tidepool-org/platform v1.33.1-0.20231013005639-3b2d96d57243/go.mod h1:MmUL8WfxdJtmRPHxh4byfEFrbdOvYIB9BriUaosQkLk=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=

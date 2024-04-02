@@ -2,14 +2,16 @@ package events
 
 import (
 	"context"
+	"log"
+
 	"github.com/Shopify/sarama"
 	"github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
-	"log"
 )
 
-type EventConsumer interface {
+// StartStopper provides lifecycle hooks for long-running service tasks.
+type StartStopper interface {
 	Start() error
 	Stop() error
 }
@@ -54,6 +56,7 @@ func (c *CloudEventsMessageConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessa
 
 func (c *CloudEventsMessageConsumer) handleCloudEvent(ce cloudevents.Event) {
 	var errors []error
+	log.Printf("handling cloud event: %+v", ce)
 	for _, handler := range c.handlers {
 		if handler.CanHandle(ce) {
 			if err := handler.Handle(ce); err != nil {

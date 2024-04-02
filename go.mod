@@ -12,7 +12,7 @@ require (
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/tidepool-org/clinic/client v0.0.0-20240125151732-338a1e40e083
-	github.com/tidepool-org/go-common v0.11.0
+	github.com/tidepool-org/go-common v0.11.1-0.20240327213938-b73f17c89fd8
 	github.com/tidepool-org/platform v1.33.1-0.20240318203309-8562d717b712
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
@@ -68,5 +68,3 @@ require (
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 )
-
-replace github.com/tidepool-org/go-common => ../go-common
