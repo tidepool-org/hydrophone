@@ -9,9 +9,9 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/clinic/client v0.0.0-20240405005007-70f5eaa69633
+	github.com/tidepool-org/clinic/client v0.0.0-20240405013858-50f54cf204d6
 	github.com/tidepool-org/go-common v0.12.1
-	github.com/tidepool-org/platform v1.33.1-0.20240327162102-a38286545e31
+	github.com/tidepool-org/platform v1.33.1-0.20240405013345-9da54abd3089
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
 	go.uber.org/zap v1.26.0

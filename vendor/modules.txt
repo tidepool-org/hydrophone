@@ -211,7 +211,7 @@ github.com/pkg/errors
 # github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 ## explicit
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/clinic/client v0.0.0-20240405005007-70f5eaa69633
+# github.com/tidepool-org/clinic/client v0.0.0-20240405013858-50f54cf204d6
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/go-common v0.12.1
@@ -226,7 +226,7 @@ github.com/tidepool-org/go-common/clients/status
 github.com/tidepool-org/go-common/errors
 github.com/tidepool-org/go-common/events
 github.com/tidepool-org/go-common/jepson
-# github.com/tidepool-org/platform v1.33.1-0.20240327162102-a38286545e31
+# github.com/tidepool-org/platform v1.33.1-0.20240405013345-9da54abd3089
 ## explicit; go 1.22
 github.com/tidepool-org/platform/alerts
 github.com/tidepool-org/platform/auth
