@@ -130,12 +130,12 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/tidepool-org/clinic/client v0.0.0-20240412011046-bbcf4250e5c4 h1:HnUJlc2gkzE8zU5FdfhUXAvwnNYXYRCMSx0/P0iFGxs=
-github.com/tidepool-org/clinic/client v0.0.0-20240412011046-bbcf4250e5c4/go.mod h1:7BpAdFdGJNB3aw/xvCz5XnWjSWRoUtWIX4xcMc4Bsko=
+github.com/tidepool-org/clinic/client v0.0.0-20240412024055-e6391b37e456 h1:r2XgnmEKYvUBq/9uaXCR2qiBkX5z6B7DdEIcI3ymX7s=
+github.com/tidepool-org/clinic/client v0.0.0-20240412024055-e6391b37e456/go.mod h1:7BpAdFdGJNB3aw/xvCz5XnWjSWRoUtWIX4xcMc4Bsko=
 github.com/tidepool-org/go-common v0.12.1 h1:eh0xNl7P/W6n1oDpG60sqNnScUBYGr2uPRZTAPHX0Uk=
 github.com/tidepool-org/go-common v0.12.1/go.mod h1:R8MuVvMM1G7FfUNVderuwFyAiXddP9YopIz7pp8KTMQ=
-github.com/tidepool-org/platform v1.33.1-0.20240405013345-9da54abd3089 h1:uE+aFDXZBivA1wSbP9q4Hh8kpQdT0SdbxrzqX5Rv02Q=
-github.com/tidepool-org/platform v1.33.1-0.20240405013345-9da54abd3089/go.mod h1:CfowSKweZ95dcRmQiAhWhmlnSeA+9cSw4OU0jdVF2go=
+github.com/tidepool-org/platform v1.33.1-0.20240412022409-2d52339c4886 h1:QRQAUTRmKUtv7jmP+4dP746ApmC7P0M1ypVRYH8O+QY=
+github.com/tidepool-org/platform v1.33.1-0.20240412022409-2d52339c4886/go.mod h1:QMsN1a7sB5ujIhjYAI1abn26AajH6dCokCJ0OIq1DWI=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/xdg-go/pbkdf2 v1.0.0 h1:Su7DPu48wXMwC3bs7MCNG+z4FhcyEuz5dlvchbq0B0c=
