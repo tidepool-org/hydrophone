@@ -1,19 +1,17 @@
 module github.com/tidepool-org/hydrophone
 
-go 1.21
-
-toolchain go1.21.3
+go 1.22
 
 require (
 	github.com/aws/aws-sdk-go v1.50.6
 	github.com/golang/mock v1.6.0
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/clinic/client v0.0.0-20240125151732-338a1e40e083
-	github.com/tidepool-org/go-common v0.11.0
-	github.com/tidepool-org/platform v1.33.1-0.20240318203309-8562d717b712
+	github.com/tidepool-org/clinic/client v0.0.0-20240412011046-bbcf4250e5c4
+	github.com/tidepool-org/go-common v0.12.1
+	github.com/tidepool-org/platform v1.33.1-0.20240405013345-9da54abd3089
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
 	go.uber.org/zap v1.26.0
@@ -26,7 +24,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.14.0 // indirect
-	github.com/cloudevents/sdk-go/v2 v2.14.0 // indirect
+	github.com/cloudevents/sdk-go/v2 v2.15.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.5.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
@@ -59,11 +57,11 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
 	go.uber.org/dig v1.17.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
-	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect

@@ -22,6 +22,10 @@ dist/hydrophone: $(GENERATED_SRCS)
 build:
 	$(MAKE) dist/hydrophone
 
+.PHONY: test
+test:
+	GOWORK=off ./test.sh
+
 .PHONY: generate
 # Generates client api
 generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
@@ -30,19 +34,27 @@ generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
 	$(OAPI_CODEGEN) -package=api -generate=client spec/confirm.v1.yaml > client/client.go
 	cd client && go generate ./...
 
-.PHONY: test
-test:
-	GOWORK=off ./test.sh
-
 $(OAPI_CODEGEN):
 	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.13.4
 
-$(SWAGGER_CLI):
-	npm-tools
+$(SWAGGER_CLI): npm-tools
 
 .PHONY: npm-tools
 npm-tools:
 # When using --no-save, any dependencies not included will be deleted, so one
 # has to install all the packages all at the same time. But it saves us from
 # having to muck with packages.json.
-	npm i --no-save --local $(NPM_PKG_SPECS)
+	npm install --no-save --local $(NPM_PKG_SPECS)
+
+.PHONY: clean
+clean:
+	rm -rf dist node_modules tools
+
+.PHONY: ci-generate
+ci-generate: generate
+
+.PHONY: ci-build
+ci-build: build
+
+.PHONY: ci-test
+ci-test: test
