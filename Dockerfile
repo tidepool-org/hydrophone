@@ -1,10 +1,10 @@
 # Development
-FROM golang:1.22.1-alpine AS development
+FROM golang:1.22.2-alpine AS development
 WORKDIR /go/src/github.com/tidepool-org/hydrophone
 RUN adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/hydrophone
 USER tidepool
-RUN go install github.com/cosmtrek/air@latest
+RUN go install github.com/cosmtrek/air@v1.49.0
 COPY --chown=tidepool . .
 RUN ./build.sh
 CMD ["air"]

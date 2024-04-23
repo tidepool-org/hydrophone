@@ -64,10 +64,10 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/yosssi/ace v0.0.5 // indirect
 	golang.org/x/arch v0.7.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
-	golang.org/x/net v0.20.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
@@ -77,3 +77,6 @@ require (
 
 // Resolve GO-2023-2116, GO-2023-2115, GO-2023-2052
 replace github.com/gofiber/fiber/v2 v2.49.1 => github.com/gofiber/fiber/v2 v2.52.0
+
+// Resolve GO-2024-2611
+replace google.golang.org/protobuf v1.32.0 => google.golang.org/protobuf v1.33.0

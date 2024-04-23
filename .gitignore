@@ -5,3 +5,7 @@ artifact_docker.sh
 .DS_Store
 /node_modules/
 /tools/
+.vscode/
+*.envrc
+*.env
+*.test

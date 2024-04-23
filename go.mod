@@ -9,9 +9,9 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/clinic/client v0.0.0-20240307005814-71ebe5953545
-	github.com/tidepool-org/go-common v0.11.1-0.20240306185825-1ddb2b762e00
-	github.com/tidepool-org/platform v1.33.1-0.20240307003344-157a71a95e3c
+	github.com/tidepool-org/clinic/client v0.0.0-20240412024055-e6391b37e456
+	github.com/tidepool-org/go-common v0.12.1
+	github.com/tidepool-org/platform v1.33.1-0.20240412022409-2d52339c4886
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
 	go.uber.org/zap v1.26.0
@@ -24,7 +24,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.14.0 // indirect
-	github.com/cloudevents/sdk-go/v2 v2.14.0 // indirect
+	github.com/cloudevents/sdk-go/v2 v2.15.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.5.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
@@ -57,11 +57,11 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
 	go.uber.org/dig v1.17.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
-	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
