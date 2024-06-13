@@ -4,7 +4,7 @@ WORKDIR /go/src/github.com/tidepool-org/hydrophone
 RUN adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/hydrophone
 USER tidepool
-RUN go install github.com/cosmtrek/air@v1.49.0
+RUN go install github.com/air-verse/air@v1.52.2
 COPY --chown=tidepool . .
 RUN ./build.sh
 CMD ["air"]
