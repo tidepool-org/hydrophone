@@ -9,3 +9,4 @@ artifact_docker.sh
 *.envrc
 *.env
 *.test
+.idea
