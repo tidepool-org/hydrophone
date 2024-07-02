@@ -3,17 +3,17 @@ module github.com/tidepool-org/hydrophone
 go 1.22
 
 require (
-	github.com/aws/aws-sdk-go v1.54.0
+	github.com/aws/aws-sdk-go v1.54.11
 	github.com/golang/mock v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/clinic/client v0.0.0-20240612205715-a4a56080b4f7
+	github.com/tidepool-org/clinic/client v0.0.0-20240629034458-1365c8963143
 	github.com/tidepool-org/go-common v0.12.2-0.20240612192926-de6d5c5a742c
-	github.com/tidepool-org/platform v1.33.1-0.20240412022409-2d52339c4886
-	go.mongodb.org/mongo-driver v1.15.0
-	go.uber.org/fx v1.22.0
+	github.com/tidepool-org/platform v1.33.1-0.20240710040908-039dbee20943
+	go.mongodb.org/mongo-driver v1.16.0
+	go.uber.org/fx v1.22.1
 	go.uber.org/zap v1.27.0
 )
 
@@ -30,7 +30,6 @@ require (
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -63,6 +62,4 @@ require (
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
 )
