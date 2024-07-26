@@ -15,19 +15,19 @@ NoAccountSignUp: "Create account"
 #Password Reset
 #(email for those that requested password reset)
 PasswordResetSubject: "Password reset"
-PasswordResetHeadline: "You requested to reset your YourLoops password."
+PasswordResetHeadline: "You requested to reset your Diabeloop password."
 PasswordResetBody: "Click on the link below to choose a new one."
 PasswordResetReset: "Reset my password"
 #Patient Password Reset
 #(email for patients that requested password reset)
 PatientPasswordResetSubject: "Password reset instructions"
-PatientPasswordResetHeadline: "You requested to reset your YourLoops account password."
+PatientPasswordResetHeadline: "You requested to reset your Diabeloop account password."
 PatientPasswordResetBody: "Please follow the instructions on your DBL and enter this key:"
 PatientPasswordResetBody2: "The key is valid for 1h. If it has expired, please request a new one on your DBL."
 #Patient Password Reset request from web app
 #(email for patients that requested password reset)
 PatientPasswordInfoSubject: "Password reset"
-PatientPasswordInfoHeadline: "You requested to reset your YourLoops password from YourLoops. However, for safety reasons, you have to request the change from your DBL."
+PatientPasswordInfoHeadline: "You requested to reset your Diabeloop password from YourLoops. However, for safety reasons, you have to request the change from your DBL."
 PatientPasswordInfoBody: "Go to Settings > YourLoops and follow the instructions on your DBL."
 PatientPasswordInfoBody2: "If this email has reached you in error, please contact our <a style='text-decoration:none;color:#00a3e2;' href='{{ .SupportEmail }}'>customer support</a>."
 #CareTeamInvite
@@ -38,8 +38,8 @@ CareTeamInviteBody: "YourLoops is a visualization platform for diabetes manageme
 CareTeamInviteBody2: "{{ .PatientName }} chose to share their data with you. To respond, click on the link below."
 #Signup
 #(email to ask patient for verification of email)
-SignupHeadline: "Verify your email address to activate your YourLoops account."
-SignupBody: "You created an account on YourLoops. To confirm your identity, please click on the link below."
+SignupHeadline: "Verify your email address to activate your Diabeloop account."
+SignupBody: "You created a Diabeloop account. To confirm your identity, please click on the link below."
 SignupDeletionWarning: "If the account is not activated during this period, your account registration will be deleted."
 SignupVerify: "Activate my account"
 #Signup Clinic
@@ -104,19 +104,16 @@ MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} invites you to share your 
 MedicalTeamPatientInviteWarning: "Please verify that the above details match the information provided by your healthcare professional before responding to the invitation."
 MedicalTeamPatientInviteWarning2: "If you're unsure, get in touch with your healthcare professional and do not accept this invitation."
 MedicalTeamPatientInviteInfo: "By adding this team, you consent to share your personal data (including health data) with its members, who are authorized healthcare professionals registered on YourLoops."
-
 #Medical/Care team patient monitoring invitation
 MedicalTeamMonitoringInvitationSubject: "Invitation to join monitoring program"
 MedicalTeamMonitoringInviteHeadline: "{{ .CreatorName }} invites you to be monitored by {{ .MedicalteamName }}"
 MedicalTeamMonitoringInviteWarning: "Please verify that the above details match the information provided by your healthcare professional before responding to the invitation."
 MedicalTeamMonitoringInviteInfo: "By join this monitoring program, you consent to be contacted by the members of {{ .MedicalteamName }} who are authorized healthcare professionals registered on YourLoops."
-
 #Shared
 ReadDataPrivacy: "Read our <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacy policy</a> for more information."
 RespondToInvite: "Respond to invitation"
 ConfirmationSubject: "Verify your email address"
 PhishingWarning: "Be alert to phishing attacks that mimic the Diabeloop name and logo. Diabeloop will never request your password. Your password should never be communicated to a third party."
-
 #AppPrescription Notification
 #(email for patients)
 AppPrescriptionSubject: "Patient medical prescription"

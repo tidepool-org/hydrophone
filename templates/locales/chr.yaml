@@ -113,6 +113,7 @@ MedicalTeamMonitoringInviteInfo: "crwdns19078:0{{ .MedicalteamName }}crwdne19078
 ReadDataPrivacy: "crwdns13463:0{{ .AssetURL }}crwdnd13463:0{{ .Language }}crwdne13463:0"
 RespondToInvite: "crwdns13465:0crwdne13465:0"
 ConfirmationSubject: "crwdns13467:0crwdne13467:0"
+PhishingWarning: "crwdns82181:0crwdne82181:0"
 #AppPrescription Notification
 #(email for patients)
 AppPrescriptionSubject: "crwdns28755:0crwdne28755:0"

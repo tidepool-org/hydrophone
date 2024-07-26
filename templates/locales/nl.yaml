@@ -15,19 +15,19 @@ NoAccountSignUp: "Account aanmaken"
 #Password Reset
 #(email for those that requested password reset)
 PasswordResetSubject: "Wachtwoord resetten"
-PasswordResetHeadline: "Je hebt gevraagd om je YourLoops-wachtwoord opnieuw in te stellen."
+PasswordResetHeadline: "Je hebt gevraagd om je Diabeloop-wachtwoord opnieuw in te stellen."
 PasswordResetBody: "Klik op onderstaande link om een ​​nieuw wachtwoord te kiezen."
 PasswordResetReset: "Mijn wachtwoord resetten"
 #Patient Password Reset
 #(email for patients that requested password reset)
 PatientPasswordResetSubject: "Instructies voor het resetten van het wachtwoord"
-PatientPasswordResetHeadline: "Je hebt gevraagd om je YourLoops-accountwachtwoord opnieuw in te stellen."
+PatientPasswordResetHeadline: "Je hebt gevraagd om je Diabeloop-accountwachtwoord opnieuw in te stellen."
 PatientPasswordResetBody: "Volg de instructies op je DBL en voer deze code in:"
 PatientPasswordResetBody2: "De code is 1 uur geldig. Als deze is verlopen, vraag dan een nieuwe aan op je DBL."
 #Patient Password Reset request from web app
 #(email for patients that requested password reset)
 PatientPasswordInfoSubject: "Wachtwoord resetten"
-PatientPasswordInfoHeadline: "Je hebt gevraagd om je YourLoops-wachtwoord opnieuw in te stellen bij YourLoops. Om veiligheidsredenen moet je de wijziging echter aanvragen bij je DBL."
+PatientPasswordInfoHeadline: "Je hebt gevraagd om je Diabeloop-wachtwoord opnieuw in te stellen bij YourLoops. Om veiligheidsredenen moet je de wijziging echter aanvragen bij je DBL."
 PatientPasswordInfoBody: "Ga naar Instellingen > YourLoops en volg de instructies op je DBL."
 PatientPasswordInfoBody2: "Als je deze e-mail ten onrechte ontvangt, neem dan contact op met onze <a style='text-decoration:none;color:#00a3e2;' href='{{ .SupportEmail }}'>klantenservice</a>."
 #CareTeamInvite
@@ -38,8 +38,8 @@ CareTeamInviteBody: "YourLoops is een visualisatieplatform voor diabetesmanageme
 CareTeamInviteBody2: "{{ .PatientName }} koos om hun gegevens met u te delen. Om te reageren, klik op de link hieronder."
 #Signup
 #(email to ask patient for verification of email)
-SignupHeadline: "Verifieer je e-mailadres om je YourLoops-account te activeren."
-SignupBody: "Je hebt een account aangemaakt op YourLoops. Klik op de onderstaande link om je identiteit te bevestigen."
+SignupHeadline: "Verifieer je e-mailadres om je Diabeloop-account te activeren."
+SignupBody: "Je hebt een account aangemaakt Diabeloop. Klik op de onderstaande link om je identiteit te bevestigen."
 SignupDeletionWarning: "Als het account niet binnen deze periode geactiveerd wordt, wordt je accountregistratie verwijderd."
 SignupVerify: "Mijn account activeren"
 #Signup Clinic
@@ -107,12 +107,13 @@ MedicalTeamPatientInviteInfo: "Door dit team toe te voegen, stem je ermee in om 
 #Medical/Care team patient monitoring invitation
 MedicalTeamMonitoringInvitationSubject: "Invitation to join monitoring program"
 MedicalTeamMonitoringInviteHeadline: "{{ .CreatorName }} invites you to be monitored by {{ .MedicalteamName }}"
-MedicalTeamMonitoringInviteWarning: "Please verify that the above details match the information provided by your healthcare professional before responding to the invitation."
+MedicalTeamMonitoringInviteWarning: "Controleer of de bovenstaande gegevens overeenkomen met de informatie die door je zorgverlener is verstrekt voordat je op de uitnodiging reageert."
 MedicalTeamMonitoringInviteInfo: "By join this monitoring program, you consent to be contacted by the members of {{ .MedicalteamName }} who are authorized healthcare professionals registered on YourLoops."
 #Shared
 ReadDataPrivacy: "Lees ons <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
 RespondToInvite: "Reageren op uitnodiging"
 ConfirmationSubject: "Verifieer je e-mailadres"
+PhishingWarning: "Wees alert voor phishingaanvallen die de naam en het logo van Diabeloop nabootsen. Diabeloop zal nooit naar je wachtwoord vragen. Geef je wachtwoord nooit aan derden."
 #AppPrescription Notification
 #(email for patients)
 AppPrescriptionSubject: "Patient medical prescription"

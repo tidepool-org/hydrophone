@@ -15,13 +15,13 @@ NoAccountSignUp: "アカウントの作成"
 #Password Reset
 #(email for those that requested password reset)
 PasswordResetSubject: "パスワードの再設定"
-PasswordResetHeadline: "YourLoopsパスワードの再設定がリクエストされました。"
+PasswordResetHeadline: "Diabeloopパスワードの再設定がリクエストされました。"
 PasswordResetBody: "下記のリンクをクリックして新しいパスワードを選択してください。"
 PasswordResetReset: "パスワードを再設定"
 #Patient Password Reset
 #(email for patients that requested password reset)
 PatientPasswordResetSubject: "パスワード再設定の手順"
-PatientPasswordResetHeadline: "YourLoopsアカウントのパスワードの再設定がリクエストされました。"
+PatientPasswordResetHeadline: "Diabeloopアカウントのパスワードの再設定がリクエストされました。"
 PatientPasswordResetBody: "DBLG1の指示に従い、次のキーを入力してください："
 PatientPasswordResetBody2: "キーは1時間有効です。有効期限が切れた場合は、DBLG1に新しいキーをリクエストしてください。"
 #Patient Password Reset request from web app
@@ -38,8 +38,8 @@ CareTeamInviteBody: "YourLoopsは糖尿病管理、共有を目的とした可�
 CareTeamInviteBody2: "{{ .PatientName }}さんがあなたとデータを共有しようとしています。回答するには下記のリンクをクリックしてください。"
 #Signup
 #(email to ask patient for verification of email)
-SignupHeadline: "メールアドレスを確認し、YourLoopsアカウントを有効にします。"
-SignupBody: "YourLoopsのアカウントを作成しました。本人確認を行うには、以下のリンクをクリックしてください。"
+SignupHeadline: "メールアドレスを確認し、Diabeloopアカウントを有効にします。"
+SignupBody: "Diabeloopのアカウントを作成しました。本人確認を行うには、以下のリンクをクリックしてください。"
 SignupDeletionWarning: "この期間に有効にしないと、アカウント登録が削除されます。"
 SignupVerify: "アカウントを有効にする"
 #Signup Clinic
@@ -113,6 +113,7 @@ MedicalTeamMonitoringInviteInfo: "このモニタリングプログラムに参�
 ReadDataPrivacy: "詳細については、<a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>プライバシーポリシー</a>をご覧ください。"
 RespondToInvite: "招待に回答する"
 ConfirmationSubject: "メールアドレスの確認"
+PhishingWarning: "Diabeloopの名称及びロゴを模したフィッシング詐欺にご注意ください。 Diabeloopがパスワードを要求することはございません。パスワードを第三者に提供しないでください。"
 #AppPrescription Notification
 #(email for patients)
 AppPrescriptionSubject: "患者医療処方箋"

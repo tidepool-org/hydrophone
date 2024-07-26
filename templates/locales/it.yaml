@@ -15,19 +15,19 @@ NoAccountSignUp: "Crea account"
 #Password Reset
 #(email for those that requested password reset)
 PasswordResetSubject: "Reimpostazione password"
-PasswordResetHeadline: "Hai richiesto di reimpostare la password di YourLoops."
+PasswordResetHeadline: "Hai richiesto di reimpostare la password di Diabeloop."
 PasswordResetBody: "Fai clic sul collegamento sottostante per sceglierne una nuova."
 PasswordResetReset: "Reimposta password"
 #Patient Password Reset
 #(email for patients that requested password reset)
 PatientPasswordResetSubject: "Istruzioni per la reimpostazione della password"
-PatientPasswordResetHeadline: "Hai richiesto di reimpostare la password del tuo account YourLoops."
+PatientPasswordResetHeadline: "Hai richiesto di reimpostare la password del tuo account Diabeloop."
 PatientPasswordResetBody: "Segui le istruzioni riportate sul DBL e digita questa chiave:"
 PatientPasswordResetBody2: "La chiave è valida per 1 ora. Se è scaduta, richiedine una nuova sul DBL."
 #Patient Password Reset request from web app
 #(email for patients that requested password reset)
 PatientPasswordInfoSubject: "Reimpostazione password"
-PatientPasswordInfoHeadline: "Hai richiesto di reimpostare la password di YourLoops da YourLoops. Tuttavia, per motivi di sicurezza, devi richiedere la modifica dal DBL."
+PatientPasswordInfoHeadline: "Hai richiesto di reimpostare la password di Diabeloop da YourLoops. Tuttavia, per motivi di sicurezza, devi richiedere la modifica dal DBL."
 PatientPasswordInfoBody: "Vai a Impostazioni > YourLoops e segui le istruzioni visualizzate sul DBL."
 PatientPasswordInfoBody2: "Se questa e-mail ti è arrivata per errore, contatta il nostro <a style='text-decoration:none;color:#00a3e2;' href='{{ .SupportEmail }}'>servizio di assistenza</a>."
 #CareTeamInvite
@@ -38,8 +38,8 @@ CareTeamInviteBody: "YourLoops è una piattaforma di visualizzazione per la gest
 CareTeamInviteBody2: "{{ .PatientName }} ha scelto di condividere i suoi dati con te. Per rispondere, clicca sul link qui sotto."
 #Signup
 #(email to ask patient for verification of email)
-SignupHeadline: "Verifica il tuo indirizzo e-mail per attivare l’account YourLoops."
-SignupBody: "Hai creato un account su YourLoops. Per confermare la tua identità, clicca sul link sottostante."
+SignupHeadline: "Verifica il tuo indirizzo e-mail per attivare l’account Diabeloop."
+SignupBody: "Hai creato un account Diabeloop. Per confermare la tua identità, clicca sul link sottostante."
 SignupDeletionWarning: "Se l'account non viene attivato entro questo periodo, la registrazione dell'account verrà eliminata."
 SignupVerify: "Attiva il mio account"
 #Signup Clinic
@@ -113,6 +113,7 @@ MedicalTeamMonitoringInviteInfo: "Aderendo a questo programma di monitoraggio, a
 ReadDataPrivacy: "Per ulteriori informazioni, leggi la nostra <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>informativa sulla privacy</a>."
 RespondToInvite: "Rispondi all’invito"
 ConfirmationSubject: "Verifica il tuo indirizzo e-mail"
+PhishingWarning: "Fare attenzione agli attacchi di phishing che simulano il nome e il logo Diabeloop. Diabeloop non chiede mai la password. La password non deve mai essere comunicata a terzi."
 #AppPrescription Notification
 #(email for patients)
 AppPrescriptionSubject: "Prescrizione medica per il paziente"

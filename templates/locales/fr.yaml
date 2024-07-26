@@ -15,13 +15,13 @@ NoAccountSignUp: "Créer un compte"
 #Password Reset
 #(email for those that requested password reset)
 PasswordResetSubject: "Réinitialisation du mot de passe"
-PasswordResetHeadline: "Vous avez demandé la réinitialisation de votre mot de passe YourLoops."
+PasswordResetHeadline: "Vous avez demandé la réinitialisation de votre mot de passe Diabeloop."
 PasswordResetBody: "Cliquez sur le bouton ci-dessous pour en choisir un nouveau."
 PasswordResetReset: "Réinitialiser mon mot de passe"
 #Patient Password Reset
 #(email for patients that requested password reset)
 PatientPasswordResetSubject: "Instructions de réinitialisation du mot de passe"
-PatientPasswordResetHeadline: "Vous avez demandé la réinitialisation de votre mot de passe YourLoops."
+PatientPasswordResetHeadline: "Vous avez demandé la réinitialisation de votre mot de passe Diabeloop."
 PatientPasswordResetBody: "Veuillez suivre les instructions sur votre DBL et entrer la clé suivante :"
 PatientPasswordResetBody2: "Cette clé est valable une heure. En cas d'expiration, veuillez renouveler la demande sur votre DBL."
 #Patient Password Reset request from web app
@@ -38,8 +38,8 @@ CareTeamInviteBody: "YourLoops est une plateforme web qui permet de visualiser l
 CareTeamInviteBody2: "{{ .PatientName }} a choisi de partager ses données avec vous. Pour accepter, cliquez sur le lien ci-dessous."
 #Signup
 #(email to ask patient for verification of email)
-SignupHeadline: "Vérifiez votre adresse email pour activer votre compte YourLoops."
-SignupBody: "Vous souhaitez créer un compte sur YourLoops. Pour confirmer qu’il s’agit bien de votre adresse email et finaliser votre inscription, veuillez cliquer sur le bouton ci-dessous."
+SignupHeadline: "Vérifiez votre adresse email pour activer votre compte Diabeloop."
+SignupBody: "Vous souhaitez créer un compte Diabeloop. Pour confirmer qu’il s’agit bien de votre adresse email et finaliser votre inscription, veuillez cliquer sur le bouton ci-dessous."
 SignupDeletionWarning: "Si le compte n'est pas activé pendant cette période, votre compte sera supprimé."
 SignupVerify: "Activer mon compte"
 #Signup Clinic
@@ -113,6 +113,7 @@ MedicalTeamMonitoringInviteInfo: "En vous acceptant de rejoindre ce programme de
 ReadDataPrivacy: "Veuillez consulter notre <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>politique de confidentialité</a> pour plus d'informations."
 RespondToInvite: "Répondre à l'invitation"
 ConfirmationSubject: "Vérification de votre adresse email"
+PhishingWarning: "Soyez attentif aux attaques de phishing qui imitent le nom et le logo Diabeloop. Diabeloop ne vous demandera jamais votre mot de passe. Votre mot de passe ne doit jamais être communiqué à un tiers."
 #AppPrescription Notification
 #(email for patients)
 AppPrescriptionSubject: "Prescription médicale du patient"
