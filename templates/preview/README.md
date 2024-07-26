@@ -19,7 +19,7 @@ To start the service you need to edit the configuration file (local-env.sh), sou
 ```
 $ cd templates/preview
 $ . ./local-env.sh
-$ ./preview.exe
+$ ./preview
 ``` 
 
 The webserver starts and listen on port 8088.  
