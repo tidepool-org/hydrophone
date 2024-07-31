@@ -3,21 +3,18 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/gorilla/mux"
 	"github.com/mdblp/crew/store"
 	"github.com/mdblp/hydrophone/templates"
 	. "github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/token"
 	"github.com/stretchr/testify/mock"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strings"
+	"testing"
 )
 
 func initTestingTeamRouter(returnNone bool) *mux.Router {
@@ -26,7 +23,6 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 
 	// Init mock data
 	remoteMonitored := true
-	notRemoteMonitored := false
 	token1 := "00000"
 	teams1 := []store.Team{}
 	members := []store.Member{
@@ -173,90 +169,6 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		Members:     membersDismissInviteAsAdmin,
 		ID:          "teamDismissInvitePatient",
 	}
-	membersMonitoringTeam := []store.Member{
-		{
-			UserID:           testing_uid1,
-			TeamID:           "teamMonitoring",
-			Role:             "admin",
-			InvitationStatus: "accepted",
-		},
-	}
-
-	patientsMonitoringTeam := []store.Patient{
-		{
-			UserID:           testing_uid_patient1,
-			TeamID:           "teamMonitoring",
-			InvitationStatus: "accepted",
-		},
-		{
-			UserID:           testing_uid1,
-			TeamID:           "teamMonitoring",
-			InvitationStatus: "accepted",
-		},
-		{
-			UserID:           testing_uid_patient2,
-			TeamID:           "teamMonitoring",
-			InvitationStatus: "pending",
-		},
-	}
-
-	teamMonitoring := store.Team{
-		Name:        "team monitoring",
-		Description: "team monitoring",
-		Members:     membersMonitoringTeam,
-		ID:          "teamMonitoring",
-		RemotePatientMonitoring: &store.TeamMonitoring{
-			Enabled: &remoteMonitored,
-		},
-	}
-
-	membersMonitoringTeamNotAdmin := []store.Member{
-		{
-			UserID:           testing_uid1,
-			TeamID:           "teamMonitoring",
-			Role:             "member",
-			InvitationStatus: "accepted",
-		},
-	}
-
-	teamMonitoringNotAdmin := store.Team{
-		Name:        "team monitoring",
-		Description: "team monitoring",
-		Members:     membersMonitoringTeamNotAdmin,
-		ID:          "teamMonitoring",
-		RemotePatientMonitoring: &store.TeamMonitoring{
-			Enabled: &remoteMonitored,
-		},
-	}
-
-	teamMonitoringNotMonitored := store.Team{
-		Name:        "team monitoring",
-		Description: "team monitoring",
-		Members:     membersMonitoringTeam,
-		ID:          "teamMonitoring",
-		RemotePatientMonitoring: &store.TeamMonitoring{
-			Enabled: &notRemoteMonitored,
-		},
-	}
-
-	membersMonitoringTeamNotMember := []store.Member{
-		{
-			UserID:           testing_uid1,
-			TeamID:           "teamMonitoring",
-			Role:             "admin",
-			InvitationStatus: "accepted",
-		},
-	}
-
-	teamMonitoringNotMember := store.Team{
-		Name:        "teamMonitoringNotMember",
-		Description: "teamMonitoringNotMember",
-		Members:     membersMonitoringTeamNotMember,
-		ID:          "teamMonitoringNotMember",
-		RemotePatientMonitoring: &store.TeamMonitoring{
-			Enabled: &remoteMonitored,
-		},
-	}
 
 	member_uid3 := store.Member{
 		TeamID:           "1",
@@ -301,18 +213,11 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"teamAlreadyMember", []store.Patient{patient_dup}, nil)
 	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"teamInvitePatient", []store.Patient{}, nil)
 	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"123456", []store.Patient{}, nil)
-	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"teamMonitoring", patientsMonitoringTeam, nil)
-	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"teamMonitoringEmpty", []store.Patient{}, nil)
-	mockPerms.SetMockNextCall(testing_token_uid1+"teamMonitoringNotMember", &teamMonitoringNotMember, nil)
-	mockPerms.SetMockNextCall("GetTeamPatients"+testing_token_uid1+"teamMonitoringNotMember", []store.Patient{}, nil)
 
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamInvitePatient", &teamAddPatientAsMember, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamDeleteMember", &teamDeleteMember, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+testing_uid1, &membersDismissInvite_uid1, nil)
 	mockPerms.SetMockNextCall(testing_token_uid1+"teamDismissInvite", &teamDismissInvite, nil)
-	mockPerms.SetMockNextCall(testing_token_uid1+"teamMonitoring", &teamMonitoring, nil)
-	mockPerms.SetMockNextCall(testing_token_uid1+"teamMonitoringNotAdmin", &teamMonitoringNotAdmin, nil)
-	mockPerms.SetMockNextCall(testing_token_uid1+"teamMonitoringNotMonitored", &teamMonitoringNotMonitored, nil)
 
 	mockPerms.SetMockNextCall(testing_token_uid1+"key.to.be.dismissed", &member_dismissed, nil)
 	mockPerms.SetMockNextCall("UpdatePatient"+testing_token_uid1+"patient.key.to.be.dismissed", &patient_dismissed, nil)
@@ -321,15 +226,6 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 
 	mockPerms.SetMockNextCall("AddPatient"+testing_token_uid1+testing_uid4, &patient_uid4, nil)
 
-	mockPerms.On(
-		"UpdatePatientMonitoringWithContext", mock.Anything, mock.Anything, mock.Anything,
-	).Return(nil, nil)
-	mockPerms.On(
-		"GetPatientMonitoring", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-	).Return(&store.Patient{}, nil)
-
-	mockPerms.On("GetTeamWithContext", mock.Anything, mock.Anything, "teamMonitoringEmpty").
-		Return(nil, errors.New("Team doesn't exist"))
 	mockPerms.On("GetTeamWithContext", mock.Anything, mock.Anything, "teamAlreadyMember").
 		Return(&teamAlreadyMember, nil)
 	mockPerms.On("GetTeamWithContext", mock.Anything, mock.Anything, "teamInvitePatient").
@@ -338,14 +234,6 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		Return(&teamDeleteMember, nil)
 	mockPerms.On("GetTeamWithContext", mock.Anything, mock.Anything, "teamDismissInvite").
 		Return(&teamDismissInvite, nil)
-	mockPerms.On("GetTeamWithContext", mock.Anything, mock.Anything, "teamMonitoring").
-		Return(&teamMonitoring, nil)
-	mockPerms.On("GetTeamWithContext", mock.Anything, mock.Anything, "teamMonitoringNotAdmin").
-		Return(&teamMonitoringNotAdmin, nil)
-	mockPerms.On("GetTeamWithContext", mock.Anything, mock.Anything, "teamMonitoringNotMonitored").
-		Return(&teamMonitoringNotMonitored, nil)
-	mockPerms.On("GetTeamWithContext", mock.Anything, mock.Anything, "teamMonitoringNotMember").
-		Return(&teamMonitoringNotMember, nil)
 
 	mockShoreline.On("TokenProvide").Return("ok")
 
@@ -388,7 +276,6 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 }
 
 func initTests() []toTest {
-	monitoringEnd := time.Now().Add(2 * time.Hour)
 	tests := []toTest{
 		// returns a 200 when everything goes well
 		{
@@ -667,122 +554,6 @@ func initTests() []toTest {
 				"code":   float64(409),
 				"error":  float64(1001),
 				"reason": statusExistingInviteMessage,
-			},
-		},
-		{
-			method:   "POST",
-			url:      "/send/team/monitoring/teamAlreadyMember/UID123",
-			respCode: 409,
-			token:    testing_token_uid1,
-			body: testJSONObject{
-				"monitoringEnd": monitoringEnd,
-			},
-			response: testJSONObject{
-				"code":   float64(409),
-				"error":  float64(1001),
-				"reason": statusExistingInviteMessage,
-			},
-		},
-		{
-			method:     "POST",
-			url:        "/send/team/monitoring/teamMonitoring/" + testing_uid_patient1,
-			returnNone: true,
-			respCode:   200,
-			token:      testing_token_uid1,
-			body: testJSONObject{
-				"monitoringEnd": monitoringEnd,
-			},
-		},
-		{
-			method:     "POST",
-			url:        "/send/team/monitoring/teamMonitoring/" + testing_uid_patient2,
-			returnNone: false,
-			respCode:   409,
-			token:      testing_token_uid1,
-			response: testJSONObject{
-				"code":   float64(409),
-				"error":  float64(1001),
-				"reason": statusExistingInviteMessage,
-			},
-			body: testJSONObject{
-				"monitoringEnd": monitoringEnd,
-			},
-		},
-		{
-			method:     "POST",
-			url:        "/send/team/monitoring/teamMonitoringNotAdmin/" + testing_uid_patient2,
-			returnNone: true,
-			respCode:   401,
-			token:      testing_token_uid1,
-			response: testJSONObject{
-				"code":   float64(401),
-				"error":  float64(1001),
-				"reason": STATUS_NOT_ADMIN,
-			},
-			body: testJSONObject{
-				"monitoringEnd": monitoringEnd,
-			},
-		},
-		{
-			method:     "POST",
-			url:        "/send/team/monitoring/teamMonitoringNotMonitored/" + testing_uid_patient1,
-			returnNone: true,
-			respCode:   400,
-			token:      testing_token_uid1,
-			response: testJSONObject{
-				"code":   float64(400),
-				"error":  float64(1001),
-				"reason": STATUS_NOT_TEAM_MONITORING,
-			},
-			body: testJSONObject{
-				"monitoringEnd": monitoringEnd,
-			},
-		},
-		{
-			method:     "POST",
-			url:        "/send/team/monitoring/teamMonitoring/doesnotexist@myemail.com",
-			returnNone: true,
-			respCode:   400,
-			token:      testing_token_uid1,
-			response: testJSONObject{
-				"code":   float64(400),
-				"error":  float64(1001),
-				"reason": STATUS_ERR_FINDING_USER,
-			},
-			body: testJSONObject{
-				"monitoringEnd": monitoringEnd,
-			},
-		},
-		// STATUS_ERR_FINDING_TEAM
-		{
-			method:     "POST",
-			url:        "/send/team/monitoring/teamMonitoringEmpty/" + testing_uid_patient1,
-			returnNone: true,
-			respCode:   400,
-			token:      testing_token_uid1,
-			response: testJSONObject{
-				"code":   float64(400),
-				"error":  float64(1001),
-				"reason": STATUS_ERR_FINDING_TEAM,
-			},
-			body: testJSONObject{
-				"monitoringEnd": monitoringEnd,
-			},
-		},
-		// STATUS_ERR_PATIENT_NOT_MBR
-		{
-			method:     "POST",
-			url:        "/send/team/monitoring/teamMonitoringNotMember/" + testing_uid_patient3,
-			returnNone: true,
-			respCode:   500,
-			token:      testing_token_uid1,
-			response: testJSONObject{
-				"code":   float64(500),
-				"error":  float64(1001),
-				"reason": STATUS_ERR_PATIENT_NOT_MBR,
-			},
-			body: testJSONObject{
-				"monitoringEnd": monitoringEnd,
 			},
 		},
 	}
@@ -1124,12 +895,6 @@ func TestAcceptTeamInvite(t *testing.T) {
 		mockPerms.SetMockNextCall(testing_token, teams1, nil)
 		mockPerms.SetMockNextCall(testing_token+testing_uid1, &membersAccepted, nil)
 		mockPerms.SetMockNextCall("UpdatePatient"+testing_token_uid1+testing_uid1, &patientsAccepted, nil)
-		mockPerms.On(
-			"UpdatePatientMonitoringWithContext", mock.Anything, mock.Anything, mock.Anything,
-		).Return(nil, nil)
-		mockPerms.On(
-			"GetPatientMonitoring", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-		).Return(&store.Patient{}, nil)
 
 		//default flow, fully authorized
 		hydrophone := InitApi(
@@ -1212,401 +977,4 @@ func TestAcceptTeamInvite(t *testing.T) {
 			}
 		}
 	}
-}
-
-func TestAcceptMonitoringInvite(t *testing.T) {
-
-	mockSeagull.On("SetCollection", testing_uid1, "profile", map[string]interface{}{"patient": map[string]interface{}{"monitoring": map[string]interface{}{"acceptanceTimestamp": time.Now().UTC().Format(time.RFC3339), "isAccepted": true}}}).Return(nil)
-	inviteTests := []toTest{
-		{
-			desc:     "valid request to accept a monitoring invite",
-			method:   http.MethodPut,
-			url:      "/accept/team/monitoring/123456/" + testing_uid1,
-			token:    testing_token_uid1,
-			respCode: http.StatusOK,
-		},
-		// Forbidden request on already accepted invitation
-		{
-			desc:     "forbidden request to accept a monitoring invite already accepted",
-			method:   http.MethodPut,
-			url:      "/accept/team/monitoring/accepted/" + testing_uid1,
-			token:    testing_token_uid1,
-			respCode: http.StatusForbidden,
-		},
-		// Forbidden request on declined invitation
-		{
-			desc:     "forbidden request to accept a monitoring invite already declined",
-			method:   http.MethodPut,
-			url:      "/accept/team/monitoring/declined/" + testing_uid1,
-			token:    testing_token_uid1,
-			respCode: http.StatusForbidden,
-		},
-		// Forbidden request on expired invitation
-		{
-			desc:     "forbidden request to accept a monitoring invite that is expired",
-			method:   http.MethodPut,
-			url:      "/accept/team/monitoring/expired/" + testing_uid1,
-			token:    testing_token_uid1,
-			respCode: http.StatusConflict,
-		},
-		// Wrong user to access an invitation
-		{
-			desc:     "valid request to accept a monitoring invite",
-			method:   http.MethodPut,
-			url:      "/accept/team/monitoring/declined/UnauthorizedUserID",
-			token:    testing_token_uid2,
-			respCode: http.StatusForbidden,
-			response: testJSONObject{
-				"code":   float64(403),
-				"error":  float64(1001),
-				"reason": STATUS_UNAUTHORIZED,
-			},
-		},
-		{
-			desc:     "Store return bad",
-			method:   http.MethodPut,
-			url:      "/accept/team/monitoring/123456/" + testing_uid1,
-			token:    testing_token_uid1,
-			doBad:    true,
-			respCode: http.StatusInternalServerError,
-		},
-		{
-			desc:       "Store return None",
-			method:     http.MethodPut,
-			url:        "/accept/team/monitoring/123456/" + testing_uid1,
-			token:      testing_token_uid1,
-			returnNone: true,
-			respCode:   http.StatusNotFound,
-		},
-	}
-
-	templatesPath, found := os.LookupEnv("TEMPLATE_PATH")
-	if found {
-		FAKE_CONFIG.I18nTemplatesPath = templatesPath
-	}
-	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath, mockLocalizer)
-
-	teams1 := []store.Team{}
-	membersAccepted := store.Member{
-		UserID:           testing_uid1,
-		TeamID:           "123456",
-		InvitationStatus: "accepted",
-	}
-	mockPerms.SetMockNextCall(testing_token, teams1, nil)
-	mockPerms.SetMockNextCall(testing_token+testing_uid1, &membersAccepted, nil)
-	mockPerms.SetMockNextCall(testing_token_uid1+"123456", &store.Patient{}, nil)
-	mockAuth := NewAuthMock(testing_uid1)
-	mockPerms.On(
-		"GetPatientMonitoring", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-	).Return(&store.Patient{}, nil)
-	mockPerms.On(
-		"UpdatePatientMonitoringWithContext", mock.Anything, mock.Anything, mock.Anything,
-	).Return(nil, nil)
-
-	for idx, inviteTest := range inviteTests {
-		// don't run a test if it says to skip it
-		if inviteTest.skip {
-			continue
-		}
-		var testRtr = mux.NewRouter()
-
-		//default flow, fully authorized
-		hydrophone := InitApi(
-			FAKE_CONFIG,
-			mockStore,
-			mockNotifier,
-			mock_uid1Shoreline,
-			mockPerms,
-			mockAuth,
-			mockSeagull,
-			medicalDataMock,
-			mockTemplates,
-			logger,
-		)
-
-		//testing when there is nothing to return from the store
-		if inviteTest.returnNone {
-			hydrophone = InitApi(
-				FAKE_CONFIG,
-				mockStoreEmpty,
-				mockNotifier,
-				mock_uid1Shoreline,
-				mockPerms,
-				mockAuth,
-				mockSeagull,
-				medicalDataMock,
-				mockTemplates,
-				logger,
-			)
-		}
-		// testing when returning errors
-		if inviteTest.doBad {
-			hydrophone = InitApi(
-				FAKE_CONFIG,
-				mockStoreFails,
-				mockNotifier,
-				mock_uid1Shoreline,
-				mockPerms,
-				mockAuth,
-				mockSeagull,
-				medicalDataMock,
-				mockTemplates,
-				logger,
-			)
-		}
-
-		hydrophone.SetHandlers("", testRtr)
-
-		var body = &bytes.Buffer{}
-		// build the body only if there is one defined in the test
-		if len(inviteTest.body) != 0 {
-			json.NewEncoder(body).Encode(inviteTest.body)
-		}
-		request, _ := http.NewRequest(inviteTest.method, inviteTest.url, body)
-		if inviteTest.token != "" {
-			request.Header.Set(TP_SESSION_TOKEN, inviteTest.token)
-		}
-		response := httptest.NewRecorder()
-		testRtr.ServeHTTP(response, request)
-
-		if response.Code != inviteTest.respCode {
-			t.Logf("TestId `%d` `%s` expected `%d` actual `%d`", idx, inviteTest.desc, inviteTest.respCode, response.Code)
-			t.Fail()
-		}
-
-		if response.Body.Len() != 0 && len(inviteTest.response) != 0 {
-			var result = &testJSONObject{}
-			err := json.NewDecoder(response.Body).Decode(result)
-			if err != nil {
-				//TODO: not dealing with arrays at the moment ....
-				if err.Error() != "json: cannot unmarshal array into Go value of type api.testJSONObject" {
-					t.Logf("TestId `%d` `%s` errored `%s` body `%v`", idx, inviteTest.desc, err.Error(), response.Body)
-					t.Fail()
-				}
-			}
-
-			if cmp := result.deepCompare(&inviteTest.response); cmp != "" {
-				t.Logf("TestId `%d` `%s` URL `%s` body `%s`", idx, inviteTest.desc, inviteTest.url, cmp)
-				t.Fail()
-			}
-		}
-	}
-}
-
-func TestDismissMonitoringInvite(t *testing.T) {
-
-	inviteTests := []toTest{
-		{
-			desc:     "valid request to dismiss a monitoring invite",
-			method:   http.MethodPut,
-			url:      "/dismiss/team/monitoring/dismiss.team/" + testing_uid1,
-			token:    testing_token_uid1,
-			respCode: http.StatusOK,
-		},
-		{
-			desc:     "request on non existing invite",
-			method:   http.MethodPut,
-			url:      "/dismiss/team/monitoring/not.found/" + testing_uid1,
-			token:    testing_token_uid1,
-			respCode: http.StatusNotFound,
-			response: testJSONObject{
-				"code":   float64(404),
-				"error":  float64(1001),
-				"reason": statusInviteNotFoundMessage,
-			},
-		},
-		// Forbidden request on user not a member
-		{
-			desc:     "valid request to dismiss a monitoring invite from team admin",
-			method:   http.MethodPut,
-			url:      "/dismiss/team/monitoring/dismiss.team/" + testing_uid1,
-			token:    testing_token_hcp2,
-			respCode: http.StatusOK,
-		},
-		{
-			desc:     "forbidden request dismiss a monitoring invite from team admin",
-			method:   http.MethodPut,
-			url:      "/dismiss/team/monitoring/dismiss.team.not.admin/" + testing_uid1,
-			token:    testing_token_hcp2,
-			respCode: http.StatusUnauthorized,
-		},
-		{
-			desc:     "Store returns error",
-			method:   http.MethodPut,
-			url:      "/dismiss/team/monitoring/dismiss.team/" + testing_uid1,
-			token:    testing_token_uid1,
-			respCode: http.StatusInternalServerError,
-			doBad:    true,
-		},
-		{
-			desc:       "Store returns not found",
-			method:     http.MethodPut,
-			url:        "/dismiss/team/monitoring/dismiss.team/" + testing_uid1,
-			token:      testing_token_uid1,
-			respCode:   http.StatusNotFound,
-			returnNone: true,
-		},
-	}
-
-	templatesPath, found := os.LookupEnv("TEMPLATE_PATH")
-	if found {
-		FAKE_CONFIG.I18nTemplatesPath = templatesPath
-	}
-	mockTemplates, _ = templates.New(FAKE_CONFIG.I18nTemplatesPath, mockLocalizer)
-
-	//patient := store.Patient{}
-	members := []store.Member{
-		{
-			UserID:           testing_token_hcp2,
-			TeamID:           "dismiss.team",
-			Role:             "admin",
-			InvitationStatus: "accepted",
-		},
-	}
-	notAdmin := []store.Member{
-		{
-			UserID:           testing_token_hcp2,
-			TeamID:           "dismiss.team",
-			Role:             "member",
-			InvitationStatus: "accepted",
-		},
-	}
-	team := store.Team{
-		Name:        "Dismiss team monitoring",
-		Description: "Dismiss team monitoring",
-		Members:     members,
-		ID:          "dismiss.team",
-	}
-	teamNotAdmin := store.Team{
-		Name:        "Dismiss team monitoring",
-		Description: "Dismiss team monitoring",
-		Members:     notAdmin,
-		ID:          "dismiss.team.not.admin",
-	}
-	//mockPerms.SetMockNextCall(testing_token_uid1+"dismiss.team", &patient, nil)
-	mockPerms.SetMockNextCall(testing_token_hcp2+"dismiss.team", &team, nil)
-	mockPerms.SetMockNextCall(testing_token_hcp2+"dismiss.team.not.admin", &teamNotAdmin, nil)
-
-	mockPerms.On(
-		"UpdatePatientMonitoringWithContext", mock.Anything, mock.Anything, mock.Anything,
-	).Return(nil, nil)
-	mockPerms.On(
-		"GetPatientMonitoring", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-	).Return(&store.Patient{}, nil)
-
-	for idx, inviteTest := range inviteTests {
-		mockAuth := NewAuthMock(inviteTest.token)
-		// don't run a test if it says to skip it
-		if inviteTest.skip {
-			continue
-		}
-		var testRtr = mux.NewRouter()
-
-		//default flow, fully authorized
-		hydrophone := InitApi(
-			FAKE_CONFIG,
-			mockStore,
-			mockNotifier,
-			mock_uid1Shoreline,
-			mockPerms,
-			mockAuth,
-			mockSeagull,
-			medicalDataMock,
-			mockTemplates,
-			logger,
-		)
-
-		//testing when there is nothing to return from the store
-		if inviteTest.returnNone {
-			hydrophone = InitApi(
-				FAKE_CONFIG,
-				mockStoreEmpty,
-				mockNotifier,
-				mock_uid1Shoreline,
-				mockPerms,
-				mockAuth,
-				mockSeagull,
-				medicalDataMock,
-				mockTemplates,
-				logger,
-			)
-		}
-		// testing when returning errors
-		if inviteTest.doBad {
-			hydrophone = InitApi(
-				FAKE_CONFIG,
-				mockStoreFails,
-				mockNotifier,
-				mock_uid1Shoreline,
-				mockPerms,
-				mockAuth,
-				mockSeagull,
-				medicalDataMock,
-				mockTemplates,
-				logger,
-			)
-		}
-
-		hydrophone.SetHandlers("", testRtr)
-
-		var body = &bytes.Buffer{}
-		// build the body only if there is one defined in the test
-		if len(inviteTest.body) != 0 {
-			json.NewEncoder(body).Encode(inviteTest.body)
-		}
-		request, _ := http.NewRequest(inviteTest.method, inviteTest.url, body)
-		if inviteTest.token != "" {
-			request.Header.Set(TP_SESSION_TOKEN, inviteTest.token)
-		}
-		response := httptest.NewRecorder()
-		testRtr.ServeHTTP(response, request)
-
-		if response.Code != inviteTest.respCode {
-			t.Logf("TestId `%d` `%s` expected `%d` actual `%d`", idx, inviteTest.desc, inviteTest.respCode, response.Code)
-			t.Fail()
-		}
-
-		if response.Body.Len() != 0 && len(inviteTest.response) != 0 {
-			var result = &testJSONObject{}
-			err := json.NewDecoder(response.Body).Decode(result)
-			if err != nil {
-				//TODO: not dealing with arrays at the moment ....
-				if err.Error() != "json: cannot unmarshal array into Go value of type api.testJSONObject" {
-					t.Logf("TestId `%d` `%s` errored `%s` body `%v`", idx, inviteTest.desc, err.Error(), response.Body)
-					t.Fail()
-				}
-			}
-
-			if cmp := result.deepCompare(&inviteTest.response); cmp != "" {
-				t.Logf("TestId `%d` `%s` URL `%s` body `%s`", idx, inviteTest.desc, inviteTest.url, cmp)
-				t.Fail()
-			}
-		}
-	}
-}
-
-func TestSendMonitoringTeamInvite(t *testing.T) {
-	tstRtr := initTestingRouterNoPerms()
-	mockAuth.On("Authenticate", mock.Anything).Return(&token.TokenData{UserId: testing_uid1, IsServer: false, Role: "hcp"})
-
-	// Malformed Requests
-	wrongBodies := []testJSONObject{
-		{"notMonitoringEnd": time.Now().Add(24 * time.Hour)},
-		{"monitoringEnd": "AZERTY"},
-	}
-
-	for _, wrongBody := range wrongBodies {
-		body := &bytes.Buffer{}
-		json.NewEncoder(body).Encode(wrongBody)
-		path := "/send/team/monitoring/TEAMID/USERID"
-		request, _ := http.NewRequest("POST", path, body)
-		request.Header.Set(TP_SESSION_TOKEN, testing_uid1)
-		response := httptest.NewRecorder()
-		tstRtr.ServeHTTP(response, request)
-		if response.Code != http.StatusBadRequest {
-			t.Logf("expected %d actual %d", http.StatusBadRequest, response.Code)
-			t.Fail()
-		}
-	}
-
 }

@@ -120,8 +120,6 @@ func (a *Api) buildPreview(res http.ResponseWriter, req *http.Request, vars map[
 		templateName = models.TemplateNameCareteamInvite
 	case "medicalteam_patient_invitation":
 		templateName = models.TemplateNameMedicalteamPatientInvite
-	case "medicalteam_monitoring_invitation":
-		templateName = models.TemplateNameMedicalteamMonitoringInvite
 	case "medicalteam_invitation":
 		templateName = models.TemplateNameMedicalteamInvite
 	case "medicalteam_do_admin":
@@ -142,12 +140,6 @@ func (a *Api) buildPreview(res http.ResponseWriter, req *http.Request, vars map[
 		templateName = models.TemplateNamePatientPinReset
 	case "signup_confirmation":
 		templateName = models.TemplateNameSignup
-	case "signup_clinic_confirmation":
-		templateName = models.TemplateNameSignupClinic
-	case "signup_custodial_confirmation":
-		templateName = models.TemplateNameSignupCustodial
-	case "signup_custodial_clinic_confirmation":
-		templateName = models.TemplateNameSignupCustodialClinic
 	case "app_prescription":
 		templateName = models.TemplateNameAppPrescription
 	default:
@@ -175,7 +167,7 @@ func (a *Api) buildPreview(res http.ResponseWriter, req *http.Request, vars map[
 	return
 }
 
-//Generate a notification from the given confirmation,write the error if it fails
+// Generate a notification from the given confirmation,write the error if it fails
 func (a *Api) generateEmail(templateName models.TemplateName, lang string) (string, error) {
 
 	log.Printf("trying preview with template '%s' with language '%s'", templateName, lang)

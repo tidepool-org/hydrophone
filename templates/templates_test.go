@@ -57,9 +57,6 @@ func Test_NewTemplates(t *testing.T) {
 		models.TemplateNamePatientPasswordInfo,
 		models.TemplateNamePatientPinReset,
 		models.TemplateNameSignup,
-		models.TemplateNameSignupClinic,
-		models.TemplateNameSignupCustodial,
-		models.TemplateNameSignupCustodialClinic,
 	}
 	for _, v := range expectedTemplates {
 		if _, ok := emailTemplates[v]; !ok {

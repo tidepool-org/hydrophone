@@ -562,57 +562,6 @@ func TestConfirmationCareteamInvite(t *testing.T) {
 	}
 }
 
-func TestConfirmationClinicSignup(t *testing.T) {
-
-	confirmation, _ := NewConfirmation(TypeSignUp, TemplateNameSignupClinic, USERID)
-
-	if confirmation.Status != StatusPending {
-		t.Fatalf("Status should be [%s] but is [%s]", StatusPending, confirmation.Status)
-	}
-
-	if confirmation.Created.IsZero() {
-		t.Fatal("The created time should be set")
-	}
-
-	if confirmation.Modified.IsZero() == false {
-		t.Fatal("The modified time should NOT be set")
-	}
-
-	if confirmation.Type != TypeSignUp {
-		t.Fatalf("The type should be [%s] but is [%s]", TypeSignUp, confirmation.Type)
-	}
-
-	if confirmation.TemplateName != TemplateNameSignupClinic {
-		t.Fatalf("The template type should be [%s] but is [%s]", TemplateNameSignupClinic, confirmation.TemplateName)
-	}
-
-	if confirmation.UserId != "" {
-		t.Logf("expected '' actual [%s]", confirmation.UserId)
-		t.Fail()
-	}
-
-	if confirmation.CreatorId != USERID {
-		t.Logf("expected [%s] actual [%s]", USERID, confirmation.CreatorId)
-		t.Fail()
-	}
-
-	if confirmation.Creator.Profile != nil {
-		t.Logf("expected `nil` actual [%v]", confirmation.Creator.Profile)
-		t.Fail()
-	}
-
-	if confirmation.Creator.UserId != "" {
-		t.Logf("expected `` actual [%s]", confirmation.Creator.UserId)
-		t.Fail()
-	}
-	confirmationDuration := "31"
-	if confirmation.GetReadableDuration() != confirmationDuration {
-		t.Logf("expected `%s` actual [%s]", confirmationDuration, confirmation.GetReadableDuration())
-		t.Fail()
-	}
-
-}
-
 func TestConfirmationSignup(t *testing.T) {
 
 	confirmation, _ := NewConfirmation(TypeSignUp, TemplateNameSignup, USERID)

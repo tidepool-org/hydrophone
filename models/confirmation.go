@@ -76,38 +76,36 @@ const (
 	StatusCanceled  Status = "canceled"
 	StatusDeclined  Status = "declined"
 	//Available Type's
-	TypePasswordReset               Type = "password_reset"
-	TypePatientPasswordReset        Type = "patient_password_reset"
-	TypePatientPasswordInfo         Type = "patient_password_info"
-	TypeCareteamInvite              Type = "careteam_invitation"    // invite and share data to a caregiver
-	TypeMedicalTeamInvite           Type = "medicalteam_invitation" // invite an hcp to a medical team
-	TypeMedicalTeamPatientInvite    Type = "medicalteam_patient_invitation"
-	TypeMedicalTeamMonitoringInvite Type = "medicalteam_monitoring_invitation"
-	TypeMedicalTeamDoAdmin          Type = "medicalteam_do_admin"
-	TypeMedicalTeamRemove           Type = "medicalteam_remove"
-	TypeSignUp                      Type = "signup_confirmation"
-	TypeNoAccount                   Type = "no_account"
-	TypeInformation                 Type = "patient_information"
-	TypePatientPinReset             Type = "patient_pin_reset"
-	TypeNotification                Type = "notification"
-	shortKeyLength                       = 8
-	letterBytes                          = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	TypePasswordReset            Type = "password_reset"
+	TypePatientPasswordReset     Type = "patient_password_reset"
+	TypePatientPasswordInfo      Type = "patient_password_info"
+	TypeCareteamInvite           Type = "careteam_invitation"    // invite and share data to a caregiver
+	TypeMedicalTeamInvite        Type = "medicalteam_invitation" // invite an hcp to a medical team
+	TypeMedicalTeamPatientInvite Type = "medicalteam_patient_invitation"
+	TypeMedicalTeamDoAdmin       Type = "medicalteam_do_admin"
+	TypeMedicalTeamRemove        Type = "medicalteam_remove"
+	TypeSignUp                   Type = "signup_confirmation"
+	TypeNoAccount                Type = "no_account"
+	TypeInformation              Type = "patient_information"
+	TypePatientPinReset          Type = "patient_pin_reset"
+	TypeNotification             Type = "notification"
+	shortKeyLength                    = 8
+	letterBytes                       = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 var (
 	Timeouts TypeDurations = TypeDurations{
-		TypeCareteamInvite:              ConfirmationDuration{"day", 7 * 24 * time.Hour},
-		TypePasswordReset:               ConfirmationDuration{"day", 7 * 24 * time.Hour},
-		TypeSignUp:                      ConfirmationDuration{"day", 31 * 24 * time.Hour},
-		TypePatientPasswordReset:        ConfirmationDuration{"hour", 1 * time.Hour},
-		TypeMedicalTeamInvite:           ConfirmationDuration{"day", 7 * 24 * time.Hour},
-		TypeMedicalTeamPatientInvite:    ConfirmationDuration{"day", 7 * 24 * time.Hour},
-		TypeMedicalTeamMonitoringInvite: ConfirmationDuration{"day", 7 * 24 * time.Hour},
-		TypeNotification:                ConfirmationDuration{"day", 7 * 24 * time.Hour},
+		TypeCareteamInvite:           ConfirmationDuration{"day", 7 * 24 * time.Hour},
+		TypePasswordReset:            ConfirmationDuration{"day", 7 * 24 * time.Hour},
+		TypeSignUp:                   ConfirmationDuration{"day", 31 * 24 * time.Hour},
+		TypePatientPasswordReset:     ConfirmationDuration{"hour", 1 * time.Hour},
+		TypeMedicalTeamInvite:        ConfirmationDuration{"day", 7 * 24 * time.Hour},
+		TypeMedicalTeamPatientInvite: ConfirmationDuration{"day", 7 * 24 * time.Hour},
+		TypeNotification:             ConfirmationDuration{"day", 7 * 24 * time.Hour},
 	}
 )
 
-//New confirmation with just the basics
+// New confirmation with just the basics
 func NewConfirmation(theType Type, templateName TemplateName, creatorId string) (*Confirmation, error) {
 
 	shortKey := ""
@@ -143,7 +141,7 @@ func NewConfirmation(theType Type, templateName TemplateName, creatorId string) 
 	}
 }
 
-//New confirmation that includes context data
+// New confirmation that includes context data
 func NewConfirmationWithContext(theType Type, templateName TemplateName, creatorId string, data interface{}) (*Confirmation, error) {
 	if conf, err := NewConfirmation(theType, templateName, creatorId); err != nil {
 		return nil, err
@@ -153,14 +151,14 @@ func NewConfirmationWithContext(theType Type, templateName TemplateName, creator
 	}
 }
 
-//Add context data
+// Add context data
 func (c *Confirmation) AddContext(data interface{}) {
 
 	jsonData, _ := json.Marshal(data)
 	c.Context = jsonData
 }
 
-//Decode the context data into the provided type
+// Decode the context data into the provided type
 func (c *Confirmation) DecodeContext(data interface{}) error {
 
 	if c.Context != nil {
@@ -172,7 +170,7 @@ func (c *Confirmation) DecodeContext(data interface{}) error {
 	return nil
 }
 
-//Set a new status and update the modified time
+// Set a new status and update the modified time
 func (c *Confirmation) UpdateStatus(newStatus Status) {
 	c.Status = newStatus
 	c.Modified = time.Now()

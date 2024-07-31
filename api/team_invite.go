@@ -4,11 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
-	"time"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/mdblp/crew/store"
 	"github.com/mdblp/go-common/v2/clients/status"
@@ -24,8 +22,8 @@ func formatAddress(addr store.Address) string {
 	}
 }
 
-//Checks do they have an existing invite or are they already a team member
-//Or are they an existing user and already in the group?
+// Checks do they have an existing invite or are they already a team member
+// Or are they an existing user and already in the group?
 func (a *Api) checkForDuplicateTeamInvite(ctx context.Context, inviteeEmail, invitorID, token string, team store.Team, invite models.Type, res http.ResponseWriter) (bool, *schema.UserData) {
 
 	confirmation := &models.Confirmation{
@@ -88,53 +86,6 @@ func (a *Api) checkForDuplicateTeamInvite(ctx context.Context, inviteeEmail, inv
 	return false, nil
 }
 
-// return the user and its status in the team, true it can be invited for monitor, otherwise it returns false
-func (a *Api) checkForMonitoringTeamInviteById(ctx context.Context, inviteeID, invitorID, token string, team store.Team, res http.ResponseWriter) (bool, *schema.UserData) {
-	confirmation := &models.Confirmation{
-		UserId: inviteeID,
-		Team: &models.Team{
-			ID: team.ID,
-		}}
-	//already has invite from this user?
-	invites, _ := a.Store.FindConfirmations(
-		ctx,
-		confirmation,
-		[]models.Status{models.StatusPending},
-		[]models.Type{models.TypeMedicalTeamMonitoringInvite},
-	)
-	if len(invites) > 0 {
-		//rule is we cannot send if the invite is not yet expired
-		if !invites[0].IsExpired() {
-			log.Println(statusExistingInviteMessage)
-			log.Println("last invite not yet expired")
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExistingInviteMessage)}
-			a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-			return false, nil
-		}
-	}
-	invitedUsr := a.findExistingUser(inviteeID, a.sl.TokenProvide())
-	// the invitedUser has to be a patient of the team
-	if invitedUsr != nil {
-		members, err := a.perms.GetTeamPatients(token, team.ID)
-		if err != nil {
-			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_TEAM)}
-			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-			return false, invitedUsr
-		}
-		for i := 0; i < len(members); i++ {
-			if members[i].UserID == invitedUsr.UserID && members[i].InvitationStatus == "accepted" {
-				return true, invitedUsr
-			}
-		}
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_PATIENT_NOT_MBR)}
-		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-		return false, invitedUsr
-	}
-	statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_FINDING_USER)}
-	a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-	return false, nil
-}
-
 func (a *Api) isTeamAdmin(userid string, team store.Team) bool {
 	for j := 0; j < len(team.Members); j++ {
 		if team.Members[j].UserID == userid {
@@ -147,7 +98,7 @@ func (a *Api) isTeamAdmin(userid string, team store.Team) bool {
 	return false
 }
 
-//Accept the given invite
+// Accept the given invite
 //
 // http.StatusOK when accepted
 // http.StatusBadRequest when the incoming data is incomplete or incorrect
@@ -244,155 +195,6 @@ func (a *Api) AcceptTeamNotifs(res http.ResponseWriter, req *http.Request, vars 
 	}
 
 	log.Printf("AcceptInvite: permissions were set for [%v] after an invite was accepted", inviteeID)
-
-}
-
-// Accept the given invite
-// http.StatusOK when accepted
-// http.StatusBadRequest when the incoming data is incomplete or incorrect
-// http.StatusForbidden when mismatch of user ID's, type or status
-// @Summary Accept the given invite
-// @Description  This would be PUT by the web page at the link in the invite email. No authentication is required.
-// @ID hydrophone-api-AcceptMonitoringInvite
-// @Accept  json
-// @Produce  json
-// @Param teamid path string true "Team ID"
-// @Param userid path string true "User ID"
-// @Success 200 {string} string "OK"
-// @Failure 400 {object} status.Status "the payload is missing or malformed"
-// @Failure 401 {object} status.Status "Authorization token is missing or does not provided sufficient privileges"
-// @Failure 403 {object} status.Status "Operation is forbiden. The invitation cannot be accepted for this given user"
-// @Failure 404 {object} status.Status "invitation not found"
-// @Failure 409 {object} status.Status "invitation is expired"
-// @Failure 500 {object} status.Status "Error (internal) while processing the data"
-// @Router /accept/team/monitoring/{teamid}/{userid} [put]
-// @security TidepoolAuth
-func (a *Api) AcceptMonitoringInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	action := "AcceptMonitoringInvite"
-	token := a.token(res, req)
-	if token == nil {
-		return
-	}
-	if token.Role != "patient" {
-		a.sendModelAsResWithStatus(
-			res,
-			&status.StatusError{Status: status.NewStatus(http.StatusForbidden, "Only Patients can accept a team monitoring invitation")},
-			http.StatusForbidden,
-		)
-		return
-	}
-	userid := vars["userid"]
-	teamid := vars["teamid"]
-
-	if userid != token.UserId {
-		a.sendModelAsResWithStatus(
-			res,
-			&status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_UNAUTHORIZED)},
-			http.StatusForbidden,
-		)
-		return
-	}
-
-	accept := &models.Confirmation{
-		UserId: userid,
-		Team:   &models.Team{ID: teamid},
-		Type:   models.TypeMedicalTeamMonitoringInvite,
-	}
-
-	conf, err := a.findExistingConfirmation(req.Context(), accept, res)
-	if err != nil {
-		log.Printf("%s error while finding confirmation [%s]\n", action, err.Error())
-		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-		return
-	}
-	if conf == nil {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
-		log.Printf("%s: [%s] ", action, statusErr.Error())
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-		return
-	}
-	if conf.IsExpired() {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusConflict, statusExpiredMessage)}
-		log.Printf("%s: [%s] ", action, statusErr.Error())
-		a.sendModelAsResWithStatus(res, statusErr, http.StatusConflict)
-		return
-	}
-
-	validationErrors := []error{}
-
-	conf.ValidateStatus(models.StatusPending, &validationErrors).
-		ValidateType([]models.Type{
-			models.TypeMedicalTeamMonitoringInvite,
-		}, &validationErrors).
-		ValidateUserID(userid, &validationErrors)
-
-	if len(validationErrors) > 0 {
-		for _, validationError := range validationErrors {
-			log.Printf("%s forbidden as there was a expectation mismatch %s", action, validationError)
-		}
-		a.sendModelAsResWithStatus(
-			res,
-			&status.StatusError{Status: status.NewStatus(http.StatusForbidden, statusForbiddenMessage)},
-			http.StatusForbidden,
-		)
-		return
-	}
-
-	monitoring := make(map[string]interface{})
-	monitoring["acceptanceTimestamp"] = time.Now().UTC().Format(time.RFC3339)
-	monitoring["isAccepted"] = true
-	patientMonitoringConsent := make(map[string]interface{})
-	patientMonitoringConsent["monitoring"] = monitoring
-
-	profileUpdate := make(map[string]interface{})
-	profileUpdate["patient"] = patientMonitoringConsent
-
-	err = a.seagull.SetCollection(req.Context(), conf.UserId, "profile", a.sl.TokenProvide(), profileUpdate)
-	if err != nil {
-		log.Printf("%s error getting monitord patient [%v]\n", action, err)
-		a.sendModelAsResWithStatus(
-			res,
-			&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_MONITORED_PATIENT)},
-			http.StatusInternalServerError,
-		)
-		return
-	}
-	patientMonitored, err := a.perms.GetPatientMonitoring(req.Context(), a.sl.TokenProvide(), conf.UserId, conf.Team.ID)
-	if err != nil {
-		log.Printf("%s error getting monitord patient [%v]\n", action, err)
-		a.sendModelAsResWithStatus(
-			res,
-			&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_MONITORED_PATIENT)},
-			http.StatusInternalServerError,
-		)
-		return
-	}
-	monitoredEnd := time.Now().Add(90 * 24 * time.Hour)
-	if patientMonitored != nil && patientMonitored.TeamID == conf.Team.ID &&
-		patientMonitored.Monitoring != nil && patientMonitored.Monitoring.MonitoringEnd != nil {
-		monitoredEnd = *patientMonitored.Monitoring.MonitoringEnd
-	}
-	var patient = store.Patient{
-		UserID: conf.UserId,
-		TeamID: conf.Team.ID,
-		Monitoring: &store.PatientMonitoring{
-			MonitoringEnd: &monitoredEnd,
-			Status:        "accepted",
-		},
-	}
-	_, err = a.perms.UpdatePatientMonitoringWithContext(req.Context(), a.sl.TokenProvide(), patient)
-	if err != nil {
-		log.Printf("%s error setting permissions [%v]\n", action, err)
-		a.sendModelAsResWithStatus(
-			res,
-			&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_DECODING_BODY)},
-			http.StatusInternalServerError,
-		)
-		return
-	}
-
-	a.acceptAnyInvite(res, req, conf)
-	log.Printf("%s: permissions were set for [%v] after an invite was accepted", action, userid)
 
 }
 
@@ -560,106 +362,6 @@ func (a *Api) DismissTeamInvite(res http.ResponseWriter, req *http.Request, vars
 	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
 }
 
-// @Summary Dismiss a monitoring invite
-// @Description Patient or Admin can dismiss a monitoring invite.
-// @ID hydrophone-api-dismissMonitoringInvite
-// @Accept  json
-// @Produce  json
-// @Param teamid path string true "Team ID"
-// @Param userid path string true "User ID"
-// @Success 200 {string} string "OK"
-// @Failure 400 {object} status.Status "teamid or/and userid are missing"
-// @Failure 401 {object} status.Status "Authorization token is missing or does not provide sufficient privileges"
-// @Failure 404 {object} status.Status "invitation not found"
-// @Failure 500 {object} status.Status "Error (internal) while processing the data"
-// @Router /dismiss/team/monitoring/{teamid}/{userid} [put]
-// @security TidepoolAuth
-func (a *Api) DismissMonitoringInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	token := a.token(res, req)
-	if token == nil {
-		return
-	}
-	tokenValue := getSessionToken(req)
-
-	teamid := sanitize(vars["teamid"])
-	patientid := sanitize(vars["userid"])
-
-	// either the token is the inviteeID or the admin ID
-	// let's find out what type of user it is later on
-	userid := token.UserId
-
-	// not sure it's necessary
-	if teamid == "" || patientid == "" {
-		a.sendModelAsResWithStatus(res, &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_INVALID_DATA)}, http.StatusBadRequest)
-		return
-	}
-
-	dismiss := &models.Confirmation{
-		UserId: patientid,
-		Team:   &models.Team{ID: teamid},
-		Type:   models.TypeMedicalTeamMonitoringInvite,
-		Status: models.StatusPending,
-	}
-
-	// Needed as the UpdatePatientMonitoringWithContext call will use server token
-	//(and because as a patient this route is forbidden)
-	if userid != patientid {
-		// by default you can just act on your records
-		if isAdmin, _, err := a.getTeamForUser(nil, tokenValue, teamid, token.UserId, res); !isAdmin || err != nil {
-			// you are not a team admin for the given team
-			log.Printf("DismissMonitoring: [%s] not authorized for [%s]", token.UserId, teamid)
-			a.sendModelAsResWithStatus(res, &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_UNAUTHORIZED)}, http.StatusUnauthorized)
-			return
-		}
-	}
-
-	if conf, err := a.findExistingConfirmation(req.Context(), dismiss, res); err != nil {
-		log.Printf("DismissMonitoring: finding [%s]", err.Error())
-		a.sendModelAsResWithStatus(res, err, http.StatusInternalServerError)
-		return
-	} else if conf != nil {
-		// the pending confirmation exists
-		var patient = store.Patient{
-			UserID: conf.UserId,
-			TeamID: teamid,
-			Monitoring: &store.PatientMonitoring{
-				MonitoringEnd: nil,
-				Status:        "rejected",
-			},
-		}
-
-		// this one will check permissions and memberships
-		_, err = a.perms.UpdatePatientMonitoringWithContext(req.Context(), a.sl.TokenProvide(), patient)
-		if err != nil {
-			log.Printf("DismissMonitoring error setting permissions [%v]\n", err)
-			a.sendModelAsResWithStatus(
-				res,
-				&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, err.Error())},
-				http.StatusInternalServerError,
-			)
-			return
-		}
-
-		if userid != patientid {
-			// canceled by team
-			conf.UpdateStatus(models.StatusCanceled)
-		} else {
-			// declined by patient
-			conf.UpdateStatus(models.StatusDeclined)
-		}
-
-		if a.addOrUpdateConfirmation(req.Context(), conf, res) {
-			log.Printf("User [%s] has dismissed the monitoring in team [%s] for patient [%s]", token.UserId, patient.TeamID, patient.UserID)
-			a.logAudit(req, "dismissmonitoring ")
-			res.WriteHeader(http.StatusOK)
-			return
-		}
-	}
-	statusErr := &status.StatusError{Status: status.NewStatus(http.StatusNotFound, statusInviteNotFoundMessage)}
-	log.Printf("DismissMonitoring: [%s]", statusErr.Error())
-	a.sendModelAsResWithStatus(res, statusErr, http.StatusNotFound)
-}
-
 // @Summary Send invitation to a hcp or patient for joining a medical team
 // @Description  create a notification for the invitee and send him an email with the invitation. The patient account has to exist otherwise the invitation is rejected.
 // @ID hydrophone-api-SendTeamInvite
@@ -803,158 +505,6 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 		}
 	}
 
-}
-
-// @Summary Send invitation to a patient for monitoring purpose
-// @Description  create a notification for the invitee and send him an email with the invitation to be monitored. The patient account has to exist and the patient has to be a member of the team otherwise the invitation is rejected.
-// @ID hydrophone-api-SendMonitoringTeamInvite
-// @Accept  json
-// @Produce  json
-// @Param teamid path string true "Team ID"
-// @Param userid path string true "invited user id"
-// @Param monitoringInfo body inviteMonitoringBody true "Monitoring info i.e end of monitoring period"
-// @Success 200 {object} models.Confirmation "invite details"
-// @Failure 400 {object} status.Status "teamId is not found, team is not a monitoring team"
-// @Failure 401 {object} status.Status "Authorization token is missing or does not provide sufficient privileges, requesting user is not an admin of the team"
-// @Failure 403 {object} status.Status "Authorization token is invalid"
-// @Failure 409 {object} status.Status "user already has a pending or declined invite OR user is already part of the team"
-// @Failure 422 {object} status.Status "Error when sending the email (probably caused by the mailling service"
-// @Failure 500 {object} status.Status "Internal error while processing the invite, detailled error returned in the body"
-// @Router /send/team/monitoring/{teamid}/{userid} [post]
-// @security TidepoolAuth
-func (a *Api) SendMonitoringTeamInvite(res http.ResponseWriter, req *http.Request, vars map[string]string) {
-	tokenValue := getSessionToken(req)
-	token := a.token(res, req)
-	if token == nil {
-		return
-	}
-
-	invitorID := token.UserId
-	if invitorID == "" {
-		res.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	var ib = &inviteMonitoringBody{}
-	if err := json.NewDecoder(req.Body).Decode(ib); err != nil {
-		log.Printf("SendMonitoringTeamInvite: error decoding invite to detail %v\n", err)
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_INVITE)}
-		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-		return
-	}
-	if ib.MonitoringEnd.IsZero() {
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_ERR_DECODING_INVITE)}
-		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-		return
-	}
-
-	patientid := sanitize(vars["userid"])
-	teamid := sanitize(vars["teamid"])
-
-	// check requesting user is admin of the team
-	isTeamAdmin, team, _ := a.getTeamForUser(req.Context(), tokenValue, teamid, token.UserId, res)
-	if team.ID == "" {
-		return
-	}
-	if !isTeamAdmin {
-		// not an admin of the team
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusUnauthorized, STATUS_NOT_ADMIN)}
-		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-		return
-	}
-	if team.RemotePatientMonitoring == nil || (team.RemotePatientMonitoring != nil && !*(team.RemotePatientMonitoring).Enabled) {
-		// monitoring not enabled for the given team
-		statusErr := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, STATUS_NOT_TEAM_MONITORING)}
-		a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)
-		return
-	}
-
-	// check the patient is already a invite and if user is already a patient
-	if canBeInvited, invitedUsr := a.checkForMonitoringTeamInviteById(req.Context(), patientid, invitorID, tokenValue, team, res); !canBeInvited {
-		log.Printf("SendMonitoringInvite: invited user [%s] cannot be invited", patientid)
-		return
-	} else if invitedUsr != nil {
-		// the user is member of the team and has not yet been invited
-		var invite *models.Confirmation
-		invite, _ = models.NewConfirmation(
-			models.TypeMedicalTeamMonitoringInvite,
-			models.TemplateNameMedicalteamMonitoringInvite,
-			invitorID)
-		invite.Team = &models.Team{ID: teamid, Name: team.Name}
-		invite.Status = models.StatusPending
-		invite.UserId = invitedUsr.UserID
-		invite.Email = invitedUsr.Username
-		inviteeLanguage := a.getUserLanguage(invite.UserId, req, res)
-
-		if a.addOrUpdateConfirmation(req.Context(), invite, res) {
-			a.logAudit(req, "monitoring invite created")
-
-			if err := a.addProfile(req.Context(), invite); err != nil {
-				log.Println("SendMonitoringInvite: ", err.Error())
-			} else {
-				emailContent := map[string]string{
-					"MedicalteamName":    team.Name,
-					"MedicalteamAddress": formatAddress(team.Address),
-					"MedicalteamPhone":   team.Phone,
-					"CreatorName":        invite.Creator.Profile.FullName,
-					"Email":              invite.Email,
-					"WebPath":            "notifications",
-					"Duration":           invite.GetReadableDuration(),
-				}
-
-				if a.createAndSendNotification(req, invite, emailContent, inviteeLanguage) {
-					a.logAudit(req, "monitoring invite sent")
-				} else {
-					a.logAudit(req, "monitoring invite failed to be sent")
-					log.Print("Something happened generating a monitoring invite email")
-					res.WriteHeader(http.StatusUnprocessableEntity)
-					return
-				}
-			}
-			// Updating patient profile with referring doctor
-			if ib.ReferringDoctor != nil {
-				patientProfile := make(map[string]interface{})
-				patientProfile["referringDoctor"] = *ib.ReferringDoctor
-				profileUpdate := make(map[string]interface{})
-				profileUpdate["patient"] = patientProfile
-
-				err := a.seagull.SetCollection(req.Context(), invitedUsr.UserID, "profile", a.sl.TokenProvide(), profileUpdate)
-				if err != nil {
-					log.Printf("error updating patient profile [%v]\n", err)
-					a.sendModelAsResWithStatus(
-						res,
-						&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_MONITORED_PATIENT)},
-						http.StatusInternalServerError,
-					)
-					return
-				}
-
-			}
-			// Updating crew patient monitoring
-			// Default prescription for 90 days
-			crewPatient := store.Patient{
-				UserID: invitedUsr.UserID,
-				TeamID: teamid,
-				Monitoring: &store.PatientMonitoring{
-					MonitoringEnd: &ib.MonitoringEnd,
-					Status:        "pending",
-				},
-			}
-			_, err := a.perms.UpdatePatientMonitoringWithContext(req.Context(), a.sl.TokenProvide(), crewPatient)
-			if err != nil {
-				log.Printf("error updating crew patient [%v]\n", err)
-				a.sendModelAsResWithStatus(
-					res,
-					&status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_MONITORED_PATIENT)},
-					http.StatusInternalServerError,
-				)
-				return
-			}
-
-			a.sendModelAsResWithStatus(res, invite, http.StatusOK)
-			return
-		}
-	}
 }
 
 func (a *Api) invitePatient(invitedUsr *schema.UserData, member store.Member, token string) *status.StatusError {
@@ -1265,7 +815,6 @@ func (a *Api) isTeamMember(userID string, team store.Team, all bool) (bool, *sto
 	return false, nil
 }
 
-//
 // return true is the user userID is admin of the Team identified by teamID
 // it returns the Team object corresponding to the team
 // if any error occurs during the search, it returns an error with the

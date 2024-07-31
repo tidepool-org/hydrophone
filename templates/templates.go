@@ -39,12 +39,6 @@ func New(templatesPath string, localizer localize.Localizer) (models.Templates, 
 		templates[template.Name()] = template
 	}
 
-	if template, err := newTemplate(templatesPath, models.TemplateNameMedicalteamMonitoringInvite, localizer); err != nil {
-		return nil, fmt.Errorf("templates: failure to create patient invite into monitoring team template: %s", err)
-	} else {
-		templates[template.Name()] = template
-	}
-
 	if template, err := newTemplate(templatesPath, models.TemplateNameMedicalteamInvite, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create medical invite template: %s", err)
 	} else {
@@ -93,24 +87,6 @@ func New(templatesPath string, localizer localize.Localizer) (models.Templates, 
 		templates[template.Name()] = template
 	}
 
-	if template, err := newTemplate(templatesPath, models.TemplateNameSignupClinic, localizer); err != nil {
-		return nil, fmt.Errorf("templates: failure to create signup clinic template: %s", err)
-	} else {
-		templates[template.Name()] = template
-	}
-
-	if template, err := newTemplate(templatesPath, models.TemplateNameSignupCustodial, localizer); err != nil {
-		return nil, fmt.Errorf("templates: failure to create signup custodial template: %s", err)
-	} else {
-		templates[template.Name()] = template
-	}
-
-	if template, err := newTemplate(templatesPath, models.TemplateNameSignupCustodialClinic, localizer); err != nil {
-		return nil, fmt.Errorf("templates: failure to create signup custodial clinic template: %s", err)
-	} else {
-		templates[template.Name()] = template
-	}
-
 	if template, err := newTemplate(templatesPath, models.TemplateNamePatientInformation, localizer); err != nil {
 		return nil, fmt.Errorf("templates: failure to create patient information template: %s", err)
 	} else {
@@ -132,8 +108,8 @@ func New(templatesPath string, localizer localize.Localizer) (models.Templates, 
 	return templates, nil
 }
 
-//NewTemplate returns the requested template
-//templateName is the name of the template to be returned
+// NewTemplate returns the requested template
+// templateName is the name of the template to be returned
 func newTemplate(templatesPath string, templateName models.TemplateName, localizer localize.Localizer) (models.Template, error) {
 	// Get template Metadata
 	var templateMeta = getTemplateMeta(templatesPath + "/meta/" + string(templateName) + ".json")
