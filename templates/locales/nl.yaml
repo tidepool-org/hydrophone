@@ -42,25 +42,6 @@ SignupHeadline: "Verifieer je e-mailadres om je Diabeloop-account te activeren."
 SignupBody: "Je hebt een account aangemaakt Diabeloop. Klik op de onderstaande link om je identiteit te bevestigen."
 SignupDeletionWarning: "Als het account niet binnen deze periode geactiveerd wordt, wordt je accountregistratie verwijderd."
 SignupVerify: "Mijn account activeren"
-#Signup Clinic
-#(email to ask clinician for verification of email)
-SignupClinicHeadline: "Controleer je e-mailadres om je YourLoops-account te activeren."
-SignupClinicBody: "Je hebt een account voor zorgverleners aangemaakt op YourLoops. Klik op de onderstaande link om je identiteit te bevestigen en je profiel te voltooien."
-SignupClinicDeletionWarning: "Als het account niet binnen deze periode geactiveerd wordt, wordt je accountregistratie verwijderd."
-SignupClinicVerify: "Mijn account activeren"
-#Signup Custodial => SUPPRIMER
-#(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialConfirmationSubject: "Controleer je YourLoops account"
-#SignupCustodialHello: "Hello,"
-SignupCustodialHeadline: "Gefeliciteerd met het aanmaken van je YourLoops account!"
-SignupCustodialVerify: "Verify Your Account"
-#Signup Custodial Clinic => SUPPRIMER
-#(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialClinicConfirmationSubject: "Diabetes Clinic Follow Up - Claim je account"
-SignupCustodialClinicHello: "Hey, {{ .FullName }}!"
-SignupCustodialClinicAccount: "{{ .CreatorName }} heeft een YourLoops account aangemaakt voor je diabetesapparaatgegevens."
-SignupCustodialClinicOwnership: "Je kunt je gratis account gebruiken om thuis gegevens te bekijken en te uploaden."
-SignupCustodialClinicClaim: "Claim je account"
 #Patient Information
 PatientInfoSubject: "Welkom bij YourLoops!"
 PatientInfoHeadline: "Log in om je DBL-gegevens te bekijken."
@@ -104,11 +85,6 @@ MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} nodigt je uit om je gegeve
 MedicalTeamPatientInviteWarning: "Controleer of de bovenstaande gegevens overeenkomen met de informatie die door je zorgverlener is verstrekt voordat je op de uitnodiging reageert."
 MedicalTeamPatientInviteWarning2: "Neem bij twijfel contact op met je zorgverlener en accepteer deze uitnodiging niet."
 MedicalTeamPatientInviteInfo: "Door dit team toe te voegen, stem je ermee in om je persoonlijke gegevens (inclusief gezondheidsgegevens) te delen met de leden van het team, die geautoriseerde zorgverleners zijn die geregistreerd zijn op YourLoops."
-#Medical/Care team patient monitoring invitation
-MedicalTeamMonitoringInvitationSubject: "Invitation to join monitoring program"
-MedicalTeamMonitoringInviteHeadline: "{{ .CreatorName }} invites you to be monitored by {{ .MedicalteamName }}"
-MedicalTeamMonitoringInviteWarning: "Controleer of de bovenstaande gegevens overeenkomen met de informatie die door je zorgverlener is verstrekt voordat je op de uitnodiging reageert."
-MedicalTeamMonitoringInviteInfo: "By join this monitoring program, you consent to be contacted by the members of {{ .MedicalteamName }} who are authorized healthcare professionals registered on YourLoops."
 #Shared
 ReadDataPrivacy: "Lees ons <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>privacybeleid</a> voor meer informatie."
 RespondToInvite: "Reageren op uitnodiging"

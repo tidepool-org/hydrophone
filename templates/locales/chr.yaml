@@ -42,25 +42,6 @@ SignupHeadline: "crwdns13126:0crwdne13126:0"
 SignupBody: "crwdns13128:0crwdne13128:0"
 SignupDeletionWarning: "crwdns17231:0crwdne17231:0"
 SignupVerify: "crwdns13130:0crwdne13130:0"
-#Signup Clinic
-#(email to ask clinician for verification of email)
-SignupClinicHeadline: "crwdns13134:0crwdne13134:0"
-SignupClinicBody: "crwdns13136:0crwdne13136:0"
-SignupClinicDeletionWarning: "crwdns17233:0crwdne17233:0"
-SignupClinicVerify: "crwdns13138:0crwdne13138:0"
-#Signup Custodial => SUPPRIMER
-#(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialConfirmationSubject: "crwdns13140:0crwdne13140:0"
-#SignupCustodialHello: "Hello,"
-SignupCustodialHeadline: "crwdns13142:0crwdne13142:0"
-SignupCustodialVerify: "crwdns13144:0crwdne13144:0"
-#Signup Custodial Clinic => SUPPRIMER
-#(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialClinicConfirmationSubject: "crwdns13146:0crwdne13146:0"
-SignupCustodialClinicHello: "crwdns13148:0{{ .FullName }}crwdne13148:0"
-SignupCustodialClinicAccount: "crwdns13150:0{{ .CreatorName }}crwdne13150:0"
-SignupCustodialClinicOwnership: "crwdns13152:0crwdne13152:0"
-SignupCustodialClinicClaim: "crwdns13154:0crwdne13154:0"
 #Patient Information
 PatientInfoSubject: "crwdns13156:0crwdne13156:0"
 PatientInfoHeadline: "crwdns13158:0crwdne13158:0"
@@ -104,11 +85,6 @@ MedicalTeamPatientInviteHeadline: "crwdns13226:0{{ .CreatorName }}crwdnd13226:0{
 MedicalTeamPatientInviteWarning: "crwdns13228:0crwdne13228:0"
 MedicalTeamPatientInviteWarning2: "crwdns13230:0crwdne13230:0"
 MedicalTeamPatientInviteInfo: "crwdns13232:0crwdne13232:0"
-#Medical/Care team patient monitoring invitation
-MedicalTeamMonitoringInvitationSubject: "crwdns19072:0crwdne19072:0"
-MedicalTeamMonitoringInviteHeadline: "crwdns19074:0{{ .CreatorName }}crwdnd19074:0{{ .MedicalteamName }}crwdne19074:0"
-MedicalTeamMonitoringInviteWarning: "crwdns19076:0crwdne19076:0"
-MedicalTeamMonitoringInviteInfo: "crwdns19078:0{{ .MedicalteamName }}crwdne19078:0"
 #Shared
 ReadDataPrivacy: "crwdns13463:0{{ .AssetURL }}crwdnd13463:0{{ .Language }}crwdne13463:0"
 RespondToInvite: "crwdns13465:0crwdne13465:0"

@@ -42,25 +42,6 @@ SignupHeadline: "メールアドレスを確認し、Diabeloopアカウントを
 SignupBody: "Diabeloopのアカウントを作成しました。本人確認を行うには、以下のリンクをクリックしてください。"
 SignupDeletionWarning: "この期間に有効にしないと、アカウント登録が削除されます。"
 SignupVerify: "アカウントを有効にする"
-#Signup Clinic
-#(email to ask clinician for verification of email)
-SignupClinicHeadline: "メールアドレスを確認し、YourLoopsアカウントを有効にします。"
-SignupClinicBody: "YourLoopsの医療従事者アカウントを作成しました。本人確認を行い、プロフィールを完成させるには、以下のリンクをクリックしてください。"
-SignupClinicDeletionWarning: "この期間に有効にしないと、アカウント登録が削除されます。"
-SignupClinicVerify: "アカウントを有効にする"
-#Signup Custodial => SUPPRIMER
-#(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialConfirmationSubject: "YourLoopsアカウントを確認する"
-#SignupCustodialHello: "Hello,"
-SignupCustodialHeadline: "YourLoopsアカウントが作成されました！"
-SignupCustodialVerify: "アカウントの確認"
-#Signup Custodial Clinic => SUPPRIMER
-#(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialClinicConfirmationSubject: "糖尿病クリニックのフォローアップ - アカウントの取得"
-SignupCustodialClinicHello: "{{ .FullName }}さん、こんにちは！"
-SignupCustodialClinicAccount: "{{ .CreatorName }} が糖尿病デバイスデータ用のYourLoopsアカウントを作成しました。"
-SignupCustodialClinicOwnership: "無料アカウントの所有権を取得して、自宅からデータの閲覧およびアップロードすることができます。"
-SignupCustodialClinicClaim: "アカウントの取得"
 #Patient Information
 PatientInfoSubject: "YourLoopsへようこそ！"
 PatientInfoHeadline: "ログインしてDBLG1データを表示します。"
@@ -104,11 +85,6 @@ MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} からデータを {{ .Med
 MedicalTeamPatientInviteWarning: "上記の詳細が医療従事者から提供された情報と一致していることを確認してください。"
 MedicalTeamPatientInviteWarning2: "不明点がある場合は、同意をせず、医療従事者に連絡してください。"
 MedicalTeamPatientInviteInfo: "このチームを追加することにより、YourLoopsに登録されている医療従事者であるメンバーと（健康データを含む）個人データを共有することに同意するものとします。"
-#Medical/Care team patient monitoring invitation
-MedicalTeamMonitoringInvitationSubject: "モニタリングプログラムへの招待"
-MedicalTeamMonitoringInviteHeadline: "{{ .CreatorName }}から{{ .MedicalteamName }}によるモニタリングの招待が届いています。"
-MedicalTeamMonitoringInviteWarning: "上記の詳細が医療従事者から提供された情報と一致していることを確認してください。"
-MedicalTeamMonitoringInviteInfo: "このモニタリングプログラムに参加することにより、YourLoopsに登録されている認定医療従事者である{{ .MedicalteamName }}のメンバーから連絡がくることに同意するものとします。"
 #Shared
 ReadDataPrivacy: "詳細については、<a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>プライバシーポリシー</a>をご覧ください。"
 RespondToInvite: "招待に回答する"

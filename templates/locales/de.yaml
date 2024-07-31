@@ -42,25 +42,6 @@ SignupHeadline: "Bestätigen Sie Ihre E-Mail-Adresse, um Ihr Diabeloop-Konto zu 
 SignupBody: "Sie haben ein Konto bei Diabeloop erstellt. Um Ihre Identität zu bestätigen, klicken Sie bitte auf den untenstehenden Link."
 SignupDeletionWarning: "Wird das Konto nicht innerhalb dieses Zeitraums aktiviert, wird Ihre Kontoregistrierung gelöscht."
 SignupVerify: "Mein Konto aktivieren"
-#Signup Clinic
-#(email to ask clinician for verification of email)
-SignupClinicHeadline: "Bestätigen Sie Ihre E-Mail-Adresse, um Ihr YourLoops-Konto zu aktivieren."
-SignupClinicBody: "Sie haben ein Konto für Ärzte bei YourLoops erstellt. Um Ihre Identität zu bestätigen und Ihr Profil zu vervollständigen, klicken Sie bitte auf den unten stehenden Link."
-SignupClinicDeletionWarning: "Wird das Konto nicht innerhalb dieses Zeitraums aktiviert, wird Ihre Kontoregistrierung gelöscht."
-SignupClinicVerify: "Konto aktivieren"
-#Signup Custodial => SUPPRIMER
-#(email to ask patient spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialConfirmationSubject: "Überprüfen Sie Ihr YourLoops Konto"
-#SignupCustodialHello: "Hello,"
-SignupCustodialHeadline: "Herzlichen Glückwunsch zur Einrichtung Ihres YourLoops-Kontos!"
-SignupCustodialVerify: "Verify Your Account"
-#Signup Custodial Clinic => SUPPRIMER
-#(email to ask clinician spawn by an existing clinician for verification of email and take ownership of his account)
-SignupCustodialClinicConfirmationSubject: "Diabetes-Klinik Nachsorge - Beantragen Sie Ihr Konto"
-SignupCustodialClinicHello: "Hallo, {{ .FullName }}!"
-SignupCustodialClinicAccount: "{{ .CreatorName }} Hat ein YourLoops-Konto für Ihre Diabetes-Gerätedaten erstellt."
-SignupCustodialClinicOwnership: "Sie können Ihr kostenloses Konto nutzen, um Daten von zu Hause aus einzusehen und hochzuladen."
-SignupCustodialClinicClaim: "Beantragen Sie Ihr Konto"
 #Patient Information
 PatientInfoSubject: "Willkommen bei YourLoops!"
 PatientInfoHeadline: "Melden Sie sich an, um Ihre DBL-Daten anzusehen."
@@ -104,11 +85,6 @@ MedicalTeamPatientInviteHeadline: "{{ .CreatorName }} bittet Sie, Ihre Daten an 
 MedicalTeamPatientInviteWarning: "Bitte prüfen Sie, ob die obigen Angaben mit den Informationen übereinstimmen, die Sie von Ihrem Arzt erhalten haben, bevor Sie auf die Einladung reagieren."
 MedicalTeamPatientInviteWarning2: "Wenn Sie sich unsicher sind, sollten Sie sich an Ihr medizinisches Fachpersonal wenden und die Einladung vorerst nicht annehmen."
 MedicalTeamPatientInviteInfo: "Wenn Sie diesem Team beitreten, stimmen Sie zu, dass Ihre persönlichen und medizinischen Daten an die jeweiligen Mitglieder (autorisierte medizinische Fachkräfte, die bei YourLoops registriert sind) weitergegeben werden dürfen."
-#Medical/Care team patient monitoring invitation
-MedicalTeamMonitoringInvitationSubject: "Invitation to join monitoring program"
-MedicalTeamMonitoringInviteHeadline: "{{ .CreatorName }} invites you to be monitored by {{ .MedicalteamName }}"
-MedicalTeamMonitoringInviteWarning: "Bitte prüfen Sie, ob die obigen Angaben mit den Informationen übereinstimmen, die Sie von Ihrem Arzt erhalten haben, bevor Sie auf die Einladung reagieren."
-MedicalTeamMonitoringInviteInfo: "By join this monitoring program, you consent to be contacted by the members of {{ .MedicalteamName }} who are authorized healthcare professionals registered on YourLoops."
 #Shared
 ReadDataPrivacy: "Weitere Informationen finden Sie in unserer <a style='text-decoration:none;color:#00a3e2;' href='{{ .AssetURL }}/data-privacy.{{ .Language }}.pdf '>Datenschutzerklärung</a>."
 RespondToInvite: "Auf Einladung antworten"
