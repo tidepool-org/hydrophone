@@ -22,7 +22,7 @@ VERSION_SHORT_COMMIT=$(git rev-parse --short HEAD)
 VERSION_FULL_COMMIT=$(git rev-parse HEAD)
 
 GO_COMMON_PATH="github.com/mdblp/go-common"
-export GOPRIVATE=github.com/mdblp/crew
+export GOPRIVATE=github.com/mdblp/*
 
 echo "Build hydrophone $VERSION_BASE+$VERSION_FULL_COMMIT"
 # let's stuck on 1.17

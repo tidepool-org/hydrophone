@@ -9,21 +9,21 @@ import (
 	"os"
 	"testing"
 
-	orcaSchema "github.com/mdblp/orca/model"
 	"github.com/mdblp/tide-whisperer-v2/v3/client/tidewhisperer"
-	tide "github.com/mdblp/tide-whisperer-v2/v3/schema"
+	tide "github.com/mdblp/tide-whisperer-v2/v3/model"
 
 	"github.com/gorilla/mux"
-	"github.com/mdblp/hydrophone/templates"
 	. "github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/token"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/mdblp/hydrophone/templates"
 )
 
 type (
 	pinResetTest struct {
 		test            toTest
-		patientSettings *tide.SettingsResult
+		patientSettings *tide.PumpSettings
 		portalErr       bool // bools are false by default
 	}
 )
@@ -92,12 +92,10 @@ func TestPinResetResponds(t *testing.T) {
 				token:      testing_token_uid1,
 				respCode:   500,
 			},
-			patientSettings: &tide.SettingsResult{
-				TimedCurrentSettings: orcaSchema.TimedCurrentSettings{
-					CurrentSettings: orcaSchema.CurrentSettings{
-						Device: &orcaSchema.Device{
-							Imei: "",
-						},
+			patientSettings: &tide.PumpSettings{
+				Settings: tide.Settings{
+					Device: &tide.Device{
+						Imei: "",
 					},
 				},
 			},
@@ -121,12 +119,10 @@ func TestPinResetResponds(t *testing.T) {
 				token:      testing_token_uid1,
 				respCode:   200,
 			},
-			patientSettings: &tide.SettingsResult{
-				TimedCurrentSettings: orcaSchema.TimedCurrentSettings{
-					CurrentSettings: orcaSchema.CurrentSettings{
-						Device: &orcaSchema.Device{
-							Imei: "123456789012345",
-						},
+			patientSettings: &tide.PumpSettings{
+				Settings: tide.Settings{
+					Device: &tide.Device{
+						Imei: "123456789012345",
 					},
 				},
 			},

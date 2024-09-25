@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"regexp"
 
-	tide "github.com/mdblp/tide-whisperer-v2/v3/schema"
+	tide "github.com/mdblp/tide-whisperer-v2/v3/model"
 
 	log "github.com/sirupsen/logrus"
 
@@ -93,7 +93,7 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 	// send PIN Reset OTP to patient
 	// the secret for the TOTP is the concatenation of userID + IMEI + userID
 	// first get the IMEI of the patient's handset
-	var patientConfig *tide.SettingsResult
+	var patientConfig *tide.PumpSettings
 
 	if patientConfig, err = a.medicalData.GetSettings(req.Context(), usrDetails.UserID, getSessionToken(req), false); err != nil {
 		a.sendError(res, http.StatusInternalServerError, statusPinResetErr, "error getting patient config: ", err.Error())
