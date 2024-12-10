@@ -1,6 +1,12 @@
 package clients
 
 import (
+	"fmt"
+	"net/http"
+	"strings"
+
+	"golang.org/x/net/idna"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
@@ -78,7 +84,11 @@ func NewSesNotifier(cfg *SesNotifierConfig, log *zap.SugaredLogger) (*SesNotifie
 func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string) {
 	var toAwsAddress = make([]*string, len(to))
 	for i, x := range to {
-		toAwsAddress[i] = aws.String(x)
+		encodedEmail, err := punycodeEmail(x)
+		if err != nil {
+			return http.StatusBadRequest, err.Error()
+		}
+		toAwsAddress[i] = aws.String(encodedEmail)
 	}
 
 	input := &ses.SendEmailInput{
@@ -114,4 +124,18 @@ func (c *SesNotifier) Send(to []string, subject string, msg string) (int, string
 		return 400, result.String()
 	}
 	return 200, result.String()
+}
+
+func punycodeEmail(email string) (encodedEmail string, err error) {
+	domainStart := strings.LastIndex(email, "@")
+	if domainStart == -1 {
+		return "", fmt.Errorf(`"%v" is not a valid email address`, email)
+	}
+	domain := email[domainStart+1:]
+	encodedDomain, err := idna.ToASCII(domain)
+	if err != nil {
+		return "", fmt.Errorf(`unable to Punycode email "%s": %w`, email, err)
+	}
+	local := email[:domainStart]
+	return fmt.Sprintf("%s@%s", local, encodedDomain), nil
 }
