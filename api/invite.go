@@ -471,6 +471,9 @@ func (a *Api) SendInvite(res http.ResponseWriter, req *http.Request, vars map[st
 
 	invite.Email = ib.Email
 	if invitedUsr != nil {
+		// Not sure if need to another checkForDuplicateInvite here but by userId.
+		// I suppose it's unlikely person A would invite person B, B accepts, B changes their email,
+		// and then person A invites B under his new email.
 		invite.UserId = invitedUsr.UserID
 	}
 
