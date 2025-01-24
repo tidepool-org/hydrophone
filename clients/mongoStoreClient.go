@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	stdErrs "errors"
 	"fmt"
 	"regexp"
 
@@ -144,7 +145,7 @@ func (c *MongoStoreClient) FindConfirmation(ctx context.Context, confirmation *m
 
 	opts := options.FindOne().SetSort(bson.D{{Key: "created", Value: -1}})
 
-	if err = confirmationsCollection(c).FindOne(ctx, query, opts).Decode(&result); err != nil && err != mongo.ErrNoDocuments {
+	if err = confirmationsCollection(c).FindOne(ctx, query, opts).Decode(&result); err != nil && !stdErrs.Is(err, mongo.ErrNoDocuments) {
 		return result, err
 	}
 
