@@ -76,6 +76,7 @@ const (
 	STATUS_ERR_SAVING_CONFIRMATION    = "Error saving the confirmation"
 	STATUS_ERR_SENDING_EMAIL          = "Error sending email"
 	STATUS_ERR_SETTING_PERMISSIONS    = "Error setting permissions"
+	STATUS_ERR_UPDATING_CONFIRMATION  = "Error updating confirmation"
 	STATUS_ERR_UPDATING_USER          = "Error updating user"
 	STATUS_ERR_VALIDATING_CONTEXT     = "Error validating the confirmation context"
 
@@ -509,6 +510,17 @@ func (a *Api) ensureIdSet(ctx context.Context, userId string, confirmations []*m
 			}
 		}
 	}
+}
+
+func (a *Api) addUserIdsToEmptyPendingInvites(ctx context.Context, user *shoreline.UserData, inviteType models.Type, inviteStatus models.Status) error {
+	opts := clients.FilterOpts{AllowEmptyUserID: true}
+	filter := &models.Confirmation{Email: user.Emails[0], UserId: "", Type: inviteType}
+	userlessConfirms, err := a.Store.FindConfirmationsWithOpts(ctx, filter, opts, inviteStatus)
+	if err != nil {
+		return err
+	}
+	a.ensureIdSet(ctx, user.UserID, userlessConfirms)
+	return nil
 }
 
 // Populate restrictions

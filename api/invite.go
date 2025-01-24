@@ -111,8 +111,16 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 
 		invitedUsr := a.findExistingUser(ctx, inviteeID, req.Header.Get(TP_SESSION_TOKEN))
 
+		// Populate userId of the confirmations for this user's userId if is not set. This will allow us to query by userId.
+		inviteType := models.TypeCareteamInvite
+		inviteStatus := models.StatusPending
+		if err := a.addUserIdsToEmptyPendingInvites(ctx, invitedUsr, inviteType, inviteStatus); err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_UPDATING_CONFIRMATION, err)
+			return
+		}
+
 		//find all oustanding invites were this user is the invite//
-		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeCareteamInvite}, models.StatusPending)
+		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{UserId: invitedUsr.UserID, Type: inviteType}, inviteStatus)
 		if err != nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err,
 				"while finding pending invites")
