@@ -512,7 +512,7 @@ func (a *Api) ensureIdSet(ctx context.Context, userId string, confirmations []*m
 	}
 }
 
-func (a *Api) addUserIdsToEmptyPendingInvites(ctx context.Context, user *shoreline.UserData, inviteType models.Type, inviteStatus models.Status) error {
+func (a *Api) addUserIdsToUserlessInvites(ctx context.Context, user *shoreline.UserData, inviteType models.Type, inviteStatus models.Status) error {
 	opts := clients.FilterOpts{AllowEmptyUserID: true}
 	filter := &models.Confirmation{Email: user.Emails[0], UserId: "", Type: inviteType}
 	userlessConfirms, err := a.Store.FindConfirmationsWithOpts(ctx, filter, opts, inviteStatus)
