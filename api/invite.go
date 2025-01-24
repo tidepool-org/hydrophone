@@ -114,7 +114,7 @@ func (a *Api) GetReceivedInvitations(res http.ResponseWriter, req *http.Request,
 		// Populate userId of the confirmations for this user's userId if is not set. This will allow us to query by userId.
 		inviteType := models.TypeCareteamInvite
 		inviteStatus := models.StatusPending
-		if err := a.addUserIdsToEmptyPendingInvites(ctx, invitedUsr, inviteType, inviteStatus); err != nil {
+		if err := a.addUserIdsToUserlessInvites(ctx, invitedUsr, inviteType, inviteStatus); err != nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_UPDATING_CONFIRMATION, err)
 			return
 		}
