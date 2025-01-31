@@ -10,7 +10,7 @@ require (
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/tidepool-org/clinic/client v0.0.0-20240802193352-3f912afe2109
-	github.com/tidepool-org/go-common v0.12.2-0.20240612192926-de6d5c5a742c
+	github.com/tidepool-org/go-common v0.12.2-0.20250129210214-bd36b59b9733
 	github.com/tidepool-org/platform v1.33.1-0.20240814160553-f9955fff3f1e
 	go.mongodb.org/mongo-driver v1.16.0
 	go.uber.org/fx v1.22.1
@@ -56,10 +56,10 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240424034433-3c2c7870ae76 // indirect
 	go.uber.org/dig v1.17.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.24.0 // indirect
-	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 )
