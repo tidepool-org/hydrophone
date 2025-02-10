@@ -94,14 +94,6 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
                             <img width="14" height="24" src="{{ .AssetURL }}/img/facebook_white_x2.png" alt="Facebook logo" style="border:0;"/>
                           </a>
                         </td>
-                        <td class="no-right-padding" valign="middle" style="padding:0;padding:0 8px;padding-right:0;">
-                          <p class="attribution" style="color:#281946;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;font-size:14px;color:#9b9b9b;padding:0 0 0 8px;Margin-bottom:0;">Made possible by</p>
-                        </td>
-                        <td class="no-right-padding" valign="middle" style="padding:0;padding:0 8px;padding-right:0;">
-                          <a href="http://www.jdrf.org/" style="color:#627CFF;text-decoration:none;">
-                            <img width="94" height="24" src="{{ .AssetURL }}/img/jdrf_logo_reverse_x2.png" alt="JDRF logo" style="border:0;"/>
-                          </a>
-                        </td>
                       </tr>
                     </table>
                   </td>
