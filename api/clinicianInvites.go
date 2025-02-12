@@ -218,7 +218,15 @@ func (a *Api) GetClinicianInvitations(res http.ResponseWriter, req *http.Request
 			return
 		}
 
-		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{Email: invitedUsr.Emails[0], Type: models.TypeClinicianInvite}, models.StatusPending)
+		// Populate userId of the confirmations for this user's userId if is not set. This will allow us to query by userId.
+		inviteType := models.TypeClinicianInvite
+		inviteStatus := models.StatusPending
+		if err := a.addUserIdsToUserlessInvites(ctx, invitedUsr, inviteType, inviteStatus); err != nil {
+			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_UPDATING_CONFIRMATION, err)
+			return
+		}
+
+		found, err := a.Store.FindConfirmations(ctx, &models.Confirmation{UserId: invitedUsr.UserID, Type: inviteType}, inviteStatus)
 		if err != nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_CONFIRMATION, err)
 			return

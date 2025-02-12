@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	stdErrs "errors"
 	"fmt"
 	"regexp"
 
@@ -144,7 +145,7 @@ func (c *MongoStoreClient) FindConfirmation(ctx context.Context, confirmation *m
 
 	opts := options.FindOne().SetSort(bson.D{{Key: "created", Value: -1}})
 
-	if err = confirmationsCollection(c).FindOne(ctx, query, opts).Decode(&result); err != nil && err != mongo.ErrNoDocuments {
+	if err = confirmationsCollection(c).FindOne(ctx, query, opts).Decode(&result); err != nil && !stdErrs.Is(err, mongo.ErrNoDocuments) {
 		return result, err
 	}
 
@@ -153,6 +154,10 @@ func (c *MongoStoreClient) FindConfirmation(ctx context.Context, confirmation *m
 
 // FindConfirmations - find and return existing confirmations
 func (c *MongoStoreClient) FindConfirmations(ctx context.Context, confirmation *models.Confirmation, statuses ...models.Status) (results []*models.Confirmation, err error) {
+	return c.FindConfirmationsWithOpts(ctx, confirmation, FilterOpts{}, statuses...)
+}
+
+func (c *MongoStoreClient) FindConfirmationsWithOpts(ctx context.Context, confirmation *models.Confirmation, extraFilters FilterOpts, statuses ...models.Status) (results []*models.Confirmation, err error) {
 	var query bson.M = bson.M{}
 
 	if confirmation.Email != "" {
@@ -171,7 +176,7 @@ func (c *MongoStoreClient) FindConfirmations(ctx context.Context, confirmation *
 	if confirmation.CreatorId != "" {
 		query["creatorId"] = confirmation.CreatorId
 	}
-	if confirmation.UserId != "" {
+	if confirmation.UserId != "" || extraFilters.AllowEmptyUserID {
 		query["userId"] = confirmation.UserId
 	}
 	if confirmation.ClinicId != "" {
