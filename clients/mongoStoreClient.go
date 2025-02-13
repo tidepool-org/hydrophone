@@ -29,12 +29,45 @@ type Client struct {
 // NewStore creates a new Client
 func NewStore(config *goComMgo.Config, logger *log.Logger) (*Client, error) {
 	client := Client{}
+
+	config.Indexes = map[string][]mongo.IndexModel{
+		confirmationsCollection: {
+			{
+				Keys: bson.D{
+					{Key: "created", Value: -1},
+				},
+				Options: options.Index().
+					SetName("created_index"),
+			},
+			{
+				Keys: bson.D{
+					{Key: "creatorId", Value: 1},
+					{Key: "created", Value: -1},
+					{Key: "status", Value: 1},
+					{Key: "type", Value: 1},
+				},
+				Options: options.Index().
+					SetName("invite_index"),
+			},
+			{
+				Keys: bson.D{
+					{Key: "status", Value: 1},
+					{Key: "teamId", Value: 1},
+					{Key: "type", Value: 1},
+					{Key: "userId", Value: 1},
+					{Key: "created", Value: -1},
+				},
+				Options: options.Index().
+					SetName("accept_index"),
+			},
+		},
+	}
 	store, err := goComMgo.NewStoreClient(config, logger)
 	client.StoreClient = store
 	return &client, err
 }
 
-//warpper function for consistent access to the collection
+// warpper function for consistent access to the collection
 func mgoConfirmationsCollection(c *Client) *mongo.Collection {
 	return c.Collection(confirmationsCollection)
 }
