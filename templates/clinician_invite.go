@@ -123,16 +123,6 @@ const _ClinicianInviteBodyTemplate string = `
                         </table>
                             <![endif]-->
                           </td>
-                          <td valign="top" style="padding:0;padding:0 2px;">
-                            <a href="https://itunes.apple.com/us/app/blip-notes/id1026395200?mt=8" style="color:#627CFF;text-decoration:none;">
-                              <img width="81" height="24" src="{{ .AssetURL }}/img/app_store_badge_x2.png" alt="App Store badge" style="border:0;"/>
-                        </a>
-                          </td>
-                          <td class="no-right-padding" valign="top" style="padding:0;padding:0 2px;padding-right:0;">
-                            <a href="https://play.google.com/store/apps/details?id=io.tidepool.urchin&hl=en" style="color:#627CFF;text-decoration:none;">
-                              <img width="72" height="24" src="{{ .AssetURL }}/img/google_play_badge_x2.png" alt="Google Play badge" style="border:0;"/>
-                        </a>
-                          </td>
                         </tr>
                       </table>
                     </td>
