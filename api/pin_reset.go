@@ -8,9 +8,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/mdblp/shoreline/schema"
-
 	"github.com/mdblp/go-common/v2/clients/status"
+
 	"github.com/mdblp/hydrophone/models"
 	"github.com/mdblp/hydrophone/utils/otp"
 )
@@ -45,7 +44,7 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 	// by default, language is EN. It will be overriden if preferred language is found later
 	var userLanguage = "en"
 	var newOTP *models.Confirmation
-	var usrDetails *schema.UserData
+	var usrDetails *models.UserData
 	var err error
 
 	if token := a.token(res, req); token == nil {
@@ -62,7 +61,7 @@ func (a *Api) SendPinReset(res http.ResponseWriter, req *http.Request, vars map[
 		return
 	}
 
-	if usrDetails, err = a.sl.GetUser(userID, a.sl.TokenProvide()); err != nil {
+	if usrDetails, err = a.userRepo.GetUser(userID, a.sl.TokenProvide()); err != nil {
 		log.Printf("sendPinReset - %s err[%s]", STATUS_ERR_FINDING_USR, err.Error())
 		a.sendModelAsResWithStatus(res, STATUS_ERR_FINDING_USR, http.StatusInternalServerError)
 		return

@@ -10,6 +10,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mdblp/shoreline/token"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/mdblp/hydrophone/api/mocks"
+	"github.com/mdblp/hydrophone/models"
 )
 
 func TestSanityCheckResponds(t *testing.T) {
@@ -58,12 +61,15 @@ func TestSanityCheckResponds(t *testing.T) {
 		} else {
 			mockAuth.On("Authenticate", mock.Anything).Return(&token.TokenData{UserId: testing_uid1, IsServer: false, Role: "patient"})
 		}
+		mockUserRepo := &mocks.UserRepo{}
+		mockUserRepo.On("GetUser", testing_uid1, mock.Anything).Return(&models.UserData{UserID: testing_uid1, Username: testing_uid1, Emails: []string{testing_uid1}, PasswordExists: true, Roles: []string{"caregiver"}, IdVerified: true}, nil)
+		mockUserRepo.On("GetUser", "NotFound", mock.Anything).Return(nil, nil)
 
 		if test.returnNone {
-			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger)
+			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger, mockUserRepo)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
-			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger)
+			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger, mockUserRepo)
 			hydrophone.SetHandlers("", testRtr)
 		}
 

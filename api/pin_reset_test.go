@@ -17,6 +17,8 @@ import (
 	"github.com/mdblp/shoreline/token"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/mdblp/hydrophone/api/mocks"
+	"github.com/mdblp/hydrophone/models"
 	"github.com/mdblp/hydrophone/templates"
 )
 
@@ -169,15 +171,18 @@ func TestPinResetResponds(t *testing.T) {
 			medicalDataMock.On("GetSettings", mock.Anything, mock.Anything, mock.Anything).Return(pinResetTest.patientSettings, nil)
 		}
 		mockSeagull.On("GetCollections", testing_uid1, []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
+		mockUserRepo := &mocks.UserRepo{}
+		mockUserRepo.On("GetUser", testing_uid1, mock.Anything).Return(&models.UserData{UserID: testing_uid1, Username: "From Mock", Emails: []string{testing_uid1}, PasswordExists: true, Roles: []string{"patient"}, IdVerified: true}, nil)
+		mockUserRepo.On("GetUser", "NotFound", mock.Anything).Return(nil, nil)
 
 		//testing when there is nothing to return from the store
 		if pinResetTest.test.returnNone {
 			mockStoreEmpty.CounterLatestConfirmations = pinResetTest.test.counterLatestConfirmations
-			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger)
+			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger, mockUserRepo)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
 			mockStore.CounterLatestConfirmations = pinResetTest.test.counterLatestConfirmations
-			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger)
+			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger, mockUserRepo)
 			hydrophone.SetHandlers("", testRtr)
 		}
 

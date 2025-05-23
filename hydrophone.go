@@ -39,11 +39,13 @@ import (
 	crewClient "github.com/mdblp/crew/client"
 	"github.com/mdblp/go-common"
 	"github.com/mdblp/go-db/mongo"
+	"github.com/mdblp/shoreline/clients/shoreline"
+
 	"github.com/mdblp/hydrophone/api"
 	sc "github.com/mdblp/hydrophone/clients"
+	"github.com/mdblp/hydrophone/infrastructure"
 	"github.com/mdblp/hydrophone/localize"
 	"github.com/mdblp/hydrophone/templates"
-	"github.com/mdblp/shoreline/clients/shoreline"
 )
 
 type (
@@ -142,6 +144,7 @@ func main() {
 	httpClient := &http.Client{Transport: tr}
 
 	shoreline := shoreline.NewShorelineClientFromEnv(httpClient)
+	userRepoClient := infrastructure.NewAuthClient(httpClient)
 
 	if err := shoreline.Start(); err != nil {
 		logger.Fatal(err)
@@ -206,7 +209,7 @@ func main() {
 	}
 
 	rtr := mux.NewRouter()
-	api := api.InitApi(config.Api, store, mail, shoreline, permsClient, authClient, seagull, tideV2Client, emailTemplates, logger)
+	api := api.InitApi(config.Api, store, mail, shoreline, permsClient, authClient, seagull, tideV2Client, emailTemplates, logger, userRepoClient)
 	api.SetHandlers("", rtr)
 
 	/*

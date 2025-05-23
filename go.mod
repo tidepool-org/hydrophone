@@ -8,7 +8,7 @@ require (
 	github.com/k3a/html2text v1.1.0
 	github.com/mdblp/crew v1.4.4
 	github.com/mdblp/go-common v1.9.0
-	github.com/mdblp/go-common/v2 v2.0.1
+	github.com/mdblp/go-common/v2 v2.1.1
 	github.com/mdblp/go-db v1.0.0
 	github.com/mdblp/go-routers v1.1.0
 	github.com/mdblp/seagull v1.6.0

@@ -8,8 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/mdblp/go-common/v2/clients/status"
+
 	"github.com/mdblp/hydrophone/models"
-	"github.com/mdblp/shoreline/schema"
 )
 
 const (
@@ -140,7 +140,7 @@ func (a *Api) passwordReset(res http.ResponseWriter, req *http.Request, vars map
 	return
 }
 
-//find the reset confirmation if it exists and hasn't expired
+// find the reset confirmation if it exists and hasn't expired
 func (a *Api) findResetConfirmation(ctx context.Context, conf *models.Confirmation, res http.ResponseWriter) *models.Confirmation {
 
 	log.Printf("findResetConfirmation: finding [%v]", conf)
@@ -216,7 +216,7 @@ func (a *Api) acceptPassword(res http.ResponseWriter, req *http.Request, vars ma
 				return
 			}
 
-			if err := a.sl.UpdateUser(usr.UserID, schema.UserUpdate{Password: &rb.Password}, token); err != nil {
+			if err := a.userRepo.UpdateUser(usr.UserID, models.UserUpdate{Password: &rb.Password}, token); err != nil {
 				log.Printf("acceptPassword: error updating password as part of password reset [%v]", err)
 				status := &status.StatusError{Status: status.NewStatus(http.StatusBadRequest, statusResetError)}
 				a.sendModelAsResWithStatus(res, status, http.StatusBadRequest)

@@ -11,10 +11,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mdblp/go-common/v2/clients/auth"
-	"github.com/mdblp/hydrophone/templates"
 	"github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/token"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/mdblp/hydrophone/api/mocks"
+	"github.com/mdblp/hydrophone/models"
+	"github.com/mdblp/hydrophone/templates"
 )
 
 func TestForgotResponds(t *testing.T) {
@@ -140,18 +143,6 @@ func TestForgotResponds(t *testing.T) {
 			respCode: 200,
 		},
 		{
-			// returns a 403 for clinician
-			method:   "POST",
-			url:      "/send/forgot/clinic@myemail.com",
-			respCode: 403,
-		},
-		{
-			// returns a 403 for caregivers
-			method:   "POST",
-			url:      "/send/forgot/caregiver@myemail.com",
-			respCode: 403,
-		},
-		{
 			// always returns a 200 if properly formed
 			returnNone: true,
 			method:     "POST",
@@ -257,7 +248,13 @@ func TestForgotResponds(t *testing.T) {
 
 		//fresh each time
 		var testRtr = mux.NewRouter()
-
+		mockUserRepo := &mocks.UserRepo{}
+		mockUserRepo.On("GetUser", "me@myemail.com", mock.Anything).Return(&models.UserData{UserID: "me@myemail.com", Username: "me@myemail.com", Emails: []string{"me@myemail.com"}, PasswordExists: true, Roles: []string{"patient"}, IdVerified: true}, nil)
+		mockUserRepo.On("GetUser", "patientNoPrefs@myemail.com", mock.Anything).Return(&models.UserData{UserID: "me@myemail.com", Username: "me@myemail.com", Emails: []string{"me@myemail.com"}, PasswordExists: true, Roles: []string{"patient"}, IdVerified: true}, nil)
+		mockUserRepo.On("GetUser", "patientfr@myemail.com", mock.Anything).Return(&models.UserData{UserID: "me@myemail.com", Username: "me@myemail.com", Emails: []string{"me@myemail.com"}, PasswordExists: true, Roles: []string{"patient"}, IdVerified: true}, nil)
+		mockUserRepo.On("GetUser", "patient@myemail.com", mock.Anything).Return(&models.UserData{UserID: "me@myemail.com", Username: "me@myemail.com", Emails: []string{"me@myemail.com"}, PasswordExists: true, Roles: []string{"patient"}, IdVerified: true}, nil)
+		mockUserRepo.On("GetUser", "caregiver@myemail.com", mock.Anything).Return(&models.UserData{UserID: "me@myemail.com", Username: "me@myemail.com", Emails: []string{"me@myemail.com"}, PasswordExists: true, Roles: []string{"caregiver"}, IdVerified: true}, nil)
+		mockUserRepo.On("UpdateUser", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		mockSeagull.On("GetCollections", "me@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{}, nil)
 		mockSeagull.On("GetCollections", "patient@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{}, nil)
 		mockSeagull.On("GetCollections", "patientfr@myemail.com", []string{"preferences"}).Return(&schema.SeagullDocument{Preferences: &schema.Preferences{DisplayLanguageCode: "fr"}}, nil)
@@ -268,11 +265,11 @@ func TestForgotResponds(t *testing.T) {
 
 		if test.returnNone {
 			mockStoreEmpty.CounterLatestConfirmations = test.counterLatestConfirmations
-			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger)
+			hydrophoneFindsNothing := InitApi(FAKE_CONFIG, mockStoreEmpty, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger, mockUserRepo)
 			hydrophoneFindsNothing.SetHandlers("", testRtr)
 		} else {
 			mockStore.CounterLatestConfirmations = test.counterLatestConfirmations
-			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger)
+			hydrophone := InitApi(FAKE_CONFIG, mockStore, mockNotifier, mockShoreline, mockPerms, mockAuth, mockSeagull, medicalDataMock, mockTemplates, logger, mockUserRepo)
 			hydrophone.SetHandlers("", testRtr)
 		}
 

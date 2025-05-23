@@ -17,6 +17,7 @@
       <env name="SERVER_SECRET" value="This needs to be the same secret everywhere. YaHut75NsK1f9UKUXuWqxNN0RUwHFBCy" />
       <env name="SERVICE_NAME" value="hydrophone" />
       <env name="SHORELINE_HOST" value="http://api-private:3000/auth" />
+      <env name="AUTH_URL" value="http://api-private:3000/auth" />
       <env name="SHORELINE_TOKEN_GET_INTERVAL" value="5m" />
       <env name="SHORELINE_TOKEN_REFRESH_INTERVAL" value="1h" />
       <env name="TIDEPOOL_HYDROPHONE_ENV" value="{ \&quot;portal\&quot;: { \&quot;serviceSpec\&quot;: { \&quot;type\&quot;: \&quot;static\&quot;, \&quot;hosts\&quot;: [\&quot;http://api-private:3000\&quot;] } }, \&quot;hakken\&quot;: { \&quot;host\&quot;: \&quot;fake-hakken\&quot;, \&quot;skipHakken\&quot;:true } }" />

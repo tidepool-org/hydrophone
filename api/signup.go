@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/mdblp/go-common/v2/clients/status"
+
 	"github.com/mdblp/hydrophone/models"
 )
 
@@ -31,7 +32,7 @@ func (a *Api) sendSignUpInformation(res http.ResponseWriter, req *http.Request, 
 		a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusBadRequest, STATUS_SIGNUP_NO_ID), http.StatusBadRequest)
 		return
 	}
-	if usrDetails, err := a.sl.GetUser(userID, a.sl.TokenProvide()); err != nil {
+	if usrDetails, err := a.userRepo.GetUser(userID, a.sl.TokenProvide()); err != nil {
 		log.Printf("sendSignUp %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
 		a.sendModelAsResWithStatus(res, status.StatusError{status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER)}, http.StatusInternalServerError)
 		return

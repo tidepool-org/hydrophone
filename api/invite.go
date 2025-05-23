@@ -3,13 +3,14 @@ package api
 import (
 	"context"
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/mdblp/go-common/v2/clients/status"
+
 	"github.com/mdblp/hydrophone/models"
-	"github.com/mdblp/shoreline/schema"
 )
 
 const (
@@ -49,7 +50,7 @@ func checkInviteBody(ib *InviteBody) *InviteBody {
 
 // Checks do they have an existing invite or are they already a team member
 // Or are they an existing user and already in the group?
-func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID, token string, res http.ResponseWriter) (bool, *schema.UserData) {
+func (a *Api) checkForDuplicateInvite(ctx context.Context, inviteeEmail, invitorID, token string, res http.ResponseWriter) (bool, *models.UserData) {
 
 	//already has invite from this user?
 	invites, _ := a.Store.FindConfirmations(

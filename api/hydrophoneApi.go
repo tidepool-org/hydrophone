@@ -23,12 +23,12 @@ import (
 	"github.com/mdblp/go-common/v2/clients/auth"
 	"github.com/mdblp/go-common/v2/clients/status"
 	muxMiddleware "github.com/mdblp/go-routers/mux"
-	"github.com/mdblp/hydrophone/clients"
-	"github.com/mdblp/hydrophone/models"
 	seagullClient "github.com/mdblp/seagull/client"
 	"github.com/mdblp/shoreline/clients/shoreline"
-	"github.com/mdblp/shoreline/schema"
 	"github.com/mdblp/shoreline/token"
+
+	"github.com/mdblp/hydrophone/clients"
+	"github.com/mdblp/hydrophone/models"
 )
 
 type (
@@ -40,6 +40,7 @@ type (
 		perms          crewClient.Crew
 		auth           auth.ClientInterface
 		seagull        seagullClient.API
+		userRepo       UserRepo
 		medicalData    tidewhisperer.ClientInterface
 		Config         Config
 		LanguageBundle *i18n.Bundle
@@ -72,48 +73,33 @@ const (
 	TP_TRACE_SESSION = "x-tidepool-trace-session"
 
 	//returned error messages
-	STATUS_ERR_SENDING_EMAIL         = "Error sending email"
 	STATUS_ERR_SAVING_CONFIRMATION   = "Error saving the confirmation"
-	STATUS_ERR_CREATING_CONFIRMATION = "Error creating a confirmation"
 	STATUS_ERR_CLINICAL_USR          = "Cannot send an information to clinical"
 	STATUS_ERR_TOO_MANY_ATTEMPTS     = "Cannot send confirmation, too many attempts"
 	STATUS_ERR_RESET_PWD_FORBIDEN    = "Cannot send reset password to non patients users"
 	STATUS_ERR_FINDING_CONFIRMATION  = "Error finding the confirmation"
 	STATUS_ERR_FINDING_USER          = "Error finding the user"
 	STATUS_ERR_FINDING_TEAM          = "Error finding the team"
-	STATUS_ERR_PATIENT_NOT_MBR       = "Error finding the patient in the team"
 	STATUS_ERR_DECODING_CONFIRMATION = "Error decoding the confirmation"
 	STATUS_ERR_DECODING_NOTIFICATION = "Error decoding the notification payload"
-	STATUS_ERR_FINDING_PREVIEW       = "Error finding the invite preview"
 	STATUS_ERR_FINDING_VALIDATION    = "Error finding the account validation"
 	STATUS_ERR_DECODING_INVITE       = "Error decoding the invitation"
 	STATUS_ERR_MISSING_DATA_INVITE   = "Error missing data in the invitation"
 	STATUS_ERR_INVALID_DATA          = "Error invalid data in the invitation"
-	STATUS_ERR_DECODING_BODY         = "Error decoding the message body"
-	STATUS_ERR_MONITORED_PATIENT     = "Error on monitored patient"
 	STATUS_ERR_FINDING_INVITE        = "Error finding the invite"
 
 	//returned status messages
-	STATUS_NOT_FOUND           = "Nothing found"
-	STATUS_NO_TOKEN            = "No x-tidepool-session-token was found"
-	STATUS_INVALID_TOKEN       = "The x-tidepool-session-token was invalid"
-	STATUS_UNAUTHORIZED        = "Not authorized for requested operation"
-	STATUS_ROLE_ALRDY_ASSIGNED = "Role already assigned to user"
-	STATUS_NOT_MEMBER          = "User is not a member"
-	STATUS_NOT_ADMIN           = STATUS_UNAUTHORIZED
-	STATUS_OK                  = "OK"
-
+	STATUS_NOT_FOUND             = "Nothing found"
+	STATUS_NO_TOKEN              = "No x-tidepool-session-token was found"
+	STATUS_UNAUTHORIZED          = "Not authorized for requested operation"
+	STATUS_ROLE_ALRDY_ASSIGNED   = "Role already assigned to user"
+	STATUS_NOT_MEMBER            = "User is not a member"
+	STATUS_NOT_ADMIN             = STATUS_UNAUTHORIZED
+	STATUS_OK                    = "OK"
 	STATUS_SIGNUP_NO_ID          = "Required userid is missing"
 	STATUS_ERR_FINDING_USR       = "Error finding user"
-	STATUS_ERR_UPDATING_USR      = "Error updating user"
 	STATUS_ERR_UPDATING_TEAM     = "Error updating team"
 	STATUS_ERR_COUNTING_CONF     = "Error counting existing confirmations"
-	STATUS_NO_PASSWORD           = "User does not have a password"
-	STATUS_MISSING_PASSWORD      = "Password is missing"
-	STATUS_INVALID_PASSWORD      = "Password specified is invalid"
-	STATUS_MISSING_BIRTHDAY      = "Birthday is missing"
-	STATUS_INVALID_BIRTHDAY      = "Birthday specified is invalid"
-	STATUS_MISMATCH_BIRTHDAY     = "Birthday specified does not match patient birthday"
 	STATUS_PATIENT_NOT_AUTH      = "Patient cannot be member of care team"
 	STATUS_MEMBER_NOT_AUTH       = "Non patient users cannot be a patient of care team"
 	STATUS_PATIENT_NOT_CAREGIVER = "Patient cannot be added as caregiver"
@@ -136,6 +122,7 @@ func InitApi(
 	medicalData tidewhisperer.ClientInterface,
 	templates models.Templates,
 	logger *log.Logger,
+	userRepo UserRepo,
 ) *Api {
 	return &Api{
 		Store:          store,
@@ -149,6 +136,7 @@ func InitApi(
 		templates:      templates,
 		LanguageBundle: nil,
 		logger:         logger,
+		userRepo:       userRepo,
 	}
 }
 
@@ -452,8 +440,8 @@ func (a *Api) logAudit(req *http.Request, format string, args ...interface{}) {
 
 // Find existing user based on the given identifier
 // The identifier could be either an id or email address
-func (a *Api) findExistingUser(identifier, token string) *schema.UserData {
-	if usr, err := a.sl.GetUser(identifier, token); err != nil {
+func (a *Api) findExistingUser(identifier, token string) *models.UserData {
+	if usr, err := a.userRepo.GetUser(identifier, token); err != nil {
 		log.Printf("Error [%s] trying to get existing users details", err.Error())
 		return nil
 	} else {

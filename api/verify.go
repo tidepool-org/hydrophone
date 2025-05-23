@@ -43,7 +43,7 @@ func (a *Api) sendSanityCheckEmail(res http.ResponseWriter, req *http.Request, v
 
 		// To ensure this route is not used for spamming, we ensure session token and {userid} param match an actual user
 		// In case the user exists, we get details about him
-		if usrDetails, err := a.sl.GetUser(userID, a.sl.TokenProvide()); err != nil {
+		if usrDetails, err := a.userRepo.GetUser(userID, a.sl.TokenProvide()); err != nil {
 			log.Printf("sanityCheck %s err[%s]", STATUS_ERR_FINDING_USER, err.Error())
 			a.sendModelAsResWithStatus(res, status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USER), http.StatusInternalServerError)
 			return

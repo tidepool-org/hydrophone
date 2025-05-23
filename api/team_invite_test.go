@@ -4,17 +4,21 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/mdblp/crew/store"
-	"github.com/mdblp/hydrophone/templates"
-	. "github.com/mdblp/seagull/schema"
-	"github.com/mdblp/shoreline/token"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/mdblp/crew/store"
+	. "github.com/mdblp/seagull/schema"
+	"github.com/mdblp/shoreline/token"
+	"github.com/stretchr/testify/mock"
+
+	"github.com/mdblp/hydrophone/api/mocks"
+	"github.com/mdblp/hydrophone/models"
+	"github.com/mdblp/hydrophone/templates"
 )
 
 func initTestingTeamRouter(returnNone bool) *mux.Router {
@@ -243,6 +247,17 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 	mockSeagull.On("GetCollections", testing_uid3, []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
 	mockSeagull.On("GetCollections", testing_uid4, []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
 	mockSeagull.On("GetCollections", testing_uid_patient1, []string{"preferences"}).Return(&SeagullDocument{Preferences: &Preferences{}}, nil)
+	mockUserRepo := &mocks.UserRepo{}
+	mockUserRepo.On("GetUser", testing_uid1, mock.Anything).Return(&models.UserData{UserID: testing_uid1, Username: testing_uid1, Emails: []string{testing_uid1}, PasswordExists: true, Roles: []string{"caregiver"}, IdVerified: true}, nil)
+	mockUserRepo.On("GetUser", testing_uid3, mock.Anything).Return(&models.UserData{UserID: testing_uid3, Username: testing_uid3, Emails: []string{testing_uid3}, PasswordExists: true, Roles: []string{"caregiver"}, IdVerified: true}, nil)
+	mockUserRepo.On("GetUser", testing_uid4, mock.Anything).Return(&models.UserData{UserID: testing_uid4, Username: testing_uid4, Emails: []string{testing_uid4}, PasswordExists: true, Roles: []string{"caregiver"}, IdVerified: true}, nil)
+	mockUserRepo.On("GetUser", testing_uid_patient1, mock.Anything).Return(&models.UserData{UserID: testing_uid_patient1, Username: testing_uid_patient1, Emails: []string{testing_uid_patient1}, PasswordExists: true, Roles: []string{"patient"}, IdVerified: true}, nil)
+	mockUserRepo.On("GetUser", "doesnotexist@myemail.com", mock.Anything).Return(nil, nil)
+	mockUserRepo.On("GetUser", "caregiver@myemail.com", mock.Anything).Return(&models.UserData{UserID: testing_uid1, Emails: []string{testing_uid1}, Username: testing_uid1, Roles: []string{"caregiver"}}, nil)
+	mockUserRepo.On("GetUser", "hcpMember@myemail.com", mock.Anything).Return(&models.UserData{UserID: testing_uid2, Emails: []string{testing_uid2}, Username: testing_uid2, Roles: []string{"hcp"}}, nil)
+	mockUserRepo.On("GetUser", "me2@myemail.com", mock.Anything).Return(&models.UserData{UserID: testing_uid3, Emails: []string{"me2@myemail.com"}, Username: "me2@myemail.com"}, nil)
+	mockUserRepo.On("GetUser", "NotFound", mock.Anything).Return(&models.UserData{UserID: testing_uid2, Emails: []string{testing_uid2}, Username: testing_uid2, Roles: []string{"hcp"}}, nil)
+	mockUserRepo.On("GetUser", "patient.team@myemail.com", mock.Anything).Return(&models.UserData{UserID: testing_uid4, Emails: []string{"patient.team@myemail.com"}, Username: "patient.team@myemail.com", Roles: []string{"patient"}}, nil)
 
 	hydrophone := InitApi(
 		FAKE_CONFIG,
@@ -255,6 +270,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 		medicalDataMock,
 		mockTemplates,
 		logger,
+		mockUserRepo,
 	)
 	if returnNone {
 		hydrophone = InitApi(
@@ -268,6 +284,7 @@ func initTestingTeamRouter(returnNone bool) *mux.Router {
 			medicalDataMock,
 			mockTemplates,
 			logger,
+			mockUserRepo,
 		)
 
 	}
@@ -908,6 +925,7 @@ func TestAcceptTeamInvite(t *testing.T) {
 			medicalDataMock,
 			mockTemplates,
 			logger,
+			nil,
 		)
 
 		//testing when there is nothing to return from the store
@@ -923,6 +941,7 @@ func TestAcceptTeamInvite(t *testing.T) {
 				medicalDataMock,
 				mockTemplates,
 				logger,
+				nil,
 			)
 		}
 		// testing when returning errors
@@ -938,6 +957,7 @@ func TestAcceptTeamInvite(t *testing.T) {
 				medicalDataMock,
 				mockTemplates,
 				logger,
+				nil,
 			)
 		}
 

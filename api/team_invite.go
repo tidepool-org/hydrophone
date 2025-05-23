@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/mdblp/crew/store"
 	"github.com/mdblp/go-common/v2/clients/status"
+
 	"github.com/mdblp/hydrophone/models"
-	"github.com/mdblp/shoreline/schema"
 )
 
 func formatAddress(addr store.Address) string {
@@ -24,7 +25,7 @@ func formatAddress(addr store.Address) string {
 
 // Checks do they have an existing invite or are they already a team member
 // Or are they an existing user and already in the group?
-func (a *Api) checkForDuplicateTeamInvite(ctx context.Context, inviteeEmail, invitorID, token string, team store.Team, invite models.Type, res http.ResponseWriter) (bool, *schema.UserData) {
+func (a *Api) checkForDuplicateTeamInvite(ctx context.Context, inviteeEmail, invitorID, token string, team store.Team, invite models.Type, res http.ResponseWriter) (bool, *models.UserData) {
 
 	confirmation := &models.Confirmation{
 		Email: inviteeEmail,
@@ -507,7 +508,7 @@ func (a *Api) SendTeamInvite(res http.ResponseWriter, req *http.Request, vars ma
 
 }
 
-func (a *Api) invitePatient(invitedUsr *schema.UserData, member store.Member, token string) *status.StatusError {
+func (a *Api) invitePatient(invitedUsr *models.UserData, member store.Member, token string) *status.StatusError {
 	if invitedUsr == nil {
 		// we return an error as the invitedUser does not exist yet
 		return &status.StatusError{Status: status.NewStatus(http.StatusForbidden, STATUS_ERR_FINDING_USER)}
@@ -530,7 +531,7 @@ func (a *Api) invitePatient(invitedUsr *schema.UserData, member store.Member, to
 	}
 }
 
-func (a *Api) inviteHcp(invitedUsr *schema.UserData, member store.Member, token string) *status.StatusError {
+func (a *Api) inviteHcp(invitedUsr *models.UserData, member store.Member, token string) *status.StatusError {
 	if invitedUsr == nil {
 		return nil
 	}
@@ -725,7 +726,7 @@ func (a *Api) DeleteTeamMember(res http.ResponseWriter, req *http.Request, vars 
 	}
 	email := req.URL.Query().Get("email")
 	if email == "" {
-		user, err := a.sl.GetUser(inviteeID, a.sl.TokenProvide())
+		user, err := a.userRepo.GetUser(inviteeID, a.sl.TokenProvide())
 		if err != nil || user == nil || user.Username == "" {
 			statusErr := &status.StatusError{Status: status.NewStatus(http.StatusInternalServerError, STATUS_ERR_FINDING_USR)}
 			a.sendModelAsResWithStatus(res, statusErr, statusErr.Code)

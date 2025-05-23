@@ -12,15 +12,20 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mdblp/crew/store"
 	"github.com/mdblp/go-common/v2/clients/auth"
-	"github.com/mdblp/hydrophone/templates"
 	"github.com/mdblp/seagull/schema"
 	"github.com/mdblp/shoreline/token"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/mdblp/hydrophone/api/mocks"
+	"github.com/mdblp/hydrophone/models"
+	"github.com/mdblp/hydrophone/templates"
 )
 
 func initTestingRouterNoPerms() *mux.Router {
 	testRtr := mux.NewRouter()
 	mockAuth.ExpectedCalls = nil
+	mockUserRepo := &mocks.UserRepo{}
+	mockUserRepo.On("GetUser", "patient.team@myemail.com", mock.Anything).Return(&models.UserData{UserID: testing_uid4, Username: testing_uid4, Emails: []string{testing_uid4}, PasswordExists: true, Roles: []string{"patient"}, IdVerified: true}, nil)
 	hydrophone := InitApi(
 		FAKE_CONFIG,
 		mockStoreEmpty,
@@ -32,6 +37,7 @@ func initTestingRouterNoPerms() *mux.Router {
 		medicalDataMock,
 		mockTemplates,
 		logger,
+		mockUserRepo,
 	)
 	hydrophone.SetHandlers("", testRtr)
 	return testRtr
@@ -434,6 +440,12 @@ func TestCaregiverInvite(t *testing.T) {
 
 		mockPerms.SetMockNextCall(testing_token_uid1, teams1, nil)
 		mockPerms.SetMockNextCall(testing_token+"123.456.789", &membersAccepted, nil)
+		mockUserRepo := &mocks.UserRepo{}
+		mockUserRepo.On("GetUser", testing_uid2+"hcp@email.org", mock.Anything).Return(&models.UserData{UserID: testing_uid2 + "hcp@email.org", Emails: []string{testing_uid2 + "hcp@email.org"}, Username: testing_uid2 + "hcp@email.org", Roles: []string{"hcp"}}, nil)
+		mockUserRepo.On("GetUser", testing_uid2, mock.Anything).Return(&models.UserData{UserID: testing_uid2, Username: testing_uid2, Emails: []string{testing_uid2}, PasswordExists: true, Roles: []string{"patient"}, IdVerified: true}, nil)
+		mockUserRepo.On("GetUser", testing_uid1, mock.Anything).Return(&models.UserData{UserID: testing_uid1, Username: testing_uid1, Emails: []string{testing_uid1}, PasswordExists: true, Roles: []string{"patient"}, IdVerified: true}, nil)
+		mockUserRepo.On("GetUser", testing_uid_patient1, mock.Anything).Return(&models.UserData{UserID: testing_uid_patient1, Username: testing_uid_patient1, Emails: []string{testing_uid_patient1}, PasswordExists: true, Roles: []string{"patient"}, IdVerified: true}, nil)
+		mockUserRepo.On("GetUser", "caregiver@myemail.com", mock.Anything).Return(&models.UserData{UserID: testing_uid1, Emails: []string{testing_uid1}, Username: testing_uid1, Roles: []string{"caregiver"}}, nil)
 
 		//default flow, fully authorized
 		hydrophone := InitApi(
@@ -447,6 +459,7 @@ func TestCaregiverInvite(t *testing.T) {
 			medicalDataMock,
 			mockTemplates,
 			logger,
+			mockUserRepo,
 		)
 
 		//testing when there is nothing to return from the store
@@ -462,6 +475,7 @@ func TestCaregiverInvite(t *testing.T) {
 				medicalDataMock,
 				mockTemplates,
 				logger,
+				mockUserRepo,
 			)
 		}
 		// testing when returning errors
@@ -477,6 +491,7 @@ func TestCaregiverInvite(t *testing.T) {
 				medicalDataMock,
 				mockTemplates,
 				logger,
+				mockUserRepo,
 			)
 		}
 		mockAuth.On("Authenticate", mock.Anything).Return(&token.TokenData{UserId: testing_uid1, IsServer: true})
