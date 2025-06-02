@@ -1,7 +1,7 @@
 name: Crowdin Upload Translations
 on:
   push:
-    branches: [ main ]
+    branches: [ dblp ]
 
 jobs:
   upload-sources:
