@@ -1,3 +1,4 @@
+preserve_hierarchy: true
 files:
   - source: /templates/locales/en.yaml
     translation: /templates/locales/%two_letters_code%.yaml
