@@ -1,6 +1,6 @@
 module github.com/mdblp/hydrophone
 
-go 1.22
+go 1.24
 
 require (
 	github.com/aws/aws-sdk-go v1.44.132
@@ -11,15 +11,15 @@ require (
 	github.com/mdblp/go-common/v2 v2.1.1
 	github.com/mdblp/go-db v1.0.0
 	github.com/mdblp/go-routers v1.1.0
-	github.com/mdblp/seagull v1.6.0
+	github.com/mdblp/seagull v1.8.2
 	github.com/mdblp/shoreline v1.11.0
 	github.com/mdblp/tide-whisperer-v2/v3 v3.20.0
 	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/nicksnyder/go-i18n/v2 v2.2.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	go.mongodb.org/mongo-driver v1.11.6
-	golang.org/x/text v0.21.0
+	golang.org/x/text v0.23.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -45,7 +45,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/t-tomalak/logrus-easy-formatter v0.0.0-20190827215021-c074f06c5816 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
@@ -54,10 +54,10 @@ require (
 	go.opentelemetry.io/otel v1.21.0 // indirect
 	go.opentelemetry.io/otel/metric v1.21.0 // indirect
 	go.opentelemetry.io/otel/trace v1.21.0 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.21.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/net v0.37.1-0.20250305215238-2914f4677317 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
