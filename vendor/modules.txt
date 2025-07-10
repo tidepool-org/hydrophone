@@ -98,9 +98,6 @@ github.com/globalsign/mgo/bson
 github.com/globalsign/mgo/internal/json
 github.com/globalsign/mgo/internal/sasl
 github.com/globalsign/mgo/internal/scram
-# github.com/golang/mock v1.6.0
-## explicit; go 1.11
-github.com/golang/mock/gomock
 # github.com/golang/snappy v1.0.0
 ## explicit
 github.com/golang/snappy
