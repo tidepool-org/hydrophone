@@ -203,14 +203,14 @@ func (a *Api) CancelOrDismissPatientInvite(res http.ResponseWriter, req *http.Re
 	}
 }
 
-func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confirmation, accept models.AcceptPatientInvite) (*clinics.Patient, error) {
+func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confirmation, accept models.AcceptPatientInvite) (*clinics.PatientV1, error) {
 	var permissions commonClients.Permissions
 	if err := confirmation.DecodeContext(&permissions); err != nil {
 		return nil, err
 	}
 
 	body := clinics.CreatePatientFromUserJSONRequestBody{
-		Permissions: &clinics.PatientPermissions{
+		Permissions: &clinics.PatientPermissionsV1{
 			View:   getPermission(permissions, "view"),
 			Upload: getPermission(permissions, "upload"),
 			Note:   getPermission(permissions, "note"),
@@ -229,14 +229,14 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 		body.Mrn = &accept.MRN
 	}
 	if count := len(accept.Tags); count > 0 {
-		tagIds := make(clinics.PatientTagIds, 0, count)
+		tagIds := make(clinics.PatientTagIdsV1, 0, count)
 		for _, tag := range accept.Tags {
 			tagIds = append(tagIds, tag)
 		}
 		body.Tags = &tagIds
 	}
 
-	var patient *clinics.Patient
+	var patient *clinics.PatientV1
 	clinicId := confirmation.ClinicId
 	patientId := confirmation.CreatorId
 	response, err := a.clinics.CreatePatientFromUserWithResponse(ctx, clinicId, patientId, body)

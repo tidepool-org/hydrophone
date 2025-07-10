@@ -14,9 +14,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
+	"go.uber.org/mock/gomock"
 
 	clinicsClient "github.com/tidepool-org/clinic/client"
 	commonClients "github.com/tidepool-org/go-common/clients"
