@@ -4,11 +4,10 @@ TOOLS_BIN = tools/bin
 NPM_BIN = node_modules/.bin
 
 OAPI_CODEGEN = $(TOOLS_BIN)/oapi-codegen
-SWAGGER_CLI = $(NPM_BIN)/swagger-cli
+REDOCLY_CLI = $(NPM_BIN)/redocly
 
 NPM_PKG_SPECS = \
-	@apidevtools/swagger-cli@^4.0.4
-
+	@redocly/cli@1.34.3
 
 .PHONY: all
 all: dist/hydrophone
@@ -28,8 +27,8 @@ test:
 
 .PHONY: generate
 # Generates client api
-generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
-	$(SWAGGER_CLI) bundle ../TidepoolApi/reference/confirm.v1.yaml -o ./spec/confirm.v1.yaml -t yaml
+generate: $(REDOCLY_CLI) $(OAPI_CODEGEN)
+	$(REDOCLY_CLI) bundle ../TidepoolApi/reference/confirm.v1.yaml -o ./spec/confirm.v1.yaml
 	$(OAPI_CODEGEN) -package=api -generate=types spec/confirm.v1.yaml > client/types.go
 	$(OAPI_CODEGEN) -package=api -generate=client spec/confirm.v1.yaml > client/client.go
 	cd client && go generate ./...
@@ -37,7 +36,7 @@ generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
 $(OAPI_CODEGEN):
 	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.3.0
 
-$(SWAGGER_CLI): npm-tools
+$(REDOCLY_CLI): npm-tools
 
 .PHONY: npm-tools
 npm-tools:
