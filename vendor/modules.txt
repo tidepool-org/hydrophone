@@ -97,9 +97,6 @@ github.com/globalsign/mgo/bson
 github.com/globalsign/mgo/internal/json
 github.com/globalsign/mgo/internal/sasl
 github.com/globalsign/mgo/internal/scram
-# github.com/golang/mock v1.6.0
-## explicit; go 1.11
-github.com/golang/mock/gomock
 # github.com/golang/snappy v0.0.4
 ## explicit
 github.com/golang/snappy
@@ -210,7 +207,7 @@ github.com/pkg/errors
 # github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 ## explicit
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/clinic/client v0.0.0-20240802193352-3f912afe2109
+# github.com/tidepool-org/clinic/client v0.0.0-20250716163434-4867f9577144
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/go-common v0.12.2-0.20250129210214-bd36b59b9733
@@ -340,6 +337,9 @@ go.uber.org/fx/internal/fxclock
 go.uber.org/fx/internal/fxlog
 go.uber.org/fx/internal/fxreflect
 go.uber.org/fx/internal/lifecycle
+# go.uber.org/mock v0.5.2
+## explicit; go 1.23
+go.uber.org/mock/gomock
 # go.uber.org/multierr v1.11.0
 ## explicit; go 1.19
 go.uber.org/multierr

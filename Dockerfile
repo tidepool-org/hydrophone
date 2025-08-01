@@ -1,5 +1,7 @@
+ARG GOLANG_VERSION=1.24.3-alpine
+
 # Development
-FROM golang:1.22.2-alpine AS development
+FROM golang:${GOLANG_VERSION} AS development
 WORKDIR /go/src/github.com/tidepool-org/hydrophone
 RUN adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/hydrophone
