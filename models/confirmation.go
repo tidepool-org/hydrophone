@@ -58,6 +58,12 @@ type (
 		BirthDate string   `json:"birthDate"`
 		FullName  string   `json:"fullName"`
 		Tags      []string `json:"tags"`
+		Sites     []Site   `json:"sites"`
+	}
+
+	Site struct {
+		Id   string `json:"id"`
+		Name string `json:"name"`
 	}
 
 	//Enum type's
