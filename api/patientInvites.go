@@ -234,6 +234,16 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 		}
 		body.Tags = &tagIds
 	}
+	if count := len(accept.Sites); count > 0 {
+		sites := make([]clinics.SiteV1, 0, count)
+		for _, site := range accept.Sites {
+			sites = append(sites, clinics.SiteV1{
+				Id:   site.Id,
+				Name: site.Name,
+			})
+		}
+		body.Sites = &sites
+	}
 
 	var patient *clinics.PatientV1
 	clinicId := confirmation.ClinicId
