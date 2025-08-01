@@ -1,19 +1,21 @@
 module github.com/tidepool-org/hydrophone
 
-go 1.22
+go 1.23
+
+toolchain go1.24.5
 
 require (
 	github.com/aws/aws-sdk-go v1.54.11
-	github.com/golang/mock v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/clinic/client v0.0.0-20240802193352-3f912afe2109
+	github.com/tidepool-org/clinic/client v0.0.0-20250716163434-4867f9577144
 	github.com/tidepool-org/go-common v0.12.2-0.20250129210214-bd36b59b9733
 	github.com/tidepool-org/platform v1.33.1-0.20240814160553-f9955fff3f1e
 	go.mongodb.org/mongo-driver v1.16.0
 	go.uber.org/fx v1.22.1
+	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 )
 
