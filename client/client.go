@@ -95,62 +95,62 @@ type ClientInterface interface {
 	AcceptPasswordChange(ctx context.Context, body AcceptPasswordChangeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AcceptCareTeamInviteWithBody request with any body
-	AcceptCareTeamInviteWithBody(ctx context.Context, userId UserId, invitedBy InvitedByUser, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AcceptCareTeamInviteWithBody(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	AcceptCareTeamInvite(ctx context.Context, userId UserId, invitedBy InvitedByUser, body AcceptCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AcceptCareTeamInvite(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, body AcceptCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ConfirmAccountSignupWithBody request with any body
-	ConfirmAccountSignupWithBody(ctx context.Context, key Key, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ConfirmAccountSignupWithBody(ctx context.Context, key KeyV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ConfirmAccountSignup(ctx context.Context, key Key, body ConfirmAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ConfirmAccountSignup(ctx context.Context, key KeyV1, body ConfirmAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DismissInviteWithBody request with any body
-	DismissInviteWithBody(ctx context.Context, userId UserId, invitedBy InvitedByUser, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DismissInviteWithBody(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	DismissInvite(ctx context.Context, userId UserId, invitedBy InvitedByUser, body DismissInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DismissInvite(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, body DismissInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DismissAccountSignupWithBody request with any body
-	DismissAccountSignupWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DismissAccountSignupWithBody(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	DismissAccountSignup(ctx context.Context, userId UserId, body DismissAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DismissAccountSignup(ctx context.Context, userId Tidepooluserid, body DismissAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SendPasswordReset request
-	SendPasswordReset(ctx context.Context, email Email, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SendPasswordReset(ctx context.Context, email EmailV1, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetReceivedInvitations request
-	GetReceivedInvitations(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetReceivedInvitations(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSentInvitations request
-	GetSentInvitations(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetSentInvitations(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ResendAccountSignup request
-	ResendAccountSignup(ctx context.Context, email Email, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ResendAccountSignup(ctx context.Context, email EmailV1, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SendCareTeamInviteWithBody request with any body
-	SendCareTeamInviteWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SendCareTeamInviteWithBody(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	SendCareTeamInvite(ctx context.Context, userId UserId, body SendCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SendCareTeamInvite(ctx context.Context, userId Tidepooluserid, body SendCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SendAccountSignupConfirmationWithBody request with any body
-	SendAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SendAccountSignupConfirmationWithBody(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	SendAccountSignupConfirmation(ctx context.Context, userId UserId, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SendAccountSignupConfirmation(ctx context.Context, userId Tidepooluserid, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAccountSignupConfirmation request
-	GetAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetAccountSignupConfirmation(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpsertAccountSignupConfirmationWithBody request with any body
-	UpsertAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpsertAccountSignupConfirmationWithBody(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpsertAccountSignupConfirmation(ctx context.Context, userId UserId, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpsertAccountSignupConfirmation(ctx context.Context, userId Tidepooluserid, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CancelAccountSignupConfirmationWithBody request with any body
-	CancelAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CancelAccountSignupConfirmationWithBody(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CancelAccountSignupConfirmation(ctx context.Context, userId UserId, body CancelAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CancelAccountSignupConfirmation(ctx context.Context, userId Tidepooluserid, body CancelAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CancelInvite request
-	CancelInvite(ctx context.Context, userId UserId, invitedBy InvitedByEmail, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CancelInvite(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyemailV1, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) AcceptPasswordChangeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -177,7 +177,7 @@ func (c *Client) AcceptPasswordChange(ctx context.Context, body AcceptPasswordCh
 	return c.Client.Do(req)
 }
 
-func (c *Client) AcceptCareTeamInviteWithBody(ctx context.Context, userId UserId, invitedBy InvitedByUser, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) AcceptCareTeamInviteWithBody(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAcceptCareTeamInviteRequestWithBody(c.Server, userId, invitedBy, contentType, body)
 	if err != nil {
 		return nil, err
@@ -189,7 +189,7 @@ func (c *Client) AcceptCareTeamInviteWithBody(ctx context.Context, userId UserId
 	return c.Client.Do(req)
 }
 
-func (c *Client) AcceptCareTeamInvite(ctx context.Context, userId UserId, invitedBy InvitedByUser, body AcceptCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) AcceptCareTeamInvite(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, body AcceptCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAcceptCareTeamInviteRequest(c.Server, userId, invitedBy, body)
 	if err != nil {
 		return nil, err
@@ -201,7 +201,7 @@ func (c *Client) AcceptCareTeamInvite(ctx context.Context, userId UserId, invite
 	return c.Client.Do(req)
 }
 
-func (c *Client) ConfirmAccountSignupWithBody(ctx context.Context, key Key, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) ConfirmAccountSignupWithBody(ctx context.Context, key KeyV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConfirmAccountSignupRequestWithBody(c.Server, key, contentType, body)
 	if err != nil {
 		return nil, err
@@ -213,7 +213,7 @@ func (c *Client) ConfirmAccountSignupWithBody(ctx context.Context, key Key, cont
 	return c.Client.Do(req)
 }
 
-func (c *Client) ConfirmAccountSignup(ctx context.Context, key Key, body ConfirmAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) ConfirmAccountSignup(ctx context.Context, key KeyV1, body ConfirmAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConfirmAccountSignupRequest(c.Server, key, body)
 	if err != nil {
 		return nil, err
@@ -225,7 +225,7 @@ func (c *Client) ConfirmAccountSignup(ctx context.Context, key Key, body Confirm
 	return c.Client.Do(req)
 }
 
-func (c *Client) DismissInviteWithBody(ctx context.Context, userId UserId, invitedBy InvitedByUser, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DismissInviteWithBody(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDismissInviteRequestWithBody(c.Server, userId, invitedBy, contentType, body)
 	if err != nil {
 		return nil, err
@@ -237,7 +237,7 @@ func (c *Client) DismissInviteWithBody(ctx context.Context, userId UserId, invit
 	return c.Client.Do(req)
 }
 
-func (c *Client) DismissInvite(ctx context.Context, userId UserId, invitedBy InvitedByUser, body DismissInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DismissInvite(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, body DismissInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDismissInviteRequest(c.Server, userId, invitedBy, body)
 	if err != nil {
 		return nil, err
@@ -249,7 +249,7 @@ func (c *Client) DismissInvite(ctx context.Context, userId UserId, invitedBy Inv
 	return c.Client.Do(req)
 }
 
-func (c *Client) DismissAccountSignupWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DismissAccountSignupWithBody(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDismissAccountSignupRequestWithBody(c.Server, userId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -261,7 +261,7 @@ func (c *Client) DismissAccountSignupWithBody(ctx context.Context, userId UserId
 	return c.Client.Do(req)
 }
 
-func (c *Client) DismissAccountSignup(ctx context.Context, userId UserId, body DismissAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DismissAccountSignup(ctx context.Context, userId Tidepooluserid, body DismissAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDismissAccountSignupRequest(c.Server, userId, body)
 	if err != nil {
 		return nil, err
@@ -273,7 +273,7 @@ func (c *Client) DismissAccountSignup(ctx context.Context, userId UserId, body D
 	return c.Client.Do(req)
 }
 
-func (c *Client) SendPasswordReset(ctx context.Context, email Email, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) SendPasswordReset(ctx context.Context, email EmailV1, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSendPasswordResetRequest(c.Server, email)
 	if err != nil {
 		return nil, err
@@ -285,7 +285,7 @@ func (c *Client) SendPasswordReset(ctx context.Context, email Email, reqEditors 
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetReceivedInvitations(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetReceivedInvitations(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetReceivedInvitationsRequest(c.Server, userId)
 	if err != nil {
 		return nil, err
@@ -297,7 +297,7 @@ func (c *Client) GetReceivedInvitations(ctx context.Context, userId UserId, reqE
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSentInvitations(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetSentInvitations(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSentInvitationsRequest(c.Server, userId)
 	if err != nil {
 		return nil, err
@@ -309,7 +309,7 @@ func (c *Client) GetSentInvitations(ctx context.Context, userId UserId, reqEdito
 	return c.Client.Do(req)
 }
 
-func (c *Client) ResendAccountSignup(ctx context.Context, email Email, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) ResendAccountSignup(ctx context.Context, email EmailV1, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewResendAccountSignupRequest(c.Server, email)
 	if err != nil {
 		return nil, err
@@ -321,7 +321,7 @@ func (c *Client) ResendAccountSignup(ctx context.Context, email Email, reqEditor
 	return c.Client.Do(req)
 }
 
-func (c *Client) SendCareTeamInviteWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) SendCareTeamInviteWithBody(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSendCareTeamInviteRequestWithBody(c.Server, userId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -333,7 +333,7 @@ func (c *Client) SendCareTeamInviteWithBody(ctx context.Context, userId UserId, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) SendCareTeamInvite(ctx context.Context, userId UserId, body SendCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) SendCareTeamInvite(ctx context.Context, userId Tidepooluserid, body SendCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSendCareTeamInviteRequest(c.Server, userId, body)
 	if err != nil {
 		return nil, err
@@ -345,7 +345,7 @@ func (c *Client) SendCareTeamInvite(ctx context.Context, userId UserId, body Sen
 	return c.Client.Do(req)
 }
 
-func (c *Client) SendAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) SendAccountSignupConfirmationWithBody(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSendAccountSignupConfirmationRequestWithBody(c.Server, userId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -357,7 +357,7 @@ func (c *Client) SendAccountSignupConfirmationWithBody(ctx context.Context, user
 	return c.Client.Do(req)
 }
 
-func (c *Client) SendAccountSignupConfirmation(ctx context.Context, userId UserId, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) SendAccountSignupConfirmation(ctx context.Context, userId Tidepooluserid, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSendAccountSignupConfirmationRequest(c.Server, userId, body)
 	if err != nil {
 		return nil, err
@@ -369,7 +369,7 @@ func (c *Client) SendAccountSignupConfirmation(ctx context.Context, userId UserI
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetAccountSignupConfirmation(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetAccountSignupConfirmation(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetAccountSignupConfirmationRequest(c.Server, userId)
 	if err != nil {
 		return nil, err
@@ -381,7 +381,7 @@ func (c *Client) GetAccountSignupConfirmation(ctx context.Context, userId UserId
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpsertAccountSignupConfirmationWithBody(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpsertAccountSignupConfirmationRequestWithBody(c.Server, userId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -393,7 +393,7 @@ func (c *Client) UpsertAccountSignupConfirmationWithBody(ctx context.Context, us
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertAccountSignupConfirmation(ctx context.Context, userId UserId, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpsertAccountSignupConfirmation(ctx context.Context, userId Tidepooluserid, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpsertAccountSignupConfirmationRequest(c.Server, userId, body)
 	if err != nil {
 		return nil, err
@@ -405,7 +405,7 @@ func (c *Client) UpsertAccountSignupConfirmation(ctx context.Context, userId Use
 	return c.Client.Do(req)
 }
 
-func (c *Client) CancelAccountSignupConfirmationWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) CancelAccountSignupConfirmationWithBody(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCancelAccountSignupConfirmationRequestWithBody(c.Server, userId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -417,7 +417,7 @@ func (c *Client) CancelAccountSignupConfirmationWithBody(ctx context.Context, us
 	return c.Client.Do(req)
 }
 
-func (c *Client) CancelAccountSignupConfirmation(ctx context.Context, userId UserId, body CancelAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) CancelAccountSignupConfirmation(ctx context.Context, userId Tidepooluserid, body CancelAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCancelAccountSignupConfirmationRequest(c.Server, userId, body)
 	if err != nil {
 		return nil, err
@@ -429,7 +429,7 @@ func (c *Client) CancelAccountSignupConfirmation(ctx context.Context, userId Use
 	return c.Client.Do(req)
 }
 
-func (c *Client) CancelInvite(ctx context.Context, userId UserId, invitedBy InvitedByEmail, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) CancelInvite(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyemailV1, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCancelInviteRequest(c.Server, userId, invitedBy)
 	if err != nil {
 		return nil, err
@@ -482,7 +482,7 @@ func NewAcceptPasswordChangeRequestWithBody(server string, contentType string, b
 }
 
 // NewAcceptCareTeamInviteRequest calls the generic AcceptCareTeamInvite builder with application/json body
-func NewAcceptCareTeamInviteRequest(server string, userId UserId, invitedBy InvitedByUser, body AcceptCareTeamInviteJSONRequestBody) (*http.Request, error) {
+func NewAcceptCareTeamInviteRequest(server string, userId Tidepooluserid, invitedBy InvitedbyuserV1, body AcceptCareTeamInviteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -493,7 +493,7 @@ func NewAcceptCareTeamInviteRequest(server string, userId UserId, invitedBy Invi
 }
 
 // NewAcceptCareTeamInviteRequestWithBody generates requests for AcceptCareTeamInvite with any type of body
-func NewAcceptCareTeamInviteRequestWithBody(server string, userId UserId, invitedBy InvitedByUser, contentType string, body io.Reader) (*http.Request, error) {
+func NewAcceptCareTeamInviteRequestWithBody(server string, userId Tidepooluserid, invitedBy InvitedbyuserV1, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -536,7 +536,7 @@ func NewAcceptCareTeamInviteRequestWithBody(server string, userId UserId, invite
 }
 
 // NewConfirmAccountSignupRequest calls the generic ConfirmAccountSignup builder with application/json body
-func NewConfirmAccountSignupRequest(server string, key Key, body ConfirmAccountSignupJSONRequestBody) (*http.Request, error) {
+func NewConfirmAccountSignupRequest(server string, key KeyV1, body ConfirmAccountSignupJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -547,7 +547,7 @@ func NewConfirmAccountSignupRequest(server string, key Key, body ConfirmAccountS
 }
 
 // NewConfirmAccountSignupRequestWithBody generates requests for ConfirmAccountSignup with any type of body
-func NewConfirmAccountSignupRequestWithBody(server string, key Key, contentType string, body io.Reader) (*http.Request, error) {
+func NewConfirmAccountSignupRequestWithBody(server string, key KeyV1, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -583,7 +583,7 @@ func NewConfirmAccountSignupRequestWithBody(server string, key Key, contentType 
 }
 
 // NewDismissInviteRequest calls the generic DismissInvite builder with application/json body
-func NewDismissInviteRequest(server string, userId UserId, invitedBy InvitedByUser, body DismissInviteJSONRequestBody) (*http.Request, error) {
+func NewDismissInviteRequest(server string, userId Tidepooluserid, invitedBy InvitedbyuserV1, body DismissInviteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -594,7 +594,7 @@ func NewDismissInviteRequest(server string, userId UserId, invitedBy InvitedByUs
 }
 
 // NewDismissInviteRequestWithBody generates requests for DismissInvite with any type of body
-func NewDismissInviteRequestWithBody(server string, userId UserId, invitedBy InvitedByUser, contentType string, body io.Reader) (*http.Request, error) {
+func NewDismissInviteRequestWithBody(server string, userId Tidepooluserid, invitedBy InvitedbyuserV1, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -637,7 +637,7 @@ func NewDismissInviteRequestWithBody(server string, userId UserId, invitedBy Inv
 }
 
 // NewDismissAccountSignupRequest calls the generic DismissAccountSignup builder with application/json body
-func NewDismissAccountSignupRequest(server string, userId UserId, body DismissAccountSignupJSONRequestBody) (*http.Request, error) {
+func NewDismissAccountSignupRequest(server string, userId Tidepooluserid, body DismissAccountSignupJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -648,7 +648,7 @@ func NewDismissAccountSignupRequest(server string, userId UserId, body DismissAc
 }
 
 // NewDismissAccountSignupRequestWithBody generates requests for DismissAccountSignup with any type of body
-func NewDismissAccountSignupRequestWithBody(server string, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
+func NewDismissAccountSignupRequestWithBody(server string, userId Tidepooluserid, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -684,7 +684,7 @@ func NewDismissAccountSignupRequestWithBody(server string, userId UserId, conten
 }
 
 // NewSendPasswordResetRequest generates requests for SendPasswordReset
-func NewSendPasswordResetRequest(server string, email Email) (*http.Request, error) {
+func NewSendPasswordResetRequest(server string, email EmailV1) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -718,7 +718,7 @@ func NewSendPasswordResetRequest(server string, email Email) (*http.Request, err
 }
 
 // NewGetReceivedInvitationsRequest generates requests for GetReceivedInvitations
-func NewGetReceivedInvitationsRequest(server string, userId UserId) (*http.Request, error) {
+func NewGetReceivedInvitationsRequest(server string, userId Tidepooluserid) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -752,7 +752,7 @@ func NewGetReceivedInvitationsRequest(server string, userId UserId) (*http.Reque
 }
 
 // NewGetSentInvitationsRequest generates requests for GetSentInvitations
-func NewGetSentInvitationsRequest(server string, userId UserId) (*http.Request, error) {
+func NewGetSentInvitationsRequest(server string, userId Tidepooluserid) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -786,7 +786,7 @@ func NewGetSentInvitationsRequest(server string, userId UserId) (*http.Request, 
 }
 
 // NewResendAccountSignupRequest generates requests for ResendAccountSignup
-func NewResendAccountSignupRequest(server string, email Email) (*http.Request, error) {
+func NewResendAccountSignupRequest(server string, email EmailV1) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -820,7 +820,7 @@ func NewResendAccountSignupRequest(server string, email Email) (*http.Request, e
 }
 
 // NewSendCareTeamInviteRequest calls the generic SendCareTeamInvite builder with application/json body
-func NewSendCareTeamInviteRequest(server string, userId UserId, body SendCareTeamInviteJSONRequestBody) (*http.Request, error) {
+func NewSendCareTeamInviteRequest(server string, userId Tidepooluserid, body SendCareTeamInviteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -831,7 +831,7 @@ func NewSendCareTeamInviteRequest(server string, userId UserId, body SendCareTea
 }
 
 // NewSendCareTeamInviteRequestWithBody generates requests for SendCareTeamInvite with any type of body
-func NewSendCareTeamInviteRequestWithBody(server string, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
+func NewSendCareTeamInviteRequestWithBody(server string, userId Tidepooluserid, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -867,7 +867,7 @@ func NewSendCareTeamInviteRequestWithBody(server string, userId UserId, contentT
 }
 
 // NewSendAccountSignupConfirmationRequest calls the generic SendAccountSignupConfirmation builder with application/json body
-func NewSendAccountSignupConfirmationRequest(server string, userId UserId, body SendAccountSignupConfirmationJSONRequestBody) (*http.Request, error) {
+func NewSendAccountSignupConfirmationRequest(server string, userId Tidepooluserid, body SendAccountSignupConfirmationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -878,7 +878,7 @@ func NewSendAccountSignupConfirmationRequest(server string, userId UserId, body 
 }
 
 // NewSendAccountSignupConfirmationRequestWithBody generates requests for SendAccountSignupConfirmation with any type of body
-func NewSendAccountSignupConfirmationRequestWithBody(server string, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
+func NewSendAccountSignupConfirmationRequestWithBody(server string, userId Tidepooluserid, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -914,7 +914,7 @@ func NewSendAccountSignupConfirmationRequestWithBody(server string, userId UserI
 }
 
 // NewGetAccountSignupConfirmationRequest generates requests for GetAccountSignupConfirmation
-func NewGetAccountSignupConfirmationRequest(server string, userId UserId) (*http.Request, error) {
+func NewGetAccountSignupConfirmationRequest(server string, userId Tidepooluserid) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -948,7 +948,7 @@ func NewGetAccountSignupConfirmationRequest(server string, userId UserId) (*http
 }
 
 // NewUpsertAccountSignupConfirmationRequest calls the generic UpsertAccountSignupConfirmation builder with application/json body
-func NewUpsertAccountSignupConfirmationRequest(server string, userId UserId, body UpsertAccountSignupConfirmationJSONRequestBody) (*http.Request, error) {
+func NewUpsertAccountSignupConfirmationRequest(server string, userId Tidepooluserid, body UpsertAccountSignupConfirmationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -959,7 +959,7 @@ func NewUpsertAccountSignupConfirmationRequest(server string, userId UserId, bod
 }
 
 // NewUpsertAccountSignupConfirmationRequestWithBody generates requests for UpsertAccountSignupConfirmation with any type of body
-func NewUpsertAccountSignupConfirmationRequestWithBody(server string, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpsertAccountSignupConfirmationRequestWithBody(server string, userId Tidepooluserid, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -995,7 +995,7 @@ func NewUpsertAccountSignupConfirmationRequestWithBody(server string, userId Use
 }
 
 // NewCancelAccountSignupConfirmationRequest calls the generic CancelAccountSignupConfirmation builder with application/json body
-func NewCancelAccountSignupConfirmationRequest(server string, userId UserId, body CancelAccountSignupConfirmationJSONRequestBody) (*http.Request, error) {
+func NewCancelAccountSignupConfirmationRequest(server string, userId Tidepooluserid, body CancelAccountSignupConfirmationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -1006,7 +1006,7 @@ func NewCancelAccountSignupConfirmationRequest(server string, userId UserId, bod
 }
 
 // NewCancelAccountSignupConfirmationRequestWithBody generates requests for CancelAccountSignupConfirmation with any type of body
-func NewCancelAccountSignupConfirmationRequestWithBody(server string, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
+func NewCancelAccountSignupConfirmationRequestWithBody(server string, userId Tidepooluserid, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1042,7 +1042,7 @@ func NewCancelAccountSignupConfirmationRequestWithBody(server string, userId Use
 }
 
 // NewCancelInviteRequest generates requests for CancelInvite
-func NewCancelInviteRequest(server string, userId UserId, invitedBy InvitedByEmail) (*http.Request, error) {
+func NewCancelInviteRequest(server string, userId Tidepooluserid, invitedBy InvitedbyemailV1) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1131,62 +1131,62 @@ type ClientWithResponsesInterface interface {
 	AcceptPasswordChangeWithResponse(ctx context.Context, body AcceptPasswordChangeJSONRequestBody, reqEditors ...RequestEditorFn) (*AcceptPasswordChangeResponse, error)
 
 	// AcceptCareTeamInviteWithBodyWithResponse request with any body
-	AcceptCareTeamInviteWithBodyWithResponse(ctx context.Context, userId UserId, invitedBy InvitedByUser, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AcceptCareTeamInviteResponse, error)
+	AcceptCareTeamInviteWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AcceptCareTeamInviteResponse, error)
 
-	AcceptCareTeamInviteWithResponse(ctx context.Context, userId UserId, invitedBy InvitedByUser, body AcceptCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*AcceptCareTeamInviteResponse, error)
+	AcceptCareTeamInviteWithResponse(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, body AcceptCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*AcceptCareTeamInviteResponse, error)
 
 	// ConfirmAccountSignupWithBodyWithResponse request with any body
-	ConfirmAccountSignupWithBodyWithResponse(ctx context.Context, key Key, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConfirmAccountSignupResponse, error)
+	ConfirmAccountSignupWithBodyWithResponse(ctx context.Context, key KeyV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConfirmAccountSignupResponse, error)
 
-	ConfirmAccountSignupWithResponse(ctx context.Context, key Key, body ConfirmAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*ConfirmAccountSignupResponse, error)
+	ConfirmAccountSignupWithResponse(ctx context.Context, key KeyV1, body ConfirmAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*ConfirmAccountSignupResponse, error)
 
 	// DismissInviteWithBodyWithResponse request with any body
-	DismissInviteWithBodyWithResponse(ctx context.Context, userId UserId, invitedBy InvitedByUser, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DismissInviteResponse, error)
+	DismissInviteWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DismissInviteResponse, error)
 
-	DismissInviteWithResponse(ctx context.Context, userId UserId, invitedBy InvitedByUser, body DismissInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*DismissInviteResponse, error)
+	DismissInviteWithResponse(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, body DismissInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*DismissInviteResponse, error)
 
 	// DismissAccountSignupWithBodyWithResponse request with any body
-	DismissAccountSignupWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DismissAccountSignupResponse, error)
+	DismissAccountSignupWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DismissAccountSignupResponse, error)
 
-	DismissAccountSignupWithResponse(ctx context.Context, userId UserId, body DismissAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*DismissAccountSignupResponse, error)
+	DismissAccountSignupWithResponse(ctx context.Context, userId Tidepooluserid, body DismissAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*DismissAccountSignupResponse, error)
 
 	// SendPasswordResetWithResponse request
-	SendPasswordResetWithResponse(ctx context.Context, email Email, reqEditors ...RequestEditorFn) (*SendPasswordResetResponse, error)
+	SendPasswordResetWithResponse(ctx context.Context, email EmailV1, reqEditors ...RequestEditorFn) (*SendPasswordResetResponse, error)
 
 	// GetReceivedInvitationsWithResponse request
-	GetReceivedInvitationsWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*GetReceivedInvitationsResponse, error)
+	GetReceivedInvitationsWithResponse(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*GetReceivedInvitationsResponse, error)
 
 	// GetSentInvitationsWithResponse request
-	GetSentInvitationsWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*GetSentInvitationsResponse, error)
+	GetSentInvitationsWithResponse(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*GetSentInvitationsResponse, error)
 
 	// ResendAccountSignupWithResponse request
-	ResendAccountSignupWithResponse(ctx context.Context, email Email, reqEditors ...RequestEditorFn) (*ResendAccountSignupResponse, error)
+	ResendAccountSignupWithResponse(ctx context.Context, email EmailV1, reqEditors ...RequestEditorFn) (*ResendAccountSignupResponse, error)
 
 	// SendCareTeamInviteWithBodyWithResponse request with any body
-	SendCareTeamInviteWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendCareTeamInviteResponse, error)
+	SendCareTeamInviteWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendCareTeamInviteResponse, error)
 
-	SendCareTeamInviteWithResponse(ctx context.Context, userId UserId, body SendCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*SendCareTeamInviteResponse, error)
+	SendCareTeamInviteWithResponse(ctx context.Context, userId Tidepooluserid, body SendCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*SendCareTeamInviteResponse, error)
 
 	// SendAccountSignupConfirmationWithBodyWithResponse request with any body
-	SendAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error)
+	SendAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error)
 
-	SendAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error)
+	SendAccountSignupConfirmationWithResponse(ctx context.Context, userId Tidepooluserid, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error)
 
 	// GetAccountSignupConfirmationWithResponse request
-	GetAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*GetAccountSignupConfirmationResponse, error)
+	GetAccountSignupConfirmationWithResponse(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*GetAccountSignupConfirmationResponse, error)
 
 	// UpsertAccountSignupConfirmationWithBodyWithResponse request with any body
-	UpsertAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error)
+	UpsertAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error)
 
-	UpsertAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error)
+	UpsertAccountSignupConfirmationWithResponse(ctx context.Context, userId Tidepooluserid, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error)
 
 	// CancelAccountSignupConfirmationWithBodyWithResponse request with any body
-	CancelAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelAccountSignupConfirmationResponse, error)
+	CancelAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelAccountSignupConfirmationResponse, error)
 
-	CancelAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, body CancelAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelAccountSignupConfirmationResponse, error)
+	CancelAccountSignupConfirmationWithResponse(ctx context.Context, userId Tidepooluserid, body CancelAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelAccountSignupConfirmationResponse, error)
 
 	// CancelInviteWithResponse request
-	CancelInviteWithResponse(ctx context.Context, userId UserId, invitedBy InvitedByEmail, reqEditors ...RequestEditorFn) (*CancelInviteResponse, error)
+	CancelInviteWithResponse(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyemailV1, reqEditors ...RequestEditorFn) (*CancelInviteResponse, error)
 }
 
 type AcceptPasswordChangeResponse struct {
@@ -1574,7 +1574,7 @@ func (c *ClientWithResponses) AcceptPasswordChangeWithResponse(ctx context.Conte
 }
 
 // AcceptCareTeamInviteWithBodyWithResponse request with arbitrary body returning *AcceptCareTeamInviteResponse
-func (c *ClientWithResponses) AcceptCareTeamInviteWithBodyWithResponse(ctx context.Context, userId UserId, invitedBy InvitedByUser, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AcceptCareTeamInviteResponse, error) {
+func (c *ClientWithResponses) AcceptCareTeamInviteWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AcceptCareTeamInviteResponse, error) {
 	rsp, err := c.AcceptCareTeamInviteWithBody(ctx, userId, invitedBy, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1582,7 +1582,7 @@ func (c *ClientWithResponses) AcceptCareTeamInviteWithBodyWithResponse(ctx conte
 	return ParseAcceptCareTeamInviteResponse(rsp)
 }
 
-func (c *ClientWithResponses) AcceptCareTeamInviteWithResponse(ctx context.Context, userId UserId, invitedBy InvitedByUser, body AcceptCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*AcceptCareTeamInviteResponse, error) {
+func (c *ClientWithResponses) AcceptCareTeamInviteWithResponse(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, body AcceptCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*AcceptCareTeamInviteResponse, error) {
 	rsp, err := c.AcceptCareTeamInvite(ctx, userId, invitedBy, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1591,7 +1591,7 @@ func (c *ClientWithResponses) AcceptCareTeamInviteWithResponse(ctx context.Conte
 }
 
 // ConfirmAccountSignupWithBodyWithResponse request with arbitrary body returning *ConfirmAccountSignupResponse
-func (c *ClientWithResponses) ConfirmAccountSignupWithBodyWithResponse(ctx context.Context, key Key, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConfirmAccountSignupResponse, error) {
+func (c *ClientWithResponses) ConfirmAccountSignupWithBodyWithResponse(ctx context.Context, key KeyV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConfirmAccountSignupResponse, error) {
 	rsp, err := c.ConfirmAccountSignupWithBody(ctx, key, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1599,7 +1599,7 @@ func (c *ClientWithResponses) ConfirmAccountSignupWithBodyWithResponse(ctx conte
 	return ParseConfirmAccountSignupResponse(rsp)
 }
 
-func (c *ClientWithResponses) ConfirmAccountSignupWithResponse(ctx context.Context, key Key, body ConfirmAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*ConfirmAccountSignupResponse, error) {
+func (c *ClientWithResponses) ConfirmAccountSignupWithResponse(ctx context.Context, key KeyV1, body ConfirmAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*ConfirmAccountSignupResponse, error) {
 	rsp, err := c.ConfirmAccountSignup(ctx, key, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1608,7 +1608,7 @@ func (c *ClientWithResponses) ConfirmAccountSignupWithResponse(ctx context.Conte
 }
 
 // DismissInviteWithBodyWithResponse request with arbitrary body returning *DismissInviteResponse
-func (c *ClientWithResponses) DismissInviteWithBodyWithResponse(ctx context.Context, userId UserId, invitedBy InvitedByUser, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DismissInviteResponse, error) {
+func (c *ClientWithResponses) DismissInviteWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DismissInviteResponse, error) {
 	rsp, err := c.DismissInviteWithBody(ctx, userId, invitedBy, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1616,7 +1616,7 @@ func (c *ClientWithResponses) DismissInviteWithBodyWithResponse(ctx context.Cont
 	return ParseDismissInviteResponse(rsp)
 }
 
-func (c *ClientWithResponses) DismissInviteWithResponse(ctx context.Context, userId UserId, invitedBy InvitedByUser, body DismissInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*DismissInviteResponse, error) {
+func (c *ClientWithResponses) DismissInviteWithResponse(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyuserV1, body DismissInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*DismissInviteResponse, error) {
 	rsp, err := c.DismissInvite(ctx, userId, invitedBy, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1625,7 +1625,7 @@ func (c *ClientWithResponses) DismissInviteWithResponse(ctx context.Context, use
 }
 
 // DismissAccountSignupWithBodyWithResponse request with arbitrary body returning *DismissAccountSignupResponse
-func (c *ClientWithResponses) DismissAccountSignupWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DismissAccountSignupResponse, error) {
+func (c *ClientWithResponses) DismissAccountSignupWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DismissAccountSignupResponse, error) {
 	rsp, err := c.DismissAccountSignupWithBody(ctx, userId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1633,7 +1633,7 @@ func (c *ClientWithResponses) DismissAccountSignupWithBodyWithResponse(ctx conte
 	return ParseDismissAccountSignupResponse(rsp)
 }
 
-func (c *ClientWithResponses) DismissAccountSignupWithResponse(ctx context.Context, userId UserId, body DismissAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*DismissAccountSignupResponse, error) {
+func (c *ClientWithResponses) DismissAccountSignupWithResponse(ctx context.Context, userId Tidepooluserid, body DismissAccountSignupJSONRequestBody, reqEditors ...RequestEditorFn) (*DismissAccountSignupResponse, error) {
 	rsp, err := c.DismissAccountSignup(ctx, userId, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1642,7 +1642,7 @@ func (c *ClientWithResponses) DismissAccountSignupWithResponse(ctx context.Conte
 }
 
 // SendPasswordResetWithResponse request returning *SendPasswordResetResponse
-func (c *ClientWithResponses) SendPasswordResetWithResponse(ctx context.Context, email Email, reqEditors ...RequestEditorFn) (*SendPasswordResetResponse, error) {
+func (c *ClientWithResponses) SendPasswordResetWithResponse(ctx context.Context, email EmailV1, reqEditors ...RequestEditorFn) (*SendPasswordResetResponse, error) {
 	rsp, err := c.SendPasswordReset(ctx, email, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1651,7 +1651,7 @@ func (c *ClientWithResponses) SendPasswordResetWithResponse(ctx context.Context,
 }
 
 // GetReceivedInvitationsWithResponse request returning *GetReceivedInvitationsResponse
-func (c *ClientWithResponses) GetReceivedInvitationsWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*GetReceivedInvitationsResponse, error) {
+func (c *ClientWithResponses) GetReceivedInvitationsWithResponse(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*GetReceivedInvitationsResponse, error) {
 	rsp, err := c.GetReceivedInvitations(ctx, userId, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1660,7 +1660,7 @@ func (c *ClientWithResponses) GetReceivedInvitationsWithResponse(ctx context.Con
 }
 
 // GetSentInvitationsWithResponse request returning *GetSentInvitationsResponse
-func (c *ClientWithResponses) GetSentInvitationsWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*GetSentInvitationsResponse, error) {
+func (c *ClientWithResponses) GetSentInvitationsWithResponse(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*GetSentInvitationsResponse, error) {
 	rsp, err := c.GetSentInvitations(ctx, userId, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1669,7 +1669,7 @@ func (c *ClientWithResponses) GetSentInvitationsWithResponse(ctx context.Context
 }
 
 // ResendAccountSignupWithResponse request returning *ResendAccountSignupResponse
-func (c *ClientWithResponses) ResendAccountSignupWithResponse(ctx context.Context, email Email, reqEditors ...RequestEditorFn) (*ResendAccountSignupResponse, error) {
+func (c *ClientWithResponses) ResendAccountSignupWithResponse(ctx context.Context, email EmailV1, reqEditors ...RequestEditorFn) (*ResendAccountSignupResponse, error) {
 	rsp, err := c.ResendAccountSignup(ctx, email, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1678,7 +1678,7 @@ func (c *ClientWithResponses) ResendAccountSignupWithResponse(ctx context.Contex
 }
 
 // SendCareTeamInviteWithBodyWithResponse request with arbitrary body returning *SendCareTeamInviteResponse
-func (c *ClientWithResponses) SendCareTeamInviteWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendCareTeamInviteResponse, error) {
+func (c *ClientWithResponses) SendCareTeamInviteWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendCareTeamInviteResponse, error) {
 	rsp, err := c.SendCareTeamInviteWithBody(ctx, userId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1686,7 +1686,7 @@ func (c *ClientWithResponses) SendCareTeamInviteWithBodyWithResponse(ctx context
 	return ParseSendCareTeamInviteResponse(rsp)
 }
 
-func (c *ClientWithResponses) SendCareTeamInviteWithResponse(ctx context.Context, userId UserId, body SendCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*SendCareTeamInviteResponse, error) {
+func (c *ClientWithResponses) SendCareTeamInviteWithResponse(ctx context.Context, userId Tidepooluserid, body SendCareTeamInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*SendCareTeamInviteResponse, error) {
 	rsp, err := c.SendCareTeamInvite(ctx, userId, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1695,7 +1695,7 @@ func (c *ClientWithResponses) SendCareTeamInviteWithResponse(ctx context.Context
 }
 
 // SendAccountSignupConfirmationWithBodyWithResponse request with arbitrary body returning *SendAccountSignupConfirmationResponse
-func (c *ClientWithResponses) SendAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error) {
+func (c *ClientWithResponses) SendAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error) {
 	rsp, err := c.SendAccountSignupConfirmationWithBody(ctx, userId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1703,7 +1703,7 @@ func (c *ClientWithResponses) SendAccountSignupConfirmationWithBodyWithResponse(
 	return ParseSendAccountSignupConfirmationResponse(rsp)
 }
 
-func (c *ClientWithResponses) SendAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error) {
+func (c *ClientWithResponses) SendAccountSignupConfirmationWithResponse(ctx context.Context, userId Tidepooluserid, body SendAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*SendAccountSignupConfirmationResponse, error) {
 	rsp, err := c.SendAccountSignupConfirmation(ctx, userId, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1712,7 +1712,7 @@ func (c *ClientWithResponses) SendAccountSignupConfirmationWithResponse(ctx cont
 }
 
 // GetAccountSignupConfirmationWithResponse request returning *GetAccountSignupConfirmationResponse
-func (c *ClientWithResponses) GetAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*GetAccountSignupConfirmationResponse, error) {
+func (c *ClientWithResponses) GetAccountSignupConfirmationWithResponse(ctx context.Context, userId Tidepooluserid, reqEditors ...RequestEditorFn) (*GetAccountSignupConfirmationResponse, error) {
 	rsp, err := c.GetAccountSignupConfirmation(ctx, userId, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1721,7 +1721,7 @@ func (c *ClientWithResponses) GetAccountSignupConfirmationWithResponse(ctx conte
 }
 
 // UpsertAccountSignupConfirmationWithBodyWithResponse request with arbitrary body returning *UpsertAccountSignupConfirmationResponse
-func (c *ClientWithResponses) UpsertAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error) {
+func (c *ClientWithResponses) UpsertAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error) {
 	rsp, err := c.UpsertAccountSignupConfirmationWithBody(ctx, userId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1729,7 +1729,7 @@ func (c *ClientWithResponses) UpsertAccountSignupConfirmationWithBodyWithRespons
 	return ParseUpsertAccountSignupConfirmationResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpsertAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error) {
+func (c *ClientWithResponses) UpsertAccountSignupConfirmationWithResponse(ctx context.Context, userId Tidepooluserid, body UpsertAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertAccountSignupConfirmationResponse, error) {
 	rsp, err := c.UpsertAccountSignupConfirmation(ctx, userId, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1738,7 +1738,7 @@ func (c *ClientWithResponses) UpsertAccountSignupConfirmationWithResponse(ctx co
 }
 
 // CancelAccountSignupConfirmationWithBodyWithResponse request with arbitrary body returning *CancelAccountSignupConfirmationResponse
-func (c *ClientWithResponses) CancelAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelAccountSignupConfirmationResponse, error) {
+func (c *ClientWithResponses) CancelAccountSignupConfirmationWithBodyWithResponse(ctx context.Context, userId Tidepooluserid, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelAccountSignupConfirmationResponse, error) {
 	rsp, err := c.CancelAccountSignupConfirmationWithBody(ctx, userId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1746,7 +1746,7 @@ func (c *ClientWithResponses) CancelAccountSignupConfirmationWithBodyWithRespons
 	return ParseCancelAccountSignupConfirmationResponse(rsp)
 }
 
-func (c *ClientWithResponses) CancelAccountSignupConfirmationWithResponse(ctx context.Context, userId UserId, body CancelAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelAccountSignupConfirmationResponse, error) {
+func (c *ClientWithResponses) CancelAccountSignupConfirmationWithResponse(ctx context.Context, userId Tidepooluserid, body CancelAccountSignupConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelAccountSignupConfirmationResponse, error) {
 	rsp, err := c.CancelAccountSignupConfirmation(ctx, userId, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1755,7 +1755,7 @@ func (c *ClientWithResponses) CancelAccountSignupConfirmationWithResponse(ctx co
 }
 
 // CancelInviteWithResponse request returning *CancelInviteResponse
-func (c *ClientWithResponses) CancelInviteWithResponse(ctx context.Context, userId UserId, invitedBy InvitedByEmail, reqEditors ...RequestEditorFn) (*CancelInviteResponse, error) {
+func (c *ClientWithResponses) CancelInviteWithResponse(ctx context.Context, userId Tidepooluserid, invitedBy InvitedbyemailV1, reqEditors ...RequestEditorFn) (*CancelInviteResponse, error) {
 	rsp, err := c.CancelInvite(ctx, userId, invitedBy, reqEditors...)
 	if err != nil {
 		return nil, err
