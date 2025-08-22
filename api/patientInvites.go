@@ -242,7 +242,7 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 				Name: site.Name,
 			})
 		}
-		body.Sites = &sites
+		body.Sites = sites
 	}
 
 	var patient *clinics.PatientV1
