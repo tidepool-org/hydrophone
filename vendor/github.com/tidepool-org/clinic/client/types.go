@@ -757,6 +757,10 @@ type BgmPeriodV1 struct {
 
 	// AverageGlucoseMmolDelta Difference between the averageGlucose in this period and the other offset version
 	AverageGlucoseMmolDelta     *float64 `json:"averageGlucoseMmolDelta,omitempty"`
+	CoefficientOfVariation      *float64 `json:"coefficientOfVariation,omitempty"`
+	CoefficientOfVariationDelta *float64 `json:"coefficientOfVariationDelta,omitempty"`
+	DaysWithData                int      `json:"daysWithData"`
+	DaysWithDataDelta           int      `json:"daysWithDataDelta"`
 	HasAverageDailyRecords      bool     `json:"hasAverageDailyRecords"`
 	HasAverageGlucoseMmol       bool     `json:"hasAverageGlucoseMmol"`
 	HasTimeInAnyHighPercent     bool     `json:"hasTimeInAnyHighPercent"`
@@ -776,6 +780,12 @@ type BgmPeriodV1 struct {
 	HasTimeInVeryLowPercent     bool     `json:"hasTimeInVeryLowPercent"`
 	HasTimeInVeryLowRecords     bool     `json:"hasTimeInVeryLowRecords"`
 	HasTotalRecords             bool     `json:"hasTotalRecords"`
+	Max                         float64  `json:"max"`
+	MaxDelta                    float64  `json:"maxDelta"`
+	Min                         float64  `json:"min"`
+	MinDelta                    float64  `json:"minDelta"`
+	StandardDeviation           *float64 `json:"standardDeviation,omitempty"`
+	StandardDeviationDelta      *float64 `json:"standardDeviationDelta,omitempty"`
 
 	// TimeInAnyHighPercent Percentage of time spent in Any high glucose range
 	TimeInAnyHighPercent *float64 `json:"timeInAnyHighPercent,omitempty"`
@@ -954,6 +964,10 @@ type CgmPeriodV1 struct {
 	HasTotalRecords                 bool     `json:"hasTotalRecords"`
 	HoursWithData                   int      `json:"hoursWithData"`
 	HoursWithDataDelta              int      `json:"hoursWithDataDelta"`
+	Max                             float64  `json:"max"`
+	MaxDelta                        float64  `json:"maxDelta"`
+	Min                             float64  `json:"min"`
+	MinDelta                        float64  `json:"minDelta"`
 	StandardDeviation               float64  `json:"standardDeviation"`
 	StandardDeviationDelta          float64  `json:"standardDeviationDelta"`
 
@@ -1468,6 +1482,9 @@ type MrnSettingsV1 struct {
 // NameV1 Name of the clinic.
 type NameV1 = string
 
+// ObjectIdV1 String representation of a resource id
+type ObjectIdV1 = string
+
 // ObjectidV1 String representation of a resource id
 type ObjectidV1 = string
 
@@ -1633,18 +1650,29 @@ type ShareCodeV1 = string
 
 // SiteV1 A clinic's physical or logical location.
 type SiteV1 struct {
-	// Id String representation of a resource id
-	Id string `json:"id"`
+	Id SiteIdV1 `json:"id"`
 
-	// Name The site description.
-	Name string `json:"name"`
+	// Name The site's name.
+	Name SiteNameV1 `json:"name"`
+}
+
+// SiteByIdV1 A clinic's physical or logical location—id only.
+type SiteByIdV1 struct {
+	// Id String representation of a resource id
+	Id *ObjectidV1 `json:"id,omitempty"`
 }
 
 // SiteCreationV1 A clinic's physical or logical location.
 type SiteCreationV1 struct {
-	// Name The site description.
-	Name string `json:"name"`
+	// Name The site's name.
+	Name SiteNameV1 `json:"name"`
 }
+
+// SiteIdV1 defines model for siteId.v1.
+type SiteIdV1 = string
+
+// SiteNameV1 The site's name.
+type SiteNameV1 = string
 
 // StateV1 State or province. In the U.S., typically something like `CA` or `California`.
 type StateV1 = string
@@ -1871,8 +1899,8 @@ type Search = string
 // ShareCode defines model for shareCode.
 type ShareCode = string
 
-// SiteId defines model for siteId.
-type SiteId = string
+// SiteId String representation of a resource id
+type SiteId = ObjectIdV1
 
 // Sort defines model for sort.
 type Sort = string
@@ -1943,13 +1971,16 @@ type ListPatientsParams struct {
 	// Period Time Period to display, filter, and sort
 	Period *string `form:"period,omitempty" json:"period,omitempty"`
 
-	// OffsetPeriods If we should display, filter, and sort based on the offset periods or default periods
-	OffsetPeriods *bool `form:"offsetPeriods,omitempty" json:"offsetPeriods,omitempty"`
-
 	// LastReviewed Inclusive
 	LastReviewed *time.Time `form:"lastReviewed,omitempty" json:"lastReviewed,omitempty"`
 
-	// CgmAverageGlucoseMmol Average glucose value of records in Mmol/L
+	// CgmMax Max glucose value in mmol/L
+	CgmMax *FloatFilter `form:"cgm.max,omitempty" json:"cgm.max,omitempty"`
+
+	// CgmMin Min glucose value in mmol/L
+	CgmMin *FloatFilter `form:"cgm.min,omitempty" json:"cgm.min,omitempty"`
+
+	// CgmAverageGlucoseMmol Average glucose value of records in mmol/L
 	CgmAverageGlucoseMmol *FloatFilter `form:"cgm.averageGlucoseMmol,omitempty" json:"cgm.averageGlucoseMmol,omitempty"`
 
 	// CgmGlucoseManagementIndicator Glucose management Indicator of records
@@ -2045,13 +2076,19 @@ type ListPatientsParams struct {
 	// CgmDaysWithData Total days with data in period
 	CgmDaysWithData *IntFilter `form:"cgm.daysWithData,omitempty" json:"cgm.daysWithData,omitempty"`
 
-	// CgmStandardDeviation Standard deviation of glucose values in Mmol/L
+	// CgmStandardDeviation Standard deviation of glucose values in mmol/L
 	CgmStandardDeviation *FloatFilter `form:"cgm.standardDeviation,omitempty" json:"cgm.standardDeviation,omitempty"`
 
-	// CgmCoefficientOfVariation Coefficient Of Variation of glucose values in Mmol/L
+	// CgmCoefficientOfVariation Coefficient Of Variation of glucose values in mmol/L
 	CgmCoefficientOfVariation *FloatFilter `form:"cgm.coefficientOfVariation,omitempty" json:"cgm.coefficientOfVariation,omitempty"`
 
-	// BgmAverageGlucoseMmol Average glucose value of records in Mmol/L
+	// BgmMax Max glucose value in mmol/L
+	BgmMax *FloatFilter `form:"bgm.max,omitempty" json:"bgm.max,omitempty"`
+
+	// BgmMin Min glucose value in mmol/L
+	BgmMin *FloatFilter `form:"bgm.min,omitempty" json:"bgm.min,omitempty"`
+
+	// BgmAverageGlucoseMmol Average glucose value of records in mmol/L
 	BgmAverageGlucoseMmol *FloatFilter `form:"bgm.averageGlucoseMmol,omitempty" json:"bgm.averageGlucoseMmol,omitempty"`
 
 	// BgmTimeInVeryLowPercent Percentage of time [0.0-1.0]  below 54 mg/dL
@@ -2105,7 +2142,13 @@ type ListPatientsParams struct {
 	// BgmTotalRecords Total records in period
 	BgmTotalRecords *IntFilter `form:"bgm.totalRecords,omitempty" json:"bgm.totalRecords,omitempty"`
 
-	// CgmAverageGlucoseMmolDelta Delta of average glucose value in Mmol/L
+	// CgmMaxDelta Delta of Max glucose value in mmol/L
+	CgmMaxDelta *FloatFilter `form:"cgm.maxDelta,omitempty" json:"cgm.maxDelta,omitempty"`
+
+	// CgmMinDelta Delta of Min glucose value in mmol/L
+	CgmMinDelta *FloatFilter `form:"cgm.minDelta,omitempty" json:"cgm.minDelta,omitempty"`
+
+	// CgmAverageGlucoseMmolDelta Delta of average glucose value in mmol/L
 	CgmAverageGlucoseMmolDelta *FloatFilter `form:"cgm.averageGlucoseMmolDelta,omitempty" json:"cgm.averageGlucoseMmolDelta,omitempty"`
 
 	// CgmGlucoseManagementIndicatorDelta Glucose management Indicator of records
@@ -2201,10 +2244,10 @@ type ListPatientsParams struct {
 	// CgmDaysWithDataDelta Delta of total days with data
 	CgmDaysWithDataDelta *IntFilter `form:"cgm.daysWithDataDelta,omitempty" json:"cgm.daysWithDataDelta,omitempty"`
 
-	// CgmStandardDeviationDelta Delta of the standard deviation of glucose values in Mmol/L
+	// CgmStandardDeviationDelta Delta of the standard deviation of glucose values in mmol/L
 	CgmStandardDeviationDelta *FloatFilter `form:"cgm.standardDeviationDelta,omitempty" json:"cgm.standardDeviationDelta,omitempty"`
 
-	// CgmCoefficientOfVariationDelta Delta of the coefficient of glucose values in Mmol/L
+	// CgmCoefficientOfVariationDelta Delta of the coefficient of glucose values in mmol/L
 	CgmCoefficientOfVariationDelta *FloatFilter `form:"cgm.coefficientOfVariationDelta,omitempty" json:"cgm.coefficientOfVariationDelta,omitempty"`
 
 	// CgmLastDataFrom Inclusive
@@ -2213,7 +2256,13 @@ type ListPatientsParams struct {
 	// CgmLastDataTo Exclusive
 	CgmLastDataTo *time.Time `form:"cgm.lastDataTo,omitempty" json:"cgm.lastDataTo,omitempty"`
 
-	// BgmAverageGlucoseMmolDelta Delta of the average glucose values in Mmol/L
+	// BgmMaxDelta Delta of Max glucose value in mmol/L
+	BgmMaxDelta *FloatFilter `form:"bgm.maxDelta,omitempty" json:"bgm.maxDelta,omitempty"`
+
+	// BgmMinDelta Delta of Min glucose value in mmol/L
+	BgmMinDelta *FloatFilter `form:"bgm.minDelta,omitempty" json:"bgm.minDelta,omitempty"`
+
+	// BgmAverageGlucoseMmolDelta Delta of the average glucose values in mmol/L
 	BgmAverageGlucoseMmolDelta *FloatFilter `form:"bgm.averageGlucoseMmolDelta,omitempty" json:"bgm.averageGlucoseMmolDelta,omitempty"`
 
 	// BgmTimeInVeryLowPercentDelta Delta of time below 54 mg/dL
@@ -2399,6 +2448,9 @@ type CreateSiteJSONRequestBody = SiteCreationV1
 
 // UpdateSiteJSONRequestBody defines body for UpdateSite for application/json ContentType.
 type UpdateSiteJSONRequestBody = SiteV1
+
+// MergeSiteJSONRequestBody defines body for MergeSite for application/json ContentType.
+type MergeSiteJSONRequestBody = SiteByIdV1
 
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications
