@@ -204,6 +204,9 @@ type ClientInterface interface {
 
 	UpdatePatientTag(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body UpdatePatientTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ConvertPatientTagToSite request
+	ConvertPatientTagToSite(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListPatients request
 	ListPatients(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -304,6 +307,11 @@ type ClientInterface interface {
 	UpdateSiteWithBody(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateSite(ctx context.Context, clinicId ClinicId, siteId SiteId, body UpdateSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MergeSiteWithBody request with any body
+	MergeSiteWithBody(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	MergeSite(ctx context.Context, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateSuppressedNotificationsWithBody request with any body
 	UpdateSuppressedNotificationsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -881,6 +889,18 @@ func (c *Client) UpdatePatientTag(ctx context.Context, clinicId ClinicId, patien
 	return c.Client.Do(req)
 }
 
+func (c *Client) ConvertPatientTagToSite(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConvertPatientTagToSiteRequest(c.Server, clinicId, patientTagId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListPatients(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListPatientsRequest(c.Server, clinicId, params)
 	if err != nil {
@@ -1327,6 +1347,30 @@ func (c *Client) UpdateSiteWithBody(ctx context.Context, clinicId ClinicId, site
 
 func (c *Client) UpdateSite(ctx context.Context, clinicId ClinicId, siteId SiteId, body UpdateSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateSiteRequest(c.Server, clinicId, siteId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MergeSiteWithBody(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMergeSiteRequestWithBody(c.Server, clinicId, siteId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MergeSite(ctx context.Context, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMergeSiteRequest(c.Server, clinicId, siteId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3170,6 +3214,47 @@ func NewUpdatePatientTagRequestWithBody(server string, clinicId ClinicId, patien
 	return req, nil
 }
 
+// NewConvertPatientTagToSiteRequest generates requests for ConvertPatientTagToSite
+func NewConvertPatientTagToSiteRequest(server string, clinicId ClinicId, patientTagId PatientTagId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientTagId", runtime.ParamLocationPath, patientTagId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patient_tags/%s/site", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListPatientsRequest generates requests for ListPatients
 func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatientsParams) (*http.Request, error) {
 	var err error
@@ -3295,9 +3380,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.OffsetPeriods != nil {
+		if params.LastReviewed != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offsetPeriods", runtime.ParamLocationQuery, *params.OffsetPeriods); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "lastReviewed", runtime.ParamLocationQuery, *params.LastReviewed); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -3311,9 +3396,25 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.LastReviewed != nil {
+		if params.CgmMax != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "lastReviewed", runtime.ParamLocationQuery, *params.LastReviewed); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.max", runtime.ParamLocationQuery, *params.CgmMax); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CgmMin != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.min", runtime.ParamLocationQuery, *params.CgmMin); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -3871,6 +3972,38 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
+		if params.BgmMax != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.max", runtime.ParamLocationQuery, *params.BgmMax); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BgmMin != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.min", runtime.ParamLocationQuery, *params.BgmMin); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.BgmAverageGlucoseMmol != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.averageGlucoseMmol", runtime.ParamLocationQuery, *params.BgmAverageGlucoseMmol); err != nil {
@@ -4146,6 +4279,38 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.BgmTotalRecords != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.totalRecords", runtime.ParamLocationQuery, *params.BgmTotalRecords); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CgmMaxDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.maxDelta", runtime.ParamLocationQuery, *params.CgmMaxDelta); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CgmMinDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.minDelta", runtime.ParamLocationQuery, *params.CgmMinDelta); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -4722,6 +4887,38 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.CgmLastDataTo != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastDataTo", runtime.ParamLocationQuery, *params.CgmLastDataTo); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BgmMaxDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.maxDelta", runtime.ParamLocationQuery, *params.BgmMaxDelta); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BgmMinDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.minDelta", runtime.ParamLocationQuery, *params.BgmMinDelta); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -6195,6 +6392,60 @@ func NewUpdateSiteRequestWithBody(server string, clinicId ClinicId, siteId SiteI
 	return req, nil
 }
 
+// NewMergeSiteRequest calls the generic MergeSite builder with application/json body
+func NewMergeSiteRequest(server string, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMergeSiteRequestWithBody(server, clinicId, siteId, "application/json", bodyReader)
+}
+
+// NewMergeSiteRequestWithBody generates requests for MergeSite with any type of body
+func NewMergeSiteRequestWithBody(server string, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "siteId", runtime.ParamLocationPath, siteId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/sites/%s/merge", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewUpdateSuppressedNotificationsRequest calls the generic UpdateSuppressedNotifications builder with application/json body
 func NewUpdateSuppressedNotificationsRequest(server string, clinicId ClinicId, body UpdateSuppressedNotificationsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -7262,6 +7513,9 @@ type ClientWithResponsesInterface interface {
 
 	UpdatePatientTagWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body UpdatePatientTagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientTagResponse, error)
 
+	// ConvertPatientTagToSiteWithResponse request
+	ConvertPatientTagToSiteWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*ConvertPatientTagToSiteResponse, error)
+
 	// ListPatientsWithResponse request
 	ListPatientsWithResponse(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*ListPatientsResponse, error)
 
@@ -7362,6 +7616,11 @@ type ClientWithResponsesInterface interface {
 	UpdateSiteWithBodyWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSiteResponse, error)
 
 	UpdateSiteWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, body UpdateSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSiteResponse, error)
+
+	// MergeSiteWithBodyWithResponse request with any body
+	MergeSiteWithBodyWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MergeSiteResponse, error)
+
+	MergeSiteWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*MergeSiteResponse, error)
 
 	// UpdateSuppressedNotificationsWithBodyWithResponse request with any body
 	UpdateSuppressedNotificationsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error)
@@ -8091,6 +8350,28 @@ func (r UpdatePatientTagResponse) StatusCode() int {
 	return 0
 }
 
+type ConvertPatientTagToSiteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SiteV1
+}
+
+// Status returns HTTPResponse.Status
+func (r ConvertPatientTagToSiteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConvertPatientTagToSiteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListPatientsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -8623,6 +8904,28 @@ func (r UpdateSiteResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateSiteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MergeSiteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SiteV1
+}
+
+// Status returns HTTPResponse.Status
+func (r MergeSiteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MergeSiteResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9398,6 +9701,15 @@ func (c *ClientWithResponses) UpdatePatientTagWithResponse(ctx context.Context, 
 	return ParseUpdatePatientTagResponse(rsp)
 }
 
+// ConvertPatientTagToSiteWithResponse request returning *ConvertPatientTagToSiteResponse
+func (c *ClientWithResponses) ConvertPatientTagToSiteWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*ConvertPatientTagToSiteResponse, error) {
+	rsp, err := c.ConvertPatientTagToSite(ctx, clinicId, patientTagId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConvertPatientTagToSiteResponse(rsp)
+}
+
 // ListPatientsWithResponse request returning *ListPatientsResponse
 func (c *ClientWithResponses) ListPatientsWithResponse(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*ListPatientsResponse, error) {
 	rsp, err := c.ListPatients(ctx, clinicId, params, reqEditors...)
@@ -9725,6 +10037,23 @@ func (c *ClientWithResponses) UpdateSiteWithResponse(ctx context.Context, clinic
 		return nil, err
 	}
 	return ParseUpdateSiteResponse(rsp)
+}
+
+// MergeSiteWithBodyWithResponse request with arbitrary body returning *MergeSiteResponse
+func (c *ClientWithResponses) MergeSiteWithBodyWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MergeSiteResponse, error) {
+	rsp, err := c.MergeSiteWithBody(ctx, clinicId, siteId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMergeSiteResponse(rsp)
+}
+
+func (c *ClientWithResponses) MergeSiteWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*MergeSiteResponse, error) {
+	rsp, err := c.MergeSite(ctx, clinicId, siteId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMergeSiteResponse(rsp)
 }
 
 // UpdateSuppressedNotificationsWithBodyWithResponse request with arbitrary body returning *UpdateSuppressedNotificationsResponse
@@ -10682,6 +11011,32 @@ func ParseUpdatePatientTagResponse(rsp *http.Response) (*UpdatePatientTagRespons
 	return response, nil
 }
 
+// ParseConvertPatientTagToSiteResponse parses an HTTP response from a ConvertPatientTagToSiteWithResponse call
+func ParseConvertPatientTagToSiteResponse(rsp *http.Response) (*ConvertPatientTagToSiteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConvertPatientTagToSiteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SiteV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListPatientsResponse parses an HTTP response from a ListPatientsWithResponse call
 func ParseListPatientsResponse(rsp *http.Response) (*ListPatientsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -11195,6 +11550,32 @@ func ParseUpdateSiteResponse(rsp *http.Response) (*UpdateSiteResponse, error) {
 	}
 
 	response := &UpdateSiteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SiteV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMergeSiteResponse parses an HTTP response from a MergeSiteWithResponse call
+func ParseMergeSiteResponse(rsp *http.Response) (*MergeSiteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MergeSiteResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
