@@ -8,16 +8,18 @@ import (
 )
 
 type (
-	MockNotifier struct{}
+	MockNotifier struct {
+		log *zap.SugaredLogger
+	}
 )
 
-func NewMockNotifier() Notifier {
-	return &MockNotifier{}
+func NewMockNotifier(log *zap.SugaredLogger) Notifier {
+	return &MockNotifier{log: log}
 }
 
 func (c *MockNotifier) Send(to []string, subject string, msg string) (int, string) {
 	details := fmt.Sprintf("Send subject[%s] with message[%s] to %v", subject, msg, to)
-	zap.S().Info(details)
+	c.log.Info(details)
 	return 200, details
 }
 

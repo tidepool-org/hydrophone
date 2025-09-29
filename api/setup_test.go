@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"go.uber.org/zap"
+
 	commonClients "github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/highwater"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
-
 	"github.com/tidepool-org/hydrophone/clients"
 	"github.com/tidepool-org/hydrophone/models"
 )
@@ -34,7 +35,7 @@ var (
 	/*
 	 * basics setup
 	 */
-	mockNotifier   = clients.NewMockNotifier()
+	mockNotifier   = clients.NewMockNotifier(zap.NewNop().Sugar())
 	mockShoreline  = shoreline.NewMock(testing_token)
 	mockGatekeeper = commonClients.NewGatekeeperMock(nil, &status.StatusError{Status: status.NewStatus(500, "Unable to parse response.")})
 	mockMetrics    = highwater.NewMock()
