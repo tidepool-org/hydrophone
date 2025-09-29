@@ -54,11 +54,12 @@ type (
 	}
 
 	AcceptPatientInvite struct {
-		MRN       string   `json:"mrn"`
-		BirthDate string   `json:"birthDate"`
-		FullName  string   `json:"fullName"`
-		Tags      []string `json:"tags"`
-		Sites     []Site   `json:"sites"`
+		MRN           string   `json:"mrn"`
+		BirthDate     string   `json:"birthDate"`
+		FullName      string   `json:"fullName"`
+		Tags          []string `json:"tags"`
+		Sites         []Site   `json:"sites"`
+		DiagnosisType string   `json:"diagnosisType"`
 	}
 
 	Site struct {

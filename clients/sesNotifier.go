@@ -45,7 +45,7 @@ func notifierConfigProvider() (SesNotifierConfig, error) {
 
 func sesNotifierProvider(config SesNotifierConfig, log *zap.SugaredLogger) (Notifier, error) {
 	if config.UseMockNotifier {
-		return NewMockNotifier(), nil
+		return NewMockNotifier(log), nil
 	}
 	mail, err := NewSesNotifier(&config, log)
 	return mail, err

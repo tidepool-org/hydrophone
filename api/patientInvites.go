@@ -228,11 +228,7 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 		body.Mrn = &accept.MRN
 	}
 	if count := len(accept.Tags); count > 0 {
-		tagIds := make(clinics.PatientTagIdsV1, 0, count)
-		for _, tag := range accept.Tags {
-			tagIds = append(tagIds, tag)
-		}
-		body.Tags = &tagIds
+		body.Tags = &accept.Tags
 	}
 	if count := len(accept.Sites); count > 0 {
 		sites := make([]clinics.SiteV1, 0, count)
@@ -243,6 +239,9 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 			})
 		}
 		body.Sites = sites
+	}
+	if accept.DiagnosisType != "" {
+		body.DiagnosisType = (*clinics.DiagnosisTypeV1)(&accept.DiagnosisType)
 	}
 
 	var patient *clinics.PatientV1
