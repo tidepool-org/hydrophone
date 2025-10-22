@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/platform/alerts"
 )
@@ -54,12 +55,13 @@ type (
 	}
 
 	AcceptPatientInvite struct {
-		MRN           string   `json:"mrn"`
-		BirthDate     string   `json:"birthDate"`
-		FullName      string   `json:"fullName"`
-		Tags          []string `json:"tags"`
-		Sites         []Site   `json:"sites"`
-		DiagnosisType string   `json:"diagnosisType"`
+		MRN            string                   `json:"mrn"`
+		BirthDate      string                   `json:"birthDate"`
+		FullName       string                   `json:"fullName"`
+		Tags           []string                 `json:"tags"`
+		Sites          []Site                   `json:"sites"`
+		DiagnosisType  clinics.DiagnosisTypeV1  `json:"diagnosisType"`
+		GlycemicRanges clinics.GlycemicRangesV1 `json:"glycemicRanges"`
 	}
 
 	Site struct {

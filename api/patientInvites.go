@@ -243,6 +243,7 @@ func (a *Api) createClinicPatient(ctx context.Context, confirmation models.Confi
 	if accept.DiagnosisType != "" {
 		body.DiagnosisType = (*clinics.DiagnosisTypeV1)(&accept.DiagnosisType)
 	}
+	body.GlycemicRanges = &accept.GlycemicRanges
 
 	var patient *clinics.PatientV1
 	clinicId := confirmation.ClinicId
