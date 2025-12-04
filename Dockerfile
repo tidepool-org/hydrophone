@@ -1,4 +1,4 @@
-ARG GOLANG_VERSION=1.24.3-alpine
+ARG GOLANG_VERSION=1.25.7-alpine
 
 # Development
 FROM golang:${GOLANG_VERSION} AS development
