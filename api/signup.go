@@ -126,6 +126,15 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			emailContent["ClinicName"] = clinicName
 		}
 
+		if newSignUp.Context != nil {
+			var contextData map[string]string
+			if err := newSignUp.DecodeContext(&contextData); err == nil {
+				if restrictedToken, ok := contextData["restrictedToken"]; ok {
+					emailContent["RestrictedToken"] = restrictedToken
+				}
+			}
+		}
+
 		if a.createAndSendNotification(req, newSignUp, emailContent) {
 			a.logMetricAsServer("signup confirmation sent")
 			res.WriteHeader(http.StatusOK)
@@ -443,7 +452,11 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					templateName = models.TemplateNameSignupClinic
 				} else if usrDetails.IsCustodial() {
 					if token.IsServer {
-						if upsertCustodialSignUpInvite.ClinicId != "" {
+						if upsertCustodialSignUpInvite.ClinicId != "" && upsertCustodialSignUpInvite.RestrictedToken != "" {
+							templateName = models.TemplateNameSignupCustodialCloudProvider
+							creatorID = upsertCustodialSignUpInvite.InvitedBy
+							clinicId = upsertCustodialSignUpInvite.ClinicId
+						} else if upsertCustodialSignUpInvite.ClinicId != "" {
 							templateName = models.TemplateNameSignupCustodialNewClinicExperience
 							creatorID = upsertCustodialSignUpInvite.InvitedBy
 							clinicId = upsertCustodialSignUpInvite.ClinicId
@@ -478,6 +491,12 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				newSignUp.UserId = usrDetails.UserID
 				newSignUp.Email = usrDetails.Emails[0]
 				newSignUp.ClinicId = clinicId
+				if upsertCustodialSignUpInvite.RestrictedToken != "" {
+					if err := newSignUp.AddContext(map[string]string{"restrictedToken": upsertCustodialSignUpInvite.RestrictedToken}); err != nil {
+						a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+						return nil
+					}
+				}
 			} else if newSignUp.Email != usrDetails.Emails[0] {
 
 				if err := a.Store.RemoveConfirmation(ctx, newSignUp); err != nil {
@@ -535,8 +554,9 @@ func IsValidDate(date string) bool {
 }
 
 type UpsertCustodialSignUpInvite struct {
-	ClinicId  string `json:"clinicId"`
-	InvitedBy string `json:"invitedBy"`
+	ClinicId        string `json:"clinicId"`
+	InvitedBy       string `json:"invitedBy"`
+	RestrictedToken string `json:"restrictedToken"`
 }
 
 var passwordRe = regexp.MustCompile(`\A\S{8,72}\z`)

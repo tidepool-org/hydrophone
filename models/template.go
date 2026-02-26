@@ -30,6 +30,7 @@ const (
 	TemplateNameSignupCustodial                    TemplateName = "signup_custodial_confirmation"
 	TemplateNameSignupCustodialClinic              TemplateName = "signup_custodial_clinic_confirmation"
 	TemplateNameSignupCustodialNewClinicExperience TemplateName = "signup_custodial_new_clinic_experience_confirmation"
+	TemplateNameSignupCustodialCloudProvider       TemplateName = "signup_custodial_cloud_provider_confirmation"
 	TemplateNameUndefined                          TemplateName = ""
 )
 
