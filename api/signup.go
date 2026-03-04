@@ -158,6 +158,10 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			return
 		}
 
+		if found.TemplateName == models.TemplateNameSignupCustodialNewClinicExperience {
+			// BACK-3478: Since this is a resend, use the reminder email template.
+			found.TemplateName = models.TemplateNameSignupCustodialNewClinicExperienceReminder
+		}
 		// addOrUpdateConfirmation logs and writes a response on errors
 		if a.addOrUpdateConfirmation(ctx, found, res) {
 			a.logMetricAsServer("signup confirmation recreated")
