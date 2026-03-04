@@ -1,6 +1,6 @@
 module github.com/tidepool-org/hydrophone
 
-go 1.23
+go 1.24.1
 
 toolchain go1.24.5
 
@@ -10,7 +10,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/clinic/client v0.0.0-20251009194813-de3f6c520060
+	github.com/tidepool-org/clinic/client v0.0.0-20260227151306-2c10ad90939d
 	github.com/tidepool-org/go-common v0.12.2-0.20250129210214-bd36b59b9733
 	github.com/tidepool-org/platform v1.33.1-0.20240814160553-f9955fff3f1e
 	go.mongodb.org/mongo-driver v1.16.0

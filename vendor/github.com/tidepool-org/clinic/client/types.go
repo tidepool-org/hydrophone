@@ -646,6 +646,7 @@ const (
 
 // Defines values for DiagnosisTypeV1.
 const (
+	DiagnosisTypeV1Empty         DiagnosisTypeV1 = ""
 	DiagnosisTypeV1Gestational   DiagnosisTypeV1 = "gestational"
 	DiagnosisTypeV1Lada          DiagnosisTypeV1 = "lada"
 	DiagnosisTypeV1Mody          DiagnosisTypeV1 = "mody"
@@ -686,18 +687,18 @@ const (
 	Xealth EhrSettingsV1Provider = "xealth"
 )
 
-// Defines values for GlycemicRangesV1Preset.
-const (
-	ADAOlderOrHighRisk     GlycemicRangesV1Preset = "ADA older or high-risk"
-	ADAPregnancyGDMOrType2 GlycemicRangesV1Preset = "ADA pregnancy GDM or type 2"
-	ADAPregnancyType1      GlycemicRangesV1Preset = "ADA pregnancy type 1"
-	ADAStandard            GlycemicRangesV1Preset = "ADA standard"
-)
-
 // Defines values for GlycemicRangesV1Type.
 const (
 	Custom GlycemicRangesV1Type = "custom"
 	Preset GlycemicRangesV1Type = "preset"
+)
+
+// Defines values for GlycemicRangesPresetV1.
+const (
+	ADAHighRisk       GlycemicRangesPresetV1 = "adaHighRisk"
+	ADAPregnancyType1 GlycemicRangesPresetV1 = "adaPregnancyType1"
+	ADAPregnancyType2 GlycemicRangesPresetV1 = "adaPregnancyType2"
+	ADAStandard       GlycemicRangesPresetV1 = "adaStandard"
 )
 
 // Defines values for GlycemicRangesThresholdUpperBoundV1Units.
@@ -741,6 +742,19 @@ const (
 	Tier0200 TierV1 = "tier0200"
 	Tier0300 TierV1 = "tier0300"
 	Tier0400 TierV1 = "tier0400"
+)
+
+// Defines values for TideReportParamsCategories.
+const (
+	DropInTimeInTargetPercent TideReportParamsCategories = "dropInTimeInTargetPercent"
+	MeetingTargets            TideReportParamsCategories = "meetingTargets"
+	TimeCGMUsePercent         TideReportParamsCategories = "timeCGMUsePercent"
+	TimeInAnyHighPercent      TideReportParamsCategories = "timeInAnyHighPercent"
+	TimeInAnyLowPercent       TideReportParamsCategories = "timeInAnyLowPercent"
+	TimeInExtremeHighPercent  TideReportParamsCategories = "timeInExtremeHighPercent"
+	TimeInTargetPercent       TideReportParamsCategories = "timeInTargetPercent"
+	TimeInVeryHighPercent     TideReportParamsCategories = "timeInVeryHighPercent"
+	TimeInVeryLowPercent      TideReportParamsCategories = "timeInVeryLowPercent"
 )
 
 // Defines values for FindPatientsParamsWorkspaceIdType.
@@ -1457,12 +1471,9 @@ type GenerateMergeReportV1 struct {
 // GlycemicRangesV1 defines model for glycemicRanges.v1.
 type GlycemicRangesV1 struct {
 	Custom GlycemicRangesCustomV1 `json:"custom,omitempty,omitzero"`
-	Preset GlycemicRangesV1Preset `json:"preset,omitempty,omitzero"`
+	Preset GlycemicRangesPresetV1 `json:"preset,omitempty,omitzero"`
 	Type   GlycemicRangesV1Type   `json:"type"`
 }
-
-// GlycemicRangesV1Preset defines model for GlycemicRangesV1.Preset.
-type GlycemicRangesV1Preset string
 
 // GlycemicRangesV1Type defines model for GlycemicRangesV1.Type.
 type GlycemicRangesV1Type string
@@ -1472,6 +1483,9 @@ type GlycemicRangesCustomV1 struct {
 	Name       string                      `json:"name"`
 	Thresholds []GlycemicRangesThresholdV1 `json:"thresholds"`
 }
+
+// GlycemicRangesPresetV1 defines model for glycemicRangesPreset.v1.
+type GlycemicRangesPresetV1 string
 
 // GlycemicRangesThresholdV1 defines model for glycemicRangesThreshold.v1.
 type GlycemicRangesThresholdV1 struct {
@@ -1604,8 +1618,23 @@ type PatientClinicRelationshipsV1 = []PatientClinicRelationshipV1
 
 // PatientCountV1 defines model for patientCount.v1.
 type PatientCountV1 struct {
-	// PatientCount The patient count for a clinic
-	PatientCount int `json:"patientCount"`
+	// Demo The count of patients associated with the clinic that are classified as demo and do not
+	// apply towards the plan-based patient count limit. Currently this is limited to 0 or 1,
+	// but allows for future expansion with multiple demo patients if needed.
+	Demo int `json:"demo"`
+
+	// Plan The count of patients associated with the clinic classified as applying towards the
+	// plan-based patient count limit. This excludes patients classified as demo as well as any
+	// other classifications that do not apply towards the plan-based patient count limit
+	// for various business reasons.
+	Plan int `json:"plan"`
+
+	// Providers The count of patients associated with the clinic by provider. As each patient may be associated
+	// with multiple providers, the sum of all provider counts may exceed the total patient count.
+	Providers *map[string]PatientProviderCountV1 `json:"providers,omitempty"`
+
+	// Total The count of all patients associated with the clinic, regardless of classification.
+	Total int `json:"total"`
 }
 
 // PatientCountLimitV1 defines model for patientCountLimit.v1.
@@ -1613,8 +1642,8 @@ type PatientCountLimitV1 struct {
 	// EndDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	EndDate *DatetimeV1 `json:"endDate,omitempty"`
 
-	// PatientCount The patient count limit
-	PatientCount int `json:"patientCount"`
+	// Plan The plan-based patient count limit
+	Plan int `json:"plan"`
 
 	// StartDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	StartDate *DatetimeV1 `json:"startDate,omitempty"`
@@ -1632,6 +1661,17 @@ type PatientPermissionsV1 struct {
 	Note      *map[string]interface{} `json:"note,omitempty"`
 	Upload    *map[string]interface{} `json:"upload,omitempty"`
 	View      *map[string]interface{} `json:"view,omitempty"`
+}
+
+// PatientProviderCountV1 The count of patients associated with the clinic for a specific provider. As each patient may be
+// associated with multiple providers, the sum of all provider counts may exceed the total patient count.
+type PatientProviderCountV1 struct {
+	// States The count of patients for the provider segmented by data source state. The possible
+	// states are connected, disconnected, error, pending, and pendingReconnect.
+	States map[string]int `json:"states"`
+
+	// Total The count of patients that have a specific provider as a data source.
+	Total int `json:"total"`
 }
 
 // PatientReviewV1 A summary of a patients recent data
@@ -1815,14 +1855,19 @@ type SuppressedNotificationsV1 struct {
 // TideConfigV1 defines model for tideConfig.v1.
 type TideConfigV1 struct {
 	// ClinicId Clinic identifier.
-	ClinicId *ClinicIdV1   `json:"clinicId,omitempty"`
-	Filters  TideFiltersV1 `json:"filters"`
+	ClinicId *ClinicIdV1 `json:"clinicId,omitempty"`
 
-	// HighGlucoseThreshold Threshold used for determining if a value is high
+	// ExtremeHighGlucoseThreshold Minimum inclusive threshold in mmol/L for categorizing if a glucose value is extremely high. Not defined by the AACE.
+	ExtremeHighGlucoseThreshold *float64 `json:"extremeHighGlucoseThreshold,omitempty"`
+
+	// Filters Visual representation of filtered categories selected
+	Filters TideFiltersV1 `json:"filters"`
+
+	// HighGlucoseThreshold Minimum exclusive threshold in mmol/L for categorizing if a glucose value is high as established by the AACE.
 	HighGlucoseThreshold float64   `json:"highGlucoseThreshold"`
 	LastDataCutoff       time.Time `json:"lastDataCutoff"`
 
-	// LowGlucoseThreshold Threshold used for determining if a value is low
+	// LowGlucoseThreshold Maximum exclusive threshold in mmol/L for categorizing if a glucose value is low as established by the AACE.
 	LowGlucoseThreshold float64 `json:"lowGlucoseThreshold"`
 	Period              string  `json:"period"`
 
@@ -1830,20 +1875,23 @@ type TideConfigV1 struct {
 	SchemaVersion int              `json:"schemaVersion"`
 	Tags          *PatientTagIdsV1 `json:"tags"`
 
-	// VeryHighGlucoseThreshold Threshold used for determining if a value is very high
+	// VeryHighGlucoseThreshold Minimum exclusive threshold in mmol/L for categorizing if a glucose value is very high as established by the AACE.
 	VeryHighGlucoseThreshold float64 `json:"veryHighGlucoseThreshold"`
 
-	// VeryLowGlucoseThreshold Threshold used for determining if a value is very low
+	// VeryLowGlucoseThreshold Maximum exclusive threshold in mmol/L for categorizing if a glucose value is very low as established by the AACE.
 	VeryLowGlucoseThreshold float64 `json:"veryLowGlucoseThreshold"`
 }
 
-// TideFiltersV1 defines model for tideFilters.v1.
+// TideFiltersV1 Visual representation of filtered categories selected
 type TideFiltersV1 struct {
-	DropInTimeInTargetPercent string `json:"dropInTimeInTargetPercent"`
-	TimeCGMUsePercent         string `json:"timeCGMUsePercent"`
-	TimeInAnyLowPercent       string `json:"timeInAnyLowPercent"`
-	TimeInTargetPercent       string `json:"timeInTargetPercent"`
-	TimeInVeryLowPercent      string `json:"timeInVeryLowPercent"`
+	DropInTimeInTargetPercent *string `json:"dropInTimeInTargetPercent,omitempty"`
+	TimeCGMUsePercent         *string `json:"timeCGMUsePercent,omitempty"`
+	TimeInAnyLowPercent       *string `json:"timeInAnyLowPercent,omitempty"`
+	TimeInExtremeHighPercent  *string `json:"timeInExtremeHighPercent,omitempty"`
+	TimeInHighPercent         *string `json:"timeInHighPercent,omitempty"`
+	TimeInTargetPercent       *string `json:"timeInTargetPercent,omitempty"`
+	TimeInVeryHighPercent     *string `json:"timeInVeryHighPercent,omitempty"`
+	TimeInVeryLowPercent      *string `json:"timeInVeryLowPercent,omitempty"`
 }
 
 // TidePatientV1 defines model for tidePatient.v1.
@@ -1887,6 +1935,9 @@ type TideResultPatientV1 struct {
 
 	// TimeInAnyLowPercent Percentage of time spent in any low glucose range
 	TimeInAnyLowPercent *float64 `json:"timeInAnyLowPercent,omitempty"`
+
+	// TimeInExtremeHighPercent Percentage of time spent in extreme high glucose range
+	TimeInExtremeHighPercent *float64 `json:"timeInExtremeHighPercent,omitempty"`
 
 	// TimeInHighPercent Percentage of time spent in high glucose range
 	TimeInHighPercent *float64 `json:"timeInHighPercent,omitempty"`
@@ -2402,19 +2453,33 @@ type ListPatientsParams struct {
 
 	// Sites Comma-separated list of clinic site IDs
 	Sites *[]string `form:"sites,omitempty" json:"sites,omitempty"`
+
+	// OmitNonStandardRanges Whether patients whose glycemic ranges selection is *not*
+	// the ADA standard ranges (e.g. as used by the TIDE report)
+	// should be omitted.
+	OmitNonStandardRanges *bool `form:"omitNonStandardRanges,omitempty" json:"omitNonStandardRanges,omitempty"`
 }
 
 // TideReportParams defines parameters for TideReport.
 type TideReportParams struct {
 	// Period Time Period to display
-	Period *string `form:"period,omitempty" json:"period,omitempty"`
+	Period string `form:"period" json:"period"`
 
 	// Tags Comma-separated list of patient tag IDs
-	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
+	Tags []ObjectIdV1 `form:"tags" json:"tags"`
 
-	// LastDataCutoff Inclusive
-	LastDataCutoff *time.Time `form:"lastDataCutoff,omitempty" json:"lastDataCutoff,omitempty"`
+	// LastDataCutoff Inclusive minimum of date of last data from a patient.
+	LastDataCutoff time.Time `form:"lastDataCutoff" json:"lastDataCutoff"`
+
+	// Categories Comma-separated list of TIDE report categories to return in queried order. If omitted or empty, the default TIDE categories will be returned - see example.
+	Categories []TideReportParamsCategories `form:"categories,omitempty" json:"categories,omitempty"`
+
+	// ExcludeNoData If true, then exclude / omit patients with no data in the TIDE report.
+	ExcludeNoData bool `form:"excludeNoData,omitempty" json:"excludeNoData,omitempty"`
 }
+
+// TideReportParamsCategories defines parameters for TideReport.
+type TideReportParamsCategories string
 
 // FindPatientsParams defines parameters for FindPatients.
 type FindPatientsParams struct {
