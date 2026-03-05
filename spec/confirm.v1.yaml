@@ -380,6 +380,12 @@ components:
       pattern: ^[a-f0-9]{24}$
       readOnly: true
       example: 2fe2488217ee43e1b2e83c2f
+    restricted-token-id.v1:
+      title: Restricted Token ID
+      type: string
+      minLength: 32
+      maxLength: 32
+      pattern: ^[0-9a-z]{32}$
     upsert.v1:
       title: Confirmation Lookup
       type: object
@@ -388,6 +394,8 @@ components:
           $ref: '#/components/schemas/clinicId.v1'
         invitedBy:
           $ref: '#/components/schemas/tidepooluserid'
+        restrictedTokenId:
+          $ref: '#/components/schemas/restricted-token-id.v1'
     error.v1:
       type: object
       title: Confirmation Error

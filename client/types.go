@@ -256,6 +256,9 @@ type RepeatV1 struct {
 	Repeat *int `json:"repeat,omitempty"`
 }
 
+// RestrictedTokenIdV1 defines model for restricted-token-id.v1.
+type RestrictedTokenIdV1 = string
+
 // RestrictionsV1 defines model for restrictions.v1.
 type RestrictionsV1 struct {
 	// CanAccept Whether the invite can be accepted by the current user
@@ -283,7 +286,8 @@ type UpsertV1 struct {
 	ClinicId *ClinicIdV1 `json:"clinicId,omitempty"`
 
 	// InvitedBy String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	InvitedBy *Tidepooluserid `json:"invitedBy,omitempty"`
+	InvitedBy         *Tidepooluserid      `json:"invitedBy,omitempty"`
+	RestrictedTokenId *RestrictedTokenIdV1 `json:"restrictedTokenId,omitempty"`
 }
 
 // ValuemgdlV1 An integer value representing a `mg/dL` value.

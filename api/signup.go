@@ -129,8 +129,8 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 		if newSignUp.Context != nil {
 			var contextData map[string]string
 			if err := newSignUp.DecodeContext(&contextData); err == nil {
-				if restrictedToken, ok := contextData["restrictedToken"]; ok {
-					emailContent["RestrictedToken"] = restrictedToken
+				if restrictedToken, ok := contextData["restrictedTokenID"]; ok {
+					emailContent["restrictedTokenID"] = restrictedToken
 				}
 			}
 		}
@@ -452,7 +452,7 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					templateName = models.TemplateNameSignupClinic
 				} else if usrDetails.IsCustodial() {
 					if token.IsServer {
-						if upsertCustodialSignUpInvite.ClinicId != "" && upsertCustodialSignUpInvite.RestrictedToken != "" {
+						if upsertCustodialSignUpInvite.ClinicId != "" && upsertCustodialSignUpInvite.RestrictedTokenID != "" {
 							templateName = models.TemplateNameSignupCustodialCloudProvider
 							creatorID = upsertCustodialSignUpInvite.InvitedBy
 							clinicId = upsertCustodialSignUpInvite.ClinicId
@@ -491,8 +491,8 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				newSignUp.UserId = usrDetails.UserID
 				newSignUp.Email = usrDetails.Emails[0]
 				newSignUp.ClinicId = clinicId
-				if upsertCustodialSignUpInvite.RestrictedToken != "" {
-					if err := newSignUp.AddContext(map[string]string{"restrictedToken": upsertCustodialSignUpInvite.RestrictedToken}); err != nil {
+				if upsertCustodialSignUpInvite.RestrictedTokenID != "" {
+					if err := newSignUp.AddContext(map[string]string{"restrictedTokenID": upsertCustodialSignUpInvite.RestrictedTokenID}); err != nil {
 						a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
 						return nil
 					}
@@ -554,9 +554,9 @@ func IsValidDate(date string) bool {
 }
 
 type UpsertCustodialSignUpInvite struct {
-	ClinicId        string `json:"clinicId"`
-	InvitedBy       string `json:"invitedBy"`
-	RestrictedToken string `json:"restrictedToken"`
+	ClinicId          string `json:"clinicId"`
+	InvitedBy         string `json:"invitedBy"`
+	RestrictedTokenID string `json:"restrictedTokenId"`
 }
 
 var passwordRe = regexp.MustCompile(`\A\S{8,72}\z`)

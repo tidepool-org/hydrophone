@@ -36,9 +36,9 @@ func TestSignupResponds(t *testing.T) {
 			url:        "/send/signup/NewUserID",
 			token:      testing_token_uid1,
 			body: testJSONObject{
-				"clinicId":        "clinicId123",
-				"invitedBy":       "clinicianId456",
-				"restrictedToken": "restricted-token-xyz",
+				"clinicId":          "clinicId123",
+				"invitedBy":         "clinicianId456",
+				"restrictedTokenId": "restricted-token-xyz",
 			},
 			respCode: 200,
 		},

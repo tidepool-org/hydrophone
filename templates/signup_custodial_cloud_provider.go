@@ -63,7 +63,7 @@ const _SignupCustodialCloudProviderBodyTemplate string = `
                     <tr>
                     <td>
                     <![endif]-->
-                    <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}&restrictedToken={{ .RestrictedToken }}" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;Margin-bottom:10px;">
+                    <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}&restrictedTokenId={{ .restrictedTokenID }}" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;Margin-bottom:10px;">
                       Set Up Your Tidepool Account
                     </a>
                     <!--[if (gte mso 9)|(IE)]>
