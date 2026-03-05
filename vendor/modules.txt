@@ -1,3 +1,4 @@
+## workspace
 # github.com/IBM/sarama v1.43.2
 ## explicit; go 1.19
 github.com/IBM/sarama
@@ -100,6 +101,8 @@ github.com/globalsign/mgo/internal/scram
 # github.com/golang/snappy v0.0.4
 ## explicit
 github.com/golang/snappy
+# github.com/google/uuid v1.5.0
+## explicit
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
@@ -207,8 +210,8 @@ github.com/pkg/errors
 # github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 ## explicit
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/clinic/client v0.0.0-20251009194813-de3f6c520060
-## explicit; go 1.22
+# github.com/tidepool-org/clinic/client v0.0.0-20260305132028-b89b3d7dc141
+## explicit; go 1.24.1
 github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/go-common v0.12.2-0.20250129210214-bd36b59b9733
 ## explicit; go 1.22
