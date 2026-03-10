@@ -514,6 +514,12 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					newSignUp.ClinicId = upsertCustodialSignUpInvite.ClinicId
 					newSignUp.CreatorId = upsertCustodialSignUpInvite.InvitedBy
 				}
+				if upsertCustodialSignUpInvite.RestrictedTokenID != "" {
+					if err := newSignUp.AddContext(map[string]string{"restrictedTokenID": upsertCustodialSignUpInvite.RestrictedTokenID}); err != nil {
+						a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+						return nil
+					}
+				}
 			} else {
 				a.sendError(ctx, res, http.StatusForbidden, STATUS_EXISTING_SIGNUP)
 				return nil
