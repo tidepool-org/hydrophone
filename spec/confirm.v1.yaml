@@ -567,7 +567,9 @@ components:
         creator:
           $ref: '#/components/schemas/creator.v1'
         context:
-          type: string
+          type: object
+          additionalProperties: true
+          description: Generic object for storing context-specific data related to the confirmation.
         restrictions:
           $ref: '#/components/schemas/restrictions.v1'
         expiresAt:

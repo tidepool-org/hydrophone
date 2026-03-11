@@ -121,7 +121,8 @@ type ConfirmationTypeV1 string
 
 // ConfirmationV1 defines model for confirmation.v1.
 type ConfirmationV1 struct {
-	Context *string `json:"context,omitempty"`
+	// Context Generic object for storing context-specific data related to the confirmation.
+	Context *map[string]interface{} `json:"context,omitempty"`
 
 	// Created [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	Created DatetimeV1 `json:"created"`
