@@ -251,11 +251,14 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		emailVerified := true
 		updates := shoreline.UserUpdate{EmailVerified: &emailVerified}
 
-		if user, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide()); err != nil {
+		user, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide())
+		if err != nil || user == nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, "trying to get user to check email verified", err)
 			return
 
-		} else if !user.PasswordExists {
+		}
+
+		if !user.PasswordExists {
 			acceptance := &models.Acceptance{}
 			if req.Body != nil {
 				if err := json.NewDecoder(req.Body).Decode(acceptance); err != nil {
@@ -295,6 +298,9 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			updates.Password = &acceptance.Password
 		}
 
+		// Setting the user's email is now required because the username and email fields will be overwritten
+		updates.Username = &user.Username
+		updates.Emails = &user.Emails
 		if err := a.sl.UpdateUser(found.UserId, updates, a.sl.TokenProvide()); err != nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_UPDATING_USER, err)
 			return
