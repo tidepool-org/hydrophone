@@ -1,8 +1,6 @@
 module github.com/tidepool-org/hydrophone
 
-go 1.23
-
-toolchain go1.24.5
+go 1.25.7
 
 require (
 	github.com/aws/aws-sdk-go v1.54.11
@@ -10,7 +8,6 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/clinic/client v0.0.0-20251009194813-de3f6c520060
 	github.com/tidepool-org/go-common v0.12.2-0.20250129210214-bd36b59b9733
 	github.com/tidepool-org/platform v1.33.1-0.20240814160553-f9955fff3f1e
 	go.mongodb.org/mongo-driver v1.16.0
@@ -50,6 +47,7 @@ require (
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
+	github.com/tidepool-org/clinic/client v0.0.0-20260303142656-bf2a8a89893c // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
