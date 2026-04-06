@@ -21,16 +21,17 @@ const (
 	// TemplateNameCareteamInviteWithAlerting is sent when a user is invited
 	// via the Loop app to use the Care Partner app to receive alert
 	// notifications.
-	TemplateNameCareteamInviteWithAlerting         TemplateName = "careteam_invitation_with_alerting"
-	TemplateNameClinicianInvite                    TemplateName = "clinician_invitation"
-	TemplateNameNoAccount                          TemplateName = "no_account"
-	TemplateNamePasswordReset                      TemplateName = "password_reset"
-	TemplateNameSignup                             TemplateName = "signup_confirmation"
-	TemplateNameSignupClinic                       TemplateName = "signup_clinic_confirmation"
-	TemplateNameSignupCustodial                    TemplateName = "signup_custodial_confirmation"
-	TemplateNameSignupCustodialClinic              TemplateName = "signup_custodial_clinic_confirmation"
-	TemplateNameSignupCustodialNewClinicExperience TemplateName = "signup_custodial_new_clinic_experience_confirmation"
-	TemplateNameUndefined                          TemplateName = ""
+	TemplateNameCareteamInviteWithAlerting                 TemplateName = "careteam_invitation_with_alerting"
+	TemplateNameClinicianInvite                            TemplateName = "clinician_invitation"
+	TemplateNameNoAccount                                  TemplateName = "no_account"
+	TemplateNamePasswordReset                              TemplateName = "password_reset"
+	TemplateNameSignup                                     TemplateName = "signup_confirmation"
+	TemplateNameSignupClinic                               TemplateName = "signup_clinic_confirmation"
+	TemplateNameSignupCustodial                            TemplateName = "signup_custodial_confirmation"
+	TemplateNameSignupCustodialClinic                      TemplateName = "signup_custodial_clinic_confirmation"
+	TemplateNameSignupCustodialNewClinicExperience         TemplateName = "signup_custodial_new_clinic_experience_confirmation"
+	TemplateNameSignupCustodialNewClinicExperienceReminder TemplateName = "signup_custodial_new_clinic_experience_confirmation_reminder"
+	TemplateNameUndefined                                  TemplateName = ""
 )
 
 type Template interface {
