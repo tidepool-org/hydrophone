@@ -75,6 +75,12 @@ func New() (models.Templates, error) {
 		templates[template.Name()] = template
 	}
 
+	if template, err := NewSignupCustodialNewClinicExperienceReminderTemplate(); err != nil {
+		return nil, fmt.Errorf("templates: failure to create custodial signup new clinicic experience reminder template: %s", err)
+	} else {
+		templates[template.Name()] = template
+	}
+
 	if template, err := NewSignupCustodialCloudProviderTemplate(); err != nil {
 		return nil, fmt.Errorf("templates: failure to create custodial signup cloud provider template: %s", err)
 	} else {
