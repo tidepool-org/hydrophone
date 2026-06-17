@@ -61,6 +61,11 @@ func (c *MongoStoreClient) EnsureIndexes(ctx context.Context) error {
 			Options: options.Index().
 				SetBackground(true),
 		},
+		{
+			Keys: bson.D{{Key: "created", Value: 1}},
+			Options: options.Index().
+				SetBackground(true),
+		},
 	}
 
 	if _, err := confirmationsCollection(c).Indexes().CreateMany(ctx, indexes); err != nil {
