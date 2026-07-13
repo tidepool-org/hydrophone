@@ -211,6 +211,15 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					}
 				}
 
+				if found.Context != nil {
+					var contextData map[string]string
+					if err := found.DecodeContext(&contextData); err == nil {
+						if restrictedToken, ok := contextData["restrictedTokenID"]; ok {
+							emailContent["restrictedTokenID"] = restrictedToken
+						}
+					}
+				}
+
 				if a.createAndSendNotification(req, found, emailContent) {
 					a.logMetricAsServer("signup confirmation re-sent")
 				} else {

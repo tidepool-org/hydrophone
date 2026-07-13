@@ -31,9 +31,7 @@ const (
 	TemplateNameSignupCustodialClinic                      TemplateName = "signup_custodial_clinic_confirmation"
 	TemplateNameSignupCustodialNewClinicExperience         TemplateName = "signup_custodial_new_clinic_experience_confirmation"
 	TemplateNameSignupCustodialNewClinicExperienceReminder TemplateName = "signup_custodial_new_clinic_experience_confirmation_reminder"
-	TemplateNameSignupCustodialCloudProvider       TemplateName = "signup_custodial_cloud_provider_confirmation"
 	TemplateNameUndefined                                  TemplateName = ""
-
 )
 
 type Template interface {
