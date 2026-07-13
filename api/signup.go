@@ -462,11 +462,7 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					templateName = models.TemplateNameSignupClinic
 				} else if usrDetails.IsCustodial() {
 					if token.IsServer {
-						if upsertCustodialSignUpInvite.ClinicId != "" && upsertCustodialSignUpInvite.RestrictedTokenID != "" {
-							templateName = models.TemplateNameSignupCustodialCloudProvider
-							creatorID = upsertCustodialSignUpInvite.InvitedBy
-							clinicId = upsertCustodialSignUpInvite.ClinicId
-						} else if upsertCustodialSignUpInvite.ClinicId != "" {
+						if upsertCustodialSignUpInvite.ClinicId != "" {
 							templateName = models.TemplateNameSignupCustodialNewClinicExperience
 							creatorID = upsertCustodialSignUpInvite.InvitedBy
 							clinicId = upsertCustodialSignUpInvite.ClinicId
