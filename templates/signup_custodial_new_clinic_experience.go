@@ -2,7 +2,7 @@ package templates
 
 import "github.com/tidepool-org/hydrophone/models"
 
-const _SignupCustodialNewClinicExperienceSubjectTemplate string = `{{ .ClinicName }} Follow Up - Claim your account and get started with Tidepool`
+const _SignupCustodialNewClinicExperienceSubjectTemplate string = `Action Required: {{ .ClinicName }} Has Invited You to Tidepool`
 const _SignupCustodialNewClinicExperienceBodyTemplate string = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -43,14 +43,22 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
                     <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:14px;font-weight:600;Margin-bottom:28px;Margin-left:auto;Margin-right:auto;max-width:400px;">
-                      {{ .ClinicName }} created a Tidepool account for your diabetes device data. Complete the following 4 steps to view and upload your data from home.
+                      {{ .ClinicName }} created a Tidepool account for you, but it looks like you haven't finished setting it up yet.
                     </p>
-                    <ol class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:14px;font-weight:600;Margin-left:auto;Margin-right:auto;max-width:400px;text-align:left">
-                      <li style="Margin-bottom:10px">Claim your account. Click <a style="text-decoration:underline" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}">here</a>.</li>
-                      <li style="Margin-bottom:10px">If you’ll be uploading your devices at home, download the <a href="https://www.tidepool.org/download">latest version of Tidepool Uploader</a>.</li>
-                      <li style="Margin-bottom:10px">Find your device on the <a href="https://www.tidepool.org/devices">Tidepool Compatible Devices List<a/>. Follow the <a href="https://support.tidepool.org/hc/en-us/articles/360029369552-Connecting-your-Dexcom-account-to-Tidepool">instructions to connect your Dexcom account</a> or upload data from your device. You may need a USB cable or cord to upload.</li>
-                      <li>View your device data. Guides and walkthroughs of Tidepool data visualizations can be found in <a href="https://support.tidepool.org/hc/en-us/categories/360001146692-Viewing-your-Data-">Tidepool’s support documentation</a>.</li>
-                    </ol>
+                  </td>
+                </tr>
+				<tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:14px;font-weight:600;Margin-bottom:28px;Margin-left:auto;Margin-right:auto;max-width:400px;">
+                      Tidepool provides secure data storage and intuitive data visualization of your diabetes device data for you, and your care team.
+                    </p>
+                  </td>
+                </tr>
+				<tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:14px;font-weight:600;Margin-bottom:28px;Margin-left:auto;Margin-right:auto;max-width:400px;">
+                      Click the button below to securely share your diabetes device data with your care team and finish setting up your account.
+                    </p>
                   </td>
                 </tr>
                 <tr>
@@ -61,7 +69,7 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
                     <td>
                     <![endif]-->
                     <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}{{ if .restrictedTokenID }}&restrictedTokenId={{ .restrictedTokenID }}{{ end }}" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;">
-                      Claim Your Account
+                      Set Up Your Tidepool Account
                     </a>
                     <!--[if (gte mso 9)|(IE)]>
                     </td>
