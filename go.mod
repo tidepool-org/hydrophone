@@ -8,7 +8,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/tidepool-org/clinic/client v0.0.0-20260303142656-bf2a8a89893c
+	github.com/tidepool-org/clinic/client v0.0.0-20260416091219-9389bf70e126
 	github.com/tidepool-org/go-common v0.12.2-0.20250129210214-bd36b59b9733
 	github.com/tidepool-org/platform v1.33.1-0.20240814160553-f9955fff3f1e
 	go.mongodb.org/mongo-driver v1.16.0

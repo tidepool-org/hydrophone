@@ -2,8 +2,9 @@ package templates
 
 import "github.com/tidepool-org/hydrophone/models"
 
-const _SignupCustodialNewClinicExperienceSubjectTemplate string = `{{ .ClinicName }} Follow Up - Claim your account and get started with Tidepool`
+const _SignupCustodialNewClinicExperienceSubjectTemplate string = `Action Required: {{ .ClinicName }} Has Invited You to Share Your Diabetes Data`
 const _SignupCustodialNewClinicExperienceBodyTemplate string = `
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -42,26 +43,46 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
               <table width="100%" style="border-spacing:0;color:#333333;">
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                    <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:14px;font-weight:600;Margin-bottom:28px;Margin-left:auto;Margin-right:auto;max-width:400px;">
-                      {{ .ClinicName }} created a Tidepool account for your diabetes device data. Complete the following 4 steps to view and upload your data from home.
+                    <a href="{{ .WebURL }}" style="color:#627CFF;text-decoration:none;"><img class="logo" width="220" height="24" src="{{ .AssetURL }}/img/tidepool_logo_light_x2.png" alt="Tidepool logo" style="border:0;display:inline-block;Margin-bottom:32px;max-width:220px;height:auto;"/></a>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <p class="h1 content-width" style="color:#281946;line-height:1.5;Margin:0;font-size:18px;font-weight:700;Margin-bottom:32px;Margin-left:auto;Margin-right:auto;max-width:400px;">
+                      Hi {{ .FullName }},
                     </p>
-                    <ol class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;Margin-bottom:10px;font-size:14px;font-weight:600;Margin-left:auto;Margin-right:auto;max-width:400px;text-align:left">
-                      <li style="Margin-bottom:10px">Claim your account. Click <a style="text-decoration:underline" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}">here</a>.</li>
-                      <li style="Margin-bottom:10px">If you’ll be uploading your devices at home, download the <a href="https://www.tidepool.org/download">latest version of Tidepool Uploader</a>.</li>
-                      <li style="Margin-bottom:10px">Find your device on the <a href="https://www.tidepool.org/devices">Tidepool Compatible Devices List<a/>. Follow the <a href="https://support.tidepool.org/hc/en-us/articles/360029369552-Connecting-your-Dexcom-account-to-Tidepool">instructions to connect your Dexcom account</a> or upload data from your device. You may need a USB cable or cord to upload.</li>
-                      <li>View your device data. Guides and walkthroughs of Tidepool data visualizations can be found in <a href="https://support.tidepool.org/hc/en-us/categories/360001146692-Viewing-your-Data-">Tidepool’s support documentation</a>.</li>
-                    </ol>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;font-size:14px;font-weight:400;Margin-left:auto;Margin-right:auto;max-width:400px;">
+                      As part of your diabetes care, {{ .ClinicName }} uses Tidepool. Tidepool safely stores your diabetes device data and shows it in easy-to-read charts, so you and your care team can track your health together.
+                    </p>
+                  </td>
+                </tr>
+				<tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;font-size:14px;font-weight:400;Margin-left:auto;Margin-right:auto;max-width:400px;">
+                      {{ .ClinicName }} has invited you to set up a Tidepool account and share your data. Setting up your account now saves time at your next visit, so you can spend more time talking about your care.
+                    </p>
+                  </td>
+                </tr>
+				<tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;font-size:14px;font-weight:400;Margin-bottom:28px;Margin-left:auto;Margin-right:auto;max-width:400px;">
+                      Click the button below to get started.
+                    </p>
                   </td>
                 </tr>
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
                     <!--[if (gte mso 9)|(IE)]>
-                    <table bgcolor="#627CFF">
+                    <table bgcolor="#627CFF" width="400" cellpadding="0" cellspacing="0" border="0" align="center">
                     <tr>
-                    <td>
+                    <td align="center">
                     <![endif]-->
-                    <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;background-color:#627CFF;color:#FFFFFF;Margin-left:5px;Margin-right:5px;">
-                      Claim Your Account
+                    <a class="btn primary" href="{{ .WebURL }}/login?signupEmail={{ .Email }}&signupKey={{ .Key }}{{ if .restrictedTokenID }}&restrictedTokenId={{ .restrictedTokenID }}{{ end }}" style="text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:13px 20px;display:block;background-color:#627CFF;color:#FFFFFF;max-width:360px;Margin-left:auto;Margin-right:auto;text-align:center;">
+                      Share Diabetes Data with Your Clinic
                     </a>
                     <!--[if (gte mso 9)|(IE)]>
                     </td>
@@ -72,12 +93,22 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
                 </tr>
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                    <p style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin-bottom:10px;Margin-left:auto;Margin-right:auto;max-width:400px;">If you have any questions, don’t hesitate to email <a href="mailto:support@tidepool.org">support@tidepool.org</a>. The Tidepool support team is available to help.</p>
+                    <p class="h2 content-width" style="color:#281946;line-height:1.5;Margin:0;font-size:14px;font-weight:400;font-style:italic;Margin-top:18px;Margin-left:auto;Margin-right:auto;max-width:400px;">
+                      Setting this up for someone else, like your child or another family member? Follow the same steps above.
+                    </p>
                   </td>
                 </tr>
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                    <a href="{{ .WebURL }}" style="color:#627CFF;text-decoration:none;"><img class="logo" width="220" height="24" src="{{ .AssetURL }}/img/tidepool_logo_light_x2.png" alt="Tidepool logo" style="border:0;display:inline-block;Margin-bottom:36px;max-width:220px;height:auto;"/></a>
+                    <p style="color:#281946;font-size:14px;line-height:1.5;font-weight:400;Margin:0;Margin-top:18px;Margin-bottom:10px;Margin-left:auto;Margin-right:auto;max-width:400px;">If you have any questions about this email or Tidepool, please contact <a href="mailto:support@tidepool.org" style="color:#627CFF;text-decoration:underline;">support@tidepool.org</a></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
+                    <p class="content-width" style="color:#281946;font-size:14px;line-height:1.5;font-weight:400;Margin:0;Margin-bottom:28px;Margin-left:auto;Margin-right:auto;max-width:400px;">
+                      Sincerely,<br/>
+                      The Tidepool Team
+                    </p>
                   </td>
                 </tr>
                 <tr>
@@ -100,7 +131,7 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
                 </tr>
                 <tr>
                   <td class="inner centered" style="padding:0;padding:10px;text-align:center;">
-                    <p class="about content-width narrow" style="color:#281946;font-size:14px;line-height:1.5;font-weight:600;Margin:0;Margin-bottom:10px;font-size:10px;font-weight:300;color:#6d6d6d;Margin-bottom:0;max-width:400px;Margin-left:auto;Margin-right:auto;max-width:350px;">
+                    <p class="about content-width narrow" style="color:#6d6d6d;line-height:1.5;Margin:0;font-size:10px;font-weight:300;Margin-bottom:0;Margin-left:auto;Margin-right:auto;max-width:350px;">
                       <a href="https://www.tidepool.org" style="color:#627CFF;text-decoration:none;">Tidepool</a>
                       An open source, not-for-profit effort to build an open data platform and better applications that reduce the burden of diabetes.
                     </p>
@@ -116,7 +147,7 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
                           <tr>
                           <td>
                           <![endif]-->
-                          <a class="btn secondary small" href="http://support.tidepool.org" style="color:#627CFF;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;padding:10px 20px;display:inline-block;border:1px solid #dbdee0;background-color:#FFFFFF;color:#281946;font-weight:normal;padding:4px 10px 5px;Margin-left:3px;Margin-right:3px;font-size:10px;border-radius:2px;">
+                          <a class="btn secondary small" href="https://support.tidepool.org" style="text-decoration:none;border-radius:2px;font-size:10px;font-weight:normal;padding:4px 10px 5px;display:inline-block;border:1px solid #dbdee0;background-color:#FFFFFF;color:#281946;Margin-left:3px;Margin-right:3px;">
                             Get Support
                           </a>
                           <!--[if (gte mso 9)|(IE)]>
@@ -142,6 +173,7 @@ const _SignupCustodialNewClinicExperienceBodyTemplate string = `
     </center>
   </body>
 </html>
+
 `
 
 func NewSignupCustodialNewClinicExperienceTemplate() (models.Template, error) {

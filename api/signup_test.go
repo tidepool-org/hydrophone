@@ -30,6 +30,19 @@ func TestSignupResponds(t *testing.T) {
 			respCode:   200,
 		},
 		{
+			// first time with a restricted token, it does it
+			returnNone: true,
+			method:     "POST",
+			url:        "/send/signup/NewUserID",
+			token:      testing_token_uid1,
+			body: testJSONObject{
+				"clinicId":          "clinicId123",
+				"invitedBy":         "clinicianId456",
+				"restrictedTokenId": "restricted-token-xyz",
+			},
+			respCode: 200,
+		},
+		{
 			// need a token
 			returnNone: true,
 			method:     "POST",

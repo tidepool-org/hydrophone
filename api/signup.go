@@ -126,6 +126,15 @@ func (a *Api) sendSignUp(res http.ResponseWriter, req *http.Request, vars map[st
 			emailContent["ClinicName"] = clinicName
 		}
 
+		if newSignUp.Context != nil {
+			var contextData map[string]string
+			if err := newSignUp.DecodeContext(&contextData); err == nil {
+				if restrictedToken, ok := contextData["restrictedTokenID"]; ok {
+					emailContent["restrictedTokenID"] = restrictedToken
+				}
+			}
+		}
+
 		if a.createAndSendNotification(req, newSignUp, emailContent) {
 			a.logMetricAsServer("signup confirmation sent")
 			res.WriteHeader(http.StatusOK)
@@ -202,6 +211,15 @@ func (a *Api) resendSignUp(res http.ResponseWriter, req *http.Request, vars map[
 					}
 				}
 
+				if found.Context != nil {
+					var contextData map[string]string
+					if err := found.DecodeContext(&contextData); err == nil {
+						if restrictedToken, ok := contextData["restrictedTokenID"]; ok {
+							emailContent["restrictedTokenID"] = restrictedToken
+						}
+					}
+				}
+
 				if a.createAndSendNotification(req, found, emailContent) {
 					a.logMetricAsServer("signup confirmation re-sent")
 				} else {
@@ -246,11 +264,14 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 		emailVerified := true
 		updates := shoreline.UserUpdate{EmailVerified: &emailVerified}
 
-		if user, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide()); err != nil {
+		user, err := a.sl.GetUser(found.UserId, a.sl.TokenProvide())
+		if err != nil || user == nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_FINDING_USER, "trying to get user to check email verified", err)
 			return
 
-		} else if !user.PasswordExists {
+		}
+
+		if !user.PasswordExists {
 			acceptance := &models.Acceptance{}
 			if req.Body != nil {
 				if err := json.NewDecoder(req.Body).Decode(acceptance); err != nil {
@@ -290,6 +311,9 @@ func (a *Api) acceptSignUp(res http.ResponseWriter, req *http.Request, vars map[
 			updates.Password = &acceptance.Password
 		}
 
+		// Setting the user's email is now required because the username and email fields will be overwritten
+		updates.Username = &user.Username
+		updates.Emails = &user.Emails
 		if err := a.sl.UpdateUser(found.UserId, updates, a.sl.TokenProvide()); err != nil {
 			a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_UPDATING_USER, err)
 			return
@@ -482,6 +506,12 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				newSignUp.UserId = usrDetails.UserID
 				newSignUp.Email = usrDetails.Emails[0]
 				newSignUp.ClinicId = clinicId
+				if upsertCustodialSignUpInvite.RestrictedTokenID != "" {
+					if err := newSignUp.AddContext(map[string]string{"restrictedTokenID": upsertCustodialSignUpInvite.RestrictedTokenID}); err != nil {
+						a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+						return nil
+					}
+				}
 			} else if newSignUp.Email != usrDetails.Emails[0] {
 
 				if err := a.Store.RemoveConfirmation(ctx, newSignUp); err != nil {
@@ -498,6 +528,12 @@ func (a *Api) upsertSignUp(res http.ResponseWriter, req *http.Request, vars map[
 				if upsertCustodialSignUpInvite.ClinicId != "" {
 					newSignUp.ClinicId = upsertCustodialSignUpInvite.ClinicId
 					newSignUp.CreatorId = upsertCustodialSignUpInvite.InvitedBy
+				}
+				if upsertCustodialSignUpInvite.RestrictedTokenID != "" {
+					if err := newSignUp.AddContext(map[string]string{"restrictedTokenID": upsertCustodialSignUpInvite.RestrictedTokenID}); err != nil {
+						a.sendError(ctx, res, http.StatusInternalServerError, STATUS_ERR_CREATING_CONFIRMATION, err)
+						return nil
+					}
 				}
 			} else {
 				a.sendError(ctx, res, http.StatusForbidden, STATUS_EXISTING_SIGNUP)
@@ -539,8 +575,9 @@ func IsValidDate(date string) bool {
 }
 
 type UpsertCustodialSignUpInvite struct {
-	ClinicId  string `json:"clinicId"`
-	InvitedBy string `json:"invitedBy"`
+	ClinicId          string `json:"clinicId"`
+	InvitedBy         string `json:"invitedBy"`
+	RestrictedTokenID string `json:"restrictedTokenId"`
 }
 
 var passwordRe = regexp.MustCompile(`\A\S{8,72}\z`)
