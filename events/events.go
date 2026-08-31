@@ -28,19 +28,18 @@ func NewHandler(store clients.StoreClient, logger *zap.SugaredLogger) events.Eve
 	})
 }
 
-func (h *handler) HandleDeleteUserEvent(payload events.DeleteUserEvent) error {
-	var err error
+func (h *handler) HandleDeleteUserEvent(payload events.DeleteUserEvent) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), deleteTimeout)
 	defer cancel()
-	defer func(err *error) {
+	defer func() {
 		log := h.logger.With(zap.String("userId", payload.UserID))
 		if err != nil {
-			log.With(zap.Error(*err)).Error("deleting confirmations")
+			log.With(zap.Error(err)).Error("deleting confirmations")
 		} else {
 			log.With().Info("successfully deleted confirmations")
 		}
-	}(&err)
-	if err = h.store.RemoveConfirmationsForUser(ctx, payload.UserID); err != nil {
+	}()
+	if err := h.store.RemoveConfirmationsForUser(ctx, payload.UserID); err != nil {
 		return err
 	}
 	return nil
